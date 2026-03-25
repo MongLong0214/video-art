@@ -335,9 +335,13 @@ def analyze_frame(frame_path: str, n_clusters: int, sample_density: int) -> dict
     }
 
 
-def merge_palettes(frame_analyses: list, tolerance: int = 25, use_lab: bool = False) -> list:
+def merge_palettes(frame_analyses: list, tolerance: int = 25, use_lab: bool = False,
+                    low_contrast: bool = False) -> list:
     """Merge palettes across frames to find the canonical palette.
-    If use_lab=True, tolerance is interpreted as ΔE2000 threshold (default 15)."""
+    If use_lab=True, tolerance is interpreted as ΔE2000 threshold (default 15).
+    If low_contrast=True, tolerance is widened for dark/low-contrast videos."""
+    if low_contrast and not use_lab:
+        tolerance = int(tolerance * 1.4)  # widen RGB tolerance from 25 to ~35
     all_colors = []
     for analysis in frame_analyses:
         for color in analysis["palette"]:
@@ -413,6 +417,18 @@ def main():
 
     print(f"Analyzing colors in {len(frame_files)} frames...")
 
+    # E1: Detect dark/low-contrast video
+    low_contrast = False
+    try:
+        first_img = np.array(Image.open(str(frame_files[0])).convert("L"))
+        mean_brightness = float(first_img.mean())
+        if mean_brightness < 30:
+            print(f"  Warning: Very dark video detected (mean brightness: {mean_brightness:.1f}/255). "
+                  "Adjusting color tolerance.", file=sys.stderr)
+            low_contrast = True
+    except Exception:
+        pass
+
     frame_analyses = []
     for i, frame_path in enumerate(frame_files):
         print(f"  [{i+1}/{len(frame_files)}] {frame_path.name}")
@@ -420,7 +436,7 @@ def main():
         frame_analyses.append(analysis)
 
     # Merge across frames
-    canonical_palette = merge_palettes(frame_analyses)
+    canonical_palette = merge_palettes(frame_analyses, low_contrast=low_contrast)
 
     # Aggregate stroke info
     stroke_widths = [
@@ -437,16 +453,20 @@ def main():
             "stroke_width_ratio": round(float(np.median(stroke_widths)) / frame_analyses[0]["resolution"]["width"], 5),
         }
 
+    analysis_params = {
+        "clusters_per_frame": args.top,
+        "sample_density": args.sample_density,
+        "sklearn_available": HAS_SKLEARN,
+        "frames_analyzed": len(frame_files),
+    }
+    if low_contrast:
+        analysis_params["low_contrast_warning"] = True
+
     result = {
         "canonical_palette": canonical_palette,
         "stroke_summary": stroke_summary,
         "per_frame_analyses": frame_analyses,
-        "analysis_params": {
-            "clusters_per_frame": args.top,
-            "sample_density": args.sample_density,
-            "sklearn_available": HAS_SKLEARN,
-            "frames_analyzed": len(frame_files),
-        },
+        "analysis_params": analysis_params,
     }
 
     out_path = frames_dir / "colors.json"

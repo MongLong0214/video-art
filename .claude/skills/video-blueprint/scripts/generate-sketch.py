@@ -18,6 +18,28 @@ from pathlib import Path
 from jinja2 import Environment, FileSystemLoader, BaseLoader
 
 TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "templates"
+_NAME_RE = re.compile(r'^[a-zA-Z0-9_-]+$')
+
+
+def _validate_name(name: str) -> str:
+    """Validate and sanitize mode name for safe file/code generation."""
+    if not _NAME_RE.match(name):
+        safe = re.sub(r'[^a-zA-Z0-9_-]', '_', name)
+        print(f"Warning: name '{name}' sanitized to '{safe}'", file=sys.stderr)
+        return safe
+    return name
+
+
+def _name_to_ts_identifier(name: str) -> str:
+    """Convert kebab/snake name to PascalCase TS identifier.
+    e.g. 'my-mode' -> 'MyMode', 'layered_v2' -> 'LayeredV2'"""
+    return ''.join(part.capitalize() for part in re.split(r'[-_]', name) if part)
+
+
+def _name_to_const(name: str) -> str:
+    """Convert name to SCREAMING_SNAKE_CASE constant.
+    e.g. 'my-mode' -> 'MY_MODE'"""
+    return re.sub(r'[-]', '_', name).upper()
 
 
 def hex_to_glsl(hex_color: str) -> str:
@@ -28,6 +50,8 @@ def hex_to_glsl(hex_color: str) -> str:
 
 def generate_sketch(blueprint: dict, output_path: str, name: str) -> str:
     """Generate a Three.js sketch TypeScript file."""
+    name = _validate_name(name)
+    ts_id = _name_to_ts_identifier(name)
     canvas = blueprint.get("canvas", {})
     effects = blueprint.get("effects", {})
     has_effects = any(e.get("enabled") for e in effects.values() if isinstance(e, dict))
@@ -38,7 +62,7 @@ import vertexShader from "@/shaders/base.vert";
 import fragmentShader from "@/shaders/{name}.frag";
 import type {{ Sketch }} from "./psychedelic";
 
-export const create{name.capitalize()} = (): Sketch => {{
+export const create{ts_id} = (): Sketch => {{
   const scene = new THREE.Scene();
   const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
 
@@ -73,46 +97,59 @@ export const create{name.capitalize()} = (): Sketch => {{
 
 
 def generate_main_patch(blueprint: dict, name: str) -> str:
-    """Generate the main.ts patch code for adding a new mode."""
+    """Generate a SKETCH_REGISTRY entry for the new sketch."""
+    name = _validate_name(name)
     canvas = blueprint.get("canvas", {})
     meta = blueprint.get("meta", {})
+    effects = blueprint.get("effects", {})
     width = canvas.get("width", 1080)
     height = canvas.get("height", 1920)
     fps = meta.get("fps", 60)
     dur = meta.get("duration_sec", 10.0)
-    upper = name.upper()
+    has_effects = any(e.get("enabled") for e in effects.values() if isinstance(e, dict))
+    post_type = "bloom_post" if has_effects else "none"
 
-    return f'''// --- {name} mode patch ---
-const IS_{upper} = MODE === "{name}";
-// Config: WIDTH = IS_{upper} ? {width} : ...
-// HEIGHT = IS_{upper} ? {height} : ...
-// FPS = IS_{upper} ? {fps} : ...
-// LOOP_DUR = IS_{upper} ? {dur} : ...
-// toneMapping = IS_{upper} ? THREE.NoToneMapping : ...
-
-// loadSketch():
-//   if (IS_{upper}) {{
-//     const {{ create{name.capitalize()} }} = await import("@/sketches/{name}");
-//     const sketch = create{name.capitalize()}();
-//     sketch.resize(WIDTH, HEIGHT);
-//     return sketch;
-//   }}
-
-// post-processing:
-//   if (IS_{upper}) {{
-//     composerRender = () => renderer.render(sketch.scene, sketch.camera);
-//     updatePostUniforms = () => {{}};
-//   }}
+    return f'''// Add to SKETCH_REGISTRY in src/lib/sketch-registry.ts:
+  "{name}": {{
+    name: "{name}",
+    width: {width},
+    height: {height},
+    fps: {fps},
+    loopDuration: {dur},
+    toneMapping: "none",
+    postProcessing: "{post_type}",
+  }},
 '''
 
 
 def generate_post_shader(blueprint: dict) -> str:
-    """Generate post-processing fragment shader from blueprint effects."""
+    """Generate post-processing fragment shader from blueprint effects via Jinja2 template."""
     effects = blueprint.get("effects", {})
     ca = effects.get("chromatic_aberration", {})
     vig = effects.get("vignette", {})
     grain = effects.get("grain", {})
 
+    template_path = TEMPLATES_DIR / "post.frag.j2"
+    if template_path.exists():
+        env = Environment(
+            loader=FileSystemLoader(str(TEMPLATES_DIR)),
+            keep_trailing_newline=True,
+            trim_blocks=True,
+            lstrip_blocks=True,
+        )
+        template = env.get_template("post.frag.j2")
+        return template.render(
+            ca_enabled=ca.get("enabled", False),
+            ca_shift=ca.get("max_shift_ratio", 0.006),
+            vignette_enabled=vig.get("enabled", False),
+            vignette_start=vig.get("start_radius", 0.7),
+            vignette_opacity=vig.get("opacity", 0.85),
+            grain_enabled=grain.get("enabled", False),
+            grain_fps=grain.get("frame_rate", 24),
+            grain_intensity=grain.get("intensity", 0.02),
+        )
+
+    # Fallback: inline generation if template not found
     lines = [
         "uniform sampler2D tDiffuse;",
         "uniform float uTime;",
@@ -129,7 +166,6 @@ def generate_post_shader(blueprint: dict) -> str:
 
     if ca.get("enabled"):
         shift = ca.get("max_shift_ratio", 0.006)
-        lines.append(f"  // Chromatic aberration")
         lines.append(f"  float aberration = length(center) * {shift};")
         lines.append(f"  vec3 col;")
         lines.append(f"  col.r = texture2D(tDiffuse, uv + center * aberration).r;")
@@ -141,7 +177,6 @@ def generate_post_shader(blueprint: dict) -> str:
     if vig.get("enabled"):
         start_r = vig.get("start_radius", 0.7)
         opacity = vig.get("opacity", 0.85)
-        lines.append(f"  // Vignette")
         lines.append(f"  float vigDist = length(center * 2.0);")
         lines.append(f"  float vig = smoothstep({start_r}, 1.4, vigDist);")
         lines.append(f"  col *= 1.0 - vig * {opacity};")
@@ -149,7 +184,6 @@ def generate_post_shader(blueprint: dict) -> str:
     if grain.get("enabled"):
         intensity = grain.get("intensity", 0.02)
         fps = grain.get("frame_rate", 24)
-        lines.append(f"  // Grain")
         lines.append(f"  float grainT = floor(uTime * {fps}.0);")
         lines.append(f"  float grain = (hash(gl_FragCoord.xy + grainT) - 0.5) * {intensity};")
         lines.append(f"  col += grain;")

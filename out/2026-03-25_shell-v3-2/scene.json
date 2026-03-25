@@ -1,0 +1,256 @@
+{
+  "version": 1,
+  "source": "monglong_studio_A_white_shell_with_two_people_diving_into_the_s_ee581942-9eda-4957-bb86-abeb334d0127.PNG",
+  "resolution": [
+    1080,
+    1080
+  ],
+  "duration": 10,
+  "fps": 30,
+  "layers": [
+    {
+      "id": "far-bg",
+      "file": "layers/layer-0.png",
+      "zIndex": 0,
+      "opacity": 1,
+      "animation": {
+        "colorCycle": {
+          "speed": 7,
+          "hueRange": 360,
+          "period": 10,
+          "phaseOffset": 0
+        },
+        "parallax": {
+          "depth": 0
+        },
+        "saturationBoost": 2.5,
+        "luminanceKey": 0.8
+      }
+    },
+    {
+      "id": "background",
+      "file": "layers/layer-1.png",
+      "zIndex": 1,
+      "opacity": 1,
+      "animation": {
+        "colorCycle": {
+          "speed": 7,
+          "hueRange": 360,
+          "period": 10,
+          "phaseOffset": 30
+        },
+        "parallax": {
+          "depth": 0
+        },
+        "saturationBoost": 2.5,
+        "luminanceKey": 0.86
+      }
+    },
+    {
+      "id": "mid-bg",
+      "file": "layers/layer-2.png",
+      "zIndex": 2,
+      "opacity": 1,
+      "animation": {
+        "colorCycle": {
+          "speed": 7,
+          "hueRange": 360,
+          "period": 10,
+          "phaseOffset": 60
+        },
+        "parallax": {
+          "depth": 0
+        },
+        "saturationBoost": 2.5,
+        "luminanceKey": 0.91
+      }
+    },
+    {
+      "id": "mid",
+      "file": "layers/layer-3.png",
+      "zIndex": 3,
+      "opacity": 1,
+      "animation": {
+        "colorCycle": {
+          "speed": 7,
+          "hueRange": 360,
+          "period": 5,
+          "phaseOffset": 90
+        },
+        "parallax": {
+          "depth": 0
+        },
+        "saturationBoost": 2.5,
+        "luminanceKey": 0.95
+      }
+    },
+    {
+      "id": "mid-fg",
+      "file": "layers/layer-4.png",
+      "zIndex": 4,
+      "opacity": 1,
+      "animation": {
+        "colorCycle": {
+          "speed": 7,
+          "hueRange": 360,
+          "period": 5,
+          "phaseOffset": 120
+        },
+        "parallax": {
+          "depth": 0
+        },
+        "saturationBoost": 2.5,
+        "luminanceKey": 0.98
+      }
+    },
+    {
+      "id": "foreground",
+      "file": "layers/layer-5.png",
+      "zIndex": 5,
+      "opacity": 1,
+      "animation": {
+        "colorCycle": {
+          "speed": 7,
+          "hueRange": 360,
+          "period": 5,
+          "phaseOffset": 150
+        },
+        "parallax": {
+          "depth": 0
+        },
+        "saturationBoost": 2.5,
+        "luminanceKey": 1
+      }
+    },
+    {
+      "id": "near-fg",
+      "file": "layers/layer-6.png",
+      "zIndex": 6,
+      "opacity": 1,
+      "animation": {
+        "colorCycle": {
+          "speed": 7,
+          "hueRange": 360,
+          "period": 2,
+          "phaseOffset": 180
+        },
+        "parallax": {
+          "depth": 0
+        },
+        "saturationBoost": 2.5,
+        "luminanceKey": 1
+      }
+    },
+    {
+      "id": "nearest",
+      "file": "layers/layer-7.png",
+      "zIndex": 7,
+      "opacity": 1,
+      "animation": {
+        "colorCycle": {
+          "speed": 7,
+          "hueRange": 360,
+          "period": 2,
+          "phaseOffset": 210
+        },
+        "parallax": {
+          "depth": 0
+        },
+        "saturationBoost": 2.5,
+        "luminanceKey": 0.98
+      }
+    },
+    {
+      "id": "layer-8",
+      "file": "layers/layer-8.png",
+      "zIndex": 8,
+      "opacity": 1,
+      "animation": {
+        "colorCycle": {
+          "speed": 7,
+          "hueRange": 360,
+          "period": 2,
+          "phaseOffset": 240
+        },
+        "parallax": {
+          "depth": 0
+        },
+        "saturationBoost": 2.5,
+        "luminanceKey": 0.95
+      }
+    },
+    {
+      "id": "layer-9",
+      "file": "layers/layer-9.png",
+      "zIndex": 9,
+      "opacity": 1,
+      "animation": {
+        "colorCycle": {
+          "speed": 7,
+          "hueRange": 360,
+          "period": 1,
+          "phaseOffset": 270
+        },
+        "parallax": {
+          "depth": 0
+        },
+        "saturationBoost": 2.5,
+        "luminanceKey": 0.91
+      }
+    },
+    {
+      "id": "layer-10",
+      "file": "layers/layer-10.png",
+      "zIndex": 10,
+      "opacity": 1,
+      "animation": {
+        "colorCycle": {
+          "speed": 7,
+          "hueRange": 360,
+          "period": 1,
+          "phaseOffset": 300
+        },
+        "parallax": {
+          "depth": 0
+        },
+        "saturationBoost": 2.5,
+        "luminanceKey": 0.86
+      }
+    },
+    {
+      "id": "layer-11",
+      "file": "layers/layer-11.png",
+      "zIndex": 11,
+      "opacity": 1,
+      "animation": {
+        "colorCycle": {
+          "speed": 7,
+          "hueRange": 360,
+          "period": 1,
+          "phaseOffset": 330
+        },
+        "parallax": {
+          "depth": 0
+        },
+        "saturationBoost": 2.5,
+        "luminanceKey": 0.8
+      }
+    }
+  ],
+  "effects": {
+    "bloom": {
+      "strength": 0.6,
+      "radius": 0.4,
+      "threshold": 0.7
+    },
+    "chromaticAberration": {
+      "offset": 1.5
+    },
+    "sparkle": {
+      "count": 80,
+      "sizeMin": 2,
+      "sizeMax": 6,
+      "speed": 1
+    }
+  }
+}

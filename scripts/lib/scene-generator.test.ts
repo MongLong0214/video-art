@@ -5,20 +5,19 @@ import sharp from "sharp";
 import { fileURLToPath } from "node:url";
 import { postprocessLayers } from "./postprocess.js";
 import { generateSceneJson } from "./scene-generator.js";
+import { getValidPeriods } from "../../src/lib/scene-schema.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const TMP = path.join(__dirname, "__test_scene_tmp__");
-const VALID_PERIODS = [1, 2, 4, 5, 10, 20];
 
 beforeAll(async () => {
   fs.mkdirSync(TMP, { recursive: true });
 
-  // Create 4 test layers with different alpha coverages
   const configs = [
-    { name: "layer-0.png", coverage: 0.9 }, // ~90% opaque
-    { name: "layer-1.png", coverage: 0.5 }, // ~50%
-    { name: "layer-2.png", coverage: 0.2 }, // ~20%
-    { name: "layer-3.png", coverage: 0.1 }, // ~10%
+    { name: "layer-0.png", coverage: 0.9 },
+    { name: "layer-1.png", coverage: 0.5 },
+    { name: "layer-2.png", coverage: 0.2 },
+    { name: "layer-3.png", coverage: 0.1 },
   ];
 
   for (const { name, coverage } of configs) {
@@ -29,10 +28,10 @@ beforeAll(async () => {
     const opaqueCount = Math.floor(size * size * coverage);
     for (let i = 0; i < size * size; i++) {
       const offset = i * channels;
-      buf[offset] = 128; // R
-      buf[offset + 1] = 64; // G
-      buf[offset + 2] = 200; // B
-      buf[offset + 3] = i < opaqueCount ? 255 : 0; // A
+      buf[offset] = 128;
+      buf[offset + 1] = 64;
+      buf[offset + 2] = 200;
+      buf[offset + 3] = i < opaqueCount ? 255 : 0;
     }
 
     await sharp(buf, { raw: { width: size, height: size, channels } })
@@ -50,7 +49,6 @@ describe("postprocessLayers", () => {
     const result = await postprocessLayers(TMP);
     expect(result.files.length).toBe(4);
 
-    // Coverages should be sorted descending
     for (let i = 0; i < result.coverages.length - 1; i++) {
       expect(result.coverages[i]).toBeGreaterThanOrEqual(result.coverages[i + 1]);
     }
@@ -58,6 +56,12 @@ describe("postprocessLayers", () => {
 });
 
 describe("generateSceneJson", () => {
+  it("should generate duration 10", async () => {
+    const ppResult = await postprocessLayers(TMP);
+    const scene = await generateSceneJson("test.png", ppResult);
+    expect(scene.duration).toBe(10);
+  });
+
   it("should generate valid scene.json structure", async () => {
     const ppResult = await postprocessLayers(TMP);
     const scene = await generateSceneJson("test.png", ppResult);
@@ -65,13 +69,10 @@ describe("generateSceneJson", () => {
     expect(scene.version).toBe(1);
     expect(scene.source).toBe("test.png");
     expect(scene.resolution).toEqual([1080, 1080]);
-    expect(scene.duration).toBe(20);
+    expect(scene.duration).toBe(10);
     expect(scene.fps).toBe(30);
     expect(scene.layers.length).toBe(4);
     expect(scene.effects).toBeDefined();
-    expect(scene.effects.bloom).toBeDefined();
-    expect(scene.effects.chromaticAberration).toBeDefined();
-    expect(scene.effects.sparkle).toBeDefined();
   });
 
   it("should have required fields on each layer", async () => {
@@ -87,21 +88,58 @@ describe("generateSceneJson", () => {
     }
   });
 
-  it("should have all animation periods as divisors of 20", async () => {
+  it("should have all periods as divisors of 10", async () => {
     const ppResult = await postprocessLayers(TMP);
     const scene = await generateSceneJson("test.png", ppResult);
+    const validPeriods = getValidPeriods(10);
 
     for (const layer of scene.layers) {
       const { animation } = layer;
       if (animation.colorCycle) {
-        expect(VALID_PERIODS).toContain(animation.colorCycle.period);
+        expect(validPeriods).toContain(animation.colorCycle.period);
       }
       if (animation.wave) {
-        expect(VALID_PERIODS).toContain(animation.wave.period);
+        expect(validPeriods).toContain(animation.wave.period);
       }
       if (animation.glow) {
-        expect(VALID_PERIODS).toContain(animation.glow.period);
+        expect(validPeriods).toContain(animation.glow.period);
       }
+    }
+  });
+
+  it("should set phaseOffset per layer [0, 90, 180, 270]", async () => {
+    const ppResult = await postprocessLayers(TMP);
+    const scene = await generateSceneJson("test.png", ppResult);
+    const offsets = scene.layers.map((l) => l.animation.colorCycle?.phaseOffset);
+    expect(offsets).toEqual([0, 90, 180, 270]);
+  });
+
+  it("should set saturationBoost in presets (2.0-3.0)", async () => {
+    const ppResult = await postprocessLayers(TMP);
+    const scene = await generateSceneJson("test.png", ppResult);
+
+    for (const layer of scene.layers) {
+      expect(layer.animation.saturationBoost).toBeGreaterThanOrEqual(2.0);
+      expect(layer.animation.saturationBoost).toBeLessThanOrEqual(3.0);
+    }
+  });
+
+  it("should set luminanceKey in presets (0.4-0.8)", async () => {
+    const ppResult = await postprocessLayers(TMP);
+    const scene = await generateSceneJson("test.png", ppResult);
+
+    for (const layer of scene.layers) {
+      expect(layer.animation.luminanceKey).toBeGreaterThanOrEqual(0.4);
+      expect(layer.animation.luminanceKey).toBeLessThanOrEqual(0.8);
+    }
+  });
+
+  it("should set colorCycle speed=1.0", async () => {
+    const ppResult = await postprocessLayers(TMP);
+    const scene = await generateSceneJson("test.png", ppResult);
+
+    for (const layer of scene.layers) {
+      expect(layer.animation.colorCycle?.speed).toBe(1.0);
     }
   });
 });

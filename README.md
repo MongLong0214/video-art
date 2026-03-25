@@ -99,7 +99,7 @@ npm run pipeline input.png -- --title sunset
 | `npm run pipeline <img> -- --title <name>` | 풀 파이프라인: 레이어 분해 → 미리보기 → mp4 |
 | `npm run pipeline:layers <img>` | 레이어 분해 + 후처리 + scene.json 생성만 |
 | `npm run pipeline:validate` | 루프 이음새 검증 (pixel RMSE < 2.0) |
-| `npm run export:layered -- --title <name>` | layered mp4 익스포트만 (1080x1080, 60fps, 20초) |
+| `npm run export:layered -- --title <name>` | layered mp4 익스포트만 (1080x1080, 60fps, scene.json duration) |
 
 ### 공통 플래그
 
@@ -254,8 +254,9 @@ loadScene("/scene.json")
 Three.js Scene (OrthographicCamera, z=10)
 ├── PlaneGeometry z=0.0  ← layer-0.png (background)
 │   └── ShaderMaterial: layer.vert + layer.frag
-│       uniforms: uTexture, uTime(0→1), uLoopDuration(20s),
-│                 ColorCycle, Wave, Glow, Parallax
+│       uniforms: uTexture, uTime(0→1), uLoopDuration(10s),
+│                 ColorCycle, Wave, Glow, Parallax,
+│                 uPhaseOffset, uSaturationBoost, uLuminanceKey
 ├── PlaneGeometry z=0.1  ← layer-1.png (subject)
 ├── PlaneGeometry z=0.2  ← layer-2.png (detail)
 └── PlaneGeometry z=0.3  ← layer-3.png (foreground)
@@ -276,18 +277,20 @@ Canvas
 |--------|------|------|
 | Parallax | `sin/cos(time × 2pi)` 원형 오프셋 | `uParallaxDepth` |
 | Wave | UV 좌표에 sin/cos 왜곡 | `uWaveAmplitude, Frequency, Period` |
-| Color Cycle | RGB→HSL, hue shift, HSL→RGB | `uColorCycleSpeed, HueRange, Period` |
+| Color Cycle | RGB→HSV, `fract()` linear hue sweep, HSV→RGB | `uColorCycleSpeed, Period, uPhaseOffset` |
+| Saturation Boost | HSV S 채널 배율 증폭 (네온/형광) | `uSaturationBoost` (기본 2.5) |
+| Luminance Key | 밝기 기반 차등 hue shift (`pow(1-lum, 1+key)`) | `uLuminanceKey` (기본 0.6) |
 | Glow | `1 + intensity × sin(time)` 밝기 배율 | `uGlowIntensity, Pulse, Period` |
 
 ### Seamless Loop
 
 ```
-모든 period = 20의 약수 (1, 2, 4, 5, 10, 20초)
+모든 period = duration의 약수 (duration=10 → 1, 2, 5, 10초)
 time = (elapsed % loopDuration) / loopDuration    → 0→1, 매 루프 리셋
 
 Sketch:  LOOP_DUR = 8초,  각 회전 속도 = 정수 × 반회전/루프 → seamless
-Layered: LOOP_DUR = 20초, 모든 period가 20의 약수 → seamless
-Sparkle: PERIOD = 4초 (20의 약수), deterministic hash → seamless
+Layered: LOOP_DUR = scene.json duration (기본 10초), 모든 period가 duration의 약수 → seamless
+Sparkle: PERIOD = 4초, mod(time, period) 독립 주기 → duration 무관 seamless
 
 검증: npm run pipeline:validate → frame[0] vs frame[last] pixel RMSE < 2.0
 ```
@@ -312,7 +315,7 @@ Puppeteer headless Chrome
 
 출력 스펙:
   Sketch:  1080x1920, 60fps, 8초,  H.264, CRF 18
-  Layered: 1080x1080, 60fps, 20초, H.264, 15Mbps
+  Layered: 1080x1080, 60fps, 10초(기본), H.264, 15Mbps
 ```
 
 ---
@@ -350,8 +353,8 @@ input.png (PNG/JPG/WEBP, max 4096x4096, 20MB)
   "version": 1,
   "source": "sunset.png",
   "resolution": [1080, 1080],
-  "duration": 20,                   // 루프 길이 (초)
-  "fps": 60,
+  "duration": 10,                   // 루프 길이 (초, 기본 10, max 60)
+  "fps": 30,
   "layers": [
     {
       "id": "background",
@@ -359,13 +362,14 @@ input.png (PNG/JPG/WEBP, max 4096x4096, 20MB)
       "zIndex": 0,
       "opacity": 1.0,
       "animation": {
-        "colorCycle": { "speed": 0.3, "hueRange": 360, "period": 20 },
-        "wave":       { "amplitude": 5, "frequency": 0.5, "period": 10 },
-        "glow":       { "intensity": 0.1, "pulse": 0.2, "period": 20 },
-        "parallax":   { "depth": 0.0 }
+        "colorCycle": { "speed": 1.0, "hueRange": 360, "period": 10, "phaseOffset": 0 },
+        "wave":       { "amplitude": 2, "frequency": 0.3, "period": 10 },
+        "parallax":   { "depth": 0.0 },
+        "saturationBoost": 2.5,
+        "luminanceKey": 0.6
       }
     }
-    // ... subject (z=1), detail (z=2), foreground (z=3)
+    // ... subject (phaseOffset:90), detail (phaseOffset:180), foreground (phaseOffset:270)
   ],
   "effects": {
     "bloom":                { "strength": 0.6, "radius": 0.4, "threshold": 0.7 },
@@ -375,7 +379,7 @@ input.png (PNG/JPG/WEBP, max 4096x4096, 20MB)
 }
 ```
 
-**period 규칙**: 반드시 20의 약수 (1, 2, 4, 5, 10, 20). `npm run pipeline:validate`가 검증.
+**period 규칙**: 반드시 duration의 약수 (duration=10 → 1, 2, 5, 10). `npm run pipeline:validate`가 검증.
 
 ---
 

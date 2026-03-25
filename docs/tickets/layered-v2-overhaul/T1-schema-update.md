@@ -21,6 +21,8 @@ scene-schema.ts에 새 애니메이션 파라미터(saturationBoost, luminanceKe
 - [ ] AC-6: 기존 scene.json (새 필드 없음)이 파싱 에러 없이 동작 (기본값 적용)
 - [ ] AC-7: period=4, period=20이 duration=10에서 Zod 검증 에러
 - [ ] AC-8: period 에러 메시지가 동적 (`"Period must be a divisor of 10: 1, 2, 5, 10"`)
+- [ ] AC-9: speed=0이 유효한 값으로 파싱됨 (hue 고정, 채도 부스트만 적용)
+- [ ] AC-10: schema version 필드 변경 없음 (version 1 유지)
 
 ## 3. TDD Spec (Red Phase)
 
@@ -46,6 +48,8 @@ scene-schema.ts에 새 애니메이션 파라미터(saturationBoost, luminanceKe
 | 16 | `getValidPeriods(20) returns [1,2,4,5,10,20]` | Unit | 함수 직접 테스트 | [1,2,4,5,10,20] |
 | 17 | `getValidPeriods(1) returns [1]` | Unit | 경계값 | [1] |
 | 18 | `getValidPeriods(60) returns 12 divisors` | Unit | 경계값 | 길이 12 |
+| 19 | `should accept speed=0` | Unit | speed=0 파싱 | pass (hue 고정) |
+| 20 | `should preserve schema version 1` | Unit | schema version 필드 | version 1 유지 |
 
 ### 3.2 Test File Location
 - `src/lib/scene-schema.test.ts` (기존 파일 수정)

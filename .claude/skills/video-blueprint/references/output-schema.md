@@ -20,22 +20,22 @@ Single JSON document. Every field filled. No subjective adjectives.
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `source_file` | string | Original video filename |
-| `duration_sec` | number | Loop duration in seconds |
-| `fps` | number | Frames per second |
-| `loop_type` | enum | `"seamless"` / `"cut"` / `"crossfade"` |
-| `loop_point_sec` | number | Exact loop reset timestamp |
-| `loop_mechanism` | string | Why the loop is seamless |
+| `source_file` | string | **Required.** Original video filename |
+| `duration_sec` | number | **Required.** Loop duration in seconds |
+| `fps` | number | **Required.** Frames per second |
+| `loop_type` | enum | **Required.** `"seamless"` / `"cut"` / `"crossfade"` / `"near_seamless"` |
+| `loop_point_sec` | number | Optional. Exact loop reset timestamp |
+| `loop_mechanism` | string | **Required.** Why the loop is seamless |
 
 ## Section: `canvas`
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `width` | int | Pixel width |
-| `height` | int | Pixel height |
-| `aspect_ratio` | string | e.g. `"1:1"` |
-| `coordinate_system` | enum | `"center_origin"` / `"top_left"` |
-| `background_color` | string | Hex `"#000000"` |
+| `width` | int | **Required.** Pixel width |
+| `height` | int | **Required.** Pixel height |
+| `aspect_ratio` | string | Optional. e.g. `"1:1"` |
+| `coordinate_system` | enum | Optional. `"center_origin"` / `"top_left"` |
+| `background_color` | string | **Required.** Hex `"#000000"` |
 
 ## Section: `palette`
 
@@ -58,7 +58,7 @@ Array ordered back-to-front. Each layer:
 {
   "id": "layer_back",
   "type": "shape_group",
-  "blend_mode": "additive",                // additive | alpha | multiply
+  "blend_mode": "additive",                // normal | additive | alpha | multiply | screen | overlay | add | soft_light
   "opacity": 1.0,
   "depth_attenuation": {                    // depth-varying brightness
     "near": 0.7, "far": 0.15, "curve": "linear"

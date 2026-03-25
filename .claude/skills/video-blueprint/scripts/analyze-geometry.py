@@ -79,7 +79,7 @@ def detect_shapes(img_bgr: np.ndarray) -> dict:
         # Aspect ratio of bounding rect
         aspect = rect_w / rect_h if rect_h > 0 else 1
 
-        # Circularity: 4π·area / perimeter²
+        # Circularity: 4*area / perimeter^2
         circularity = 4 * math.pi * area / (perimeter ** 2) if perimeter > 0 else 0
 
         # Solidity: contour area / convex hull area
@@ -337,7 +337,7 @@ def detect_symmetry(img_bgr: np.ndarray) -> dict:
     diff_y = np.mean(np.abs(top - bottom)) / 255.0
     sym_y = 1.0 - diff_y
 
-    # Rotational symmetry: compare image to 180° rotation
+    # Rotational symmetry: compare image to 180 rotation
     rotated_180 = np.rot90(gray_f, 2)
     diff_180 = np.mean(np.abs(gray_f - rotated_180)) / 255.0
     sym_180 = 1.0 - diff_180
@@ -365,6 +365,96 @@ def detect_symmetry(img_bgr: np.ndarray) -> dict:
         "bilateral_y_score": round(sym_y, 4),
         "rotational_180_score": round(sym_180, 4),
     }
+
+
+def check_geometric_validity(analyses: list) -> dict:
+    """Check if the input appears to be geometric art (not real-life photos, particles, etc.).
+
+    Criteria for REJECTION (non-geometric):
+    1. Average shape count across frames < 3
+    2. Cross-frame shape count consistency is very poor (max - min > 50% of max)
+    3. No concentric pattern in any frame AND average circularity std > 0.3
+    4. Mean solidity of shapes < 0.3 (complex/irregular shapes)
+    """
+    if not analyses:
+        return {"is_geometric": False, "reason": "No frames analyzed", "confidence": 1.0}
+
+    shape_counts = [a["shape_count"] for a in analyses]
+    avg_shape_count = sum(shape_counts) / len(shape_counts)
+
+    # Criterion 1: Too few geometric shapes
+    if avg_shape_count < 3:
+        return {
+            "is_geometric": False,
+            "reason": f"Too few geometric shapes detected (avg {avg_shape_count:.1f} per frame, need >= 3)",
+            "confidence": 0.9,
+        }
+
+    # Criterion 2: Cross-frame shape count consistency is very poor
+    if len(shape_counts) > 1:
+        sc_min, sc_max = min(shape_counts), max(shape_counts)
+        if sc_max > 0 and (sc_max - sc_min) > 0.5 * sc_max:
+            # Rescue heuristics for neon glow / additive blending art where
+            # edge-detection contour count fluctuates but geometry is constant.
+            #
+            # Symmetry rescue: all frames have strong bilateral_xy symmetry
+            all_high_symmetry = all(
+                a.get("symmetry", {}).get("bilateral_x_score", 0) > 0.90
+                and a.get("symmetry", {}).get("bilateral_y_score", 0) > 0.90
+                for a in analyses
+            )
+            # Concentric rescue: any frame has a concentric pattern
+            any_concentric_rescue = any(
+                a.get("concentric_pattern", {}).get("is_concentric", False)
+                for a in analyses
+            )
+
+            if not (all_high_symmetry or any_concentric_rescue):
+                return {
+                    "is_geometric": False,
+                    "reason": (f"Shape count too inconsistent across frames (range {sc_min}-{sc_max}, "
+                               f"variance exceeds 50% of max)"),
+                    "confidence": 0.75,
+                }
+
+    # Criterion 3: No concentric pattern AND very inconsistent circularity
+    any_concentric = any(
+        a["concentric_pattern"].get("is_concentric", False) for a in analyses
+    )
+    all_circularities = []
+    for a in analyses:
+        for s in a.get("shapes", []):
+            all_circularities.append(s["circularity"])
+
+    circularity_std = 0.0
+    if all_circularities:
+        mean_circ = sum(all_circularities) / len(all_circularities)
+        circularity_std = (sum((c - mean_circ) ** 2 for c in all_circularities) / len(all_circularities)) ** 0.5
+
+    if not any_concentric and circularity_std > 0.3:
+        return {
+            "is_geometric": False,
+            "reason": (f"No concentric patterns and highly inconsistent shape circularity "
+                       f"(std={circularity_std:.3f} > 0.3)"),
+            "confidence": 0.7,
+        }
+
+    # Criterion 4: Mean solidity too low (complex/irregular shapes)
+    all_solidities = []
+    for a in analyses:
+        for s in a.get("shapes", []):
+            all_solidities.append(s["solidity"])
+
+    if all_solidities:
+        mean_solidity = sum(all_solidities) / len(all_solidities)
+        if mean_solidity < 0.3:
+            return {
+                "is_geometric": False,
+                "reason": f"Shapes are too irregular (mean solidity={mean_solidity:.3f} < 0.3)",
+                "confidence": 0.8,
+            }
+
+    return {"is_geometric": True, "reason": "Input passes geometric validity checks", "confidence": 0.85}
 
 
 def analyze_frame(frame_path: str) -> dict:
@@ -432,6 +522,19 @@ def main():
         result = analyze_frame(frame_path)
         analyses.append(result)
 
+    # Geometric validity check
+    validity = check_geometric_validity(analyses)
+    if not validity["is_geometric"]:
+        reason = validity["reason"]
+        print(f"\nGeometric validity check FAILED (confidence={validity['confidence']:.2f}):",
+              file=sys.stderr)
+        print(f"  {reason}", file=sys.stderr)
+        print(f"Non-geometric input detected: {reason}. "
+              f"This tool only supports geometric looping video art.", file=sys.stderr)
+        sys.exit(1)
+
+    print(f"\nGeometric validity: PASS (confidence={validity['confidence']:.2f})")
+
     # Cross-frame consistency check
     consistency = {}
     if len(analyses) > 1:
@@ -452,6 +555,7 @@ def main():
 
     output = {
         "frame_analyses": analyses,
+        "geometric_validity": validity,
         "cross_frame_consistency": consistency,
         "analysis_params": {
             "frames_analyzed": len(analyses),

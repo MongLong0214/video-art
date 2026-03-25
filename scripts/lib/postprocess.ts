@@ -77,10 +77,10 @@ async function cleanAlphaEdges(filePath: string): Promise<void> {
   const { width, height, channels } = info;
   const pixels = new Uint8Array(data);
 
-  // Threshold alpha: < 10 → 0, > 245 → 255
+  // Threshold alpha: < 3 → 0, > 252 → 255 (permissive to preserve soft edges)
   for (let i = 3; i < pixels.length; i += channels) {
-    if (pixels[i] < 10) pixels[i] = 0;
-    else if (pixels[i] > 245) pixels[i] = 255;
+    if (pixels[i] < 3) pixels[i] = 0;
+    else if (pixels[i] > 252) pixels[i] = 255;
   }
 
   await sharp(Buffer.from(pixels), { raw: { width, height, channels } })
@@ -106,13 +106,13 @@ async function removeNoiseIslands(filePath: string): Promise<void> {
   const blurredAlpha = await sharp(alphaChannel, {
     raw: { width, height, channels: 1 },
   })
-    .blur(3)
+    .blur(1.5)
     .raw()
     .toBuffer();
 
-  // Apply: where blurred alpha < 30, zero out original alpha
+  // Apply: where blurred alpha < 8, zero out original alpha (permissive — only remove true noise)
   for (let i = 0; i < width * height; i++) {
-    if (blurredAlpha[i] < 30) {
+    if (blurredAlpha[i] < 8) {
       pixels[i * channels + 3] = 0;
     }
   }

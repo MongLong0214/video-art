@@ -6,27 +6,12 @@ and identifies concentric patterns.
 """
 
 import math
-import sys
 from pathlib import Path
 
 import cv2
 import numpy as np
 
-# Import CIELAB functions from analyze-colors.py sibling
-_parent = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(_parent))
-try:
-    import importlib.util
-    _spec = importlib.util.spec_from_file_location("analyze_colors", _parent / "analyze-colors.py")
-    _colors_mod = importlib.util.module_from_spec(_spec)
-    _spec.loader.exec_module(_colors_mod)
-    rgb_to_lab = _colors_mod.rgb_to_lab
-    compute_delta_e2000 = _colors_mod.compute_delta_e2000
-except Exception:
-    def rgb_to_lab(r, g, b):
-        return [0, 0, 0]
-    def compute_delta_e2000(lab1, lab2):
-        return math.sqrt(sum((a - b) ** 2 for a, b in zip(lab1, lab2)))
+from .color_utils import rgb_to_lab, compute_delta_e2000
 
 
 def hex_to_bgr(hex_color: str) -> tuple:
@@ -192,7 +177,7 @@ def group_color_families(palette: list, delta_e_threshold: float = 15.0) -> dict
 
 def analyze_all_layers(frames_dir: str, color_tolerance: int = 40,
                         temporal_pairs: int = 8) -> dict:
-    """Full color-mask analysis across frames."""
+    """Full color-mask analysis across frames (multi-frame)."""
     import json
     frames_path = Path(frames_dir)
     frame_files = sorted(frames_path.glob("frame_*.png"))
@@ -210,33 +195,65 @@ def analyze_all_layers(frames_dir: str, color_tolerance: int = 40,
 
     families = group_color_families(non_bg, delta_e_threshold=15)
 
+    # Select evenly-spaced frame indices for multi-frame analysis
+    if frame_files:
+        sample_indices = np.linspace(
+            0, len(frame_files) - 1,
+            min(temporal_pairs + 1, len(frame_files)),
+            dtype=int,
+        )
+    else:
+        sample_indices = np.array([], dtype=int)
+
+    # Load sampled frames
+    frame_images = {}
+    for idx in sample_indices:
+        img = cv2.imread(str(frame_files[idx]))
+        if img is not None:
+            frame_images[int(idx)] = img
+
+    # Build shapes_by_frame: {color_hex: {frame_idx: [shapes], ...}, ...}
+    shapes_by_frame = {}
+    for fname, members in families.items():
+        for color in members:
+            bgr = hex_to_bgr(color["hex"])
+            per_frame = {}
+            for fidx, img in frame_images.items():
+                mask = create_color_mask(img, bgr, color_tolerance)
+                shapes = measure_shapes_in_mask(mask, img)
+                per_frame[fidx] = shapes
+            shapes_by_frame[color["hex"]] = per_frame
+
+    # Build layer_analyses from first frame (backward compat)
     layer_analyses = []
-    first_frame = cv2.imread(str(frame_files[0])) if frame_files else None
+    first_idx = int(sample_indices[0]) if len(sample_indices) > 0 else None
 
-    if first_frame is not None:
-        for fname, members in families.items():
-            for color in members:
-                bgr = hex_to_bgr(color["hex"])
-                mask = create_color_mask(first_frame, bgr, color_tolerance)
-                shapes = measure_shapes_in_mask(mask, first_frame)
-                concentric = detect_concentric_pattern(shapes)
+    if first_idx is not None:
+        first_frame = frame_images.get(first_idx)
+        if first_frame is not None:
+            for fname, members in families.items():
+                for color in members:
+                    shapes = shapes_by_frame.get(color["hex"], {}).get(first_idx, [])
+                    concentric = detect_concentric_pattern(shapes)
 
-                layer_analyses.append({
-                    "color_hex": color["hex"],
-                    "color_family": fname,
-                    "shape_count": len(shapes),
-                    "shapes_in_first_frame": shapes[:20],
-                    "concentric_pattern": concentric,
-                    "scale_ratios": concentric.get("scale_ratios", []),
-                    "mean_scale_ratio": concentric.get("mean_scale_ratio"),
-                    "rotation_steps_deg": concentric.get("rotation_steps", []),
-                    "mean_rotation_step_deg": concentric.get("mean_rotation_step_deg"),
-                })
+                    layer_analyses.append({
+                        "color_hex": color["hex"],
+                        "color_family": fname,
+                        "shape_count": len(shapes),
+                        "shapes_in_first_frame": shapes[:20],
+                        "concentric_pattern": concentric,
+                        "scale_ratios": concentric.get("scale_ratios", []),
+                        "mean_scale_ratio": concentric.get("mean_scale_ratio"),
+                        "rotation_steps_deg": concentric.get("rotation_steps", []),
+                        "mean_rotation_step_deg": concentric.get("mean_rotation_step_deg"),
+                    })
 
     return {
         "layer_analyses": layer_analyses,
         "color_families": {k: [c["hex"] for c in v] for k, v in families.items()},
         "background_color": bg["hex"] if bg else None,
+        "shapes_by_frame": shapes_by_frame,
+        "frame_images": frame_images,
         "analysis_params": {
             "color_tolerance": color_tolerance,
             "frames_analyzed": len(frame_files),

@@ -15,8 +15,8 @@
 ## 2. Acceptance Criteria
 - [ ] AC-1: `npm run pipeline <img> -- --title e2e-test` 성공 (10초 mp4 출력)
 - [ ] AC-2: `npm run pipeline:validate` → RMSE < 2.0 (seamless loop)
-- [ ] AC-3: 출력 mp4의 채도 측정: mean_sat > 0.60
-- [ ] AC-4: 출력 mp4의 hue shift 속도: > 80°/s
+- [ ] AC-3: 출력 mp4의 채도 측정: mean_sat > 0.65 (PRD §11 target 일치)
+- [ ] AC-4: 출력 mp4의 hue shift 속도: > 100°/s (PRD §11 target: 100~120°/s)
 - [ ] AC-5: README.md의 layered 섹션이 변경사항 반영 (duration 10, HSV, 60fps, period [1,2,5,10])
 
 ## 3. TDD Spec (Red Phase)

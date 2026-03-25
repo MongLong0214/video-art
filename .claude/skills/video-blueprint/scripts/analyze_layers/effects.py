@@ -5,24 +5,11 @@ and global effects (glow, breathing, vignette, chromatic aberration, grain).
 """
 
 import math
-import sys
-from pathlib import Path
 
 import cv2
 import numpy as np
 
-_parent = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(_parent))
-try:
-    import importlib.util
-    _spec = importlib.util.spec_from_file_location("analyze_colors", _parent / "analyze-colors.py")
-    _cm = importlib.util.module_from_spec(_spec)
-    _spec.loader.exec_module(_cm)
-    rgb_to_lab = _cm.rgb_to_lab
-    compute_delta_e2000 = _cm.compute_delta_e2000
-except Exception:
-    def rgb_to_lab(r, g, b): return [0, 0, 0]
-    def compute_delta_e2000(a, b): return 0
+from .color_utils import rgb_to_lab, compute_delta_e2000
 
 
 # ─── Depth-Varying Properties ────────────────────────────

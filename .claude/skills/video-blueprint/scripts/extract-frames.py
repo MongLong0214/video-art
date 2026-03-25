@@ -10,6 +10,7 @@ Features:
   - Auto-detects loop point via SSIM frame similarity
   - Outputs high-res frames + metadata JSON
   - Extracts first/last frames at full quality for loop seam analysis
+  - Auto-downscales 4K+ input to 1920px for analysis
 
 Dependencies: ffmpeg, ffprobe, Pillow, numpy
 """
@@ -19,6 +20,31 @@ import json
 import os
 import subprocess
 import sys
+
+# Optional: decord for GPU-accelerated frame extraction
+try:
+    import decord
+    from PIL import Image
+    HAS_DECORD = True
+except ImportError:
+    HAS_DECORD = False
+
+
+def _extract_frame_decord(video_path: str, timestamp: float, out_path: str, vr=None) -> bool:
+    """Extract a frame using decord (GPU-accelerated). Returns True on success."""
+    if not HAS_DECORD:
+        return False
+    try:
+        if vr is None:
+            vr = decord.VideoReader(video_path)
+        fps = vr.get_avg_fps()
+        frame_idx = int(timestamp * fps)
+        frame_idx = min(frame_idx, len(vr) - 1)
+        frame = vr[frame_idx].asnumpy()
+        Image.fromarray(frame).save(out_path)
+        return True
+    except Exception:
+        return False
 
 
 def get_video_info(video_path: str) -> dict:
@@ -59,25 +85,37 @@ def compute_ssim_simple(img1_path: str, img2_path: str) -> float:
     return float(num / den)
 
 
-def extract_frame_at(video_path: str, timestamp: float, out_path: str):
-    """Extract a single frame at exact timestamp as lossless PNG."""
-    subprocess.run([
+def extract_frame_at(video_path: str, timestamp: float, out_path: str,
+                     scale_filter: str = None, _decord_vr=None):
+    """Extract a single frame at exact timestamp as lossless PNG.
+    Uses decord if available for acceleration, falls back to ffmpeg."""
+    if _decord_vr is not None or HAS_DECORD:
+        if scale_filter is None and _extract_frame_decord(video_path, timestamp, out_path, _decord_vr):
+            return
+
+    cmd = [
         "ffmpeg", "-y", "-v", "quiet",
         "-ss", str(timestamp),
         "-i", video_path,
+    ]
+    if scale_filter:
+        cmd.extend(["-vf", scale_filter])
+    cmd.extend([
         "-frames:v", "1",
         "-pix_fmt", "rgb24",
-        out_path
-    ], check=True)
+        out_path,
+    ])
+    subprocess.run(cmd, check=True)
 
 
-def detect_loop_point(video_path: str, out_dir: str, duration: float, fps: float) -> dict:
+def detect_loop_point(video_path: str, out_dir: str, duration: float, fps: float,
+                      scale_filter: str = None) -> dict:
     """
     Detect loop point by comparing the first frame to frames near the end.
     Tests last 20% of the video at fine granularity.
     """
     first_frame = os.path.join(out_dir, "_loop_first.png")
-    extract_frame_at(video_path, 0.0, first_frame)
+    extract_frame_at(video_path, 0.0, first_frame, scale_filter=scale_filter)
 
     # Test frames in the last 20% of the video
     start_t = duration * 0.8
@@ -95,7 +133,7 @@ def detect_loop_point(video_path: str, out_dir: str, duration: float, fps: float
         if t >= duration:
             break
         test_path = os.path.join(out_dir, f"_loop_test_{i:03d}.png")
-        extract_frame_at(video_path, t, test_path)
+        extract_frame_at(video_path, t, test_path, scale_filter=scale_filter)
         ssim = compute_ssim_simple(first_frame, test_path)
         results.append({"t": round(t, 4), "ssim": round(ssim, 6)})
         if ssim > best_ssim:
@@ -139,11 +177,31 @@ def extract_frames(video_path: str, num_frames: int, out_dir: str, detect_loop: 
     pix_fmt = video_stream.get("pix_fmt", "unknown")
     bit_rate = int(info["format"].get("bit_rate", 0))
 
+    # Auto-downscale 4K+ input to fit within 1920px on the longest side
+    scale_filter = None
+    analysis_width = width
+    analysis_height = height
+    if max(width, height) > 1920:
+        if width >= height:
+            analysis_width = 1920
+            analysis_height = int(round(height * (1920 / width)))
+        else:
+            analysis_height = 1920
+            analysis_width = int(round(width * (1920 / height)))
+        # Ensure even dimensions for ffmpeg compatibility
+        if analysis_width % 2 != 0:
+            analysis_width += 1
+        if analysis_height % 2 != 0:
+            analysis_height += 1
+        scale_filter = f"scale={analysis_width}:{analysis_height}"
+        print(f"  Input resolution {width}x{height} exceeds 1920px. "
+              f"Downscaling to {analysis_width}x{analysis_height} for analysis.")
+
     # Loop detection
     loop_info = None
     if detect_loop:
         print("Detecting loop point...")
-        loop_info = detect_loop_point(video_path, out_dir, duration, fps)
+        loop_info = detect_loop_point(video_path, out_dir, duration, fps, scale_filter=scale_filter)
         print(f"  Loop point: {loop_info['loop_point_sec']}s (SSIM={loop_info['loop_ssim']:.4f}, type={loop_info['loop_type']})")
 
     # Extract evenly-spaced frames
@@ -153,15 +211,15 @@ def extract_frames(video_path: str, num_frames: int, out_dir: str, detect_loop: 
     frame_paths = []
     for i, t in enumerate(timestamps):
         out_path = os.path.join(out_dir, f"frame_{i:03d}.png")
-        extract_frame_at(video_path, t, out_path)
+        extract_frame_at(video_path, t, out_path, scale_filter=scale_filter)
         frame_paths.append(out_path)
         print(f"  [{i+1}/{num_frames}] t={t:.3f}s -> {out_path}")
 
     # Also extract first and last frame for seam comparison
     seam_first = os.path.join(out_dir, "seam_first.png")
     seam_last = os.path.join(out_dir, "seam_last.png")
-    extract_frame_at(video_path, 0.0, seam_first)
-    extract_frame_at(video_path, effective_duration - (1.0 / fps), seam_last)
+    extract_frame_at(video_path, 0.0, seam_first, scale_filter=scale_filter)
+    extract_frame_at(video_path, effective_duration - (1.0 / fps), seam_last, scale_filter=scale_filter)
     seam_ssim = compute_ssim_simple(seam_first, seam_last)
     print(f"  Seam SSIM (first vs last): {seam_ssim:.4f}")
 
@@ -171,18 +229,31 @@ def extract_frames(video_path: str, num_frames: int, out_dir: str, detect_loop: 
         ssim = compute_ssim_simple(frame_paths[i], frame_paths[i + 1])
         adjacent_ssims.append(round(ssim, 6))
 
+    # Non-looping warning (E9)
+    if loop_info and loop_info["loop_type"] == "cut":
+        print(f"  WARNING: Input does not appear to loop (seam SSIM={loop_info['loop_ssim']:.4f}). "
+              "Results may be inaccurate for non-looping video.", file=sys.stderr)
+        meta_extra_flags = {"non_looping_warning": True}
+    else:
+        meta_extra_flags = {}
+
     # Hi-res consecutive frame pairs for per-shape motion measurement
     hi_res_pair_data = []
     if hi_res_pairs > 0:
         interval = 1.0 / fps
+        # E3: Auto-adjust interval for high FPS (120fps+)
+        if fps > 60 and interval < 0.01:
+            skip = max(2, int(fps / 60))
+            interval *= skip
+            print(f"  High FPS ({fps:.0f}) detected. Using {skip}-frame skip for hi-res pairs (interval: {interval:.4f}s)")
         for p in range(hi_res_pairs):
             t_base = round(effective_duration * p / hi_res_pairs, 4)
             if t_base + interval >= effective_duration:
                 t_base = max(0, effective_duration - interval * 2)
             path_a = os.path.join(out_dir, f"hires_pair_{p:02d}_a.png")
             path_b = os.path.join(out_dir, f"hires_pair_{p:02d}_b.png")
-            extract_frame_at(video_path, t_base, path_a)
-            extract_frame_at(video_path, t_base + interval, path_b)
+            extract_frame_at(video_path, t_base, path_a, scale_filter=scale_filter)
+            extract_frame_at(video_path, t_base + interval, path_b, scale_filter=scale_filter)
             hi_res_pair_data.append({
                 "timestamp": t_base,
                 "paths": [os.path.abspath(path_a), os.path.abspath(path_b)],
@@ -197,7 +268,9 @@ def extract_frames(video_path: str, num_frames: int, out_dir: str, detect_loop: 
         "effective_duration_sec": round(effective_duration, 4),
         "fps": round(fps, 2),
         "total_frames": total_frames,
-        "resolution": {"width": width, "height": height},
+        "original_resolution": {"width": width, "height": height},
+        "analysis_resolution": {"width": analysis_width, "height": analysis_height},
+        "resolution": {"width": analysis_width, "height": analysis_height},
         "aspect_ratio": f"{width}:{height}",
         "aspect_ratio_decimal": round(width / height, 6) if height else 0,
         "codec": codec,
@@ -217,6 +290,7 @@ def extract_frames(video_path: str, num_frames: int, out_dir: str, detect_loop: 
     }
 
     meta["hi_res_pairs"] = hi_res_pair_data
+    meta.update(meta_extra_flags)
 
     if loop_info:
         meta["loop_detection"] = loop_info
@@ -238,13 +312,40 @@ def main():
     parser.add_argument("--hi-res-pairs", type=int, default=3, help="Number of hi-res consecutive frame pairs (default: 3)")
     args = parser.parse_args()
 
+    # E11: ffmpeg version check
+    try:
+        result = subprocess.run(["ffmpeg", "-version"], capture_output=True, text=True)
+        version_line = result.stdout.split("\n")[0] if result.stdout else ""
+        import re
+        match = re.search(r"version\s+(\d+)\.(\d+)", version_line)
+        if match:
+            major, minor = int(match.group(1)), int(match.group(2))
+            if major < 4:
+                print(f"Error: ffmpeg >= 4.0 required. Found: {major}.{minor}", file=sys.stderr)
+                sys.exit(1)
+        else:
+            print(f"Warning: could not parse ffmpeg version from: {version_line}", file=sys.stderr)
+    except FileNotFoundError:
+        print("Error: ffmpeg not found. Install ffmpeg >= 4.0 and ensure it is in PATH.", file=sys.stderr)
+        sys.exit(1)
+
     if not os.path.isfile(args.video):
         print(f"File not found: {args.video}", file=sys.stderr)
         sys.exit(1)
 
+    if HAS_DECORD:
+        print("decord available — using GPU-accelerated frame extraction")
+
     print(f"Extracting {args.frames} frames from: {args.video}")
     meta = extract_frames(args.video, args.frames, args.out_dir, args.detect_loop, args.hi_res_pairs)
-    print(f"\nDone. {meta['resolution']['width']}x{meta['resolution']['height']}, "
+
+    orig = meta['original_resolution']
+    analysis = meta['analysis_resolution']
+    downscaled = orig != analysis
+    res_str = f"{orig['width']}x{orig['height']}"
+    if downscaled:
+        res_str += f" -> {analysis['width']}x{analysis['height']}"
+    print(f"\nDone. {res_str}, "
           f"{meta['duration_sec']:.3f}s ({meta['effective_duration_sec']:.3f}s effective), "
           f"{meta['fps']:.1f}fps, motion={meta['motion_magnitude']}")
 

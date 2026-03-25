@@ -6,8 +6,7 @@ import {
   detectManualLayers,
   ensureRgba,
 } from "./lib/input-validator.js";
-import { decomposeImage, downloadLayers } from "./lib/image-layered.js";
-import { checkDeps } from "./lib/check-deps.js";
+import { decomposeHybrid } from "./lib/image-decompose.js";
 import { postprocessLayers } from "./lib/postprocess.js";
 import { generateSceneJson } from "./lib/scene-generator.js";
 
@@ -18,51 +17,69 @@ async function main() {
     process.exit(1);
   }
 
+  const method = process.argv.includes("--depth-only")
+    ? "depth-only" as const
+    : process.argv.includes("--qwen-only")
+      ? "qwen-only" as const
+      : "hybrid" as const;
+
   const projectRoot = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
   const layersDir = path.join(projectRoot, "out", "layers");
   const publicDir = path.join(projectRoot, "public");
   const publicLayersDir = path.join(publicDir, "layers");
 
-  checkDeps();
-
   // --- Step 1: Layer Split ---
   const manualLayers = detectManualLayers(layersDir);
+  let result;
+
   if (manualLayers) {
     console.log(`Found ${manualLayers.length} manual layers in layers/. Skipping API call.`);
     for (const layerPath of manualLayers) {
       await ensureRgba(layerPath);
     }
+    console.log("\nPost-processing layers...");
+    result = await postprocessLayers(layersDir);
   } else {
     console.log("Validating input...");
     const { filePath, width, height, wasResized } =
       await validateAndPrepare(path.resolve(inputPath));
     console.log(`Input: ${width}x${height}${wasResized ? " (resized)" : ""}`);
 
-    console.log("Decomposing image into layers...");
-    const { urls, count } = await decomposeImage(filePath, { numLayers: 4 });
-    console.log(`Got ${count} layers from Replicate API.`);
+    console.log(`\nDecomposing image (method: ${method})...`);
+    const decomposeResult = await decomposeHybrid(filePath, layersDir, {
+      numLayers: 8,
+      depthZones: 4,
+      method,
+    });
 
-    console.log("Downloading layers...");
-    const files = await downloadLayers(urls, layersDir);
-    for (const f of files) {
-      console.log(`  ${path.basename(f)}`);
+    console.log(`\n${decomposeResult.files.length} layers generated (${decomposeResult.method}):`);
+    for (let i = 0; i < decomposeResult.files.length; i++) {
+      console.log(`  layer-${i}: ${(decomposeResult.coverages[i] * 100).toFixed(1)}%`);
     }
+
+    // Skip aggressive postprocessing for API-generated layers
+    result = {
+      files: decomposeResult.files,
+      order: decomposeResult.files.map((_, i) => i),
+      coverages: decomposeResult.coverages,
+    };
   }
 
-  // --- Step 2: Post-Process ---
-  console.log("\nPost-processing layers...");
-  const result = await postprocessLayers(layersDir);
-  console.log(`Ordered ${result.files.length} layers by coverage: ${result.coverages.map((c) => c.toFixed(2)).join(", ")}`);
+  console.log(`\nOrdered ${result.files.length} layers by coverage: ${result.coverages.map((c: number) => c.toFixed(2)).join(", ")}`);
 
-  // --- Step 2b: Generate scene.json ---
+  // --- Generate scene.json ---
   const sourceName = inputPath ? path.basename(inputPath) : "manual-input";
   console.log("Generating scene.json...");
   const scene = await generateSceneJson(sourceName, result);
 
   const sceneJsonPath = path.join(publicDir, "scene.json");
 
-  // --- Copy to public for Vite serving ---
+  // --- Copy to public ---
   fs.mkdirSync(publicLayersDir, { recursive: true });
+  // Clean old layers
+  for (const f of fs.readdirSync(publicLayersDir)) {
+    if (f.startsWith("layer-")) fs.unlinkSync(path.join(publicLayersDir, f));
+  }
   for (const file of result.files) {
     fs.copyFileSync(file, path.join(publicLayersDir, path.basename(file)));
   }

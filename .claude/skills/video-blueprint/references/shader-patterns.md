@@ -7,7 +7,7 @@ Claude uses these patterns when writing layer body GLSL code in Phase E Step 2.
 | File | Purpose |
 |------|---------|
 | `templates/shader.frag.j2` | Jinja2 skeleton (uniforms, SDF lib, main structure) |
-| `templates/post-effects.frag.j2` | Post-processing shader template (CA, vignette, grain) |
+| `templates/post.frag.j2` | Post-processing shader template (CA, vignette, grain) |
 | `scripts/generate-shader.py` | Renders skeleton + layer body patterns |
 | `references/shader-patterns.md` | This file — GLSL pattern reference |
 

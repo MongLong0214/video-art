@@ -23,12 +23,14 @@ def test_skill_md_references_exist():
 
 
 def test_pip_install_command_valid():
-    """T13 #3: pip install packages are importable."""
+    """T13 #3: requirements.txt exists and contains key packages."""
     content = SKILL_MD.read_text()
-    assert "pip install" in content
-    # Check key packages mentioned
+    assert "requirements.txt" in content, "SKILL.md should reference requirements.txt"
+    req_path = SKILL_DIR / "requirements.txt"
+    assert req_path.exists(), "requirements.txt not found"
+    req_content = req_path.read_text()
     for pkg in ["numpy", "Pillow", "opencv-python-headless", "jinja2", "colorspacious"]:
-        assert pkg in content, f"Missing '{pkg}' in pip install"
+        assert pkg in req_content, f"Missing '{pkg}' in requirements.txt"
 
 
 def test_skill_md_phase_c_documented():
@@ -36,8 +38,9 @@ def test_skill_md_phase_c_documented():
     content = SKILL_MD.read_text()
     assert "Phase C" in content
     # Phase C should mention manual/Claude verification
-    phase_c_idx = content.index("Phase C")
-    phase_c_section = content[phase_c_idx:phase_c_idx + 500]
+    # Find the Phase C *heading* (## Phase C), not just any "Phase C" mention
+    phase_c_idx = content.index("## Phase C")
+    phase_c_section = content[phase_c_idx:phase_c_idx + 800]
     assert "visual" in phase_c_section.lower() or "claude" in phase_c_section.lower() or "manual" in phase_c_section.lower() or "cross-validate" in phase_c_section.lower(), \
         "Phase C should describe manual verification"
 

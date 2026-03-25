@@ -1,13 +1,11 @@
 import "dotenv/config";
 import puppeteer from "puppeteer";
 import { exec } from "node:child_process";
-import { sceneSchema } from "../src/lib/scene-schema.js";
+import { sceneSchema, getValidPeriods } from "../src/lib/scene-schema.js";
 import fs from "node:fs";
 import path from "node:path";
 
-const LOOP_DURATION = 20;
 const FPS = 60;
-const TOTAL_FRAMES = LOOP_DURATION * FPS; // 1200
 const RMSE_THRESHOLD = 2.0;
 
 async function waitForServer(url: string, maxWait = 15000): Promise<void> {
@@ -24,12 +22,18 @@ async function waitForServer(url: string, maxWait = 15000): Promise<void> {
   throw new Error(`Server did not start within ${maxWait}ms`);
 }
 
-function validatePeriods(): boolean {
+function loadSceneConfig() {
   const scenePath = path.join(process.cwd(), "public", "scene.json");
+  if (!fs.existsSync(scenePath)) {
+    throw new Error("public/scene.json not found. Run pipeline:layers first.");
+  }
   const sceneJson = JSON.parse(fs.readFileSync(scenePath, "utf-8"));
-  const config = sceneSchema.parse(sceneJson);
+  return sceneSchema.parse(sceneJson);
+}
 
-  const validPeriods = [1, 2, 4, 5, 10, 20];
+function validatePeriods(): boolean {
+  const config = loadSceneConfig();
+  const validPeriods = getValidPeriods(config.duration);
   let allValid = true;
 
   for (const layer of config.layers) {
@@ -41,17 +45,22 @@ function validatePeriods(): boolean {
 
     for (const { name, value } of periods) {
       if (!validPeriods.includes(value)) {
-        console.error(`FAIL: ${layer.id}.${name}.period = ${value} is not a divisor of 20`);
+        console.error(`FAIL: ${layer.id}.${name}.period = ${value} is not a divisor of ${config.duration}`);
         allValid = false;
       }
     }
   }
 
-  if (allValid) console.log("PASS: All animation periods are divisors of 20");
+  if (allValid) console.log(`PASS: All animation periods are divisors of ${config.duration}`);
   return allValid;
 }
 
 async function validatePixelLoop(): Promise<boolean> {
+  const config = loadSceneConfig();
+  const LOOP_DURATION = config.duration;
+  const TOTAL_FRAMES = LOOP_DURATION * FPS;
+
+  console.log(`Duration: ${LOOP_DURATION}s, ${TOTAL_FRAMES} frames @ ${FPS}fps`);
   console.log("Starting Vite dev server...");
   const viteProcess = exec("npx vite --port 5199");
 

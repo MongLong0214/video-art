@@ -6,6 +6,7 @@ import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass.js";
 import type { Sketch } from "@/sketches/psychedelic";
 import { Clock } from "@/core/clock";
 import { createShaderPlane } from "@/lib/shader-plane";
+import { getSketchConfig, getToneMapping } from "@/lib/sketch-registry";
 import postVertexShader from "@/shaders/post.vert";
 import postFragmentShader from "@/shaders/post.frag";
 import baseVertexShader from "@/shaders/base.vert";
@@ -35,10 +36,11 @@ const SKETCH_NAME = params.get("sketch") || "psychedelic";
 
 // --- config ---
 const IS_LAYERED = MODE === "layered";
-const WIDTH = IS_LAYERED ? 1080 : 1080;
-const HEIGHT = IS_LAYERED ? 1080 : 1920;
-const FPS = 60;
-const LOOP_DUR = IS_LAYERED ? 20.0 : 8.0;
+const sketchConfig = getSketchConfig(SKETCH_NAME);
+const WIDTH = IS_LAYERED ? 1080 : sketchConfig.width;
+const HEIGHT = IS_LAYERED ? 1080 : sketchConfig.height;
+const FPS = sketchConfig.fps;
+let LOOP_DUR = IS_LAYERED ? 10.0 : sketchConfig.loopDuration; // overridden by sceneConfig in init()
 
 // --- renderer ---
 const renderer = new THREE.WebGLRenderer({
@@ -48,7 +50,7 @@ const renderer = new THREE.WebGLRenderer({
 renderer.setSize(WIDTH, HEIGHT);
 renderer.setPixelRatio(1);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMapping = IS_LAYERED ? THREE.ACESFilmicToneMapping : getToneMapping(sketchConfig);
 renderer.toneMappingExposure = 1.0;
 document.body.appendChild(renderer.domElement);
 
@@ -75,7 +77,7 @@ function createShaderSketch(name: string): Sketch {
   return {
     scene,
     camera,
-    update(time: number) {
+    update(time: number, _dt: number) {
       material.uniforms.uTime.value = time;
     },
     resize(width: number, height: number) {
@@ -104,6 +106,12 @@ async function loadSketch(): Promise<Sketch> {
 async function init() {
   const sketch = await loadSketch();
 
+  // --- dynamic duration from scene.json (layered mode) ---
+  if (IS_LAYERED) {
+    const layeredSketch = sketch as import("@/sketches/layered-psychedelic").LayeredSketch;
+    LOOP_DUR = layeredSketch.sceneConfig.duration;
+  }
+
   // --- post-processing ---
   let composerRender: () => void;
   let updatePostUniforms: (time: number) => void;
@@ -120,6 +128,9 @@ async function init() {
       config.resolution,
     );
     composerRender = () => composer.render();
+    updatePostUniforms = () => {};
+  } else if (sketchConfig.postProcessing === "none") {
+    composerRender = () => renderer.render(sketch.scene, sketch.camera);
     updatePostUniforms = () => {};
   } else {
     const composer = new EffectComposer(renderer);

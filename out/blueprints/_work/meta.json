@@ -1,0 +1,381 @@
+{
+  "source": "/Users/isaac/Downloads/vecteezy_kaleidoscope-motion-graphics-background_2401022.mp4",
+  "source_filename": "vecteezy_kaleidoscope-motion-graphics-background_2401022.mp4",
+  "duration_sec": 15.0333,
+  "effective_duration_sec": 12.0267,
+  "fps": 30.0,
+  "total_frames": 450,
+  "original_resolution": {
+    "width": 1920,
+    "height": 1080
+  },
+  "analysis_resolution": {
+    "width": 1920,
+    "height": 1080
+  },
+  "resolution": {
+    "width": 1920,
+    "height": 1080
+  },
+  "aspect_ratio": "1920:1080",
+  "aspect_ratio_decimal": 1.777778,
+  "codec": "h264",
+  "pixel_format": "yuv420p",
+  "bit_rate": 7700167,
+  "extracted_frames": 24,
+  "timestamps": [
+    0.0,
+    0.5011,
+    1.0022,
+    1.5033,
+    2.0044,
+    2.5056,
+    3.0067,
+    3.5078,
+    4.0089,
+    4.51,
+    5.0111,
+    5.5122,
+    6.0133,
+    6.5145,
+    7.0156,
+    7.5167,
+    8.0178,
+    8.5189,
+    9.02,
+    9.5211,
+    10.0222,
+    10.5234,
+    11.0245,
+    11.5256
+  ],
+  "frame_paths": [
+    "/Users/isaac/projects/video-art/out/blueprints/_work/frame_000.png",
+    "/Users/isaac/projects/video-art/out/blueprints/_work/frame_001.png",
+    "/Users/isaac/projects/video-art/out/blueprints/_work/frame_002.png",
+    "/Users/isaac/projects/video-art/out/blueprints/_work/frame_003.png",
+    "/Users/isaac/projects/video-art/out/blueprints/_work/frame_004.png",
+    "/Users/isaac/projects/video-art/out/blueprints/_work/frame_005.png",
+    "/Users/isaac/projects/video-art/out/blueprints/_work/frame_006.png",
+    "/Users/isaac/projects/video-art/out/blueprints/_work/frame_007.png",
+    "/Users/isaac/projects/video-art/out/blueprints/_work/frame_008.png",
+    "/Users/isaac/projects/video-art/out/blueprints/_work/frame_009.png",
+    "/Users/isaac/projects/video-art/out/blueprints/_work/frame_010.png",
+    "/Users/isaac/projects/video-art/out/blueprints/_work/frame_011.png",
+    "/Users/isaac/projects/video-art/out/blueprints/_work/frame_012.png",
+    "/Users/isaac/projects/video-art/out/blueprints/_work/frame_013.png",
+    "/Users/isaac/projects/video-art/out/blueprints/_work/frame_014.png",
+    "/Users/isaac/projects/video-art/out/blueprints/_work/frame_015.png",
+    "/Users/isaac/projects/video-art/out/blueprints/_work/frame_016.png",
+    "/Users/isaac/projects/video-art/out/blueprints/_work/frame_017.png",
+    "/Users/isaac/projects/video-art/out/blueprints/_work/frame_018.png",
+    "/Users/isaac/projects/video-art/out/blueprints/_work/frame_019.png",
+    "/Users/isaac/projects/video-art/out/blueprints/_work/frame_020.png",
+    "/Users/isaac/projects/video-art/out/blueprints/_work/frame_021.png",
+    "/Users/isaac/projects/video-art/out/blueprints/_work/frame_022.png",
+    "/Users/isaac/projects/video-art/out/blueprints/_work/frame_023.png"
+  ],
+  "seam_first": "/Users/isaac/projects/video-art/out/blueprints/_work/seam_first.png",
+  "seam_last": "/Users/isaac/projects/video-art/out/blueprints/_work/seam_last.png",
+  "seam_ssim": 0.028689,
+  "adjacent_frame_ssims": [
+    -0.025274,
+    -0.030642,
+    -0.056686,
+    -0.050013,
+    -0.010918,
+    -0.000511,
+    -0.011331,
+    -0.016538,
+    -0.026359,
+    -0.020694,
+    -0.006274,
+    -0.006831,
+    0.019961,
+    0.058312,
+    0.06444,
+    0.074527,
+    0.119952,
+    0.170066,
+    0.201597,
+    0.231486,
+    0.258273,
+    0.217629,
+    0.225701
+  ],
+  "motion_magnitude": "high",
+  "hi_res_pairs": [
+    {
+      "timestamp": 0.0,
+      "paths": [
+        "/Users/isaac/projects/video-art/out/blueprints/_work/hires_pair_00_a.png",
+        "/Users/isaac/projects/video-art/out/blueprints/_work/hires_pair_00_b.png"
+      ],
+      "interval_sec": 0.033333
+    },
+    {
+      "timestamp": 4.0089,
+      "paths": [
+        "/Users/isaac/projects/video-art/out/blueprints/_work/hires_pair_01_a.png",
+        "/Users/isaac/projects/video-art/out/blueprints/_work/hires_pair_01_b.png"
+      ],
+      "interval_sec": 0.033333
+    },
+    {
+      "timestamp": 8.0178,
+      "paths": [
+        "/Users/isaac/projects/video-art/out/blueprints/_work/hires_pair_02_a.png",
+        "/Users/isaac/projects/video-art/out/blueprints/_work/hires_pair_02_b.png"
+      ],
+      "interval_sec": 0.033333
+    }
+  ],
+  "non_looping_warning": true,
+  "loop_detection": {
+    "loop_point_sec": 12.0267,
+    "loop_ssim": 0.030019,
+    "loop_type": "cut",
+    "scan_results": [
+      {
+        "t": 12.0267,
+        "ssim": 0.030019
+      },
+      {
+        "t": 12.0762,
+        "ssim": 0.020475
+      },
+      {
+        "t": 12.1258,
+        "ssim": 0.013218
+      },
+      {
+        "t": 12.1753,
+        "ssim": 0.0034
+      },
+      {
+        "t": 12.2249,
+        "ssim": -0.000248
+      },
+      {
+        "t": 12.2744,
+        "ssim": -0.000536
+      },
+      {
+        "t": 12.324,
+        "ssim": 0.003735
+      },
+      {
+        "t": 12.3736,
+        "ssim": 0.005926
+      },
+      {
+        "t": 12.4231,
+        "ssim": 0.007463
+      },
+      {
+        "t": 12.4727,
+        "ssim": 0.01143
+      },
+      {
+        "t": 12.5222,
+        "ssim": 0.011395
+      },
+      {
+        "t": 12.5718,
+        "ssim": 0.009887
+      },
+      {
+        "t": 12.6213,
+        "ssim": 0.009051
+      },
+      {
+        "t": 12.6709,
+        "ssim": 0.007493
+      },
+      {
+        "t": 12.7204,
+        "ssim": 0.00736
+      },
+      {
+        "t": 12.77,
+        "ssim": 0.010008
+      },
+      {
+        "t": 12.8196,
+        "ssim": 0.01318
+      },
+      {
+        "t": 12.8691,
+        "ssim": 0.016025
+      },
+      {
+        "t": 12.9187,
+        "ssim": 0.015423
+      },
+      {
+        "t": 12.9682,
+        "ssim": 0.011361
+      },
+      {
+        "t": 13.0178,
+        "ssim": 0.010303
+      },
+      {
+        "t": 13.0673,
+        "ssim": 0.006898
+      },
+      {
+        "t": 13.1169,
+        "ssim": 0.00575
+      },
+      {
+        "t": 13.1664,
+        "ssim": 0.005779
+      },
+      {
+        "t": 13.216,
+        "ssim": 0.006193
+      },
+      {
+        "t": 13.2656,
+        "ssim": 0.006529
+      },
+      {
+        "t": 13.3151,
+        "ssim": 0.007065
+      },
+      {
+        "t": 13.3647,
+        "ssim": 0.007873
+      },
+      {
+        "t": 13.4142,
+        "ssim": 0.007815
+      },
+      {
+        "t": 13.4638,
+        "ssim": 0.007075
+      },
+      {
+        "t": 13.5133,
+        "ssim": 0.006863
+      },
+      {
+        "t": 13.5629,
+        "ssim": 0.006697
+      },
+      {
+        "t": 13.6124,
+        "ssim": 0.006932
+      },
+      {
+        "t": 13.662,
+        "ssim": 0.006493
+      },
+      {
+        "t": 13.7116,
+        "ssim": 0.007005
+      },
+      {
+        "t": 13.7611,
+        "ssim": 0.006816
+      },
+      {
+        "t": 13.8107,
+        "ssim": 0.006745
+      },
+      {
+        "t": 13.8602,
+        "ssim": 0.007104
+      },
+      {
+        "t": 13.9098,
+        "ssim": 0.00715
+      },
+      {
+        "t": 13.9593,
+        "ssim": 0.006866
+      },
+      {
+        "t": 14.0089,
+        "ssim": 0.006557
+      },
+      {
+        "t": 14.0584,
+        "ssim": 0.00667
+      },
+      {
+        "t": 14.108,
+        "ssim": 0.006683
+      },
+      {
+        "t": 14.1576,
+        "ssim": 0.006548
+      },
+      {
+        "t": 14.2071,
+        "ssim": 0.006141
+      },
+      {
+        "t": 14.2567,
+        "ssim": 0.005782
+      },
+      {
+        "t": 14.3062,
+        "ssim": 0.00521
+      },
+      {
+        "t": 14.3558,
+        "ssim": 0.004887
+      },
+      {
+        "t": 14.4053,
+        "ssim": 0.004919
+      },
+      {
+        "t": 14.4549,
+        "ssim": 0.004989
+      },
+      {
+        "t": 14.5044,
+        "ssim": 0.004544
+      },
+      {
+        "t": 14.554,
+        "ssim": 0.00434
+      },
+      {
+        "t": 14.6036,
+        "ssim": 0.003722
+      },
+      {
+        "t": 14.6531,
+        "ssim": 0.003499
+      },
+      {
+        "t": 14.7027,
+        "ssim": 0.003043
+      },
+      {
+        "t": 14.7522,
+        "ssim": 0.002939
+      },
+      {
+        "t": 14.8018,
+        "ssim": 0.003004
+      },
+      {
+        "t": 14.8513,
+        "ssim": 0.003011
+      },
+      {
+        "t": 14.9009,
+        "ssim": 0.003012
+      },
+      {
+        "t": 14.9504,
+        "ssim": 0.003012
+      }
+    ]
+  }
+}

@@ -7,6 +7,11 @@ from pathlib import Path
 
 import pytest
 
+
+def pytest_configure(config):
+    """Register custom markers."""
+    config.addinivalue_line("markers", "integration: marks tests requiring real video frames")
+
 # Add scripts directory to path so we can import modules
 SCRIPTS_DIR = Path(__file__).parent.parent
 sys.path.insert(0, str(SCRIPTS_DIR))

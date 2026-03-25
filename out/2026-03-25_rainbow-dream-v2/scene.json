@@ -1,0 +1,109 @@
+{
+  "version": 1,
+  "source": "monglong_studio_a_rainbow_is_seen_outside_the_window_of_an_open_f3a3dd50-0cac-434d-a19b-9a802c4574e3.PNG",
+  "resolution": [
+    1080,
+    1080
+  ],
+  "duration": 10,
+  "fps": 30,
+  "layers": [
+    {
+      "id": "background",
+      "file": "layers/layer-0.png",
+      "zIndex": 0,
+      "opacity": 1,
+      "animation": {
+        "colorCycle": {
+          "speed": 1,
+          "hueRange": 360,
+          "period": 10,
+          "phaseOffset": 0
+        },
+        "wave": {
+          "amplitude": 2,
+          "frequency": 0.3,
+          "period": 10
+        },
+        "parallax": {
+          "depth": 0
+        },
+        "saturationBoost": 2.5,
+        "luminanceKey": 0.6
+      }
+    },
+    {
+      "id": "subject",
+      "file": "layers/layer-1.png",
+      "zIndex": 1,
+      "opacity": 1,
+      "animation": {
+        "colorCycle": {
+          "speed": 1,
+          "hueRange": 360,
+          "period": 5,
+          "phaseOffset": 90
+        },
+        "parallax": {
+          "depth": 0.3
+        },
+        "saturationBoost": 2.5,
+        "luminanceKey": 0.5
+      }
+    },
+    {
+      "id": "detail",
+      "file": "layers/layer-2.png",
+      "zIndex": 2,
+      "opacity": 1,
+      "animation": {
+        "colorCycle": {
+          "speed": 1,
+          "hueRange": 360,
+          "period": 2,
+          "phaseOffset": 180
+        },
+        "parallax": {
+          "depth": 0.5
+        },
+        "saturationBoost": 3,
+        "luminanceKey": 0.7
+      }
+    },
+    {
+      "id": "foreground",
+      "file": "layers/layer-3.png",
+      "zIndex": 3,
+      "opacity": 1,
+      "animation": {
+        "colorCycle": {
+          "speed": 1,
+          "hueRange": 360,
+          "period": 5,
+          "phaseOffset": 270
+        },
+        "parallax": {
+          "depth": 0.7
+        },
+        "saturationBoost": 2,
+        "luminanceKey": 0.4
+      }
+    }
+  ],
+  "effects": {
+    "bloom": {
+      "strength": 0.6,
+      "radius": 0.4,
+      "threshold": 0.7
+    },
+    "chromaticAberration": {
+      "offset": 1.5
+    },
+    "sparkle": {
+      "count": 80,
+      "sizeMin": 2,
+      "sizeMax": 6,
+      "speed": 1
+    }
+  }
+}

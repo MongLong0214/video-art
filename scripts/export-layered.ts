@@ -12,9 +12,9 @@ import {
   cleanFrames,
 } from "./lib/archive.js";
 
+import { sceneSchema } from "../src/lib/scene-schema.js";
+
 const FPS = 60;
-const DURATION = 20;
-const TOTAL_FRAMES = FPS * DURATION;
 
 async function waitForServer(url: string, maxWait = 20000): Promise<void> {
   const start = Date.now();
@@ -34,7 +34,8 @@ function startViteServer(port: number): ChildProcess {
   return exec(`npx vite --port ${port}`, { cwd: process.cwd() });
 }
 
-async function captureFrames(outputDir: string): Promise<void> {
+async function captureFrames(outputDir: string, totalFrames: number): Promise<void> {
+  const TOTAL_FRAMES = totalFrames;
   const port = 5299;
   fs.mkdirSync(outputDir, { recursive: true });
 
@@ -134,13 +135,24 @@ async function main() {
   const tempFrames = framesDir(projectRoot);
   const outputPath = path.join(archiveDir, `${title}.mp4`);
 
+  // Load duration from scene.json
+  const scenePath = path.join(projectRoot, "public", "scene.json");
+  if (!fs.existsSync(scenePath)) {
+    throw new Error("public/scene.json not found. Run pipeline:layers first.");
+  }
+  const sceneJson = JSON.parse(fs.readFileSync(scenePath, "utf-8"));
+  const config = sceneSchema.parse(sceneJson);
+  const DURATION = config.duration;
+  const TOTAL_FRAMES = FPS * DURATION;
+
   console.log(`Title: ${title}`);
   console.log(`Archive: ${path.relative(projectRoot, archiveDir)}/`);
+  console.log(`Duration: ${DURATION}s, ${TOTAL_FRAMES} frames @ ${FPS}fps`);
 
   const estimatedMB = (TOTAL_FRAMES * 4.5).toFixed(0);
   console.log(`Estimated disk usage: ~${estimatedMB}MB for ${TOTAL_FRAMES} frames`);
 
-  await captureFrames(tempFrames);
+  await captureFrames(tempFrames, TOTAL_FRAMES);
   await encodeVideo(tempFrames, outputPath);
 
   // Snapshot layers + scene.json into archive

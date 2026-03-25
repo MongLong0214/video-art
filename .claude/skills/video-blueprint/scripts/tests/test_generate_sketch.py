@@ -61,11 +61,11 @@ def test_sketch_exports_interface(bp, tmp_path):
 
 
 def test_main_ts_patch(bp, tmp_path):
-    """T10 #3: main.ts patch contains IS_{NAME} + dynamic import."""
+    """T10 #3: main.ts patch contains sketch registry entry."""
     mod = _import_sketch_gen()
     patch = mod.generate_main_patch(bp, "psy")
-    assert "IS_PSY" in patch or "is_psy" in patch.lower() or "psy" in patch.lower()
-    assert "import" in patch
+    assert "psy" in patch.lower()
+    assert "SKETCH_REGISTRY" in patch or "width" in patch
 
 
 def test_uniforms_bound(bp, tmp_path):
@@ -79,10 +79,10 @@ def test_uniforms_bound(bp, tmp_path):
 
 
 def test_tone_mapping_no(bp, tmp_path):
-    """T10 #6: NoToneMapping referenced."""
+    """T10 #6: toneMapping field present in registry entry."""
     mod = _import_sketch_gen()
     patch = mod.generate_main_patch(bp, "test")
-    assert "NoToneMapping" in patch or "toneMapping" in patch.lower()
+    assert "toneMapping" in patch
 
 
 def test_canvas_config_patch(bp, tmp_path):

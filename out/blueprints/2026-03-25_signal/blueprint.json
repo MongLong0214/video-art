@@ -1,0 +1,246 @@
+{
+  "meta": {
+    "source_file": "signal-2026-03-25-161200.mp4",
+    "duration_sec": 7.9333,
+    "fps": 60,
+    "loop_type": "seamless",
+    "loop_point_sec": 7.9333,
+    "loop_mechanism": "Per-instance rotation speeds are integer multiples of half-turns per loop, ensuring all shapes return to start position"
+  },
+  "canvas": {
+    "width": 1080,
+    "height": 1920,
+    "aspect_ratio": "9:16",
+    "coordinate_system": "center_origin",
+    "background_color": "#10110D"
+  },
+  "palette": {
+    "colors": [
+      { "id": "bg", "hex": "#10110D", "role": "background" },
+      { "id": "yellow_bright", "hex": "#F9F8AE", "role": "outer_border_stroke" },
+      { "id": "yellow_warm", "hex": "#E1D588", "role": "outer_border_glow" },
+      { "id": "blue_cool", "hex": "#AAC7D7", "role": "secondary_border_stroke" },
+      { "id": "warm_outer", "hex": "#A2907F", "role": "concentric_near" },
+      { "id": "warm_mid", "hex": "#BFAC97", "role": "concentric_mid" },
+      { "id": "warm_inner", "hex": "#FCFCFB", "role": "concentric_far" },
+      { "id": "peach", "hex": "#F7DFCF", "role": "concentric_highlight" },
+      { "id": "pink", "hex": "#EDA19E", "role": "rotating_stroke_a" },
+      { "id": "red", "hex": "#C86363", "role": "rotating_stroke_b" }
+    ],
+    "gradient_maps": [
+      {
+        "id": "warm_gradient",
+        "type": "linear",
+        "stops": [
+          { "position": 0.0, "color_id": "warm_outer" },
+          { "position": 0.5, "color_id": "warm_mid" },
+          { "position": 1.0, "color_id": "warm_inner" }
+        ]
+      }
+    ]
+  },
+  "layers": [
+    {
+      "id": "layer_pink_strokes",
+      "type": "shape_group",
+      "blend_mode": "additive",
+      "opacity": 1.0,
+      "depth_attenuation": { "near": 0.6, "far": 0.35, "curve": "linear" },
+      "elements": [
+        {
+          "id": "el_pink_strokes",
+          "shape": "rounded_rect",
+          "rendering_method": "sdf_stroke",
+          "center": [0.5, 0.5],
+          "size": [0.75, 0.50],
+          "corner_radius": 0.35,
+          "rotation_deg": 0,
+          "fill": null,
+          "stroke": { "color_id": "pink", "width_ratio": 0.008 },
+          "glow": {
+            "amplitude": 0.20,
+            "decay_range": [40, 100],
+            "depth_scaling": true
+          },
+          "repetition": {
+            "type": "concentric",
+            "count": 3,
+            "scale_step": 0.75,
+            "rotation_step_deg": 0,
+            "color_cycle": ["pink", "red", "pink"],
+            "depth_fade": { "start_opacity": 0.6, "end_opacity": 0.35 },
+            "stroke_depth": {
+              "near_width_ratio": 0.008,
+              "far_width_ratio": 0.004
+            },
+            "per_instance_animation": {
+              "property": "rotation_deg",
+              "motion_type": "per_instance",
+              "speed_formula": "linear",
+              "base_speed_half_turns_per_loop": 4,
+              "speed_step_per_instance": 2,
+              "speed_ratio_per_instance": null,
+              "speed_exponent": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "layer_yellow_border",
+      "type": "shape_group",
+      "blend_mode": "additive",
+      "opacity": 1.0,
+      "elements": [
+        {
+          "id": "el_yellow_border",
+          "shape": "rounded_rect",
+          "rendering_method": "sdf_stroke",
+          "center": [0.5, 0.5],
+          "size": [0.77, 0.52],
+          "corner_radius": 0.12,
+          "rotation_deg": 0,
+          "fill": null,
+          "stroke": { "color_id": "yellow_bright", "width_ratio": 0.007 },
+          "glow": {
+            "amplitude": 0.25,
+            "decay_range": [30, 80],
+            "depth_scaling": false
+          },
+          "repetition": null
+        }
+      ]
+    },
+    {
+      "id": "layer_blue_border",
+      "type": "shape_group",
+      "blend_mode": "additive",
+      "opacity": 0.7,
+      "elements": [
+        {
+          "id": "el_blue_border",
+          "shape": "rounded_rect",
+          "rendering_method": "sdf_stroke",
+          "center": [0.5, 0.5],
+          "size": [0.70, 0.47],
+          "corner_radius": 0.12,
+          "rotation_deg": 0,
+          "fill": null,
+          "stroke": { "color_id": "blue_cool", "width_ratio": 0.005 },
+          "glow": {
+            "amplitude": 0.15,
+            "decay_range": [40, 90],
+            "depth_scaling": false
+          },
+          "repetition": null
+        }
+      ]
+    },
+    {
+      "id": "layer_warm_rects",
+      "type": "shape_group",
+      "blend_mode": "additive",
+      "opacity": 1.0,
+      "depth_attenuation": { "near": 0.65, "far": 0.15, "curve": "linear" },
+      "elements": [
+        {
+          "id": "el_warm_rects",
+          "shape": "rounded_rect",
+          "rendering_method": "sdf_stroke",
+          "center": [0.5, 0.5],
+          "size": [0.65, 0.43],
+          "corner_radius": 0.10,
+          "rotation_deg": 0,
+          "fill": null,
+          "stroke": { "color_id": "warm_outer", "width_ratio": 0.010 },
+          "glow": {
+            "amplitude": 0.30,
+            "decay_range": [50, 160],
+            "depth_scaling": true
+          },
+          "repetition": {
+            "type": "concentric",
+            "count": 9,
+            "scale_step": 0.84,
+            "rotation_step_deg": 0,
+            "color_cycle": ["warm_outer"],
+            "color_gradient": { "near": "warm_outer", "far": "warm_inner" },
+            "depth_fade": { "start_opacity": 0.65, "end_opacity": 0.15 },
+            "stroke_depth": {
+              "near_width_ratio": 0.010,
+              "far_width_ratio": 0.003
+            },
+            "per_instance_animation": {
+              "property": "rotation_deg",
+              "motion_type": "per_instance",
+              "speed_formula": "linear",
+              "base_speed_half_turns_per_loop": 1,
+              "speed_step_per_instance": 1,
+              "speed_ratio_per_instance": null,
+              "speed_exponent": null
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "motion": {
+    "global_time_sec": 7.9333,
+    "easing_default": "linear",
+    "animations": [
+      {
+        "target_id": "el_warm_rects",
+        "property": "rotation_deg",
+        "keyframes": [
+          { "t": 0.0, "value": 0 },
+          { "t": 1.0, "value": 180 }
+        ],
+        "easing": "linear",
+        "loop": "repeat"
+      },
+      {
+        "target_id": "el_pink_strokes",
+        "property": "rotation_deg",
+        "keyframes": [
+          { "t": 0.0, "value": 0 },
+          { "t": 1.0, "value": 720 }
+        ],
+        "easing": "linear",
+        "loop": "repeat"
+      }
+    ]
+  },
+  "effects": {
+    "glow": {
+      "enabled": true,
+      "per_layer": true
+    },
+    "breathing": {
+      "enabled": false
+    },
+    "chromatic_aberration": {
+      "enabled": false
+    },
+    "grain": {
+      "enabled": false
+    },
+    "vignette": {
+      "enabled": true,
+      "start_radius": 0.75,
+      "edge_color": "#10110D",
+      "opacity": 0.3,
+      "method": "multiply"
+    }
+  },
+  "constraints": {
+    "spatial": { "dimension": "2d_flat", "perspective": false, "camera_movement": false },
+    "style": { "texture": "none", "glow": true, "blur": false },
+    "composition": { "symmetry": "bilateral_xy", "alignment": "center" },
+    "prohibitions": [
+      "no 3D depth or perspective",
+      "no particle systems",
+      "no text or UI elements",
+      "no fill-only shapes except background"
+    ]
+  }
+}

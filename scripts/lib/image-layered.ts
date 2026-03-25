@@ -14,8 +14,10 @@ function getToken(): string {
 }
 
 export interface LayerOptions {
-  numLayers?: number;
-  description?: string;
+  layers?: number;
+  resolution?: 640 | 1024;
+  trueCfgScale?: number;
+  numInferenceSteps?: number;
   outputFormat?: "png" | "webp" | "jpg";
   goFast?: boolean;
   seed?: number | null;
@@ -33,13 +35,15 @@ export async function decomposeImage(
   options: LayerOptions = {},
 ): Promise<LayerResult> {
   const {
-    numLayers = 4,
-    description = "auto",
+    layers = 8,
+    resolution = 1024,
+    trueCfgScale = 4.0,
+    numInferenceSteps = 50,
     outputFormat = "png",
-    goFast = true,
+    goFast = false,
     seed = null,
     disableSafetyChecker = true,
-    outputQuality = 95,
+    outputQuality = 100,
   } = options;
 
   const replicate = new Replicate({ auth: getToken() });
@@ -60,8 +64,10 @@ export async function decomposeImage(
     output = (await replicate.run("qwen/qwen-image-layered", {
       input: {
         image: dataUri,
-        num_layers: numLayers,
-        description,
+        layers,
+        resolution,
+        true_cfg_scale: trueCfgScale,
+        num_inference_steps: numInferenceSteps,
         output_format: outputFormat,
         output_quality: outputQuality,
         go_fast: goFast,

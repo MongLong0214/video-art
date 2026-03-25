@@ -99,3 +99,11 @@ def test_backward_compatible_output():
             assert "hex" in color
             assert "rgb" in color
             assert "percentage" in color
+
+
+def test_merge_palettes_empty_input():
+    """T3 #7: merge_palettes([]) → returns empty list without error."""
+    merge_fn = getattr(_mod, "merge_palettes", None)
+    assert merge_fn is not None, "merge_palettes function not found"
+    result = merge_fn([], tolerance=15, use_lab=True)
+    assert result == [], f"Expected [], got {result}"

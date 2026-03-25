@@ -12,7 +12,7 @@ Convert looping video art into multi-layer geometric blueprints and runnable sha
 ## Dependencies
 
 ```bash
-pip install numpy Pillow opencv-python-headless scikit-learn scipy scikit-image jinja2 colorspacious
+pip install -r .claude/skills/video-blueprint/requirements.txt
 # Optional (may fail on macOS ARM)
 pip install decord
 ```
@@ -26,20 +26,22 @@ python3 .claude/skills/video-blueprint/scripts/extract-frames.py <video_path> \
   --frames 24 --detect-loop --hi-res-pairs 3 --out-dir ./out/blueprints/_work
 ```
 
-Read `./out/blueprints/_work/meta.json` for resolution, fps, duration, loop_point_sec, seam_ssim, motion_magnitude. Hi-res consecutive pairs are saved at 0%, 33%, 66% of the loop for motion analysis.
+Read `./out/blueprints/_work/meta.json` for resolution, fps, duration, loop_point_sec, seam_ssim, motion_magnitude. Hi-res consecutive pairs are saved at 0%, 33%, 66% of the loop for Claude's visual inspection in Phase C — they are not used by the analysis scripts.
+
+If `meta.json` shows `loop_type: "cut"`, the video does not seamlessly loop. Consider trimming to a looping segment before proceeding, or continue with caution and note the limitation in the blueprint's `meta.loop_mechanism` field.
 
 ## Phase B: Computational Analysis
 
-Run scripts in dependency order: colors first, then layers (depends on colors.json), geometry and motion in parallel.
+Run scripts in any order. Colors and layers are independent — analyze-layers.py runs its own internal color clustering and does NOT read colors.json. Geometry and motion can run in parallel with layers.
 
 ```bash
 # 1. Color palette (CIELAB clustering + deltaE2000)
 python3 .claude/skills/video-blueprint/scripts/analyze-colors.py ./out/blueprints/_work --top 12
 
-# 2. Layer decomposition (depends on colors.json)
+# 2. Layer decomposition (independent — runs its own clustering, not colors.json)
 python3 .claude/skills/video-blueprint/scripts/analyze-layers.py ./out/blueprints/_work
 
-# 3+4. Parallel
+# 3+4. Parallel with step 2
 python3 .claude/skills/video-blueprint/scripts/analyze-geometry.py ./out/blueprints/_work
 python3 .claude/skills/video-blueprint/scripts/analyze-motion.py ./out/blueprints/_work
 ```
@@ -77,11 +79,11 @@ Assembly rules:
 
 **Step 1** -- Jinja2 skeleton:
 ```bash
-python3 .claude/skills/video-blueprint/scripts/generate-shader.py ./blueprint.json --out ./src/shaders/{name}.frag
-python3 .claude/skills/video-blueprint/scripts/generate-sketch.py ./blueprint.json --out ./src/sketches/{name}.ts
+python3 .claude/skills/video-blueprint/scripts/generate-shader.py ./blueprint.json --output ./src/shaders/{name}.frag
+python3 .claude/skills/video-blueprint/scripts/generate-sketch.py ./blueprint.json --output-dir ./src/sketches/
 ```
 
-Generates: uniforms, main() structure, SDF library, EffectComposer setup.
+Generates: uniforms, main() structure, SDF library. If effects are enabled, generates a post-processing shader stub and main.ts wiring hints (Claude completes EffectComposer integration in Step 2).
 
 **Step 2** -- Claude writes layer bodies: Read blueprint.json + skeleton output. Write the per-layer loop body (rotation, zoom, depth attenuation, glow), blend logic, and effect parameter tuning. Reference [references/shader-patterns.md](references/shader-patterns.md) for GLSL patterns.
 
@@ -89,11 +91,23 @@ Generates: uniforms, main() structure, SDF library, EffectComposer setup.
 
 ## Phase F: Verification
 
+**Step 1** -- Capture rendered frames via Puppeteer:
+
+> Note: `scripts/capture-rendered.ts` is not yet implemented. Until it exists, capture frames manually using the browser dev console or a screen recorder, saving PNGs to `./out/blueprints/_rendered/` at the same frame count used in Phase A.
+
+```bash
+# Placeholder — not yet available:
+# npx tsx scripts/capture-rendered.ts --mode <name> --frames 24 --fps 60 \
+#   --loop-dur <seconds> --out-dir ./out/blueprints/_rendered
+```
+
+**Step 2** -- Compare original vs rendered:
 ```bash
 python3 .claude/skills/video-blueprint/scripts/verify-output.py \
-  --original ./out/blueprints/_work \
-  --rendered ./out/blueprints/_rendered \
-  --report ./out/blueprints/verification-report.json
+  --original-dir ./out/blueprints/_work \
+  --rendered-dir ./out/blueprints/_rendered \
+  --threshold 0.85 \
+  --output ./out/blueprints/verification-report.json
 ```
 
 Compares original vs rendered frames using:

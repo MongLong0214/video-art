@@ -79,3 +79,15 @@ def test_fail_verdict_below_threshold():
         shape_report={"diff": 3, "match": False},
     )
     assert report["verdict"] == "FAIL"
+
+
+def test_pass_verdict():
+    """T12 #7: SSIM [0.95, 0.92] with default threshold 0.85 → verdict PASS."""
+    mod = _import_verify()
+    report = mod.create_report(
+        ssim_values=[0.95, 0.92],
+        palette_report={"delta_e_values": [2.0, 1.5]},
+        shape_report={"diff": 0, "match": True},
+    )
+    assert report["verdict"] == "PASS", f"Expected PASS, got {report['verdict']}"
+    assert report["ssim_mean"] >= 0.85, f"ssim_mean={report['ssim_mean']} should be >= 0.85"

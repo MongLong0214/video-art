@@ -2,36 +2,20 @@ import path from "node:path";
 import type { PostProcessResult } from "./postprocess.js";
 import type { SceneConfig } from "../../src/lib/scene-schema.js";
 
-const LAYER_PRESETS = [
-  // zIndex 0 = background (highest coverage)
-  {
-    colorCycle: { speed: 0.3, hueRange: 360, period: 20 },
-    wave: { amplitude: 5, frequency: 0.5, period: 10 },
-    glow: { intensity: 0.1, pulse: 0.2, period: 20 },
-    parallax: { depth: 0.0 },
-  },
-  // zIndex 1 = main subject
-  {
-    colorCycle: { speed: 0.15, hueRange: 180, period: 20 },
-    wave: { amplitude: 2, frequency: 0.3, period: 10 },
-    glow: { intensity: 0.4, pulse: 0.5, period: 5 },
-    parallax: { depth: 0.3 },
-  },
-  // zIndex 2 = detail
-  {
-    colorCycle: { speed: 0.2, hueRange: 120, period: 10 },
-    wave: { amplitude: 3, frequency: 0.4, period: 5 },
-    glow: { intensity: 0.3, pulse: 0.3, period: 4 },
-    parallax: { depth: 0.5 },
-  },
-  // zIndex 3+ = foreground
-  {
-    colorCycle: { speed: 0.1, hueRange: 90, period: 10 },
-    wave: { amplitude: 1.5, frequency: 0.2, period: 4 },
-    glow: { intensity: 0.5, pulse: 0.6, period: 2 },
-    parallax: { depth: 0.7 },
-  },
-];
+// Dynamic preset generation: evenly distributes phaseOffset across N layers
+function generatePreset(index: number, total: number): SceneConfig["layers"][number]["animation"] {
+  const t = index / Math.max(total - 1, 1); // 0..1 normalized position
+  const phaseOffset = Math.round((360 * index) / total);
+  const periods = [10, 5, 2, 1] as const;
+  const period = periods[Math.min(Math.floor(t * periods.length), periods.length - 1)];
+
+  return {
+    colorCycle: { speed: 13.0, hueRange: 360, period, phaseOffset },
+    parallax: { depth: 0 },
+    saturationBoost: 2.5,
+    luminanceKey: +(0.8 + Math.sin(t * Math.PI) * 0.2).toFixed(2),
+  };
+}
 
 export async function generateSceneJson(
   sourceName: string,
@@ -42,9 +26,9 @@ export async function generateSceneJson(
 
   for (let i = 0; i < result.files.length; i++) {
     const filePath = result.files[i];
-    const preset = LAYER_PRESETS[Math.min(i, LAYER_PRESETS.length - 1)];
+    const preset = generatePreset(i, result.files.length);
 
-    const layerNames = ["background", "subject", "detail", "foreground"];
+    const layerNames = ["far-bg", "background", "mid-bg", "mid", "mid-fg", "foreground", "near-fg", "nearest"];
     const id = i < layerNames.length ? layerNames[i] : `layer-${i}`;
 
     layers.push({
@@ -60,7 +44,7 @@ export async function generateSceneJson(
     version: 1,
     source: sourceName,
     resolution,
-    duration: 20,
+    duration: 10,
     fps: 30,
     layers,
     effects: {

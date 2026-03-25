@@ -213,3 +213,41 @@ def test_unknown_effects_array(v3_bp):
     assert isinstance(ue, list)
     result = validate(v3_bp)
     assert result.is_valid
+
+
+def test_subjective_language_detected(v2_bp):
+    """T1 #16: blueprint with subjective word 'vibrant' in a field → is_valid=False."""
+    v2_bp["meta"]["loop_mechanism"] = "vibrant pulsing rotation"
+    result = validate(v2_bp)
+    assert not result.is_valid, "Expected validation failure for subjective word 'vibrant'"
+    assert any("vibrant" in e for e in result.errors), (
+        f"Expected 'vibrant' in errors, got: {result.errors}"
+    )
+
+
+def test_duplicate_element_id_rejected(v2_bp):
+    """T1 #17: two elements with the same id → error."""
+    import copy
+    el = copy.deepcopy(v2_bp["layers"][0]["elements"][0])
+    el["id"] = "e1"  # same as existing element
+    v2_bp["layers"][0]["elements"].append(el)
+    result = validate(v2_bp)
+    assert not result.is_valid, "Expected validation failure for duplicate element id"
+    assert any("Duplicate element id" in e for e in result.errors), (
+        f"Expected 'Duplicate element id' error, got: {result.errors}"
+    )
+
+
+def test_keyframe_not_monotonic(v2_bp):
+    """T1 #18: keyframe t values [0, 0.8, 0.5, 1.0] not monotonically increasing → error."""
+    v2_bp["motion"]["animations"][0]["keyframes"] = [
+        {"t": 0.0, "value": 0},
+        {"t": 0.8, "value": 200},
+        {"t": 0.5, "value": 100},  # goes backwards
+        {"t": 1.0, "value": 360},
+    ]
+    result = validate(v2_bp)
+    assert not result.is_valid, "Expected validation failure for non-monotonic keyframes"
+    assert any("monotonically" in e for e in result.errors), (
+        f"Expected monotonicity error, got: {result.errors}"
+    )
