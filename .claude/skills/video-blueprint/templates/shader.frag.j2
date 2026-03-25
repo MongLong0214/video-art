@@ -1,0 +1,91 @@
+precision highp float;
+
+uniform float uTime;
+uniform vec2 uResolution;
+
+varying vec2 vUv;
+
+#define PI 3.14159265359
+#define TAU 6.28318530718
+#define LOOP_DUR {{ loop_dur }}
+
+// ─── SDF Library ────────────────────────────────────────
+
+float sdRoundedBox(vec2 p, vec2 b, float r) {
+  vec2 q = abs(p) - b + r;
+  return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r;
+}
+
+float sdCircle(vec2 p, float r) {
+  return length(p) - r;
+}
+
+float sdLine(vec2 p, vec2 a, vec2 b) {
+  vec2 pa = p - a, ba = b - a;
+  float h = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0);
+  return length(pa - ba * h);
+}
+
+// ─── Utility ────────────────────────────────────────────
+
+mat2 rot(float a) {
+  float s = sin(a), c = cos(a);
+  return mat2(c, -s, s, c);
+}
+
+float hash(vec2 p) {
+  return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+}
+
+float noise(vec2 p) {
+  vec2 i = floor(p);
+  vec2 f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
+  float a = hash(i);
+  float b = hash(i + vec2(1.0, 0.0));
+  float c = hash(i + vec2(0.0, 1.0));
+  float d = hash(i + vec2(1.0, 1.0));
+  return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+}
+
+// ─── Palette ────────────────────────────────────────────
+
+{% for color in palette %}
+vec3 {{ color.id }} = vec3({{ color.r }}, {{ color.g }}, {{ color.b }});
+{% endfor %}
+
+// ─── Main ───────────────────────────────────────────────
+
+void main() {
+  float aspect = uResolution.x / uResolution.y;
+  vec2 uv = (gl_FragCoord.xy - 0.5 * uResolution) / min(uResolution.x, uResolution.y);
+  float lt = mod(uTime, LOOP_DUR);
+
+  vec3 col = {{ bg_color }};
+
+{% if breathing_enabled %}
+  float breathe = 1.0 + {{ breathing_amplitude }} * sin(lt * TAU * {{ breathing_period_ratio }} / LOOP_DUR);
+{% else %}
+  float breathe = 1.0;
+{% endif %}
+
+  // ═══════════════════════════════════════════════
+  // LAYER BLOCKS — Claude fills these from blueprint
+  // ═══════════════════════════════════════════════
+{% for layer in layers %}
+  // --- LAYER: {{ layer.id }} ---
+  // blend_mode: {{ layer.blend_mode }}
+  // shapes: {{ layer.shape_count }}
+  // motion: {{ layer.motion_type }}
+  // TODO: Claude writes layer body here based on blueprint
+{% endfor %}
+
+{% if grain_enabled %}
+  // Grain (looped)
+  float nPhase = lt * TAU * 2.0 / LOOP_DUR;
+  col += noise(uv * 8.0 + vec2(sin(nPhase), cos(nPhase)) * 2.0) * {{ grain_intensity }};
+{% endif %}
+
+  col = clamp(col, 0.0, 2.0);
+  gl_FragColor = vec4(col, 1.0);
+}

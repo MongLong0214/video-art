@@ -49,6 +49,11 @@ export class Clock {
     return { time: this._time, dt: this._dt, frame: this._frame };
   }
 
+  setFps(fps: number) {
+    this._fps = fps;
+    this._dt = 1 / fps;
+  }
+
   reset() {
     this._time = 0;
     this._frame = 0;

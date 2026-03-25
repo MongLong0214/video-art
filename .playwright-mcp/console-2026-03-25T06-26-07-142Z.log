@@ -1,0 +1,3 @@
+[  229443ms] [ERROR] WebSocket connection to 'ws://localhost:5173/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:5173/@vite/client:1034
+[  294273ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/favicon.ico:0
+[  296810ms] [WARNING] WARNING: Multiple instances of Three.js being imported. @ http://localhost:5173/node_modules/.vite/deps/chunk-4NAQ2R6Y.js?v=3ed38161:21106

@@ -1,5 +1,22 @@
-node_modules
-dist
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Vite-served generated assets (copied by pipeline)
+public/layers/
+public/scene.json
+
+# Environment
+.env
 *.local
+
+# OS
 .DS_Store
+
+# IDE
+.idea/
+
+# Recordings (legacy)
 recordings/
