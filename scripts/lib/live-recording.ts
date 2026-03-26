@@ -1,3 +1,4 @@
+import * as fs from "node:fs";
 import * as path from "node:path";
 
 type RecordingState = "idle" | "recording" | "stopped";
@@ -11,6 +12,7 @@ interface RecordConfig {
 interface LiveRecordingOptions {
   projectRoot: string;
   onRecordingChange: (isRecording: boolean) => void;
+  evalSclang?: (code: string) => void;
 }
 
 export const sanitizeTitle = (title: string): string => {
@@ -64,10 +66,19 @@ export class LiveRecording {
     this.options.onRecordingChange(true);
 
     const outputPath = generateRecordPath(this.options.projectRoot, title ?? "untitled");
-    void outputPath;
+    const outputDir = path.dirname(outputPath);
+    fs.mkdirSync(outputDir, { recursive: true });
+
+    // Send s.record to the running sclang session via stdin pipe
+    const escapedPath = outputPath.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+    const scCmd = `s.record("${escapedPath}"); "recording started".postln;`;
+    this.options.evalSclang?.(scCmd);
   }
 
   stop(): void {
+    if (this.state === "recording") {
+      this.options.evalSclang?.('s.stopRecording; "recording stopped".postln;');
+    }
     this.state = "stopped";
     this.options.onRecordingChange(false);
   }

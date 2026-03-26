@@ -41,6 +41,7 @@ export const validateFxParams = (
 };
 
 export const FX_MODULE_ORDER = [
+  "customSidechain",
   "customCompressor",
   "customSaturator",
   "customEQ",

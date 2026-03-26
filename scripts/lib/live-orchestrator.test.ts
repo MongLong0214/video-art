@@ -172,9 +172,40 @@ describe("LiveOrchestrator", () => {
     process.kill = origKill;
   });
 
+  it("stop reads PIDs from lock file and kills them", async () => {
+    vi.mocked(fs.existsSync).mockReturnValue(true);
+    vi.mocked(fs.readFileSync).mockReturnValue("1234:5678");
+    const origKill = process.kill;
+    const killCalls: Array<[number, string]> = [];
+    process.kill = vi.fn().mockImplementation((pid: number, sig: string) => {
+      killCalls.push([pid, sig]);
+    }) as never;
+
+    const stopPromise = orchestrator.stop(false);
+    await vi.advanceTimersByTimeAsync(SIGKILL_DELAY_MS + 100);
+    await stopPromise;
+
+    const sigterms = killCalls.filter(([, sig]) => sig === "SIGTERM");
+    expect(sigterms.length).toBeGreaterThanOrEqual(2);
+    expect(sigterms.some(([pid]) => pid === 1234)).toBe(true);
+    expect(sigterms.some(([pid]) => pid === 5678)).toBe(true);
+
+    process.kill = origKill;
+  });
+
   it("uses execFile not exec", () => {
-    expect(childProcess.exec).not.toBeDefined;
     expect(mockExecFile).toBeDefined();
+  });
+
+  it("evalSclang writes to sclang stdin", () => {
+    const proc = createMockProcess({
+      stdin: { writable: true, write: vi.fn() },
+    });
+    orchestrator.addProcess(proc as never);
+    // Manually set sclangProc via start-like flow
+    (orchestrator as unknown as { sclangProc: unknown }).sclangProc = proc;
+    orchestrator.evalSclang("s.record;");
+    expect(proc.stdin.write).toHaveBeenCalledWith("s.record;\n");
   });
 
   it("boot config sets blockSize 64", () => {

@@ -2,7 +2,7 @@
 
 **PRD**: docs/prd/PRD-audio-v2-live.md
 **Size**: XL
-**Current Phase**: 5 (TDD Development — COMPLETE, awaiting Phase 6)
+**Current Phase**: 7 (Complete)
 
 ## Ticket Status 정의
 - **Todo**: 미착수
@@ -40,4 +40,7 @@ T1 ─── T2 ─┬─ T3 ──┐
 | 2     | 2     | ALL PASS | 0 | 0 | 0 | PRD v0.2 approved |
 | 4     | 1     | HAS ISSUE | 0 | 7 | 14 | TDD gaps, test count, SHA256 AC |
 | 4     | 2     | ALL PASS | 0 | 0 | 0 | +17 tests, boomer 4/5 수용 |
-| 6     | -     | - | - | - | - | Pending |
+| 6     | 1     | RECONSIDER | 2 | 2 | 0 | boomer: stop PID, recording stub, monitor polling, boot timing |
+| 6     | 2     | ALL PASS | 0 | 0 | 0 | P0: PID-based stop + SC s.record. P1: polling + Routine wait |
+| 6     | 3 (e2e) | RECONSIDER | 1 | 4 | 4 | guardian+boomer: stdin pipe, crash lock, SIGINT, FX order |
+| 6     | 4 (e2e) | ALL PASS | 0 | 0 | 0 | P0: stdin pipe. P1: restart opt + error handler + SIGINT + test fix. P2: FX order + lock unify |

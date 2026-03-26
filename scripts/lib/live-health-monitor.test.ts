@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { LiveHealthMonitor } from "./live-health-monitor";
 
 describe("LiveHealthMonitor", () => {
@@ -9,10 +9,16 @@ describe("LiveHealthMonitor", () => {
 
   beforeEach(() => {
     vi.restoreAllMocks();
+    vi.useFakeTimers();
     onCrash = vi.fn();
     onHighMemory = vi.fn();
     onHighCpu = vi.fn();
     monitor = new LiveHealthMonitor({ onCrash, onHighMemory, onHighCpu });
+  });
+
+  afterEach(() => {
+    monitor.stopPolling();
+    vi.useRealTimers();
   });
 
   it("detects crash and calls onCrash", () => {
@@ -38,5 +44,30 @@ describe("LiveHealthMonitor", () => {
   it("no warning on normal CPU", () => {
     monitor.checkCpu(40);
     expect(onHighCpu).not.toHaveBeenCalled();
+  });
+
+  it("startPolling detects dead process", () => {
+    const origKill = process.kill;
+    process.kill = vi.fn().mockImplementation(() => {
+      throw new Error("ESRCH");
+    }) as never;
+
+    monitor.startPolling(99999, 100);
+    vi.advanceTimersByTime(150);
+    expect(onCrash).toHaveBeenCalled();
+
+    process.kill = origKill;
+  });
+
+  it("stopPolling stops polling", () => {
+    const origKill = process.kill;
+    process.kill = vi.fn().mockReturnValue(true) as never;
+
+    monitor.startPolling(12345, 100);
+    monitor.stopPolling();
+    vi.advanceTimersByTime(200);
+    expect(onCrash).not.toHaveBeenCalled();
+
+    process.kill = origKill;
   });
 });

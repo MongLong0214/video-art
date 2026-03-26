@@ -85,8 +85,9 @@ SynthDef(\customSidechain, { |out, sideGain=1, sideRelease=0.2|
 	]);
 });
 
-// Set FX chain order
+// Set FX chain order (sidechain before compressor for ducking)
 ~dirt.orderModules([
+	\customSidechain,
 	\customCompressor,
 	\customSaturator,
 	\customEQ,
