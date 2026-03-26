@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "supercollider": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "/Users/isaac/mcp-servers/supercollider-mcp/dist/index.js"
+      ],
+      "env": {
+        "PATH": "/Applications/SuperCollider.app/Contents/MacOS:/Applications/SuperCollider.app/Contents/Resources:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin",
+        "SCLANG_PATH": "/Applications/SuperCollider.app/Contents/MacOS/sclang",
+        "SCSYNTH_PATH": "/Applications/SuperCollider.app/Contents/Resources/scsynth"
+      }
+    }
+  }
+}
