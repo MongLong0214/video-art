@@ -74,7 +74,8 @@ async function validatePixelLoop(): Promise<boolean> {
     });
 
     const page = await browser.newPage();
-    await page.setViewport({ width: 1080, height: 1080 });
+    const [vpW, vpH] = config.resolution;
+    await page.setViewport({ width: vpW, height: vpH });
     await page.goto("http://localhost:5199/?mode=layered", { waitUntil: "networkidle0" });
 
     // Wait for sketch to initialize

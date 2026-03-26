@@ -18,7 +18,10 @@
     "audio:setup": "bash audio/setup.sh",
     "audio:test": "bash -c 'sclang -i none audio/sc/test-synthdefs.scd'",
     "render:audio": "tsx scripts/render-audio.ts",
-    "render:av": "tsx scripts/render-av.ts"
+    "render:av": "tsx scripts/render-av.ts",
+    "live:start": "tsx scripts/live-start.ts",
+    "live:stop": "tsx scripts/live-stop.ts",
+    "live:record": "tsx scripts/live-record.ts"
   },
   "dependencies": {
     "dotenv": "^17.3.1",

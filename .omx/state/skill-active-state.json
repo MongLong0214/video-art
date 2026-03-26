@@ -1,28 +1,15 @@
 {
   "version": 1,
   "active": true,
-  "skill": "ultrawork",
-  "keyword": "Parallel",
+  "skill": "cancel",
+  "keyword": "Stop",
   "phase": "planning",
-  "activated_at": "2026-03-26T08:01:14.600Z",
-  "updated_at": "2026-03-26T08:01:14.601Z",
+  "activated_at": "2026-03-26T12:03:56.047Z",
+  "updated_at": "2026-03-26T12:03:56.047Z",
   "source": "keyword-detector",
-  "input_lock": {
-    "active": false,
-    "scope": "deep-interview-auto-approval",
-    "acquired_at": "2026-03-25T05:26:28.249Z",
-    "released_at": "2026-03-26T08:01:14.600Z",
-    "blocked_inputs": [
-      "yes",
-      "y",
-      "proceed",
-      "continue",
-      "ok",
-      "sure",
-      "go ahead",
-      "next i should"
-    ],
-    "message": "Deep interview is active; auto-approval shortcuts are blocked until the interview finishes.",
-    "exit_reason": "handoff"
-  }
+  "session_id": "",
+  "thread_id": "019d2a06-b7b5-7951-ad5c-a0afccc411bf",
+  "turn_id": "019d2a07-8045-74d2-94ff-2a075d404983",
+  "iteration": 3,
+  "last_turn_at": "2026-03-26T12:20:04.440Z"
 }

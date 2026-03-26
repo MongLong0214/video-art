@@ -1,6 +1,7 @@
 import "dotenv/config";
 import fs from "node:fs";
 import path from "node:path";
+import sharp from "sharp";
 import {
   validateAndPrepare,
   detectManualLayers,
@@ -11,13 +12,24 @@ import { postprocessLayers } from "./lib/postprocess.js";
 import { generateSceneJson } from "./lib/scene-generator.js";
 import { createWorkDir } from "./lib/archive.js";
 
+function parseDuration(argv: string[]): number | undefined {
+  const idx = argv.indexOf("--duration");
+  if (idx === -1 || idx + 1 >= argv.length) return undefined;
+  const val = parseInt(argv[idx + 1], 10);
+  if (Number.isNaN(val) || val < 1 || val > 60) {
+    throw new Error(`Invalid --duration value. Must be 1-60 (integer).`);
+  }
+  return val;
+}
+
 async function main() {
   const inputPath = process.argv[2];
   if (!inputPath) {
-    console.error("Usage: npm run pipeline:layers <input.png>");
+    console.error("Usage: npm run pipeline:layers <input.png> [--duration <seconds>]");
     process.exit(1);
   }
 
+  const duration = parseDuration(process.argv.slice(2));
   const method = process.argv.includes("--depth-only")
     ? "depth-only" as const
     : process.argv.includes("--qwen-only")
@@ -35,9 +47,16 @@ async function main() {
   const manualLayersInput = path.join(projectRoot, "layers");
   const manualLayers = detectManualLayers(manualLayersInput);
   let result;
+  let imageWidth: number;
+  let imageHeight: number;
 
   if (manualLayers) {
     console.log(`Found ${manualLayers.length} manual layers in layers/. Skipping API call.`);
+    // Read dimensions from first layer
+    const meta = await sharp(manualLayers[0]).metadata();
+    imageWidth = meta.width || 1080;
+    imageHeight = meta.height || 1920;
+    console.log(`Layer dimensions: ${imageWidth}x${imageHeight}`);
     // Copy to work dir so originals stay untouched
     fs.mkdirSync(layersDir, { recursive: true });
     for (const src of manualLayers) {
@@ -53,6 +72,8 @@ async function main() {
     console.log("Validating input...");
     const { filePath, width, height, wasResized } =
       await validateAndPrepare(path.resolve(inputPath));
+    imageWidth = width;
+    imageHeight = height;
     console.log(`Input: ${width}x${height}${wasResized ? " (resized)" : ""}`);
 
     console.log(`\nDecomposing image (method: ${method})...`);
@@ -80,7 +101,7 @@ async function main() {
   // --- Generate scene.json ---
   const sourceName = inputPath ? path.basename(inputPath) : "manual-input";
   console.log("Generating scene.json...");
-  const scene = await generateSceneJson(sourceName, result);
+  const scene = await generateSceneJson(sourceName, result, [imageWidth, imageHeight], duration);
 
   const sceneJsonPath = path.join(publicDir, "scene.json");
 

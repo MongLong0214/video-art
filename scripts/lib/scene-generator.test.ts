@@ -62,15 +62,15 @@ describe("postprocessLayers", () => {
 });
 
 describe("generateSceneJson", () => {
-  it("should generate duration 10", () => {
-    expect(scene.duration).toBe(10);
+  it("should generate duration 20 (default)", () => {
+    expect(scene.duration).toBe(20);
   });
 
   it("should generate valid scene.json structure", () => {
     expect(scene.version).toBe(1);
     expect(scene.source).toBe("test.png");
     expect(scene.resolution).toEqual([1080, 1080]);
-    expect(scene.duration).toBe(10);
+    expect(scene.duration).toBe(20);
     expect(scene.fps).toBe(30);
     expect(scene.layers.length).toBe(4);
     expect(scene.effects).toBeDefined();
@@ -86,8 +86,8 @@ describe("generateSceneJson", () => {
     }
   });
 
-  it("should have all periods as divisors of 10", () => {
-    const validPeriods = getValidPeriods(10);
+  it("should have all periods as divisors of duration", () => {
+    const validPeriods = getValidPeriods(scene.duration);
 
     for (const layer of scene.layers) {
       const { animation } = layer;
@@ -129,7 +129,7 @@ describe("generateSceneJson", () => {
   });
 
   it("should include wave preset with valid periods", () => {
-    const validPeriods = getValidPeriods(10);
+    const validPeriods = getValidPeriods(scene.duration);
 
     for (const layer of scene.layers) {
       expect(layer.animation.wave).toBeDefined();
@@ -139,7 +139,7 @@ describe("generateSceneJson", () => {
   });
 
   it("should include glow preset with valid periods", () => {
-    const validPeriods = getValidPeriods(10);
+    const validPeriods = getValidPeriods(scene.duration);
 
     for (const layer of scene.layers) {
       expect(layer.animation.glow).toBeDefined();

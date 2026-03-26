@@ -1,12 +1,13 @@
 import path from "node:path";
 import type { PostProcessResult } from "./postprocess.js";
 import type { SceneConfig } from "../../src/lib/scene-schema.js";
+import { getValidPeriods } from "../../src/lib/scene-schema.js";
 
 // Dynamic preset generation: evenly distributes phaseOffset across N layers
-function generatePreset(index: number, total: number): SceneConfig["layers"][number]["animation"] {
+function generatePreset(index: number, total: number, duration: number): SceneConfig["layers"][number]["animation"] {
   const t = index / Math.max(total - 1, 1); // 0..1 normalized position
   const phaseOffset = Math.round((360 * index) / total);
-  const periods = [10, 5, 2, 1] as const;
+  const periods = getValidPeriods(duration).sort((a, b) => b - a); // descending: back layers → longer period
   const period = periods[Math.min(Math.floor(t * periods.length), periods.length - 1)];
 
   return {
@@ -23,12 +24,27 @@ export async function generateSceneJson(
   sourceName: string,
   result: PostProcessResult,
   resolution: [number, number] = [1080, 1080],
+  duration: number = 20,
 ): Promise<SceneConfig> {
+  // Cap resolution while maintaining aspect ratio (Puppeteer + GPU limit)
+  const MAX_OUTPUT_DIM = 1920;
+  let [w, h] = resolution;
+  if (w > MAX_OUTPUT_DIM || h > MAX_OUTPUT_DIM) {
+    const scale = MAX_OUTPUT_DIM / Math.max(w, h);
+    w = Math.round(w * scale);
+    h = Math.round(h * scale);
+  }
+  // Ensure even dimensions for h264 yuv420p encoding
+  const evenRes: [number, number] = [
+    w % 2 === 0 ? w : w - 1,
+    h % 2 === 0 ? h : h - 1,
+  ];
+
   const layers: SceneConfig["layers"] = [];
 
   for (let i = 0; i < result.files.length; i++) {
     const filePath = result.files[i];
-    const preset = generatePreset(i, result.files.length);
+    const preset = generatePreset(i, result.files.length, duration);
 
     const layerNames = ["far-bg", "background", "mid-bg", "mid", "mid-fg", "foreground", "near-fg", "nearest"];
     const id = i < layerNames.length ? layerNames[i] : `layer-${i}`;
@@ -45,8 +61,8 @@ export async function generateSceneJson(
   return {
     version: 1,
     source: sourceName,
-    resolution,
-    duration: 10,
+    resolution: evenRes,
+    duration,
     fps: 30,
     layers,
     effects: {

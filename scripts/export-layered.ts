@@ -32,7 +32,7 @@ function startViteServer(port: number): ChildProcess {
   return exec(`npx vite --port ${port}`, { cwd: process.cwd() });
 }
 
-async function captureFrames(outputDir: string, totalFrames: number): Promise<void> {
+async function captureFrames(outputDir: string, totalFrames: number, resolution: [number, number]): Promise<void> {
   const TOTAL_FRAMES = totalFrames;
   const port = 5299;
   fs.mkdirSync(outputDir, { recursive: true });
@@ -55,7 +55,7 @@ async function captureFrames(outputDir: string, totalFrames: number): Promise<vo
     });
 
     const page = await browser.newPage();
-    await page.setViewport({ width: 1080, height: 1080 });
+    await page.setViewport({ width: resolution[0], height: resolution[1] });
     await page.goto(`http://localhost:${port}/?mode=layered`, {
       waitUntil: "networkidle0",
     });
@@ -139,14 +139,16 @@ async function main() {
   const DURATION = config.duration;
   const TOTAL_FRAMES = FPS * DURATION;
 
+  const [resW, resH] = config.resolution;
   console.log(`Title: ${title}`);
   console.log(`Archive: ${path.relative(projectRoot, ctx.archiveDir)}/`);
+  console.log(`Resolution: ${resW}x${resH}`);
   console.log(`Duration: ${DURATION}s, ${TOTAL_FRAMES} frames @ ${FPS}fps`);
 
   const estimatedMB = (TOTAL_FRAMES * 4.5).toFixed(0);
   console.log(`Estimated disk usage: ~${estimatedMB}MB for ${TOTAL_FRAMES} frames`);
 
-  await captureFrames(ctx.paths.frames, TOTAL_FRAMES);
+  await captureFrames(ctx.paths.frames, TOTAL_FRAMES, config.resolution);
   await encodeVideo(ctx.paths.frames, outputPath);
 
   // Snapshot layers + scene.json into archive

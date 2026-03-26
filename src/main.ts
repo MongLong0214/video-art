@@ -37,10 +37,10 @@ const SKETCH_NAME = params.get("sketch") || "psychedelic";
 // --- config ---
 const IS_LAYERED = MODE === "layered";
 const sketchConfig = getSketchConfig(SKETCH_NAME);
-const WIDTH = IS_LAYERED ? 1080 : sketchConfig.width;
-const HEIGHT = IS_LAYERED ? 1080 : sketchConfig.height;
+let WIDTH = IS_LAYERED ? 1080 : sketchConfig.width;
+let HEIGHT = IS_LAYERED ? 1080 : sketchConfig.height;
 const FPS = sketchConfig.fps;
-let LOOP_DUR = IS_LAYERED ? 10.0 : sketchConfig.loopDuration; // overridden by sceneConfig in init()
+let LOOP_DUR = IS_LAYERED ? 20.0 : sketchConfig.loopDuration; // overridden by sceneConfig in init()
 
 // --- renderer ---
 const renderer = new THREE.WebGLRenderer({
@@ -106,10 +106,14 @@ async function loadSketch(): Promise<Sketch> {
 async function init() {
   const sketch = await loadSketch();
 
-  // --- dynamic duration from scene.json (layered mode) ---
+  // --- dynamic duration + resolution from scene.json (layered mode) ---
   if (IS_LAYERED) {
     const layeredSketch = sketch as import("@/sketches/layered-psychedelic").LayeredSketch;
     LOOP_DUR = layeredSketch.sceneConfig.duration;
+    const [w, h] = layeredSketch.sceneConfig.resolution;
+    WIDTH = w;
+    HEIGHT = h;
+    renderer.setSize(WIDTH, HEIGHT);
   }
 
   // --- post-processing ---

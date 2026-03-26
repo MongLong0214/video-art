@@ -48,15 +48,47 @@ describe("sceneSchema", () => {
     expect(result.success).toBe(false);
   });
 
-  it("should have default duration of 10", () => {
+  it("should have default duration of 20", () => {
     const { duration: _, ...rest } = validScene;
     const result = sceneSchema.parse(rest);
-    expect(result.duration).toBe(10);
+    expect(result.duration).toBe(20);
   });
 
-  it("should reject duration > 60", () => {
-    const result = sceneSchema.safeParse({ ...validScene, duration: 120 });
+  it("should reject duration > 300", () => {
+    const result = sceneSchema.safeParse({ ...validScene, duration: 301 });
     expect(result.success).toBe(false);
+  });
+
+  it("should accept duration 300", () => {
+    const result = sceneSchema.safeParse({
+      ...validScene,
+      duration: 300,
+      layers: [
+        {
+          ...validScene.layers[0],
+          animation: {
+            colorCycle: { speed: 1.0, period: 300 },
+          },
+        },
+      ],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("should accept duration 0.5 (min boundary)", () => {
+    const result = sceneSchema.safeParse({
+      ...validScene,
+      duration: 1,
+      layers: [
+        {
+          ...validScene.layers[0],
+          animation: {
+            colorCycle: { speed: 1.0, period: 1 },
+          },
+        },
+      ],
+    });
+    expect(result.success).toBe(true);
   });
 
   it("should reject non-integer duration", () => {
@@ -438,6 +470,30 @@ describe("sceneSchema audio field", () => {
     const result = sceneSchema.safeParse({
       ...baseScene,
       audio: { preset: "techno-default_v2" },
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("audio genre house accepted", () => {
+    const result = sceneSchema.safeParse({
+      ...baseScene,
+      audio: { genre: "house" },
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("audio genre dnb accepted", () => {
+    const result = sceneSchema.safeParse({
+      ...baseScene,
+      audio: { genre: "dnb" },
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("audio genre ambient accepted", () => {
+    const result = sceneSchema.safeParse({
+      ...baseScene,
+      audio: { genre: "ambient" },
     });
     expect(result.success).toBe(true);
   });

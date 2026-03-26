@@ -2,7 +2,7 @@
 
 **PRD**: docs/prd/PRD-audio-v2-live.md
 **Size**: XL
-**Current Phase**: 4 (Ticket Review — PASSED)
+**Current Phase**: 5 (TDD Development — COMPLETE, awaiting Phase 6)
 
 ## Ticket Status 정의
 - **Todo**: 미착수
@@ -15,12 +15,12 @@
 
 | Ticket | Title | Size | Status | Review | Depends | Notes |
 |--------|-------|------|--------|--------|---------|-------|
-| T1 | Phase A 호환성 + setup.sh v2 | M | Todo | - | None | schema 확장 + 설치 검증 |
-| T2 | SuperDirt boot + SynthDef 등록 | M | Todo | - | T1 | boot.scd + 9종 등록 |
-| T3 | 커스텀 FX 모듈 | M | Todo | - | T2 | comp/sidechain/sat/eq |
-| T4 | TidalCycles 연결 | M | Todo | - | T1, T2 | BootTidal.hs + OSC |
-| T5 | 라이브 오케스트레이터 | L (8-16h) | Todo | - | T2, T3, T4 | live:start / live:stop |
-| T6 | 라이브 녹음 | S | Todo | - | T5 | SC s.record |
+| T1 | Phase A 호환성 + setup.sh v2 | M | Done | PASS | None | +12 tests, duration 300, 3 genres |
+| T2 | SuperDirt boot + SynthDef 등록 | M | Done | PASS | T1 | +8 tests, boot.scd + 9종 등록 |
+| T3 | 커스텀 FX 모듈 | M | Done | PASS | T2 | +11 tests, comp/sidechain/sat/eq |
+| T4 | TidalCycles 연결 | M | Done | PASS | T1, T2 | +14 tests, BootTidal.hs + OSC |
+| T5 | 라이브 오케스트레이터 | L (8-16h) | Done | PASS | T2, T3, T4 | +16 tests, live:start/stop |
+| T6 | 라이브 녹음 | S | Done | PASS | T5 | +11 tests, SC s.record |
 
 ## Dependency Graph
 

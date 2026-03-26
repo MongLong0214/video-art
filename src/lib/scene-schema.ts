@@ -82,7 +82,7 @@ const audioSchema = z.object({
   scale: z
     .enum(["major", "minor", "dorian", "phrygian", "mixolydian"])
     .default("minor"),
-  genre: z.enum(["techno", "trance"]).default("techno"),
+  genre: z.enum(["techno", "trance", "house", "dnb", "ambient"]).default("techno"),
   energy: z.number().min(0).max(1).default(0.7),
   preset: z
     .string()
@@ -95,7 +95,7 @@ export const sceneSchema = z
     version: z.literal(1),
     source: z.string(),
     resolution: z.tuple([z.number().positive(), z.number().positive()]),
-    duration: z.number().int().positive().max(60).default(10),
+    duration: z.number().int().positive().max(300).default(20),
     fps: z.number().positive().default(30),
     layers: z.array(layerSchema).min(1),
     effects: effectsSchema.default({

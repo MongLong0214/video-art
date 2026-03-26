@@ -3,16 +3,21 @@ interface BpmResult {
   bars: number;
 }
 
-const GENRE_BPM_RANGE: Record<string, [number, number]> = {
+const GENRE_BPM_RANGE = {
   techno: [125, 150],
   trance: [130, 145],
-};
+  house: [120, 130],
+  dnb: [160, 180],
+  ambient: [60, 90],
+} as const satisfies Record<string, readonly [number, number]>;
 
-const BAR_CANDIDATES = [2, 4, 8, 16, 32, 64];
+type Genre = keyof typeof GENRE_BPM_RANGE;
+
+const BAR_CANDIDATES = [2, 4, 8, 12, 16, 24, 32, 40, 48, 64, 96, 128];
 
 export const calculateBpm = (
   duration: number,
-  genre: "techno" | "trance",
+  genre: Genre,
 ): BpmResult => {
   const [minBpm, maxBpm] = GENRE_BPM_RANGE[genre];
 
