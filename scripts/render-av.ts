@@ -11,37 +11,32 @@ import { promisify } from "node:util";
 const execFile = promisify(execFileCb);
 
 const PROJECT_ROOT = resolve(import.meta.dirname, "..");
-const AUDIO_MASTER = join(PROJECT_ROOT, "out", "audio", "master", "master.wav");
 const MERGE_SCRIPT = join(PROJECT_ROOT, "audio", "render", "merge-av.sh");
 
-const findLatestVideo = (): string | null => {
-  // Search in out/layered/{date}_{title}/*.mp4 (export-layered output)
-  const layeredDir = join(PROJECT_ROOT, "out", "layered");
-  if (existsSync(layeredDir)) {
-    const dirs = readdirSync(layeredDir)
-      .filter((d) => statSync(join(layeredDir, d)).isDirectory())
-      .sort()
-      .reverse();
+const findLatestInPipeline = (pipeline: string, ext: string): string | null => {
+  const pipelineDir = join(PROJECT_ROOT, "out", pipeline);
+  if (!existsSync(pipelineDir)) return null;
 
-    for (const dir of dirs) {
-      const dirPath = join(layeredDir, dir);
-      const mp4s = readdirSync(dirPath).filter((f) => f.endsWith(".mp4"));
-      if (mp4s.length > 0) {
-        return join(dirPath, mp4s[0]);
-      }
-    }
+  const dirs = readdirSync(pipelineDir)
+    .filter((d) => statSync(join(pipelineDir, d)).isDirectory())
+    .sort()
+    .reverse();
+
+  for (const dir of dirs) {
+    const dirPath = join(pipelineDir, dir);
+    const files = readdirSync(dirPath).filter((f) => f.endsWith(ext));
+    if (files.length > 0) return join(dirPath, files[0]);
   }
-
-  // Fallback: check common paths
-  const fallbacks = [
-    join(PROJECT_ROOT, "out", "video.mp4"),
-    join(PROJECT_ROOT, "out", "layered.mp4"),
-  ];
-  for (const f of fallbacks) {
-    if (existsSync(f)) return f;
-  }
-
   return null;
+};
+
+const findLatestVideo = (): string | null => {
+  return findLatestInPipeline("layered", ".mp4")
+    ?? (existsSync(join(PROJECT_ROOT, "out", "video.mp4")) ? join(PROJECT_ROOT, "out", "video.mp4") : null);
+};
+
+const findLatestAudio = (): string | null => {
+  return findLatestInPipeline("audio", "master.wav");
 };
 
 const getStreamDuration = async (file: string, stream: string): Promise<number | null> => {
@@ -75,21 +70,22 @@ const main = async () => {
   }
   console.log(`Video: ${videoPath}`);
 
-  // 2. Check audio
-  if (!existsSync(AUDIO_MASTER)) {
+  // 2. Find audio
+  const audioPath = findLatestAudio();
+  if (!audioPath) {
     throw new Error(
       "No audio master found.\n" +
-      "  Expected: out/audio/master/master.wav\n" +
+      "  Expected: out/audio/{date}_{title}/master.wav\n" +
       "  Run first: npm run render:audio",
     );
   }
-  console.log(`Audio: ${AUDIO_MASTER}`);
+  console.log(`Audio: ${audioPath}`);
 
   // 3. Merge
   const outputPath = join(PROJECT_ROOT, "out", "final.mp4");
   console.log(`Output: ${outputPath}\n`);
 
-  await execFile("bash", [MERGE_SCRIPT, videoPath, AUDIO_MASTER, outputPath], {
+  await execFile("bash", [MERGE_SCRIPT, videoPath, audioPath, outputPath], {
     timeout: 120_000,
   });
 

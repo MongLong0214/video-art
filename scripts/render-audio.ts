@@ -1,9 +1,9 @@
 #!/usr/bin/env tsx
 // render-audio.ts — Full SC NRT rendering pipeline
-// Usage: npm run render:audio
-// Pipeline: scene.json → BPM → SC config → NRT render → loop crossfade → ffmpeg mixdown
+// Usage: npm run render:audio [--title <name>]
+// Output: out/audio/{YYYY-MM-DD}_{title}/master.wav
 
-import { existsSync, mkdirSync, readFileSync, unlinkSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, unlinkSync, copyFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { execFile as execFileCb } from "node:child_process";
 import { promisify } from "node:util";
@@ -15,15 +15,13 @@ import {
   acquireLock,
   releaseLock,
 } from "./lib/render-audio-utils.js";
+import { createRunContext, parseTitle } from "./lib/archive.js";
 
 const execFile = promisify(execFileCb);
 
 const PROJECT_ROOT = resolve(import.meta.dirname, "..");
 const SCENE_JSON = join(PROJECT_ROOT, "public", "scene.json");
-const OUTPUT_DIR = join(PROJECT_ROOT, "out", "audio");
-const STEMS_DIR = join(OUTPUT_DIR, "stems");
-const MASTER_DIR = join(OUTPUT_DIR, "master");
-const LOCK_FILE = join(OUTPUT_DIR, ".render.lock");
+const LOCK_FILE = join(PROJECT_ROOT, "out", "audio", ".render.lock");
 const SC_DIR = join(PROJECT_ROOT, "audio", "sc");
 const SCLANG = "/Applications/SuperCollider.app/Contents/MacOS/sclang";
 
@@ -31,12 +29,12 @@ const main = async () => {
   console.log("=== Audio Render Pipeline ===\n");
 
   // 1. Check dependencies
-  console.log("[1/6] Checking dependencies...");
+  console.log("[1/7] Checking dependencies...");
   checkDependencies();
-  console.log("  OK: sclang, scsynth, ffmpeg, sox found\n");
+  console.log("  OK\n");
 
   // 2. Parse scene.json
-  console.log("[2/6] Reading scene.json...");
+  console.log("[2/7] Reading scene.json...");
   if (!existsSync(SCENE_JSON)) {
     throw new Error(`scene.json not found: ${SCENE_JSON}. Run the video pipeline first.`);
   }
@@ -44,25 +42,32 @@ const main = async () => {
   const scene = sceneSchema.parse(raw);
   console.log(`  Duration: ${scene.duration}s\n`);
 
-  // 3. Generate config
-  console.log("[3/6] Generating audio config...");
+  // 3. Create archive context
+  const title = parseTitle(process.argv.slice(2));
+  const ctx = createRunContext(PROJECT_ROOT, title, "audio");
+  ctx.skipCleanup(); // audio has no _work/ to clean
+  const stemsDir = join(ctx.archiveDir, "stems");
+  const masterPath = join(ctx.archiveDir, "master.wav");
+  mkdirSync(stemsDir, { recursive: true });
+
+  console.log(`[3/7] Archive: ${ctx.archiveDir}\n`);
+
+  // 4. Generate config
   const config = generateConfig(
     { duration: scene.duration, audio: scene.audio },
-    STEMS_DIR,
+    stemsDir,
   );
-  console.log(`  BPM: ${config.bpm}, Bars: ${config.bars}, Genre: ${config.genre}, Key: ${config.key}\n`);
+  console.log(`[4/7] Config: BPM=${config.bpm}, Bars=${config.bars}, Genre=${config.genre}, Key=${config.key}\n`);
 
-  // 4. Setup directories + lock
-  mkdirSync(OUTPUT_DIR, { recursive: true });
-  mkdirSync(STEMS_DIR, { recursive: true });
-  mkdirSync(MASTER_DIR, { recursive: true });
+  // 5. Acquire lock
+  mkdirSync(join(PROJECT_ROOT, "out", "audio"), { recursive: true });
   acquireLock(LOCK_FILE);
 
-  const configPath = join(OUTPUT_DIR, `audio-config-${process.pid}.scd`);
+  const configPath = join(ctx.archiveDir, `audio-config-${process.pid}.scd`);
 
   try {
-    // 5. Write SC config + run NRT
-    console.log("[4/6] Running SC NRT render...");
+    // 6. Write SC config + run NRT
+    console.log("[5/7] SC NRT render...");
     generateScConfig(config, configPath);
 
     const nrtScript = join(SC_DIR, "scores", "render-nrt.scd");
@@ -72,30 +77,28 @@ const main = async () => {
       { timeout: 120_000 },
     );
 
-    // Check for errors
     if (stdout.includes("ERROR") || stderr.includes("ERROR")) {
       throw new Error(`NRT render failed:\n${stdout}\n${stderr}`);
     }
 
-    const stemFile = join(STEMS_DIR, "stem-master.wav");
+    const stemFile = join(stemsDir, "stem-master.wav");
     if (!existsSync(stemFile)) {
       throw new Error("NRT render produced no output file");
     }
-    console.log("  NRT render OK\n");
+    console.log("  NRT OK\n");
 
-    // 6. Loop crossfade
-    console.log("[5/6] Loop crossfade...");
+    // 7. Loop crossfade
+    console.log("[6/7] Loop crossfade...");
     const crossfadeScript = join(PROJECT_ROOT, "audio", "render", "loop-crossfade.sh");
-    const crossfadedFile = join(STEMS_DIR, "stem-crossfaded.wav");
+    const crossfadedFile = join(stemsDir, "stem-crossfaded.wav");
 
     await execFile("bash", [crossfadeScript, stemFile, String(scene.duration), crossfadedFile], {
       timeout: 60_000,
     });
-    console.log("  Crossfade OK\n");
+    console.log("  OK\n");
 
-    // 7. FFmpeg mixdown → -14 LUFS, peak ≤ -1 dBTP, 48kHz 16-bit WAV
-    console.log("[6/6] FFmpeg mixdown...");
-    const masterPath = join(MASTER_DIR, "master.wav");
+    // 8. FFmpeg mixdown
+    console.log("[7/7] FFmpeg mixdown...");
     const inputFile = existsSync(crossfadedFile) ? crossfadedFile : stemFile;
 
     await execFile("ffmpeg", [
@@ -112,7 +115,10 @@ const main = async () => {
       throw new Error("FFmpeg mixdown produced no output");
     }
 
-    // 8. Verify output
+    // Snapshot scene.json into archive
+    copyFileSync(SCENE_JSON, join(ctx.archiveDir, "scene.json"));
+
+    // Verify
     const { stdout: probeOut } = await execFile("ffprobe", [
       "-v", "quiet",
       "-show_entries", "format=duration",
@@ -121,15 +127,16 @@ const main = async () => {
     ]);
     const outputDuration = parseFloat(probeOut.trim());
 
-    console.log(`  Master: ${masterPath}`);
+    console.log(`\n  Master: ${masterPath}`);
     console.log(`  Duration: ${outputDuration.toFixed(3)}s (target: ${scene.duration}s)`);
     console.log(`  Format: WAV 48kHz 16-bit, -14 LUFS`);
+    console.log(`\n=== Audio Render Complete ===`);
+    console.log(`Archive: ${ctx.archiveDir}`);
 
-    console.log("\n=== Audio Render Complete ===");
+    // Cleanup config
+    try { unlinkSync(configPath); } catch { /* ignore */ }
 
   } finally {
-    // Cleanup
-    try { unlinkSync(configPath); } catch { /* ignore */ }
     releaseLock(LOCK_FILE);
   }
 };
