@@ -2,11 +2,11 @@
 
 **Subtitle**: A/B Evaluation of `Qwen-Only` vs `Qwen+ZoeDepth`
 
-**Version**: 1.1
+**Version**: 1.2
 **Author**: Codex + Isaac
 **Date**: 2026-03-26
-**Status**: Ready for A/B Implementation
-**Size**: L
+**Status**: In Review (Round 1 fixes applied)
+**Size**: XL
 
 ---
 
@@ -149,7 +149,8 @@ replicate.run("qwen/qwen-image-layered", {
 - [ ] AC-1.1: 최종 retained layer의 대다수는 `uniqueCoverage >= 2%`를 만족한다.
 - [ ] AC-1.2: `uniqueCoverage < 2%`인 레이어는 기본적으로 drop되며, role-critical일 때만 예외 허용한다.
 - [ ] AC-1.3: 두 후보의 `IoU > 0.85`이고 geometry가 유사하면 merge 또는 drop한다.
-- [ ] AC-1.4: 중복 레이어 비율이 현재 baseline 대비 유의미하게 감소한다.
+- [ ] AC-1.4: retained 레이어 중 `uniqueCoverage < 2%`인 것이 0개이다 (role-critical 예외 제외).
+- [ ] AC-1.5: 최종 retained layer count가 **8개 이하**이다 (G4).
 
 ### US-2: 역할 기반 ordering
 
@@ -160,6 +161,7 @@ replicate.run("qwen/qwen-image-layered", {
 - [ ] AC-2.1: 최종 ordering은 coverage sort만으로 결정되지 않는다.
 - [ ] AC-2.2: `background plate`는 항상 가장 뒤 레이어로 배치된다.
 - [ ] AC-2.3: `foreground-occluder`는 가장 앞쪽 그룹에 배치된다.
+- [ ] AC-2.4: exclusive ownership 후 retained 레이어 간 pairwise pixel overlap이 **5% 이하**이다 (G2).
 
 ### US-3: Qwen의 올바른 사용
 
@@ -182,6 +184,8 @@ replicate.run("qwen/qwen-image-layered", {
 - [ ] AC-4.2: `pipelineVariant = "qwen-zoedepth"` 경로가 구현된다.
 - [ ] AC-4.3: 두 경로가 같은 input contract, 같은 archive contract, 같은 scene-generator contract를 사용한다.
 - [ ] AC-4.4: 비교 결과가 report와 manifest에 기록된다.
+- [ ] AC-4.5: production mode에서 model version이 immutable SHA가 아니면 **hard fail**한다 (G9).
+- [ ] AC-4.6: `decomposition-manifest.json`에 exact model version string이 기록된다 (`latest` 불허).
 
 ### US-5: 역할 기반 animation preset
 
@@ -202,6 +206,7 @@ replicate.run("qwen/qwen-image-layered", {
 - [ ] AC-6.1: archive에 `decomposition-manifest.json`이 저장된다.
 - [ ] AC-6.2: manifest에는 source image, prepared image, model id, model version, pipeline variant, candidate stats, drop reasons가 포함된다.
 - [ ] AC-6.3: source image와 prepared image가 archive에 함께 저장된다.
+- [ ] AC-6.4: 기존 scene.json (`role` 필드 없음)이 새 스키마에서 정상 파싱된다 (backward compat).
 
 ---
 
@@ -210,15 +215,19 @@ replicate.run("qwen/qwen-image-layered", {
 ### 4.1 External API Constraints
 
 - Replicate 결과 URL은 일시적이므로 즉시 다운로드 후 로컬에 저장해야 한다.
+- **결과 URL 검증**: fetch 전 `new URL(url).hostname`이 `*.replicate.delivery` 또는 `*.replicate.com`인지 확인. 불일치 시 skip + 경고.
 - production rollout 전 `qwen-image-layered`는 immutable version pin을 사용해야 한다.
 - `Variant B`를 실험할 때는 `zoedepth`도 immutable version pin을 사용해야 한다.
-- API 실패 시 재시도와 명확한 오류 보고가 필요하다.
+- **Production mode 정의**: `NODE_ENV=production` 또는 `--production` flag. production mode에서 unpinned model version → hard fail.
+- **Retry policy**: max 3회, exponential backoff (1s, 3s, 9s), per-attempt timeout 60s, 총 timeout 120s. 3회 실패 → diagnostic 포함 에러.
+- **API call cap**: 단일 이미지 처리당 최대 Replicate 호출 = base 1회 + recursive 최대 3회 = **총 4회 상한**.
 - 동일 입력 재실행 시 불필요한 비용을 줄이기 위해 cache key를 도입할 수 있어야 한다.
+- **`disable_safety_checker` 정책**: configurable flag로 분리. 기본값 `false` (checker ON). CLI `--unsafe` flag로 opt-out. (OQ-4 해결)
 
 ### 4.2 Data Handling
 
 - `REPLICATE_API_TOKEN`은 `.env`에서만 읽고 로그에 출력하지 않는다.
-- 사용자가 제공한 이미지는 외부 모델 호출 시 Replicate로 전송된다는 점을 명시한다.
+- 사용자가 제공한 이미지는 외부 모델 호출 시 Replicate로 전송된다는 점을 명시한다. (이 파이프라인은 로컬 CLI 도구이며, operator가 입력을 직접 선택하므로 별도 end-user consent flow는 불필요.)
 - archive는 입력/중간 산출물/최종 산출물을 함께 저장해 forensic debugging이 가능해야 한다.
 
 ### 4.3 Backward Compatibility
@@ -234,6 +243,17 @@ replicate.run("qwen/qwen-image-layered", {
 ### 5.1 Variant Overview
 
 이 PRD는 두 경로를 모두 구현한다.
+
+**CLI interface**:
+
+```bash
+npm run pipeline:layers <input.png> --variant qwen-only      # Variant A (default)
+npm run pipeline:layers <input.png> --variant qwen-zoedepth   # Variant B
+npm run pipeline:layers <input.png> --layers 6                # explicit layer count override
+npm run pipeline:layers <input.png> --unsafe                  # disable safety checker
+```
+
+기존 `--depth-only` 및 `--qwen-only` flag는 **deprecated** → `--variant`로 통합. 기존 `--depth-only` (pure depth-only mode)는 제거 (Variant B로 대체).
 
 #### Variant A: `Qwen-Only`
 
@@ -295,12 +315,19 @@ input image
 
 `qwen-image-layered` layer count는 고정값이 아니라 입력 복잡도에 따라 결정한다.
 
-예시 heuristic:
+**Rollout Phase 1 minimal heuristic** (초기값, golden set으로 튜닝 가능):
 
-- simple: low edge density + low entropy + few large regions -> 3 layers
-- medium: 일반적인 single subject / collage -> 4 layers
-- complex: many small objects / occluders / busy background -> 6 layers
-- explicit override가 없는 한 첫 pass에서 8은 사용하지 않는다
+```ts
+const edgeDensity = sobelEdgeRatio(preparedImage);  // 0~1
+const colorEntropy = hsvHistogramEntropy(preparedImage);  // bits
+
+if (edgeDensity < 0.10 && colorEntropy < 5.5) return 3;  // simple
+if (edgeDensity > 0.20 || colorEntropy > 7.0) return 6;  // complex
+return 4;  // medium (default)
+```
+
+- `--layers N` CLI override가 있으면 scoring을 건너뛰고 N을 직접 사용한다.
+- explicit override가 없는 한 첫 pass에서 8은 사용하지 않는다.
 
 이 단계의 목적은 `Qwen을 과분해 도구가 아니라 coarse semantic tool`로 쓰는 것이다.
 
@@ -314,7 +341,7 @@ Qwen이 반환한 RGBA 이미지는 최종 레이어가 아니라 `candidate`다
 interface LayerCandidate {
   id: string;
   source: "qwen-base" | "qwen-recursive" | "depth-split";
-  pixels: Buffer;
+  filePath: string;  // 파일 경로 참조 (메모리 압박 방지, pixels: Buffer 대신)
   width: number;
   height: number;
   coverage: number;
@@ -333,10 +360,12 @@ interface LayerCandidate {
 
 각 Qwen RGBA output은 다음을 거친다.
 
-1. alpha threshold
+1. alpha binarize (threshold > 128 → opaque)
 2. connected component split
-3. 너무 작은 component 제거
-4. component별 stats 계산
+3. 너무 작은 component 제거 (< 0.5% coverage)
+4. component별 stats 계산 (bbox, centroid, coverage, edgeDensity)
+
+**Connected component split 구현**: 순수 JS BFS flood-fill on binarized alpha channel. 외부 dependency 없음 (~100 LOC). 4-connectivity. 성능 목표: < 2s on 2048x2048.
 
 중요:
 
@@ -438,12 +467,16 @@ recursive decomposition 금지 조건:
 5. 남은 unique coverage를 계산한다.
 6. 의미 없는 candidate는 drop한다.
 
-개념식:
+**Rollout Phase 1: binarized alpha** (soft alpha halo 방지):
 
 ```text
-exclusive_alpha = candidate_alpha * (1 - claimed_alpha)
-claimed_alpha = max(claimed_alpha, candidate_alpha)
+binary_alpha = candidate_alpha > 128 ? 1 : 0
+exclusive_mask = binary_alpha AND NOT claimed_mask
+claimed_mask = claimed_mask OR binary_alpha
+uniqueCoverage = count(exclusive_mask) / totalPixels
 ```
+
+각 픽셀은 정확히 하나의 레이어에 귀속된다 (argmax semantics). Rollout Phase 2에서 continuous alpha refinement를 검토할 수 있다.
 
 retain rule:
 
@@ -459,12 +492,13 @@ drop rule:
 
 최후방에는 `background plate`를 반드시 둔다.
 
-Phase 1 목표:
+Tier A (Rollout Phase 1):
 
 - 가장 넓고 연속적인 후면 candidate를 background plate로 사용
-- foreground subtraction 이후 남는 hole은 mild fill 또는 soft alpha 처리
+- foreground subtraction 이후 남는 hole은 원본 이미지 블렌딩으로 처리 (mild fill)
+- hole이 50% 이상이면 원본 이미지를 fallback background plate로 사용 + manifest에 경고 기록
 
-Phase 2 목표:
+Tier B (Rollout Phase 2+):
 
 - local inpaint or hole reconstruction
 
@@ -484,11 +518,18 @@ type LayerRole =
 
 초기 heuristic:
 
-- 가장 넓고 연속적인 후면 영역 -> background-plate
-- 후면의 넓은 보조 영역 -> background
-- 중앙 subject-like bbox -> subject
-- 작고 분리된 장식 -> detail
-- 화면 가장자리와 닿는 앞쪽 구조 -> foreground-occluder
+- 가장 넓고 연속적인 후면 영역 → background-plate
+- 후면의 넓은 보조 영역 → background
+- 중간 depth + 중간 coverage → midground
+- 중앙 subject-like bbox → subject
+- 작고 분리된 장식 → detail
+- 화면 가장자리와 닿는 앞쪽 구조 → foreground-occluder
+
+**Role priority ladder** (cap 초과 시 낮은 우선순위부터 drop):
+
+```
+background-plate > subject > foreground-occluder > background > midground > detail
+```
 
 ### 5.12 Scene Generation Changes
 
@@ -498,6 +539,7 @@ type LayerRole =
 
 - background-plate: 가장 느린 color cycle, 가장 큰 parallax, wave 약함
 - background: 느린 color cycle, 중간 parallax
+- midground: background와 subject 사이 보간값
 - subject: 중간 parallax, 중간 wave
 - detail: 빠른 hue, 작은 wave, 선택적 glow
 - foreground-occluder: 큰 parallax, 보수적 saturation
@@ -509,10 +551,12 @@ type LayerRole =
 
 ### 5.13 Provenance Manifest
 
-추가 산출물:
+**Archive integration**: `createRunContext()`를 사용 (기존 `createWorkDir()` 대신). 중간 산출물은 work dir (transient, auto-cleanup), 최종 산출물만 archive dir에 영구 저장.
+
+추가 산출물 (archive dir):
 
 ```text
-out/.../
+out/layered/{date}_{title}/
   source/
     original.<ext>
     prepared.png
@@ -567,16 +611,31 @@ manifest 예시 필드:
 
 ### 6.1 Required Code Changes
 
+**수정:**
 ```text
-scripts/lib/image-decompose.ts
-scripts/pipeline-layers.ts
-scripts/lib/postprocess.ts
-scripts/lib/scene-generator.ts
-src/lib/scene-schema.ts
-src/lib/scene-schema.test.ts
-scripts/lib/scene-generator.test.ts
+scripts/pipeline-layers.ts           — CLI 인터페이스 변경 (--variant, --layers, --unsafe)
+scripts/lib/image-decompose.ts       — candidate model 도입, Qwen 호출 개선 (retry, version pin, safety flag)
+scripts/lib/scene-generator.ts       — role 기반 preset 전환
+scripts/lib/postprocess.ts           — alphaDilate 제거 (exclusive ownership과 충돌). removeNoiseIslands는 candidate extraction 전에만 실행
+src/lib/scene-schema.ts              — LayerRole optional field 추가
+src/lib/scene-schema.test.ts         — role field 파싱 + backward compat 테스트
+scripts/lib/scene-generator.test.ts  — role 기반 preset 테스트
+scripts/lib/image-layered.test.ts    — decomposition 관련 테스트 업데이트
 README.md
 ```
+
+**신규:**
+```text
+scripts/lib/candidate-extraction.ts  — BFS flood-fill CCA, candidate stats, RGBA decode
+scripts/lib/layer-resolve.ts         — dedupe, exclusive ownership, role assignment
+scripts/lib/complexity-scoring.ts    — edge density + entropy → layer count heuristic
+scripts/lib/decomposition-manifest.ts — manifest 생성/검증
+scripts/lib/candidate-extraction.test.ts
+scripts/lib/layer-resolve.test.ts
+scripts/lib/complexity-scoring.test.ts
+```
+
+**postprocess.ts 실행 순서 결정**: `alphaDilate`는 exclusive ownership의 binarized mask와 충돌하므로 **제거**. `removeNoiseIslands`는 candidate extraction의 alpha threshold 단계에서만 사용 (ownership 이전). ownership 이후에는 mask를 변형하지 않는다.
 
 ### 6.2 Schema Changes
 
@@ -603,7 +662,13 @@ role?: LayerRole
 | E5 | recursive decomposition fails | keep parent candidate, continue pipeline | Medium |
 | E6 | Replicate URL fetch fails | retry with backoff, then fail with diagnostic | High |
 | E7 | model version is unpinned in production mode | hard fail before remote call | High |
-| E8 | final layer count exceeds cap | retain top candidates by uniqueCoverage and role priority | Medium |
+| E8 | final layer count exceeds cap | retain top candidates by role priority ladder (§5.11), then uniqueCoverage | Medium |
+| E9 | Sharp decode failure on Replicate RGBA output (corrupt/truncated) | skip candidate, record in manifest with reason | Medium |
+| E10 | Replicate 429 rate limit | backoff + retry per §4.1 policy, then fail | High |
+| E11 | Disk space exhaustion during archive write | check available space before write, fail early with diagnostic | Medium |
+| E12 | CCA yields zero components (degenerate alpha) | skip candidate, record as "empty-alpha" | Low |
+| E13 | Background plate has >50% holes after foreground subtraction | use original image as fallback background plate, warn in manifest | Medium |
+| E14 | Recursive Qwen API call cap (4회) 도달 | stop recursion, proceed with current candidates | Low |
 
 ---
 
@@ -752,11 +817,11 @@ guardrail:
 
 ## 12. Open Questions
 
-- [ ] OQ-1: complexity score에 어떤 feature 조합을 쓸지
+- [x] OQ-1: complexity score feature 조합 → **§5.3에서 Sobel edge density + HSV histogram entropy로 결정. Phase 1 초기값 명시.**
 - [ ] OQ-2: role assignment heuristic을 어디까지 1차 구현에 포함할지
-- [ ] OQ-3: background hole fill을 OpenCV/Sharp만으로 할지 별도 dependency를 둘지
-- [ ] OQ-4: production mode에서 `disable_safety_checker` 정책을 유지할지 flag로 분리할지
-- [ ] OQ-5: ZoeDepth variant를 유지할 만큼 품질 이득이 실제로 있는지
+- [ ] OQ-3: background hole fill을 Sharp만으로 할지 별도 dependency를 둘지 (Phase 1: 원본 블렌딩)
+- [x] OQ-4: `disable_safety_checker` 정책 → **§4.1에서 결정: configurable flag, 기본값 false (ON), --unsafe로 opt-out.**
+- [ ] OQ-5: ZoeDepth variant를 유지할 만큼 품질 이득이 실제로 있는지 (A/B 결과로 결정)
 
 ---
 
@@ -774,6 +839,37 @@ guardrail:
 | Provenance manifest | required | 재현성과 디버깅에 필수 |
 | Model versions | pin in production | drift 방지 |
 | Production default | defer until A/B result | 먼저 비교 후 결정 |
+
+---
+
+## Review History
+
+### Round 1 (v1.1 → v1.2)
+
+**Reviewers**: strategist + guardian + boomer (XL 3인 팀)
+
+| # | Sev | Source | Issue | Resolution |
+|---|-----|--------|-------|-----------|
+| 1 | P1 | S+B | CCA 알고리즘/라이브러리 미지정 | §5.4: BFS flood-fill on alpha, zero deps 명시 |
+| 2 | P1 | G | G2 exclusive ownership AC 없음 | AC-2.4 추가: pairwise overlap < 5% |
+| 3 | P1 | G | G4 layer count cap AC 없음 | AC-1.5 추가: retained <= 8 |
+| 4 | P1 | G | G9 version pin AC 없음 | AC-4.5/4.6 추가 |
+| 5 | P1 | S | CLI variant 선택 미지정 | §5.1: --variant flag 명시 |
+| 6 | P1 | S | §6.1 신규 파일 누락 | §6.1: 7개 신규 파일 + postprocess 실행 순서 명시 |
+| 7 | P1 | B | postprocess.ts와 ownership 충돌 | §6.1: alphaDilate 제거, 실행 순서 결정 |
+| 8 | P1 | S+B | claimed_alpha 소프트 알파 취약성 | §5.9: binarized alpha (threshold > 128) for Phase 1 |
+| 9 | P1 | G | Retry/backoff 미명세 | §4.1: max 3회, exponential backoff 명시 |
+| 10 | P1 | G+B | disable_safety_checker OQ 미해결 | §4.1: configurable flag, 기본 ON, --unsafe opt-out |
+| 11 | P2 | S | Phase 용어 충돌 (§5.10 vs §10) | §5.10: Tier A/B로 변경 |
+| 12 | P2 | S | Cap vs uniqueCoverage 우선순위 미정 | §5.11: role priority ladder 추가 |
+| 13 | P2 | B | Complexity scoring golden set 없이 배포 | §5.3: Phase 1 minimal heuristic 초기값 명시 |
+| 14 | P2 | B | LayerCandidate pixels: Buffer 메모리 압박 | §5.4: filePath 참조 방식으로 변경 |
+| 15 | P2 | G | Backward compat AC 부재 | AC-6.4 추가 |
+| 16 | P2 | S | midground preset 누락 | §5.12: midground 보간값 추가 |
+| 17 | P2 | S | Archive + RunContext 통합 미명세 | §5.13: createRunContext() 명시 |
+| 18 | P2 | G | 에러 시나리오 부족 | §7: E9-E14 6개 추가 |
+| 19 | P2 | S | --depth-only deprecated 미명시 | §5.1: deprecated → --variant로 통합 명시 |
+| 20 | P2 | B | Recursive Qwen API 비용 상한 없음 | §4.1: 총 4회 상한 명시 |
 
 ---
 
