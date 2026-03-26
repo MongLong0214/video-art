@@ -54,12 +54,17 @@ expectedDefs.do { |name|
 		if(File.exists(outFile), {
 			var sf = SoundFile.openRead(outFile);
 			if(sf.notNil, {
-				var frames = sf.numFrames;
+				var frames, data, rms;
+				frames = sf.numFrames;
+				// RMS check: read samples and compute RMS
+				data = FloatArray.newClear(frames * sf.numChannels);
+				sf.readData(data);
 				sf.close;
-				if(frames > 1000, {
-					("NRT OK: " ++ name ++ " — " ++ frames ++ " frames").postln;
+				rms = (data.squared.mean).sqrt;
+				if(frames > 1000 && (rms > 0.001), {
+					("NRT OK: " ++ name ++ " — " ++ frames ++ " frames, RMS=" ++ rms.round(0.0001)).postln;
 				}, {
-					("NRT FAIL: " ++ name ++ " — " ++ frames ++ " frames (too few)").postln;
+					("NRT FAIL: " ++ name ++ " — frames=" ++ frames ++ " rms=" ++ rms).postln;
 					errors = errors + 1;
 				});
 			}, {

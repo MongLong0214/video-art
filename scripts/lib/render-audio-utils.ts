@@ -1,4 +1,4 @@
-import { execFile as execFileCb } from "node:child_process";
+import { execFile as execFileCb, execFileSync } from "node:child_process";
 import { promisify } from "node:util";
 import { existsSync, writeFileSync, unlinkSync } from "node:fs";
 import { calculateBpm } from "../../src/lib/bpm-calculator.js";
@@ -27,8 +27,7 @@ export const checkDependencies = (): void => {
 
 const commandExists = (cmd: string): boolean => {
   try {
-    const { execSync } = require("node:child_process");
-    execSync(`which ${cmd}`, { stdio: "ignore" });
+    execFileSync("which", [cmd], { stdio: "ignore" });
     return true;
   } catch {
     return false;
@@ -127,8 +126,8 @@ export const runSclang = async (
     timeout: 120_000,
   });
 
-  if (result.stdout.includes("ERROR")) {
-    throw new Error(`sclang error: ${result.stdout}`);
+  if (result.stdout.includes("ERROR") || result.stderr.includes("ERROR")) {
+    throw new Error(`sclang error: ${result.stdout}\n${result.stderr}`);
   }
 
   return result;
