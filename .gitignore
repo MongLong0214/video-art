@@ -27,6 +27,7 @@ out/
 
 # Audio render output
 out/audio/
+audio/render/test-output/
 
 # Recordings (legacy)
 recordings/
