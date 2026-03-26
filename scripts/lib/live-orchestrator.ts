@@ -11,9 +11,14 @@ interface BootConfig {
   memSize: number;
 }
 
+interface StartOptions {
+  restart?: boolean;
+}
+
 export class LiveOrchestrator {
   private projectRoot: string;
   private processes: Set<ChildProcess> = new Set();
+  private sclangProc: ChildProcess | null = null;
   private recording = false;
   private lockFile: string;
 
@@ -42,9 +47,26 @@ export class LiveOrchestrator {
     return this.processes.size;
   }
 
-  async start(): Promise<void> {
-    this.checkLock();
-    this.writeLock();
+  getSclangPid(): number | undefined {
+    return this.sclangProc?.pid ?? undefined;
+  }
+
+  getSclangProcess(): ChildProcess | null {
+    return this.sclangProc;
+  }
+
+  evalSclang(code: string): void {
+    if (this.sclangProc?.stdin?.writable) {
+      this.sclangProc.stdin.write(code + "\n");
+    }
+  }
+
+  async start(options?: StartOptions): Promise<void> {
+    if (!options?.restart) {
+      this.checkLock();
+    } else {
+      this.removeLock();
+    }
 
     const bootScd = path.join(
       this.projectRoot,
@@ -55,17 +77,28 @@ export class LiveOrchestrator {
     );
 
     return new Promise<void>((resolve, reject) => {
-      const proc = execFile("sclang", [bootScd]);
+      const proc = execFile("sclang", ["-i", "stdin", bootScd]);
+      this.sclangProc = proc;
       this.processes.add(proc);
+      this.writeLock(proc.pid);
 
       let resolved = false;
 
-      const timeout = setTimeout(() => {
+      const cleanup = (err: Error) => {
         if (!resolved) {
           resolved = true;
-          reject(new Error("SC boot timeout — no ready signal within 30s"));
+          clearTimeout(timeout);
+          reject(err);
         }
+      };
+
+      const timeout = setTimeout(() => {
+        cleanup(new Error("SC boot timeout — no ready signal within 30s"));
       }, BOOT_TIMEOUT_MS);
+
+      proc.on("error", (err) => {
+        cleanup(new Error(`Failed to start sclang: ${err.message}`));
+      });
 
       proc.stdout?.on("data", (data: string) => {
         if (data.includes("SuperDirt ready") && !resolved) {
@@ -77,9 +110,7 @@ export class LiveOrchestrator {
 
       proc.on("exit", (code: number | null) => {
         if (!resolved && code !== 0) {
-          resolved = true;
-          clearTimeout(timeout);
-          reject(
+          cleanup(
             new Error(`sclang exited with code ${code}. Check SC installation.`),
           );
         }
@@ -88,16 +119,24 @@ export class LiveOrchestrator {
   }
 
   async stop(isRecording: boolean): Promise<void> {
+    // Stop recording via sclang stdin (same session)
     if (isRecording || this.recording) {
-      try {
-        execFile("oscsend", ["127.0.0.1", "57110", "/quit"]);
-      } catch {
-        // best-effort OSC quit
-      }
+      this.evalSclang("s.stopRecording;");
     }
 
+    // Kill in-process children (when called from same process as start)
     for (const proc of this.processes) {
       proc.kill("SIGTERM");
+    }
+
+    // Also kill PIDs from lock file (when called from a separate process)
+    const lockPids = this.readLockPids();
+    for (const pid of lockPids) {
+      try {
+        process.kill(pid, "SIGTERM");
+      } catch {
+        // already dead
+      }
     }
 
     await new Promise<void>((resolve) => {
@@ -109,25 +148,46 @@ export class LiveOrchestrator {
             // already dead
           }
         }
+        for (const pid of lockPids) {
+          try {
+            process.kill(pid, "SIGKILL");
+          } catch {
+            // already dead
+          }
+        }
         this.processes.clear();
+        this.sclangProc = null;
         this.removeLock();
         resolve();
       }, SIGKILL_DELAY_MS);
     });
   }
 
+  private readLockPids(): number[] {
+    try {
+      if (!fs.existsSync(this.lockFile)) return [];
+      const content = fs.readFileSync(this.lockFile, "utf-8").trim();
+      return content.split(":").map(Number).filter((n) => !isNaN(n) && n > 0);
+    } catch {
+      return [];
+    }
+  }
+
   private checkLock(): void {
     if (fs.existsSync(this.lockFile)) {
-      const pid = parseInt(fs.readFileSync(this.lockFile, "utf-8").trim(), 10);
-      if (pid && this.isProcessAlive(pid)) {
-        throw new Error(`Already running (PID ${pid}). Use live:stop first.`);
+      const pids = this.readLockPids();
+      if (pids.some((pid) => this.isProcessAlive(pid))) {
+        throw new Error(`Already running (PIDs ${pids.join(",")}). Use live:stop first.`);
       }
       fs.unlinkSync(this.lockFile);
     }
   }
 
-  private writeLock(): void {
-    fs.writeFileSync(this.lockFile, String(process.pid));
+  private writeLock(sclangPid?: number): void {
+    const pids = sclangPid
+      ? `${process.pid}:${sclangPid}`
+      : String(process.pid);
+    fs.writeFileSync(this.lockFile, pids);
   }
 
   private removeLock(): void {

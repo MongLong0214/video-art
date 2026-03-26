@@ -9,7 +9,7 @@ const orchestrator = new LiveOrchestrator(PROJECT_ROOT);
 const monitor = new LiveHealthMonitor({
   onCrash: () => {
     console.error("[CRASH] scsynth crashed — attempting restart...");
-    orchestrator.start().catch((err) => {
+    orchestrator.start({ restart: true }).catch((err) => {
       console.error("[FATAL] Restart failed:", err.message);
       process.exit(1);
     });
@@ -23,6 +23,18 @@ const monitor = new LiveHealthMonitor({
   },
 });
 
+const gracefulShutdown = () => {
+  console.log("\nShutting down live stack...");
+  monitor.stopPolling();
+  orchestrator.stop(false).then(() => {
+    console.log("Live stack stopped.");
+    process.exit(0);
+  });
+};
+
+process.on("SIGINT", gracefulShutdown);
+process.on("SIGTERM", gracefulShutdown);
+
 console.log("Starting live stack...");
 orchestrator
   .start()
@@ -32,7 +44,11 @@ orchestrator
     console.log("BootTidal.hs: audio/tidal/BootTidal.hs");
     console.log("Sessions dir: audio/tidal/sessions/");
 
-    void monitor;
+    const sclangPid = orchestrator.getSclangPid();
+    if (sclangPid) {
+      monitor.startPolling(sclangPid);
+      console.log(`Health monitor active (PID ${sclangPid})`);
+    }
   })
   .catch((err) => {
     console.error("Failed to start live stack:", err.message);

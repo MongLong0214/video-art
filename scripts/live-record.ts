@@ -11,6 +11,9 @@ const recording = new LiveRecording({
   onRecordingChange: (isRecording) => {
     orchestrator.setRecording(isRecording);
   },
+  evalSclang: (code) => {
+    orchestrator.evalSclang(code);
+  },
 });
 
 console.log(`Starting recording: "${title}"`);

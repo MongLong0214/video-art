@@ -51,14 +51,20 @@ s.waitForBoot {
 
 	~dirt.start(57120, 0 ! 8);
 
-	// Load custom FX modules (comp/sidechain/sat/eq + addModule + orderModules)
-	var fxPath = thisProcess.nowExecutingPath.dirname +/+ "custom-fx.scd";
-	if(File.exists(fxPath)) {
-		fxPath.load;
-	} {
-		"WARNING: custom-fx.scd not found, FX modules not loaded".postln;
-	};
+	// Wait for SuperDirt to fully initialize before loading FX modules
+	Routine({
+		1.wait;
+		s.sync;
 
-	"=== SuperDirt ready (8 orbits, port 57120) ===".postln;
+		// Load custom FX modules (comp/sidechain/sat/eq + addModule + orderModules)
+		var fxPath = thisProcess.nowExecutingPath.dirname +/+ "custom-fx.scd";
+		if(File.exists(fxPath)) {
+			fxPath.load;
+		} {
+			"WARNING: custom-fx.scd not found, FX modules not loaded".postln;
+		};
+
+		"=== SuperDirt ready (8 orbits, port 57120) ===".postln;
+	}).play;
 };
 )

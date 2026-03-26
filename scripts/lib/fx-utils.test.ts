@@ -48,8 +48,9 @@ describe("validateFxParams", () => {
 });
 
 describe("FX_MODULE_ORDER", () => {
-  it("default order: comp -> sat -> eq -> reverb -> delay", () => {
+  it("default order: sidechain -> comp -> sat -> eq -> reverb -> delay", () => {
     expect(FX_MODULE_ORDER).toEqual([
+      "customSidechain",
       "customCompressor",
       "customSaturator",
       "customEQ",

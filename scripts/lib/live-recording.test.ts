@@ -5,6 +5,9 @@ import {
   checkDiskSpace,
   LiveRecording,
 } from "./live-recording";
+import * as fs from "node:fs";
+
+vi.mock("node:fs");
 
 describe("generateRecordPath", () => {
   it("formats date correctly", () => {
@@ -38,13 +41,16 @@ describe("checkDiskSpace", () => {
 describe("LiveRecording", () => {
   let recording: LiveRecording;
   let onRecordingChange: ReturnType<typeof vi.fn>;
+  let evalSclang: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     vi.restoreAllMocks();
     onRecordingChange = vi.fn();
+    evalSclang = vi.fn();
     recording = new LiveRecording({
       projectRoot: "/fake/project",
       onRecordingChange,
+      evalSclang,
     });
   });
 
@@ -75,6 +81,22 @@ describe("LiveRecording", () => {
     expect(config.sampleRate).toBe(48000);
     expect(config.format).toBe("WAV");
     expect(config.sampleFormat).toBe("float");
+  });
+
+  it("start calls evalSclang with s.record", () => {
+    recording.start("test-session");
+    expect(evalSclang).toHaveBeenCalledTimes(1);
+    const call = evalSclang.mock.calls[0][0] as string;
+    expect(call).toContain("s.record");
+  });
+
+  it("stop calls evalSclang with s.stopRecording", () => {
+    recording.start();
+    evalSclang.mockClear();
+    recording.stop();
+    expect(evalSclang).toHaveBeenCalledTimes(1);
+    const call = evalSclang.mock.calls[0][0] as string;
+    expect(call).toContain("s.stopRecording");
   });
 
   it("disk monitor stops recording on low space", () => {

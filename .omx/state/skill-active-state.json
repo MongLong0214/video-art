@@ -1,15 +1,10 @@
 {
   "version": 1,
-  "active": true,
-  "skill": "cancel",
-  "keyword": "Stop",
-  "phase": "planning",
-  "activated_at": "2026-03-26T12:03:56.047Z",
-  "updated_at": "2026-03-26T12:03:56.047Z",
-  "source": "keyword-detector",
-  "session_id": "",
-  "thread_id": "019d2a06-b7b5-7951-ad5c-a0afccc411bf",
-  "turn_id": "019d2a07-8045-74d2-94ff-2a075d404983",
-  "iteration": 3,
-  "last_turn_at": "2026-03-26T12:20:04.440Z"
+  "active": false,
+  "skill": "ralph",
+  "keyword": "Ralph",
+  "phase": "completing",
+  "activated_at": "2026-03-26T12:29:59.439Z",
+  "updated_at": "2026-03-26T12:29:59.440Z",
+  "source": "keyword-detector"
 }
