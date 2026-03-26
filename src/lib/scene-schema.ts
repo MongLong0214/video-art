@@ -8,6 +8,17 @@ export const getValidPeriods = (duration: number): number[] => {
   return divisors;
 };
 
+export const layerRoleSchema = z.enum([
+  "background-plate",
+  "background",
+  "midground",
+  "subject",
+  "detail",
+  "foreground-occluder",
+]);
+
+export type LayerRole = z.infer<typeof layerRoleSchema>;
+
 const animationSchema = z.object({
   colorCycle: z
     .object({
@@ -44,6 +55,7 @@ const layerSchema = z.object({
   file: z.string(),
   zIndex: z.number().int().min(0),
   opacity: z.number().min(0).max(1).default(1),
+  role: layerRoleSchema.optional(),
   animation: animationSchema.default({ saturationBoost: 2.5, luminanceKey: 0.6 }),
 });
 
@@ -129,3 +141,22 @@ export type LayerConfig = z.infer<typeof layerSchema>;
 export type AnimationConfig = z.infer<typeof animationSchema>;
 export type EffectsConfig = z.infer<typeof effectsSchema>;
 export type AudioConfig = z.infer<typeof audioSchema>;
+
+export interface LayerCandidate {
+  id: string;
+  source: "qwen-base" | "qwen-recursive" | "depth-split";
+  filePath: string;
+  width: number;
+  height: number;
+  coverage: number;
+  uniqueCoverage?: number;
+  meanDepth?: number;
+  depthStd?: number;
+  bbox: { x: number; y: number; w: number; h: number };
+  centroid: { x: number; y: number };
+  edgeDensity: number;
+  componentCount: number;
+  role?: LayerRole;
+  parentId?: string;
+  droppedReason?: string;
+}

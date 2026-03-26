@@ -21,7 +21,8 @@
     "render:av": "tsx scripts/render-av.ts",
     "live:start": "tsx scripts/live-start.ts",
     "live:stop": "tsx scripts/live-stop.ts",
-    "live:record": "tsx scripts/live-record.ts"
+    "live:record": "tsx scripts/live-record.ts",
+    "pipeline:compare": "tsx scripts/compare-variants.ts"
   },
   "dependencies": {
     "dotenv": "^17.3.1",

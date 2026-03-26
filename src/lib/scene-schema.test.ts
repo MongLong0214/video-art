@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { sceneSchema, getValidPeriods } from "./scene-schema";
+import { sceneSchema, getValidPeriods, layerRoleSchema } from "./scene-schema";
+import type { LayerRole, LayerCandidate } from "./scene-schema";
 
 const validScene = {
   version: 1,
@@ -523,5 +524,125 @@ describe("sceneSchema audio field", () => {
       audio: { bpm: 300 },
     });
     expect(result.success).toBe(false);
+  });
+});
+
+describe("LayerRole schema", () => {
+  const VALID_ROLES: LayerRole[] = [
+    "background-plate",
+    "background",
+    "midground",
+    "subject",
+    "detail",
+    "foreground-occluder",
+  ];
+
+  it("should accept valid LayerRole values", () => {
+    for (const role of VALID_ROLES) {
+      const result = layerRoleSchema.safeParse(role);
+      expect(result.success).toBe(true);
+    }
+  });
+
+  it("should reject invalid role string", () => {
+    const result = layerRoleSchema.safeParse("invalid-role");
+    expect(result.success).toBe(false);
+  });
+
+  it("should parse scene.json without role field (backward compat)", () => {
+    const sceneWithoutRole = {
+      version: 1,
+      source: "test.png",
+      resolution: [1080, 1080],
+      duration: 10,
+      fps: 30,
+      layers: [
+        {
+          id: "bg",
+          file: "layers/layer-0.png",
+          zIndex: 0,
+          animation: {
+            colorCycle: { speed: 1.0, period: 10 },
+          },
+        },
+      ],
+    };
+    const result = sceneSchema.safeParse(sceneWithoutRole);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.layers[0].role).toBeUndefined();
+    }
+  });
+
+  it("should parse scene.json with role field", () => {
+    const sceneWithRole = {
+      version: 1,
+      source: "test.png",
+      resolution: [1080, 1080],
+      duration: 10,
+      fps: 30,
+      layers: [
+        {
+          id: "bg",
+          file: "layers/layer-0.png",
+          zIndex: 0,
+          role: "subject",
+          animation: {
+            colorCycle: { speed: 1.0, period: 10 },
+          },
+        },
+      ],
+    };
+    const result = sceneSchema.safeParse(sceneWithRole);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.layers[0].role).toBe("subject");
+    }
+  });
+});
+
+describe("LayerCandidate type", () => {
+  it("should satisfy the interface contract", () => {
+    const candidate: LayerCandidate = {
+      id: "layer-0-comp-0",
+      source: "qwen-base",
+      filePath: "/tmp/layers/layer-0.png",
+      width: 1080,
+      height: 1080,
+      coverage: 0.45,
+      bbox: { x: 0, y: 0, w: 1080, h: 1080 },
+      centroid: { x: 540, y: 540 },
+      edgeDensity: 0.12,
+      componentCount: 1,
+    };
+    expect(candidate.id).toBe("layer-0-comp-0");
+    expect(candidate.source).toBe("qwen-base");
+    expect(candidate.role).toBeUndefined();
+  });
+
+  it("should accept all optional fields", () => {
+    const candidate: LayerCandidate = {
+      id: "layer-1-comp-2",
+      source: "depth-split",
+      filePath: "/tmp/layers/layer-1-depth-2.png",
+      width: 1080,
+      height: 1080,
+      coverage: 0.20,
+      uniqueCoverage: 0.15,
+      meanDepth: 0.6,
+      depthStd: 0.1,
+      bbox: { x: 100, y: 200, w: 400, h: 300 },
+      centroid: { x: 300, y: 350 },
+      edgeDensity: 0.08,
+      componentCount: 3,
+      role: "midground",
+      parentId: "layer-1",
+      droppedReason: "overlap > 80%",
+    };
+    expect(candidate.uniqueCoverage).toBe(0.15);
+    expect(candidate.meanDepth).toBe(0.6);
+    expect(candidate.role).toBe("midground");
+    expect(candidate.parentId).toBe("layer-1");
+    expect(candidate.droppedReason).toBe("overlap > 80%");
   });
 });

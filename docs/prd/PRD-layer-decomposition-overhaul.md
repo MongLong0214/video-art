@@ -2,10 +2,10 @@
 
 **Subtitle**: A/B Evaluation of `Qwen-Only` vs `Qwen+ZoeDepth`
 
-**Version**: 1.2
+**Version**: 1.3
 **Author**: Codex + Isaac
 **Date**: 2026-03-26
-**Status**: In Review (Round 1 fixes applied)
+**Status**: Approved
 **Size**: XL
 
 ---
@@ -204,7 +204,7 @@ replicate.run("qwen/qwen-image-layered", {
 **Acceptance Criteria**
 
 - [ ] AC-6.1: archive에 `decomposition-manifest.json`이 저장된다.
-- [ ] AC-6.2: manifest에는 source image, prepared image, model id, model version, pipeline variant, candidate stats, drop reasons가 포함된다.
+- [ ] AC-6.2: manifest에는 source image, prepared image, model id, model version, pipeline variant, candidate stats, drop reasons, `unsafeFlag`, `productionMode`, requested/selected layer counts가 포함된다.
 - [ ] AC-6.3: source image와 prepared image가 archive에 함께 저장된다.
 - [ ] AC-6.4: 기존 scene.json (`role` 필드 없음)이 새 스키마에서 정상 파싱된다 (backward compat).
 
@@ -219,8 +219,11 @@ replicate.run("qwen/qwen-image-layered", {
 - production rollout 전 `qwen-image-layered`는 immutable version pin을 사용해야 한다.
 - `Variant B`를 실험할 때는 `zoedepth`도 immutable version pin을 사용해야 한다.
 - **Production mode 정의**: `NODE_ENV=production` 또는 `--production` flag. production mode에서 unpinned model version → hard fail.
-- **Retry policy**: max 3회, exponential backoff (1s, 3s, 9s), per-attempt timeout 60s, 총 timeout 120s. 3회 실패 → diagnostic 포함 에러.
-- **API call cap**: 단일 이미지 처리당 최대 Replicate 호출 = base 1회 + recursive 최대 3회 = **총 4회 상한**.
+- **Retry policy**: max 3회, exponential backoff (1s, 3s, 9s), per-attempt timeout 30s, 총 timeout 100s. `Retry-After` 헤더 존재 시 우선 적용. 3회 실패 → diagnostic 포함 에러.
+- **API call cap** (per variant):
+  - Variant A: Qwen base 1회 + recursive 최대 3회 = **총 4회**
+  - Variant B: Qwen base 1회 + ZoeDepth 1회 + recursive 최대 2회 = **총 4회**
+  - Retry는 call cap에 포함하지 않는다 (retry는 동일 call의 재시도).
 - 동일 입력 재실행 시 불필요한 비용을 줄이기 위해 cache key를 도입할 수 있어야 한다.
 - **`disable_safety_checker` 정책**: configurable flag로 분리. 기본값 `false` (checker ON). CLI `--unsafe` flag로 opt-out. (OQ-4 해결)
 
@@ -496,7 +499,7 @@ Tier A (Rollout Phase 1):
 
 - 가장 넓고 연속적인 후면 candidate를 background plate로 사용
 - foreground subtraction 이후 남는 hole은 원본 이미지 블렌딩으로 처리 (mild fill)
-- hole이 50% 이상이면 원본 이미지를 fallback background plate로 사용 + manifest에 경고 기록
+- hole이 50% 이상이면 원본 이미지의 **unclaimed pixels만** 추출하여 fallback background plate로 사용 + manifest에 경고 기록. fallback plate는 exclusive ownership 후 잔여 영역만 채우므로 AC-2.4 overlap 제약을 위반하지 않는다.
 
 Tier B (Rollout Phase 2+):
 
@@ -870,6 +873,30 @@ guardrail:
 | 18 | P2 | G | 에러 시나리오 부족 | §7: E9-E14 6개 추가 |
 | 19 | P2 | S | --depth-only deprecated 미명시 | §5.1: deprecated → --variant로 통합 명시 |
 | 20 | P2 | B | Recursive Qwen API 비용 상한 없음 | §4.1: 총 4회 상한 명시 |
+
+### Round 2 (v1.2 → v1.3)
+
+**Reviewers**: strategist + guardian + boomer
+
+| Reviewer | Verdict | Notes |
+|----------|---------|-------|
+| strategist | ALL PASS | P1 10건 전수 해결 확인. cross-reference 일관성 검증 통과 |
+| guardian | ALL PASS | AC 5건 테스트 가능 확인. E9-E14 충분. P3 3건 (문서 정리, non-blocking) |
+| boomer | HAS ISSUE → **RESOLVED** | P1 2건: retry timeout 모순 + Variant B API cap 불가 → v1.3에서 수정 |
+
+Boomer P1 수정:
+| # | Issue | Resolution |
+|---|-------|-----------|
+| 1 | Retry timeout 모순 (3×60s > 120s) | per-attempt 30s, 총 100s로 정합성 확보 |
+| 2 | API call cap 4 Variant B 불가 | per-variant 예산 분리 (A: 1+3, B: 1+1+2) |
+
+Boomer P2 수정:
+| # | Issue | Resolution |
+|---|-------|-----------|
+| 3 | Fallback plate vs overlap AC 충돌 | unclaimed pixels만 추출, AC-2.4 위반 불가 명시 |
+| 4 | --unsafe manifest 미기록 | AC-6.2에 unsafeFlag, productionMode 필드 추가 |
+
+**PRD Status: v1.3 → Approved**
 
 ---
 
