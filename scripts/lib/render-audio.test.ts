@@ -59,11 +59,30 @@ describe("render-audio-utils", () => {
     expect(existsSync(tmpLock)).toBe(false);
   });
 
-  it("checkDiskSpace — does not throw for existing dir", () => {
-    expect(() => checkDiskSpace("/tmp")).not.toThrow();
+  it("checkDiskSpace — does not throw when enough space", () => {
+    expect(() => checkDiskSpace("/tmp", 1024)).not.toThrow();
   });
 
   it("checkDiskSpace — does not throw for missing dir", () => {
-    expect(() => checkDiskSpace("/tmp/nonexistent-dir-xyz")).not.toThrow();
+    expect(() => checkDiskSpace("/tmp/nonexistent-dir-xyz", 1024)).not.toThrow();
+  });
+
+  it("checkDiskSpace — throws when requesting absurd space", () => {
+    expect(() => checkDiskSpace("/tmp", Number.MAX_SAFE_INTEGER)).toThrow("Insufficient");
+  });
+
+  it("generateConfig — manual bpm still satisfies duration invariant", () => {
+    const config = generateConfig(
+      { duration: 10, audio: { bpm: 140 } },
+      "/tmp/out",
+    );
+    const computedDuration = (config.bars * 4 * 60) / config.bpm;
+    expect(Math.abs(computedDuration - 10)).toBeLessThan(0.5);
+  });
+
+  it("generateConfig — auto bpm satisfies strict invariant", () => {
+    const config = generateConfig({ duration: 10 }, "/tmp/out");
+    const computedDuration = (config.bars * 4 * 60) / config.bpm;
+    expect(Math.abs(computedDuration - 10)).toBeLessThan(0.001);
   });
 });

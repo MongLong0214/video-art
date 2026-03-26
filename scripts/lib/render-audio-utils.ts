@@ -63,7 +63,7 @@ export const generateConfig = (
   const audio = sceneJson.audio ?? {};
   const genre = audio.genre ?? "techno";
   const { bpm, bars } = audio.bpm
-    ? { bpm: audio.bpm, bars: Math.round((audio.bpm * sceneJson.duration) / 240) }
+    ? { bpm: audio.bpm, bars: Math.max(2, Math.round((audio.bpm * sceneJson.duration) / 240)) }
     : calculateBpm(sceneJson.duration, genre);
 
   return {
@@ -80,10 +80,24 @@ export const generateConfig = (
   };
 };
 
-export const checkDiskSpace = (outputDir: string): void => {
-  // For local dev, trust filesystem has enough space
-  // Production would check via `df`
+export const checkDiskSpace = (outputDir: string, estimatedBytes: number = 0): void => {
   if (!existsSync(outputDir)) return;
+  try {
+    const dfOut = execFileSync("df", ["-k", outputDir], { encoding: "utf-8" });
+    const lines = dfOut.trim().split("\n");
+    if (lines.length < 2) return;
+    const cols = lines[1].split(/\s+/);
+    const availKB = parseInt(cols[3], 10);
+    if (isNaN(availKB)) return;
+    const requiredKB = Math.ceil((estimatedBytes * 2) / 1024);
+    if (availKB < requiredKB) {
+      throw new Error(
+        `Insufficient disk space. Available: ${Math.round(availKB / 1024)}MB, Required: ${Math.round(requiredKB / 1024)}MB (2x safety margin)`,
+      );
+    }
+  } catch (e) {
+    if (e instanceof Error && e.message.includes("Insufficient")) throw e;
+  }
 };
 
 export const acquireLock = (lockPath: string): void => {

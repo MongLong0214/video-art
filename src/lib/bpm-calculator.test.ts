@@ -54,9 +54,26 @@ describe("calculateBpm", () => {
   });
 
   it("trance range preference when achievable", () => {
-    // 60s trance: bars=32 → bpm=128 (below [130,145]), bars=64 → bpm=256 → fallback
     const result = calculateBpm(60, "trance");
     expect(result.bpm).toBeGreaterThan(0);
+    const computed = (result.bars * 4 * 60) / result.bpm;
+    expect(Math.abs(computed - 60)).toBeLessThan(0.001);
+  });
+
+  it("duration=1 → bars >= 2 (no zero bars)", () => {
+    const result = calculateBpm(1, "techno");
+    expect(result.bars).toBeGreaterThanOrEqual(2);
+    expect(result.bpm).toBeGreaterThan(0);
+  });
+
+  it("duration=0.5 → still valid", () => {
+    const result = calculateBpm(0.5, "trance");
+    expect(result.bars).toBeGreaterThanOrEqual(2);
+    expect(result.bpm).toBeGreaterThan(0);
+  });
+
+  it("duration=60 techno → bars * 4 * 60 / bpm = 60 exactly", () => {
+    const result = calculateBpm(60, "techno");
     const computed = (result.bars * 4 * 60) / result.bpm;
     expect(Math.abs(computed - 60)).toBeLessThan(0.001);
   });
