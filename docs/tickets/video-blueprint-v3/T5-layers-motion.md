@@ -3,7 +3,7 @@
 **PRD Ref**: PRD-video-blueprint-v3 > US-2, US-3
 **Priority**: P0 (Blocker)
 **Size**: L (4-8h)
-**Status**: Todo
+**Status**: Done
 **Depends On**: T4
 
 ---

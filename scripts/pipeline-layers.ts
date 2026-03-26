@@ -9,6 +9,7 @@ import {
 import { decomposeHybrid } from "./lib/image-decompose.js";
 import { postprocessLayers } from "./lib/postprocess.js";
 import { generateSceneJson } from "./lib/scene-generator.js";
+import { createWorkDir } from "./lib/archive.js";
 
 async function main() {
   const inputPath = process.argv[2];
@@ -24,17 +25,26 @@ async function main() {
       : "hybrid" as const;
 
   const projectRoot = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
-  const layersDir = path.join(projectRoot, "out", "layers");
+  const work = createWorkDir(projectRoot);
+  const layersDir = work.paths.layers;
   const publicDir = path.join(projectRoot, "public");
   const publicLayersDir = path.join(publicDir, "layers");
 
   // --- Step 1: Layer Split ---
-  const manualLayers = detectManualLayers(layersDir);
+  // Manual layers: stable input dir at project root (layers/layer-0.png, ...)
+  const manualLayersInput = path.join(projectRoot, "layers");
+  const manualLayers = detectManualLayers(manualLayersInput);
   let result;
 
   if (manualLayers) {
     console.log(`Found ${manualLayers.length} manual layers in layers/. Skipping API call.`);
-    for (const layerPath of manualLayers) {
+    // Copy to work dir so originals stay untouched
+    fs.mkdirSync(layersDir, { recursive: true });
+    for (const src of manualLayers) {
+      fs.copyFileSync(src, path.join(layersDir, path.basename(src)));
+    }
+    const workLayers = manualLayers.map(p => path.join(layersDir, path.basename(p)));
+    for (const layerPath of workLayers) {
       await ensureRgba(layerPath);
     }
     console.log("\nPost-processing layers...");
@@ -86,6 +96,7 @@ async function main() {
   fs.writeFileSync(sceneJsonPath, JSON.stringify(scene, null, 2));
   console.log(`scene.json + layers copied to public/ (${scene.layers.length} layers)`);
 
+  // Work dir auto-cleaned on exit via RunContext
   console.log("\nPipeline complete. Run `npm run dev` then open http://localhost:5173/?mode=layered");
 }
 

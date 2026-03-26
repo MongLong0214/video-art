@@ -32,7 +32,7 @@ If `meta.json` shows `loop_type: "cut"`, the video does not seamlessly loop. Con
 
 ## Phase B: Computational Analysis
 
-Run scripts in any order. Colors and layers are independent — analyze-layers.py runs its own internal color clustering and does NOT read colors.json. Geometry and motion can run in parallel with layers.
+Run colors first — analyze-layers.py reads colors.json for palette data. Geometry and motion can run in parallel with layers.
 
 ```bash
 # 1. Color palette (CIELAB clustering + deltaE2000)
@@ -83,9 +83,9 @@ python3 .claude/skills/video-blueprint/scripts/generate-shader.py ./blueprint.js
 python3 .claude/skills/video-blueprint/scripts/generate-sketch.py ./blueprint.json --output-dir ./src/sketches/
 ```
 
-Generates: uniforms, main() structure, SDF library. If effects are enabled, generates a post-processing shader stub and main.ts wiring hints (Claude completes EffectComposer integration in Step 2).
+Generates: uniforms, main() structure, SDF library, and complete layer bodies based on blueprint data (rotation, zoom, depth attenuation, glow, blend logic). If effects are enabled, generates a post-processing shader and main.ts wiring hints.
 
-**Step 2** -- Claude writes layer bodies: Read blueprint.json + skeleton output. Write the per-layer loop body (rotation, zoom, depth attenuation, glow), blend logic, and effect parameter tuning. Reference [references/shader-patterns.md](references/shader-patterns.md) for GLSL patterns.
+**Step 2** -- Claude reviews and tunes: Read the generated code + blueprint.json. Verify layer bodies match the intended visual. Tune parameters (glow amplitude, depth fade, color mixing) and add any effects or logic that the deterministic generator cannot capture. Reference [references/shader-patterns.md](references/shader-patterns.md) for GLSL patterns.
 
 **Step 3** -- Patch main.ts: Add dynamic import for the new sketch mode.
 
@@ -93,13 +93,12 @@ Generates: uniforms, main() structure, SDF library. If effects are enabled, gene
 
 **Step 1** -- Capture rendered frames via Puppeteer:
 
-> Note: `scripts/capture-rendered.ts` is not yet implemented. Until it exists, capture frames manually using the browser dev console or a screen recorder, saving PNGs to `./out/blueprints/_rendered/` at the same frame count used in Phase A.
-
 ```bash
-# Placeholder — not yet available:
-# npx tsx scripts/capture-rendered.ts --mode <name> --frames 24 --fps 60 \
-#   --loop-dur <seconds> --out-dir ./out/blueprints/_rendered
+npx tsx scripts/capture-rendered.ts --mode <name> --frames 24 --fps 60 \
+  --loop-dur <seconds> --out-dir ./out/blueprints/_rendered
 ```
+
+Requires `vite dev` running. Launches headless Puppeteer, waits for `__captureReady`, injects deterministic clock via `__startCapture(fps)`, captures each frame at exact time offsets.
 
 **Step 2** -- Compare original vs rendered:
 ```bash
@@ -119,11 +118,12 @@ Uses deterministic clock (uTime injection) + gl.finish() for frame-accurate capt
 
 ## Output
 
-Save to `./out/blueprints/{YYYY-MM-DD}_{source-name}/`:
+Archive: `./out/{YYYY-MM-DD}_{title}/`
 - `blueprint.json` -- v3 schema
-- `{name}.frag` + `{name}.ts` -- generated code
-- `verification-report.json` -- SSIM + contour + palette scores
-- Analysis frames and intermediate JSONs
+- `{name}.frag` -- generated shader
+- `{name}.mp4` -- rendered seamless loop
+
+Intermediate files (frames, analysis JSONs) are stored in `_work/` inside the archive dir during processing and auto-deleted after export completes.
 
 ## Anti-patterns
 

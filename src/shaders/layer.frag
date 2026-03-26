@@ -6,7 +6,6 @@ uniform float uOpacity;
 
 // Color cycling
 uniform float uColorCycleSpeed;
-uniform float uColorCycleHueRange;
 uniform float uColorCyclePeriod;
 uniform float uPhaseOffset;
 
@@ -71,9 +70,9 @@ void main() {
   vec3 hsv = rgb2hsv(texColor.rgb);
   float originalSat = hsv.y;
 
-  // Time sweep
-  float lumFactor = uLuminanceKey > 0.001 ? pow(1.0 - lum, 1.0 + uLuminanceKey) : 1.0;
-  float hueShift = fract(time / uColorCyclePeriod * uColorCycleSpeed * lumFactor + uPhaseOffset / 360.0);
+  // Time sweep — lumPhase as additive offset (guarantees seamless when K×speed is integer)
+  float lumPhase = uLuminanceKey > 0.001 ? pow(1.0 - lum, 1.0 + uLuminanceKey) : 0.0;
+  float hueShift = fract(time / uColorCyclePeriod * uColorCycleSpeed + lumPhase + uPhaseOffset / 360.0);
 
   // Two strategies blended by original saturation:
   // HIGH sat pixels: shift existing hue (preserves original palette character)
@@ -96,7 +95,8 @@ void main() {
 
   // --- Glow ---
   float glowT = time * TAU / uGlowPeriod;
-  float glowFactor = 1.0 + uGlowIntensity * (0.5 + 0.5 * sin(glowT));
+  float glowPulse = mix(1.0, 0.5 + 0.5 * sin(glowT), uGlowPulse);
+  float glowFactor = 1.0 + uGlowIntensity * glowPulse;
   rgb *= glowFactor;
 
   gl_FragColor = vec4(rgb, texColor.a * uOpacity);

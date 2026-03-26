@@ -2,7 +2,7 @@
 
 **PRD**: docs/prd/PRD-video-blueprint-v3.md
 **Size**: XL (3-PR 분할)
-**Current Phase**: 6 (최종 전수 리뷰)
+**Current Phase**: 7 (완료)
 **Active Tickets**: 11 (all Done)
 
 ## Tickets
@@ -33,9 +33,16 @@
 | T12 | verify-output.py | M | **Done** | 6 |
 | T13 | SKILL.md v3 통합 | M | **Done** | 7 |
 
-## Test Summary
+## Build Verification (2026-03-26)
 
-**Total: 88 passed, 3 skipped, 0 failed**
+| Check | Result |
+|-------|--------|
+| `tsc --noEmit` | PASS |
+| `vite build` | PASS |
+| `vitest run` (TS) | 79 passed, 0 failed |
+| `pytest` (Python) | 115 passed, 3 skipped |
+
+**Total: 194 passed, 3 skipped, 0 failed**
 
 ## Review History
 
@@ -44,3 +51,16 @@
 | 2 | 1-3 | ALL PASS | PRD v0.3 Approved |
 | 4 | 1-2 | ALL PASS | 11 tickets, T1+T7/T10+T11 merged |
 | 5 | cumulative | ALL PASS | 88 tests, 0 failures |
+| 6 | 1 | ALL PASS (after fixes) | P0 layer/element index fix, P1 hex validation, P2 filename fix, I5 grain EffectComposer fix, SKILL.md doc sync |
+
+## Phase 6 Fixes Applied
+
+| Severity | File | Fix |
+|----------|------|-----|
+| P0 | generate-shader.py | Layer/element index mismatch — `_layer_index` tracking |
+| P1 | generate-shader.py | Hex validation in `prepare_template_context` |
+| P2 | generate-sketch.py | `Path.stem` for multi-dot filenames |
+| I5 | generate-sketch.py | Grain-only effects no longer trigger EffectComposer |
+| C1 | SKILL.md | Phase E hybrid doc updated to match actual behavior |
+| Fix | scene-generator.ts | luminanceKey range + colorCycle speed |
+| Fix | SKILL.md | capture-rendered.ts "not yet implemented" note removed |

@@ -3,7 +3,7 @@
 **PRD Ref**: PRD-video-blueprint-v3 > US-2 (개별 도형 모션 추적에 필요한 고시간해상도 프레임)
 **Priority**: P2 (Medium)
 **Size**: S (< 2h)
-**Status**: Todo
+**Status**: Done
 **Depends On**: None
 
 ---

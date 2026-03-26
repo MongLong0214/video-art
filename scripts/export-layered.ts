@@ -6,10 +6,8 @@ import { exec, execFile, type ChildProcess } from "node:child_process";
 import { checkFfmpeg } from "./lib/check-deps.js";
 import {
   parseTitle,
-  createArchiveDir,
+  createRunContext,
   snapshotLayers,
-  framesDir,
-  cleanFrames,
 } from "./lib/archive.js";
 
 import { sceneSchema } from "../src/lib/scene-schema.js";
@@ -43,12 +41,9 @@ async function captureFrames(outputDir: string, totalFrames: number): Promise<vo
   const viteProcess = startViteServer(port);
   let browser: Browser | null = null;
 
-  const cleanup = () => {
-    browser?.close().catch(() => {});
-    viteProcess.kill();
-    process.exit(130);
-  };
-  process.on("SIGINT", cleanup);
+  // Ensure vite is killed on any exit (SIGINT → RunContext → process.exit → 'exit' event)
+  const killVite = () => { viteProcess.kill(); };
+  process.on("exit", killVite);
 
   try {
     await waitForServer(`http://localhost:${port}`);
@@ -77,11 +72,11 @@ async function captureFrames(outputDir: string, totalFrames: number): Promise<vo
         "window.__captureFrame()",
       )) as string;
 
-      const base64 = dataUrl.split(",")[1];
+      const base64 = dataUrl.replace(/^data:image\/png;base64,/, "");
       const buf = Buffer.from(base64, "base64");
       const framePath = path.join(
         outputDir,
-        `frame-${String(i + 1).padStart(4, "0")}.png`,
+        `frame_${String(i).padStart(5, "0")}.png`,
       );
       fs.writeFileSync(framePath, buf);
 
@@ -95,7 +90,7 @@ async function captureFrames(outputDir: string, totalFrames: number): Promise<vo
   } finally {
     await browser?.close().catch(() => {});
     viteProcess.kill();
-    process.removeListener("SIGINT", cleanup);
+    process.removeListener("exit", killVite);
   }
 }
 
@@ -103,7 +98,7 @@ function encodeVideo(inputFramesDir: string, outputPath: string): Promise<void> 
   const ffmpegArgs = [
     "-y",
     "-framerate", String(FPS),
-    "-i", path.join(inputFramesDir, "frame-%04d.png"),
+    "-i", path.join(inputFramesDir, "frame_%05d.png"),
     "-c:v", "libx264",
     "-pix_fmt", "yuv420p",
     "-b:v", "15M",
@@ -131,9 +126,8 @@ async function main() {
   checkFfmpeg();
 
   const projectRoot = process.cwd();
-  const archiveDir = createArchiveDir(projectRoot, title);
-  const tempFrames = framesDir(projectRoot);
-  const outputPath = path.join(archiveDir, `${title}.mp4`);
+  const ctx = createRunContext(projectRoot, title, "layered");
+  const outputPath = path.join(ctx.archiveDir, `${title}.mp4`);
 
   // Load duration from scene.json
   const scenePath = path.join(projectRoot, "public", "scene.json");
@@ -146,30 +140,31 @@ async function main() {
   const TOTAL_FRAMES = FPS * DURATION;
 
   console.log(`Title: ${title}`);
-  console.log(`Archive: ${path.relative(projectRoot, archiveDir)}/`);
+  console.log(`Archive: ${path.relative(projectRoot, ctx.archiveDir)}/`);
   console.log(`Duration: ${DURATION}s, ${TOTAL_FRAMES} frames @ ${FPS}fps`);
 
   const estimatedMB = (TOTAL_FRAMES * 4.5).toFixed(0);
   console.log(`Estimated disk usage: ~${estimatedMB}MB for ${TOTAL_FRAMES} frames`);
 
-  await captureFrames(tempFrames, TOTAL_FRAMES);
-  await encodeVideo(tempFrames, outputPath);
+  await captureFrames(ctx.paths.frames, TOTAL_FRAMES);
+  await encodeVideo(ctx.paths.frames, outputPath);
 
   // Snapshot layers + scene.json into archive
-  snapshotLayers(projectRoot, archiveDir);
+  snapshotLayers(projectRoot, ctx.archiveDir);
 
-  if (!keepFrames) {
-    cleanFrames(projectRoot);
-  } else {
-    console.log(`\nFrames kept at: ${tempFrames}`);
+  if (keepFrames) {
+    ctx.skipCleanup();
+    console.log(`\nFrames kept at: ${ctx.paths.frames}`);
   }
 
   console.log(`\nOutput: ${path.relative(projectRoot, outputPath)}`);
   const stats = fs.statSync(outputPath);
   console.log(`Size: ${(stats.size / 1024 / 1024).toFixed(1)}MB`);
 
-  // List archive contents
-  const files = fs.readdirSync(archiveDir, { recursive: true }) as string[];
+  // Cleanup _work/ before listing (unless --keep-frames)
+  if (!keepFrames) ctx.cleanup();
+
+  const files = fs.readdirSync(ctx.archiveDir, { recursive: true }) as string[];
   console.log(`\nArchive contents:`);
   for (const f of files) {
     console.log(`  ${f}`);

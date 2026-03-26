@@ -283,7 +283,8 @@ def extract_frames(video_path: str, num_frames: int, out_dir: str, detect_loop: 
         "seam_last": os.path.abspath(seam_last),
         "seam_ssim": round(seam_ssim, 6),
         "adjacent_frame_ssims": adjacent_ssims,
-        "motion_magnitude": "static" if all(s > 0.995 for s in adjacent_ssims)
+        "motion_magnitude": "unknown" if not adjacent_ssims
+            else "static" if all(s > 0.995 for s in adjacent_ssims)
             else "subtle" if all(s > 0.97 for s in adjacent_ssims)
             else "moderate" if all(s > 0.90 for s in adjacent_ssims)
             else "high",

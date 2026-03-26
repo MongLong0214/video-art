@@ -106,8 +106,12 @@ def generate_main_patch(blueprint: dict, name: str) -> str:
     height = canvas.get("height", 1920)
     fps = meta.get("fps", 60)
     dur = meta.get("duration_sec", 10.0)
-    has_effects = any(e.get("enabled") for e in effects.values() if isinstance(e, dict))
-    post_type = "bloom_post" if has_effects else "none"
+    # Only post-processing effects trigger EffectComposer (grain/breathing are shader-internal)
+    _POST_EFFECTS = {"chromatic_aberration", "vignette", "bloom"}
+    has_post_effects = any(
+        effects.get(k, {}).get("enabled") for k in _POST_EFFECTS
+    )
+    post_type = "bloom_post" if has_post_effects else "none"
 
     return f'''// Add to SKETCH_REGISTRY in src/lib/sketch-registry.ts:
   "{name}": {{
@@ -205,9 +209,14 @@ def main():
     with open(args.blueprint) as f:
         bp = json.load(f)
 
-    name = args.name or bp.get("meta", {}).get("source_file", "generated").split(".")[0]
+    name = args.name or Path(bp.get("meta", {}).get("source_file", "generated")).stem
 
-    sketch_path = f"{args.output_dir}/{name}.ts"
+    sketch_path = str(Path(f"{args.output_dir}/{name}.ts").resolve())
+    cwd = str(Path.cwd().resolve())
+    if not sketch_path.startswith(cwd):
+        print(f"Error: output path {sketch_path} escapes project root {cwd}", file=sys.stderr)
+        sys.exit(1)
+
     generate_sketch(bp, sketch_path, name)
     print(f"Sketch: {sketch_path}")
 
@@ -215,7 +224,8 @@ def main():
     print(f"\nmain.ts patch:\n{patch}")
 
     effects = bp.get("effects", {})
-    if any(e.get("enabled") for e in effects.values() if isinstance(e, dict)):
+    _POST_EFFECTS_MAIN = {"chromatic_aberration", "vignette", "bloom"}
+    if any(effects.get(k, {}).get("enabled") for k in _POST_EFFECTS_MAIN):
         post = generate_post_shader(bp)
         post_path = f"src/shaders/{name}-post.frag"
         Path(post_path).parent.mkdir(parents=True, exist_ok=True)

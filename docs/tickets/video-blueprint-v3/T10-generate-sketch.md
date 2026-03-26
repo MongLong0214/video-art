@@ -3,7 +3,7 @@
 **PRD Ref**: PRD-video-blueprint-v3 > US-5 (AC-5.2, AC-5.4)
 **Priority**: P1 (High)
 **Size**: L (4-8h)
-**Status**: Todo
+**Status**: Done
 **Depends On**: T9
 
 ---

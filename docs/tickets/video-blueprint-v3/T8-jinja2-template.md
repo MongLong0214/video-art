@@ -3,7 +3,7 @@
 **PRD Ref**: PRD-video-blueprint-v3 > US-5 (Phase E Step 1)
 **Priority**: P0 (Blocker)
 **Size**: M (2-4h)
-**Status**: Todo
+**Status**: Done
 **Depends On**: T1
 
 ---

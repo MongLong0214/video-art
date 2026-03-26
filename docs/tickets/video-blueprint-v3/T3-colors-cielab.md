@@ -3,7 +3,7 @@
 **PRD Ref**: PRD-video-blueprint-v3 > US-1 (AC-1.3: ΔE2000 ≤ 15 병합 기준)
 **Priority**: P1 (High)
 **Size**: M (2-4h)
-**Status**: Todo
+**Status**: Done
 **Depends On**: None
 
 ---

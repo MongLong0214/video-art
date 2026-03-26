@@ -10,10 +10,12 @@ function generatePreset(index: number, total: number): SceneConfig["layers"][num
   const period = periods[Math.min(Math.floor(t * periods.length), periods.length - 1)];
 
   return {
-    colorCycle: { speed: 13.0, hueRange: 360, period, phaseOffset },
-    parallax: { depth: 0 },
+    colorCycle: { speed: 13.0, period, phaseOffset },
+    wave: { amplitude: +(3 - t * 2).toFixed(1), frequency: +(0.3 + t * 0.2).toFixed(1), period },
+    glow: { intensity: +(0.2 + t * 0.3).toFixed(1), pulse: +(0.4 + t * 0.3).toFixed(1), period },
+    parallax: { depth: +(t * 0.5).toFixed(1) },
     saturationBoost: 2.5,
-    luminanceKey: +(0.8 + Math.sin(t * Math.PI) * 0.2).toFixed(2),
+    luminanceKey: +(0.4 + Math.sin(t * Math.PI) * 0.4).toFixed(2),
   };
 }
 

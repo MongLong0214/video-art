@@ -3,7 +3,7 @@
 **PRD Ref**: PRD-video-blueprint-v3 > US-6
 **Priority**: P1 (High)
 **Size**: M (2-4h)
-**Status**: Todo
+**Status**: Done
 **Depends On**: T10
 
 ---

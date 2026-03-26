@@ -120,7 +120,7 @@ async function init() {
     const { createComposer } = await import("@/lib/effect-composer");
     const layeredSketch = sketch as import("@/sketches/layered-psychedelic").LayeredSketch;
     const config = layeredSketch.sceneConfig;
-    const { composer } = createComposer(
+    const { composer, sparkleEffect } = createComposer(
       renderer,
       sketch.scene,
       sketch.camera,
@@ -128,7 +128,9 @@ async function init() {
       config.resolution,
     );
     composerRender = () => composer.render();
-    updatePostUniforms = () => {};
+    updatePostUniforms = (time: number) => {
+      sparkleEffect.setTime(time);
+    };
   } else if (sketchConfig.postProcessing === "none") {
     composerRender = () => renderer.render(sketch.scene, sketch.camera);
     updatePostUniforms = () => {};
@@ -271,6 +273,7 @@ async function init() {
   let capturing = false;
   const win = window as unknown as Record<string, unknown>;
   win.__captureReady = true;
+  win.__clock = clock;
   win.__captureFrame = () => {
     const { time } = clock.tick();
     sketch.update(time, clock.dt);

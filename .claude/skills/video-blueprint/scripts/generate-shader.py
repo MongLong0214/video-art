@@ -54,7 +54,11 @@ def prepare_template_context(blueprint: dict) -> dict:
         if not _ID_RE.match(cid):
             print(f"Warning: invalid palette id '{cid}', sanitizing", file=sys.stderr)
             cid = re.sub(r'[^a-zA-Z0-9_]', '_', cid)
-        h = c["hex"].lstrip("#")
+        hex_val = c["hex"]
+        if not _HEX_RE.match(hex_val):
+            print(f"Warning: invalid hex '{hex_val}' for palette id '{cid}', using black", file=sys.stderr)
+            hex_val = "#000000"
+        h = hex_val.lstrip("#")
         palette.append({
             "id": cid,
             "r": round(int(h[0:2], 16) / 255.0, 3),
@@ -62,9 +66,9 @@ def prepare_template_context(blueprint: dict) -> dict:
             "b": round(int(h[4:6], 16) / 255.0, 3),
         })
 
-    # Layers → simplified for template
+    # Layers → simplified for template (one entry per element, tracks source layer)
     layers = []
-    for layer in layers_raw:
+    for li, layer in enumerate(layers_raw):
         for el in layer.get("elements", []):
             rep = el.get("repetition") or {}
             pia = rep.get("per_instance_animation", {})
@@ -73,6 +77,7 @@ def prepare_template_context(blueprint: dict) -> dict:
                 "blend_mode": layer.get("blend_mode", "normal"),
                 "shape_count": rep.get("count", 1),
                 "motion_type": pia.get("motion_type", "static"),
+                "_layer_index": li,
             })
 
     # Effects
@@ -192,6 +197,8 @@ def render_layer_body(layer: dict, blueprint: dict) -> str:
     if glow_cfg.get("amplitude"):
         amp = glow_cfg["amplitude"]
         decay = glow_cfg.get("decay_range", [80, 180])
+        if len(decay) < 2:
+            decay = [decay[0], decay[0] * 2] if decay else [80, 180]
         lines.append(f"    float glow = exp(-abs(d) * mix({decay[0]}.0, {decay[1]}.0, ratio)) * {amp};")
     else:
         lines.append(f"    float glow = 0.0;")
@@ -255,11 +262,12 @@ def render_shader(blueprint: dict) -> str:
     template = env.get_template("shader.frag.j2")
     ctx = prepare_template_context(blueprint)
 
-    # Generate layer bodies and attach to each layer in context
+    # Generate layer bodies — use tracked _layer_index to map elements to source layers
     layers_raw = blueprint.get("layers", [])
-    for i, layer_ctx in enumerate(ctx["layers"]):
-        if i < len(layers_raw):
-            layer_ctx["body"] = render_layer_body(layers_raw[i], blueprint)
+    for layer_ctx in ctx["layers"]:
+        li = layer_ctx.get("_layer_index", 0)
+        if li < len(layers_raw):
+            layer_ctx["body"] = render_layer_body(layers_raw[li], blueprint)
         else:
             layer_ctx["body"] = "  // empty layer\n"
 
@@ -278,10 +286,16 @@ def main():
     shader_code = render_shader(bp)
 
     if args.output:
-        out_path = Path(args.output)
+        out_path = Path(args.output).resolve()
     else:
         name = Path(args.blueprint).stem.replace("-blueprint", "").replace("blueprint", "generated")
-        out_path = Path(f"src/shaders/{name}.frag")
+        out_path = Path(f"src/shaders/{name}.frag").resolve()
+
+    # PRD §6: path containment check
+    cwd = Path.cwd().resolve()
+    if not str(out_path).startswith(str(cwd)):
+        print(f"Error: output path {out_path} escapes project root {cwd}", file=sys.stderr)
+        sys.exit(1)
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with open(out_path, "w") as f:

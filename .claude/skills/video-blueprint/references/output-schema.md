@@ -94,7 +94,12 @@ Array ordered back-to-front. Each layer:
     "color_gradient": {                      // depth color interpolation
       "near": "burg", "far": "burg2"
     },
-    "depth_fade": { "start_opacity": 0.7, "end_opacity": 0.15 },
+    "depth_fade": {
+          "start_opacity": 0.7,
+          "end_opacity": 0.15,
+          "fade_in_instances": 1.5,
+          "fade_out_scale": 0.02
+        },
     "stroke_depth": {                        // depth-varying stroke width
       "near_width_ratio": 0.013,
       "far_width_ratio": 0.003
@@ -147,11 +152,11 @@ Array ordered back-to-front. Each layer:
 
 ## Section: `effects`
 
-Post-processing effects applied after layer compositing:
+Post-processing effects applied after layer compositing. This is the value of the top-level `"effects"` key:
 
 ```jsonc
+// blueprint.effects =
 {
-  "effects": {
     "glow": {
       "enabled": true,
       "per_layer": true,
@@ -179,8 +184,8 @@ Post-processing effects applied after layer compositing:
       "edge_color": "#111111",
       "opacity": 0.85,
       "method": "multiply"
-    }
-  }
+    },
+    "unknown_effects": []
 }
 ```
 

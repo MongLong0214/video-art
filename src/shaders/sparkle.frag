@@ -9,7 +9,7 @@ uniform float uSparkleSpeed;
 uniform vec3 uPalette[24];
 
 #define TAU 6.28318530718
-#define SPARKLE_PERIOD 4.0
+#define SPARKLE_PERIOD 5.0
 
 float hash21(vec2 p) {
   p = fract(p * vec2(123.34, 456.21));

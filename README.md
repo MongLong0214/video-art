@@ -41,7 +41,7 @@ npm run pipeline sunset.png -- --title sunset
 # 4. Enter → 프레임 캡처 → mp4 인코딩 → 아카이브 저장
 ```
 
-수동 레이어 가능: Photoshop 등에서 직접 레이어를 나눠서 `out/layers/layer-0.png ~ layer-3.png`에 넣으면 API 호출 없이 진행.
+수동 레이어 가능: 프로젝트 루트 `layers/` 디렉토리에 `layer-0.png ~ layer-3.png`를 넣고 `pipeline:layers`를 실행하면 API 호출 없이 진행. 원본은 보존되고, work dir에 복사되어 처리됨.
 
 ---
 
@@ -90,7 +90,7 @@ npm run pipeline input.png -- --title sunset
 
 | Command | Description |
 |---------|-------------|
-| `npm run export:sketch -- --sketch <name>` | sketch .frag → mp4 (1080x1920, 60fps, 8초) |
+| `npm run export:sketch -- --sketch <name>` | sketch .frag → mp4 (해상도/fps/duration은 `sketch-configs.ts` 레지스트리 참조) |
 
 ### Layered 모드
 
@@ -107,50 +107,74 @@ npm run pipeline input.png -- --title sunset
 |------|-------------|
 | `--title <name>` | 작품 타이틀 (아카이브 폴더명). 생략 시 입력 파일명 또는 `untitled` |
 | `--sketch <name>` | sketch .frag 파일명 (기본: `psychedelic`) |
-| `--keep-frames` | 인코딩 후 PNG 프레임 보존 |
+| `--url <url>` | dev server URL (기본: `http://localhost:5173`) |
+| `--keep-frames` | 인코딩 후 PNG 프레임 보존 (`_work/` 유지) |
 | `--no-preview` | pipeline에서 미리보기 단계 건너뛰기 |
 
 ---
 
 ## Output & Archiving
 
-모든 결과물은 `out/` 아래에 **날짜\_타이틀** 폴더로 아카이빙된다. `out/` 전체가 `.gitignore`.
+모든 결과물은 `out/{pipeline}/` 아래에 **날짜\_타이틀** 폴더로 아카이빙된다. `out/` 전체가 `.gitignore`.
 
 ```
 out/
-├── 2026-03-25_sunset/                ← layered 모드 작품
-│   ├── layers/
-│   │   ├── layer-0.png                  배경
-│   │   ├── layer-1.png                  주체
-│   │   ├── layer-2.png                  디테일
-│   │   └── layer-3.png                  전경
-│   ├── scene.json                       씬 설정 스냅샷
-│   └── sunset.mp4                       최종 영상
+├── blueprint/                           ← sketch 모드 파이프라인
+│   ├── 2026-03-26_psychedelic/
+│   │   ├── psychedelic.frag                셰이더 소스 스냅샷
+│   │   └── psychedelic.mp4                 최종 영상
+│   └── 2026-03-26_ocean-wave/
+│       ├── ocean-wave.frag
+│       └── ocean-wave.mp4
 │
-├── 2026-03-25_ocean-wave/            ← sketch 모드 작품
-│   ├── ocean-wave.frag                  셰이더 소스 스냅샷
-│   └── ocean-wave.mp4                   최종 영상
+├── layered/                             ← layered 모드 파이프라인
+│   ├── 2026-03-26_sunset/
+│   │   ├── layers/
+│   │   │   ├── layer-0.png                 배경
+│   │   │   ├── layer-1.png                 주체
+│   │   │   ├── layer-2.png                 디테일
+│   │   │   └── layer-3.png                 전경
+│   │   ├── scene.json                      씬 설정 스냅샷
+│   │   └── sunset.mp4                      최종 영상
+│   └── 2026-03-26_sunset-2/             ← 같은 날 재실행 시 자동 넘버링
+│       └── ...
 │
-├── 2026-03-25_ocean-wave-2/          ← 같은 날 재실행 시 자동 넘버링
-│   └── ...
+├── _work/                               ← pipeline-layers 임시 (createWorkDir)
+│   └── {runId}/                            프로세스 종료 시 자동 삭제
+│       └── layers/
 │
-├── _frames/                          임시 프레임 (인코딩 후 자동 삭제)
-├── layers/                           작업용 레이어 (pipeline:layers 출력)
-└── blueprints/                       /video-blueprint 분석 출력
-    └── 2026-03-25_psy/
-        ├── frames/                      분석 프레임
-        ├── blueprint.json               기하학 스펙
-        └── psy.frag                     자동 생성된 셰이더
+└── captured-frames/                     ← capture-rendered.ts (standalone 유틸)
+    └── frame_00000.png ...
 ```
+
+### 아카이빙 시스템 (archive.ts)
+
+두 가지 컨텍스트 생성 함수:
+
+| 함수 | 용도 | 아카이브 경로 | _work/ 위치 |
+|------|------|-------------|------------|
+| `createRunContext(root, title, pipeline)` | 최종 산출물 있는 익스포트 | `out/{pipeline}/{date}_{title}/` | 아카이브 내부 (`archiveDir/_work/`) |
+| `createWorkDir(root)` | 중간 단계만 (pipeline-layers) | 없음 | `out/_work/{runId}/` |
+
+각 스크립트의 사용:
+
+| 스크립트 | 함수 | pipeline |
+|---------|------|---------|
+| `export-sketch.ts` | `createRunContext` | `"blueprint"` |
+| `export-layered.ts` | `createRunContext` | `"layered"` |
+| `pipeline-layers.ts` | `createWorkDir` | — |
+| `capture-rendered.ts` | 없음 (독립 유틸) | — |
 
 ### 아카이브 규칙
 
 | 규칙 | 설명 |
 |------|------|
-| 폴더명 | `{YYYY-MM-DD}_{slugified-title}` |
-| 자기완결 | Sketch: `.frag` + `.mp4` / Layered: `layers/` + `scene.json` + `.mp4` |
+| 폴더명 | `out/{pipeline}/{YYYY-MM-DD}_{slugified-title}/` |
+| 자기완결 | Blueprint: `.frag` + `.mp4` / Layered: `layers/` + `scene.json` + `.mp4` |
 | 충돌 방지 | 같은 날짜+타이틀 시 `-2`, `-3` 자동 suffix |
 | 슬러그 | 영문+숫자+하이픈만 (`Hello World!` → `hello-world`) |
+| 자동 정리 | `_work/` 완료 시 삭제. 실패 시 빈 아카이브 디렉토리도 자동 삭제 |
+| `--keep-frames` | `skipCleanup()` — `_work/` 유지하여 프레임 보존 |
 
 ---
 
@@ -165,6 +189,9 @@ video-art/
 │   ├── lib/
 │   │   ├── scene-schema.ts           scene.json Zod 스키마 + 타입
 │   │   ├── scene-loader.ts           scene.json fetch + 검증
+│   │   ├── sketch-configs.ts         스케치 레지스트리 (해상도, fps, loopDuration, toneMapping)
+│   │   ├── sketch-registry.ts        스케치 레지스트리 re-export + toneMapping getter
+│   │   ├── bpm-calculator.ts         BPM → 루프/주기 계산
 │   │   ├── palette.ts                24색 팔레트 (hex → vec3)
 │   │   ├── shader-plane.ts           풀스크린 쿼드 팩토리
 │   │   └── effect-composer.ts        포스트프로세싱 (Bloom, CA, SparkleEffect)
@@ -172,6 +199,11 @@ video-art/
 │   │   ├── sketches/                 ★ 작품 셰이더 (.frag 하나 = 작품 하나)
 │   │   │   ├── psychedelic.frag         터널 + 회전 프레임
 │   │   │   ├── blueprint.frag           동심 회전 rounded rect
+│   │   │   ├── signal.frag              시그널 웨이브
+│   │   │   ├── psy.frag / psy-v3.frag   사이키델릭 변형
+│   │   │   ├── psychedelic-eye.frag     눈 모티프 (1080x1080)
+│   │   │   ├── rainbow-spiral.frag      무지개 나선
+│   │   │   ├── kaleidoscope.frag        만화경 (1920x1080)
 │   │   │   └── {new-work}.frag          새 작품은 여기에 추가
 │   │   ├── layer.frag                레이어 모드 전용 (색순환, 웨이브, 글로우, 패럴랙스)
 │   │   ├── sparkle.frag              반짝임 파티클 (deterministic hash, 4초 주기)
@@ -181,23 +213,33 @@ video-art/
 │   │   ├── post.vert                 포스트프로세싱 버텍스
 │   │   └── glsl.d.ts                 GLSL import 타입 선언
 │   └── sketches/
-│       ├── psychedelic.ts            Sketch 인터페이스 타입 정의
+│       ├── psychedelic.ts            Sketch 인터페이스 + psychedelic 셋업
+│       ├── signal.ts                 signal 스케치 셋업
+│       ├── psy-v3.ts                 psy-v3 스케치 셋업
+│       ├── rainbow-spiral.ts         rainbow-spiral 스케치 셋업
 │       └── layered-psychedelic.ts    멀티 레이어 스택 (scene.json 기반)
 │
 ├── scripts/
 │   ├── pipeline.ts                   layered 오케스트레이터 (분해 → 미리보기 → 익스포트)
 │   ├── pipeline-layers.ts            레이어 분해 + 후처리 + scene.json 생성
-│   ├── export-sketch.ts              sketch 모드 Puppeteer 캡처 → ffmpeg mp4
+│   ├── export-sketch.ts              sketch 모드 Puppeteer 캡처 → ffmpeg mp4 (sketch-configs 기반)
+│   ├── capture-rendered.ts           독립 프레임 캡처 유틸 (out/captured-frames/)
 │   ├── export-layered.ts             layered 모드 Puppeteer 캡처 → ffmpeg mp4
 │   ├── validate-loop.ts              루프 이음새 RMSE 검증
 │   ├── tsconfig.json                 scripts 전용 TS 설정
 │   └── lib/
-│       ├── archive.ts                아카이브 (날짜_타이틀, 충돌 방지, .frag/layers 스냅샷)
+│       ├── archive.ts                RunContext + createWorkDir (파이프라인별 아카이브, 자동 삭제)
 │       ├── check-deps.ts             ffmpeg / API 토큰 체크
+│       ├── image-decompose.ts        하이브리드 레이어 분해 (Qwen + ZoeDepth)
 │       ├── image-layered.ts          Replicate API (레이어 분해 + 다운로드)
 │       ├── input-validator.ts        입력 이미지 검증 (포맷, 크기, CMYK 변환)
 │       ├── postprocess.ts            레이어 후처리 (알파 정리, 노이즈 제거, 커버리지 정렬)
 │       └── scene-generator.ts        scene.json 자동 생성 (zIndex별 프리셋)
+│
+├── audio/
+│   ├── setup.sh                     SuperCollider 환경 설정
+│   ├── sc/                          SuperCollider synthdef/패턴
+│   └── render/                      오디오 렌더 출력
 │
 ├── out/                              모든 생성물 (gitignored)
 ├── public/                           Vite 정적 서빙 (pipeline이 자동 복사)
@@ -288,7 +330,8 @@ Canvas
 모든 period = duration의 약수 (duration=10 → 1, 2, 5, 10초)
 time = (elapsed % loopDuration) / loopDuration    → 0→1, 매 루프 리셋
 
-Sketch:  LOOP_DUR = 8초,  각 회전 속도 = 정수 × 반회전/루프 → seamless
+Sketch:  LOOP_DUR = sketch-configs.ts 레지스트리 (기본 8초, 스케치별 상이)
+         각 회전 속도 = 정수 × 반회전/루프 → seamless
 Layered: LOOP_DUR = scene.json duration (기본 10초), 모든 period가 duration의 약수 → seamless
 Sparkle: PERIOD = 4초, mod(time, period) 독립 주기 → duration 무관 seamless
 
@@ -301,21 +344,22 @@ Sparkle: PERIOD = 4초, mod(time, period) 독립 주기 → duration 무관 seam
 Puppeteer headless Chrome
     │
     ├── Clock.startRecording()           deterministic 모드
-    │   time = frame × (1/fps)           매 프레임 정확히 1/60초 진행
+    │   time = frame × (1/fps)           매 프레임 정확히 1/fps초 진행
     │
     ├── Loop N frames:
     │   __captureFrame()
     │   → clock.tick() → sketch.update() → composer.render()
-    │   → canvas.toDataURL("image/png") → out/_frames/*.png
+    │   → canvas.toDataURL("image/png") → archiveDir/_work/frames/*.png
     │
     ├── ffmpeg 인코딩
     │   libx264, yuv420p, preset slow, CRF 18 / 15Mbps
     │
-    └── 아카이브 저장 + _frames/ 삭제
+    └── 아카이브 저장 + ctx.cleanup() (_work/ 삭제)
 
 출력 스펙:
-  Sketch:  1080x1920, 60fps, 8초,  H.264, CRF 18
-  Layered: 1080x1080, 60fps, 10초(기본), H.264, 15Mbps
+  Sketch:  sketch-configs.ts 레지스트리 기반 (스케치별 해상도/fps/duration)
+           기본 1080x1920, 60fps, 8초, H.264, CRF 18
+  Layered: 1080x1080, 60fps, scene.json duration(기본 10초), H.264, 15Mbps
 ```
 
 ---
@@ -332,7 +376,7 @@ input.png (PNG/JPG/WEBP, max 4096x4096, 20MB)
     │
     ├── image-layered.ts
     │   Replicate API (qwen/qwen-image-layered) → 4장 RGBA PNG
-    │   (또는 out/layers/에 수동 PNG 배치 → API 생략)
+    │   (또는 프로젝트 루트 layers/에 수동 PNG 배치 → API 생략)
     │
     ├── postprocess.ts
     │   cleanAlphaEdges → removeNoiseIslands → alphaDilate
@@ -409,7 +453,7 @@ input.png (PNG/JPG/WEBP, max 4096x4096, 20MB)
     │
     ▼ 익스포트
     │
-    └── out/{date}_{name}/
+    └── out/blueprint/{date}_{name}/
         ├── blueprint.json          분석 스펙
         ├── {name}.frag             셰이더 소스
         └── {name}.mp4              최종 영상
@@ -428,17 +472,34 @@ Puppeteer API: `window.__captureReady` → `__startCapture(fps)` → `__captureF
 
 ---
 
-## Tech Stack
+## Dependencies
 
-| 영역 | 기술 |
+### Production
+
+| 패키지 | 버전 | 역할 |
+|--------|------|------|
+| **three** | ^0.172.0 | 3D 렌더링 엔진. OrthographicCamera + PlaneGeometry + ShaderMaterial로 GLSL 셰이더를 풀스크린 쿼드에 렌더링 |
+| **postprocessing** | ^6.39.0 | Three.js 후처리 이펙트. BloomEffect, ChromaticAberrationEffect + 커스텀 SparkleEffect를 EffectComposer로 체이닝 |
+| **puppeteer** | ^24.40.0 | headless Chrome 제어. 프레임 캡처 (`__captureFrame` → `canvas.toDataURL`), deterministic clock으로 정확한 fps 녹화 |
+| **sharp** | ^0.34.5 | Node.js 이미지 처리. 레이어 알파 정리(cleanAlphaEdges), 노이즈 제거(removeNoiseIslands), 커버리지 계산, 깊이맵 리사이즈 |
+| **replicate** | ^1.4.0 | Replicate API 클라이언트. `qwen/qwen-image-layered`(레이어 분해)와 `cjwbw/zoedepth`(깊이맵) 모델 호출 (~$0.03/회) |
+| **zod** | ^4.3.6 | 런타임 스키마 검증. `scene.json` 파싱(sceneSchema), CLI 입력 검증, 타입 추론(`z.infer`) |
+| **dotenv** | ^17.3.1 | `.env` 파일에서 `REPLICATE_API_TOKEN` 등 환경변수 로드. layered 파이프라인 스크립트에서 사용 |
+
+### Development
+
+| 패키지 | 버전 | 역할 |
+|--------|------|------|
+| **vite** | ^6.2.0 | 번들러 + 개발서버. HMR으로 셰이더 실시간 수정 확인, 프로덕션 빌드 |
+| **vite-plugin-glsl** | ^1.3.1 | `.frag`/`.vert` 파일을 ES module로 import 가능하게 함. `import fragSrc from "./psychedelic.frag"` 패턴 |
+| **typescript** | ^5.7.0 | 타입 체크. `tsc --noEmit`으로 빌드 전 검증, strict 모드 |
+| **@types/three** | ^0.172.0 | Three.js TypeScript 타입 정의 |
+| **tsx** | ^4.21.0 | TypeScript 스크립트 직접 실행. `npx tsx scripts/pipeline.ts` — Node.js에서 TS를 트랜스파일 없이 실행 |
+| **vitest** | ^4.1.1 | 유닛 테스트. scene-generator, input-validator, image-layered, bpm-calculator 등 테스트 |
+
+### External (npm 외)
+
+| 도구 | 역할 |
 |------|------|
-| 렌더링 | Three.js + GLSL ShaderMaterial |
-| 포스트프로세싱 | postprocessing npm + custom SparkleEffect |
-| 레이어 분해 | Replicate API (`qwen/qwen-image-layered`, ~$0.03/회) |
-| 이미지 처리 | sharp (alpha cleanup, noise removal, coverage sort) |
-| 씬 설정 | Zod v4 (scene.json 런타임 검증) |
-| 영상 출력 | Puppeteer + ffmpeg (H.264) |
-| 빌드 | Vite + vite-plugin-glsl |
-| 테스트 | Vitest |
-| 아카이빙 | scripts/lib/archive.ts (날짜\_타이틀, 충돌 방지, 스냅샷) |
-| 영상 분석 | /video-blueprint 스킬 (OpenCV, k-means, SSIM) |
+| **ffmpeg** | PNG 프레임 시퀀스 → H.264 MP4 인코딩. libx264, yuv420p, CRF 18 / 15Mbps |
+| **SuperCollider** (sclang) | 오디오 합성. `audio/sc/` synthdef 실행, BPM 기반 사운드 렌더링 (선택) |

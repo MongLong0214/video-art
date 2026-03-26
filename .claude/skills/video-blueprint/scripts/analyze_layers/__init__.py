@@ -92,6 +92,12 @@ def analyze(frames_dir: str, color_tolerance: int = 40, temporal_pairs: int = 8)
     color_result.pop("frame_images", None)
     color_result.pop("shapes_by_frame", None)
 
+    # Guard: ensure Phase 1 produced required keys
+    if "layer_analyses" not in color_result:
+        err = color_result.get("error", "Phase 1 (color_mask) produced no layer_analyses")
+        print(f"Error: {err}", file=sys.stderr)
+        sys.exit(1)
+
     # Merge: enrich layer_analyses with motion data
     result = {
         "layer_analyses": color_result["layer_analyses"],

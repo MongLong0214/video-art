@@ -4,33 +4,33 @@ import * as fs from "fs";
 import * as path from "path";
 import {
   parseTitle,
-  createArchiveDir,
-  framesDir,
-  cleanFrames,
+  createRunContext,
 } from "./lib/archive.js";
+import { getSketchConfig } from "../src/lib/sketch-configs.js";
 
-const WIDTH = 1080;
-const HEIGHT = 1920;
-const FPS = 60;
-const LOOP_DUR = 8.0;
-const TOTAL_FRAMES = FPS * LOOP_DUR;
-
-function parseSketch(argv: string[]): string {
-  const idx = argv.indexOf("--sketch");
+function parseArg(argv: string[], flag: string, fallback: string): string {
+  const idx = argv.indexOf(flag);
   if (idx !== -1 && argv[idx + 1] && !argv[idx + 1].startsWith("--")) {
     return argv[idx + 1];
   }
-  return "psychedelic";
+  return fallback;
 }
 
 async function main() {
   const args = process.argv.slice(2);
-  const sketch = parseSketch(args);
-  const title = parseTitle(args) === "untitled" ? sketch : parseTitle(args);
+  const sketch = parseArg(args, "--sketch", "psychedelic");
+  const devUrl = parseArg(args, "--url", "http://localhost:5173");
+  const cfg = getSketchConfig(sketch);
+  const WIDTH = cfg.width;
+  const HEIGHT = cfg.height;
+  const FPS = cfg.fps;
+  const LOOP_DUR = cfg.loopDuration;
+  const TOTAL_FRAMES = Math.round(FPS * LOOP_DUR);
+  const parsed = parseTitle(args);
+  const title = parsed === "untitled" ? sketch : parsed;
   const projectRoot = process.cwd();
-  const archiveDir = createArchiveDir(projectRoot, title);
-  const tempFrames = framesDir(projectRoot);
-  const outputPath = path.join(archiveDir, `${title}.mp4`);
+  const ctx = createRunContext(projectRoot, title, "blueprint");
+  const outputPath = path.join(ctx.archiveDir, `${title}.mp4`);
 
   // Verify sketch exists
   const fragPath = path.join(projectRoot, "src", "shaders", "sketches", `${sketch}.frag`);
@@ -44,11 +44,10 @@ async function main() {
 
   console.log(`Sketch: ${sketch}`);
   console.log(`Title: ${title}`);
-  console.log(`Archive: ${path.relative(projectRoot, archiveDir)}/`);
+  console.log(`Archive: ${path.relative(projectRoot, ctx.archiveDir)}/`);
 
-  // clean & create temp frames dir
-  if (fs.existsSync(tempFrames)) fs.rmSync(tempFrames, { recursive: true });
-  fs.mkdirSync(tempFrames, { recursive: true });
+  // Use RunContext frames dir for temp frames
+  fs.mkdirSync(ctx.paths.frames, { recursive: true });
 
   let browser: Browser | null = null;
 
@@ -67,7 +66,7 @@ async function main() {
 
     const page = await browser.newPage();
     await page.setViewport({ width: WIDTH, height: HEIGHT });
-    await page.goto(`http://localhost:5173/?sketch=${sketch}`, {
+    await page.goto(`${devUrl}/?sketch=${sketch}`, {
       waitUntil: "networkidle0",
     });
 
@@ -85,13 +84,16 @@ async function main() {
     );
 
     for (let f = 0; f < TOTAL_FRAMES; f++) {
-      await page.evaluate("window.__captureFrame()");
+      const dataUrl = (await page.evaluate(
+        "window.__captureFrame()",
+      )) as string;
 
       const framePath = path.join(
-        tempFrames,
+        ctx.paths.frames,
         `frame_${String(f).padStart(5, "0")}.png`,
       );
-      await canvas.screenshot({ path: framePath, type: "png" });
+      const base64 = dataUrl.replace(/^data:image\/png;base64,/, "");
+      fs.writeFileSync(framePath, Buffer.from(base64, "base64"));
 
       if (f % FPS === 0) {
         console.log(
@@ -109,7 +111,7 @@ async function main() {
   execFileSync("ffmpeg", [
     "-y",
     "-framerate", String(FPS),
-    "-i", path.join(tempFrames, "frame_%05d.png"),
+    "-i", path.join(ctx.paths.frames, "frame_%05d.png"),
     "-c:v", "libx264",
     "-preset", "slow",
     "-crf", "18",
@@ -119,18 +121,18 @@ async function main() {
   ], { stdio: "inherit" });
 
   // Snapshot shader source into archive
-  fs.copyFileSync(fragPath, path.join(archiveDir, `${sketch}.frag`));
+  fs.copyFileSync(fragPath, path.join(ctx.archiveDir, `${sketch}.frag`));
 
   console.log(`\nOutput: ${path.relative(projectRoot, outputPath)}`);
   console.log(`  ${WIDTH}x${HEIGHT} @ ${FPS}fps, ${LOOP_DUR}s seamless loop`);
 
-  // List archive contents
+  // Cleanup _work/ before listing
+  ctx.cleanup();
+
   console.log(`\nArchive contents:`);
-  for (const f of fs.readdirSync(archiveDir)) {
+  for (const f of fs.readdirSync(ctx.archiveDir)) {
     console.log(`  ${f}`);
   }
-
-  cleanFrames(projectRoot);
 }
 
 main().catch((err) => {

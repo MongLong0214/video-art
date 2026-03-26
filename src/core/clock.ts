@@ -18,6 +18,9 @@ export class Clock {
   get time() {
     return this._time;
   }
+  set time(t: number) {
+    this._time = t;
+  }
   get frame() {
     return this._frame;
   }

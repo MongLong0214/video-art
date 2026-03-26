@@ -38,9 +38,9 @@ class SparkleEffect extends Effect {
     });
   }
 
-  update(_renderer: THREE.WebGLRenderer, _inputBuffer: THREE.WebGLRenderTarget, deltaTime: number) {
+  setTime(t: number) {
     const u = this.uniforms.get("uTime");
-    if (u) u.value += deltaTime;
+    if (u) u.value = t;
   }
 }
 

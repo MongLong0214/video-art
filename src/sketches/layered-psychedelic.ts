@@ -46,7 +46,6 @@ export async function createLayeredPsychedelic(
         uOpacity: { value: layerConfig.opacity },
         // Color cycle
         uColorCycleSpeed: { value: anim.colorCycle?.speed ?? 0 },
-        uColorCycleHueRange: { value: anim.colorCycle?.hueRange ?? 0 },
         uColorCyclePeriod: { value: anim.colorCycle?.period ?? 10 },
         uPhaseOffset: { value: anim.colorCycle?.phaseOffset ?? 0 },
         // Wave
