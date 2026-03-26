@@ -1,12 +1,12 @@
-// Trance Master — complete trance sequencer with structure
+// Trance Master — complete trance sequencer with structure + macro automation
 
 ~buildTranceScore = { |rootMidi=69, scaleName=\minor, bpm=138, bars=32|
-	var chordDegrees = ~progressions[\trance_am]; // [1, 6, 3, 7]
+	var chordDegrees = ~progressions[\trance_am];
 	var chords = ~chordProgression.(rootMidi, scaleName, chordDegrees, 0);
 	var barDur = 4 * 60 / bpm;
 	var totalDur = bars * barDur;
+	var macro = ~tranceMacro.(bars, bpm);
 
-	// Build Ppar from active layers
 	var layerPatterns = [\sub_bass, \rolling_bass, \arp, \pad, \lead].collect { |name|
 		var builder = ~tranceLayers[name];
 		if(builder.notNil, {

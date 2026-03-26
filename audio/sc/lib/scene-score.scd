@@ -16,7 +16,7 @@
 // Determine active layers based on energy
 ~energyToLayers = { |energy|
 	var active = Array.new;
-	if(energy >= 0.0, { active = active.add(\sub_bass) });   // always
+	if(energy > 0.0, { active = active.add(\sub_bass) });
 	if(energy >= 0.2, { active = active.add(\pad) });
 	if(energy >= 0.4, { active = active.add(\rolling_bass) });
 	if(energy >= 0.5, { active = active.add(\arp) });
