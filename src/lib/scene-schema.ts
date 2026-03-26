@@ -12,7 +12,6 @@ const animationSchema = z.object({
   colorCycle: z
     .object({
       speed: z.number(),
-      hueRange: z.number().min(0).max(360),
       period: z.number().positive(),
       phaseOffset: z.number().min(0).max(360).default(0),
     })
@@ -71,6 +70,26 @@ const effectsSchema = z.object({
   sparkle: sparkleSchema.default({ count: 80, sizeMin: 2, sizeMax: 6, speed: 1 }),
 });
 
+const audioSchema = z.object({
+  bpm: z.number().int().min(60).max(200).optional(),
+  key: z
+    .enum([
+      "C", "Cm", "C#", "C#m", "D", "Dm", "D#", "D#m",
+      "E", "Em", "F", "Fm", "F#", "F#m",
+      "G", "Gm", "G#", "G#m", "A", "Am", "A#", "A#m", "B", "Bm",
+    ])
+    .default("Am"),
+  scale: z
+    .enum(["major", "minor", "dorian", "phrygian", "mixolydian"])
+    .default("minor"),
+  genre: z.enum(["techno", "trance"]).default("techno"),
+  energy: z.number().min(0).max(1).default(0.7),
+  preset: z
+    .string()
+    .regex(/^[a-zA-Z0-9_-]+$/)
+    .optional(),
+});
+
 export const sceneSchema = z
   .object({
     version: z.literal(1),
@@ -84,6 +103,7 @@ export const sceneSchema = z
       chromaticAberration: { offset: 1.5 },
       sparkle: { count: 80, sizeMin: 2, sizeMax: 6, speed: 1 },
     }),
+    audio: audioSchema.optional(),
   })
   .superRefine((data, ctx) => {
     const validPeriods = getValidPeriods(data.duration);
@@ -108,3 +128,4 @@ export type SceneConfig = z.infer<typeof sceneSchema>;
 export type LayerConfig = z.infer<typeof layerSchema>;
 export type AnimationConfig = z.infer<typeof animationSchema>;
 export type EffectsConfig = z.infer<typeof effectsSchema>;
+export type AudioConfig = z.infer<typeof audioSchema>;

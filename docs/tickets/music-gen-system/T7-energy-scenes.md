@@ -1,7 +1,7 @@
 # T7: 에너지 씬 시스템
 
 **PRD Ref**: PRD-music-gen-system > US-4
-**Priority**: P2 (Medium)
+**Priority**: P1 (High)
 **Size**: M (2-4h)
 **Status**: Todo
 **Depends On**: T5, T6
@@ -25,8 +25,10 @@
 | 1 | `scenescore parse` | Unit (SC) | SceneScore JSON/dict 파싱 | 섹션 배열 |
 | 2 | `energy to params` | Unit (SC) | energy 0.3 → low openness | 파라미터 매핑 정확 |
 | 3 | `energy to params high` | Unit (SC) | energy 0.9 → high all | 파라미터 매핑 정확 |
-| 4 | `techno scene NRT` | Integration | 5섹션 테크노 NRT | WAV + duration 일치 |
-| 5 | `trance scene NRT` | Integration | 5섹션 트랜스 NRT | WAV + duration 일치 |
+| 4 | `techno scene NRT` | Integration | 5섹션 테크노 NRT | WAV + duration 일치 + ffprobe bars 검증 |
+| 5 | `trance scene NRT` | Integration | 5섹션 트랜스 NRT | WAV + duration 일치 + ffprobe bars 검증 |
+| 6 | `energy=0 all off` | Unit (SC) | energy 0 → 모든 레이어 off | 무음 출력 (정상) |
+| 7 | `energy=1 all on` | Unit (SC) | energy 1 → 모든 레이어 on + max params | 전 레이어 시그널 |
 
 ### 3.2 Test File Location
 - `audio/sc/test-scenes.scd` (신규)

@@ -32,6 +32,9 @@
 | 5 | `riser loads` | Integration | sclang 로드 에러 0 | exit 0 |
 | 6 | `supersaw NRT render` | Integration | NRT → WAV + RMS > -60dBFS | WAV + 무음 아님 |
 | 7 | `riser NRT render` | Integration | NRT → WAV + RMS > -60dBFS | WAV + 무음 아님 |
+| 8 | `pad NRT render` | Integration | NRT → WAV + RMS > -60dBFS | WAV + 무음 아님 |
+| 9 | `lead NRT render` | Integration | NRT → WAV + RMS > -60dBFS | WAV + 무음 아님 |
+| 10 | `arp_pluck NRT render` | Integration | NRT → WAV + RMS > -60dBFS | WAV + 무음 아님 |
 
 ### 3.2 Test File Location
 - `audio/sc/test-synthdefs.scd` (T2와 공유, 확장)

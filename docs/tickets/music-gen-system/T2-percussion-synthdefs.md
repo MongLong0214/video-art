@@ -30,6 +30,8 @@
 | 4 | `clap loads` | Integration | sclang 로드 에러 0 | exit 0 |
 | 5 | `kick NRT render` | Integration | NRT → WAV 존재 + RMS > -60dBFS | WAV 파일 + 무음 아님 |
 | 6 | `bass NRT render` | Integration | NRT → WAV 존재 + RMS > -60dBFS | WAV 파일 + 무음 아님 |
+| 7 | `hat NRT render` | Integration | NRT → WAV 존재 + RMS > -60dBFS | WAV 파일 + 무음 아님 |
+| 8 | `clap NRT render` | Integration | NRT → WAV 존재 + RMS > -60dBFS | WAV 파일 + 무음 아님 |
 
 ### 3.2 Test File Location
 - `audio/sc/test-synthdefs.scd` (T1에서 생성한 스켈레톤 확장)

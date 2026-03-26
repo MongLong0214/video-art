@@ -4,7 +4,7 @@
 **Priority**: P1 (High)
 **Size**: L (4-8h)
 **Status**: Todo
-**Depends On**: T2, T4, T7
+**Depends On**: T2, T3, T4, T7
 
 ---
 
@@ -19,6 +19,8 @@ SC NRT 스템 렌더 + seamless loop crossfade + ffmpeg 믹스다운. `npm run r
 - [ ] AC-5: 렌더 전 디스크 공간 체크 (2x 여유). 실패 시 partial cleanup
 - [ ] AC-6: PID lock file (`out/audio/.render.lock`). 동시 렌더 방지
 - [ ] AC-7: 출력 WAV RMS > -60dBFS (무음 아님 검증)
+- [ ] AC-8: 모든 외부 프로세스 호출은 `child_process.execFile` (array-form). `exec`/`spawn(shell:true)` 금지
+- [ ] AC-9: SC NRT 스코어는 `TempoClock` 기반. NRT duration = scene.json duration ±1 sample
 
 ## 3. TDD Spec (Red Phase)
 

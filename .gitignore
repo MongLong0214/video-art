@@ -22,5 +22,11 @@ __pycache__/
 # IDE
 .idea/
 
+# Output artifacts (archives + work dirs)
+out/
+
+# Audio render output
+out/audio/
+
 # Recordings (legacy)
 recordings/

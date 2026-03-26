@@ -14,7 +14,11 @@
     "pipeline:preview": "vite",
     "pipeline:validate": "tsx scripts/validate-loop.ts",
     "export:sketch": "tsx scripts/export-sketch.ts",
-    "export:layered": "tsx scripts/export-layered.ts"
+    "export:layered": "tsx scripts/export-layered.ts",
+    "audio:setup": "bash audio/setup.sh",
+    "audio:test": "bash -c 'sclang -i none audio/sc/test-synthdefs.scd'",
+    "render:audio": "tsx scripts/render-audio.ts",
+    "render:av": "tsx scripts/render-av.ts"
   },
   "dependencies": {
     "dotenv": "^17.3.1",

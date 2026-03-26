@@ -15,7 +15,7 @@ SC Pdef 기반 테크노 패턴 3종 + 유클리드 리듬 + 확률 트리거 + 
 - [ ] AC-1: 유클리드 리듬 패턴 3종 — kick(Bjorklund(4,16)), hat(Bjorklund(7,16)), clap(Bjorklund(3,8))
 - [ ] AC-2: 각 패턴에 Pwrand/Prand 확률 요소 최소 1개 포함
 - [ ] AC-3: 2/4/8마디마다 hat density, clap 위치, filter cutoff 중 1개+ Pseg/Penv 변화
-- [ ] AC-4: NRT 스코어 내 filter cutoff Pseg 오토메이션 동작
+- [ ] AC-4: NRT 스코어 내 filter cutoff + delay feedback Pseg 오토메이션 동작
 - [ ] AC-5: 8~32마디 길이 패턴 NRT 렌더 → WAV RMS > -60dBFS
 
 ## 3. TDD Spec (Red Phase)
@@ -23,11 +23,16 @@ SC Pdef 기반 테크노 패턴 3종 + 유클리드 리듬 + 확률 트리거 + 
 ### 3.1 Test Cases
 | # | Test Name | Type | Description | Expected |
 |---|-----------|------|-------------|----------|
-| 1 | `bjorklund algorithm` | Unit (SC) | Bjorklund(4,16) | [1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0] |
+| 1a | `bjorklund(4,16)` | Unit (SC) | Bjorklund(4,16) | [1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0] |
+| 1b | `bjorklund(7,16)` | Unit (SC) | Bjorklund(7,16) | 7개 히트가 16스텝에 균등 분배 |
+| 1c | `bjorklund(3,8)` | Unit (SC) | Bjorklund(3,8) | 3개 히트가 8스텝에 균등 분배 |
 | 2 | `kick pattern loads` | Integration | sclang 로드 에러 0 | exit 0 |
 | 3 | `hat pattern loads` | Integration | sclang 로드 에러 0 | exit 0 |
-| 4 | `techno 16bar NRT` | Integration | 16마디 NRT 렌더 | WAV + RMS > -60dBFS |
-| 5 | `filter automation` | Integration | cutoff Pseg 적용 NRT | WAV (spectral change) |
+| 4 | `clap pattern loads` | Integration | sclang 로드 에러 0 | exit 0 |
+| 5 | `probability elements` | Unit (SC) | 패턴 스코어에 Pwrand/Prand 포함 여부 | assert true |
+| 6 | `techno 16bar NRT` | Integration | 16마디 NRT 렌더 | WAV + RMS > -60dBFS |
+| 7 | `filter automation` | Integration | cutoff Pseg 적용 NRT | WAV (spectral change) |
+| 8 | `delay feedback automation` | Integration | delay feedback Pseg 적용 NRT | WAV (temporal change) |
 
 ### 3.2 Test File Location
 - `audio/sc/test-patterns.scd` (신규)

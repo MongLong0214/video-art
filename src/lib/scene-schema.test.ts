@@ -13,7 +13,7 @@ const validScene = {
       file: "layers/layer-0.png",
       zIndex: 0,
       animation: {
-        colorCycle: { speed: 1.0, hueRange: 360, period: 10 },
+        colorCycle: { speed: 1.0, period: 10 },
       },
     },
   ],
@@ -72,7 +72,7 @@ describe("sceneSchema", () => {
           {
             ...validScene.layers[0],
             animation: {
-              colorCycle: { speed: 1.0, hueRange: 360, period },
+              colorCycle: { speed: 1.0, period },
             },
           },
         ],
@@ -88,7 +88,7 @@ describe("sceneSchema", () => {
         {
           ...validScene.layers[0],
           animation: {
-            colorCycle: { speed: 1.0, hueRange: 360, period: 4 },
+            colorCycle: { speed: 1.0, period: 4 },
           },
         },
       ],
@@ -103,7 +103,7 @@ describe("sceneSchema", () => {
         {
           ...validScene.layers[0],
           animation: {
-            colorCycle: { speed: 1.0, hueRange: 360, period: 20 },
+            colorCycle: { speed: 1.0, period: 20 },
           },
         },
       ],
@@ -119,7 +119,7 @@ describe("sceneSchema", () => {
         {
           ...validScene.layers[0],
           animation: {
-            colorCycle: { speed: 1.0, hueRange: 360, period: 4 },
+            colorCycle: { speed: 1.0, period: 4 },
           },
         },
       ],
@@ -218,7 +218,7 @@ describe("sceneSchema", () => {
         {
           ...validScene.layers[0],
           animation: {
-            colorCycle: { speed: 1.0, hueRange: 360, period: 10, phaseOffset: 400 },
+            colorCycle: { speed: 1.0, period: 10, phaseOffset: 400 },
           },
         },
       ],
@@ -233,7 +233,7 @@ describe("sceneSchema", () => {
         {
           ...validScene.layers[0],
           animation: {
-            colorCycle: { speed: 1.0, hueRange: 360, period: 10, phaseOffset: -90 },
+            colorCycle: { speed: 1.0, period: 10, phaseOffset: -90 },
           },
         },
       ],
@@ -249,7 +249,7 @@ describe("sceneSchema", () => {
         {
           ...validScene.layers[0],
           animation: {
-            colorCycle: { speed: 1.0, hueRange: 360, period: 1 },
+            colorCycle: { speed: 1.0, period: 1 },
           },
         },
       ],
@@ -287,7 +287,7 @@ describe("sceneSchema", () => {
           file: "layers/layer-0.png",
           zIndex: 0,
           animation: {
-            colorCycle: { speed: 1.0, hueRange: 360, period: 10 },
+            colorCycle: { speed: 1.0, period: 10 },
           },
         },
       ],
@@ -326,7 +326,7 @@ describe("sceneSchema", () => {
         {
           ...validScene.layers[0],
           animation: {
-            colorCycle: { speed: 1.0, hueRange: 360, period: 3 },
+            colorCycle: { speed: 1.0, period: 3 },
           },
         },
       ],
@@ -348,7 +348,7 @@ describe("sceneSchema", () => {
         {
           ...validScene.layers[0],
           animation: {
-            colorCycle: { speed: 0, hueRange: 360, period: 10 },
+            colorCycle: { speed: 0, period: 10 },
           },
         },
       ],
@@ -379,5 +379,93 @@ describe("sceneSchema", () => {
     expect(result.effects.bloom.strength).toBe(0.6);
     expect(result.effects.chromaticAberration.offset).toBe(1.5);
     expect(result.effects.sparkle.count).toBe(80);
+  });
+});
+
+describe("sceneSchema audio field", () => {
+  const baseScene = {
+    version: 1 as const,
+    source: "test.png",
+    resolution: [1080, 1080] as [number, number],
+    duration: 10,
+    fps: 30,
+    layers: [
+      {
+        id: "bg",
+        file: "layers/layer-0.png",
+        zIndex: 0,
+        animation: {
+          colorCycle: { speed: 1.0, period: 10 },
+        },
+      },
+    ],
+  };
+
+  it("audio field optional — scene without audio parses OK", () => {
+    const result = sceneSchema.safeParse(baseScene);
+    expect(result.success).toBe(true);
+  });
+
+  it("audio field valid — valid audio object parses", () => {
+    const result = sceneSchema.safeParse({
+      ...baseScene,
+      audio: {
+        key: "Am",
+        genre: "techno",
+        energy: 0.7,
+      },
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("audio key invalid — rejects bad key", () => {
+    const result = sceneSchema.safeParse({
+      ...baseScene,
+      audio: { key: "Xm#" },
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("audio preset injection — rejects shell characters", () => {
+    const result = sceneSchema.safeParse({
+      ...baseScene,
+      audio: { preset: "; rm -rf /" },
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("audio preset valid — accepts alphanumeric+dash+underscore", () => {
+    const result = sceneSchema.safeParse({
+      ...baseScene,
+      audio: { preset: "techno-default_v2" },
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("audio defaults applied when fields omitted", () => {
+    const result = sceneSchema.parse({
+      ...baseScene,
+      audio: {},
+    });
+    expect(result.audio?.key).toBe("Am");
+    expect(result.audio?.scale).toBe("minor");
+    expect(result.audio?.genre).toBe("techno");
+    expect(result.audio?.energy).toBe(0.7);
+  });
+
+  it("audio bpm optional with valid range", () => {
+    const result = sceneSchema.safeParse({
+      ...baseScene,
+      audio: { bpm: 128 },
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("audio bpm rejects out of range", () => {
+    const result = sceneSchema.safeParse({
+      ...baseScene,
+      audio: { bpm: 300 },
+    });
+    expect(result.success).toBe(false);
   });
 });

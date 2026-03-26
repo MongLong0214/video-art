@@ -24,8 +24,11 @@ SC Pbind/Routine 기반 트랜스 시퀀서 — 코드 진행 엔진 + 아르페
 | # | Test Name | Type | Description | Expected |
 |---|-----------|------|-------------|----------|
 | 1 | `chord gen Am scale` | Unit (SC) | Am 스케일 코드 4개 생성 | 모든 노트 ∈ [A,B,C,D,E,F,G] |
-| 2 | `arp direction up` | Unit (SC) | up 방향 아르페지오 | ascending 순서 |
-| 3 | `arp direction down` | Unit (SC) | down 방향 | descending 순서 |
+| 2a | `arp direction up` | Unit (SC) | up 방향 아르페지오 | ascending 순서 |
+| 2b | `arp direction down` | Unit (SC) | down 방향 | descending 순서 |
+| 2c | `arp direction random` | Unit (SC) | random 방향 | 비순차 순서 |
+| 2d | `arp octave span 3` | Unit (SC) | octave=3 | 3옥타브 범위 출력 |
+| 2e | `arp gate pattern` | Unit (SC) | gate 패턴 적용 | 일부 스텝 묵음 |
 | 4 | `layer bus routing` | Integration | 6 Bus 독립 출력 | 각 Bus에 시그널 존재 |
 | 5 | `macro automation` | Integration | 32마디 filter Pseg | NRT 렌더 성공 |
 | 6 | `trance 32bar NRT` | Integration | 전체 시퀀서 NRT | WAV + RMS > -60dBFS |

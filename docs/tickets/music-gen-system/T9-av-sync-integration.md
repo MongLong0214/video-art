@@ -14,7 +14,7 @@ ffmpeg로 비디오+오디오 합성. `npm run render:av` 원커맨드. 최종 .
 ## 2. Acceptance Criteria
 - [ ] AC-1: `npm run render:av` — 비디오 렌더 + 오디오 렌더 + ffmpeg 합성 → .mp4
 - [ ] AC-2: ffmpeg: `ffmpeg -i video.mp4 -i audio.wav -c:v copy -c:a aac -b:a 320k output.mp4`
-- [ ] AC-3: 출력 .mp4의 비디오/오디오 duration 일치 (ffprobe, 오차 < 100ms)
+- [ ] AC-3: 출력 .mp4의 비디오/오디오 duration 일치 (ffprobe, 오차 < 50ms). 컨테이너 muxing 특성상 ±1 sample 정밀도는 T8에서 보장
 - [ ] AC-4: merge-av.sh 스크립트 — 입력 경로 + 출력 경로 인자
 
 ## 3. TDD Spec (Red Phase)
@@ -22,10 +22,11 @@ ffmpeg로 비디오+오디오 합성. `npm run render:av` 원커맨드. 최종 .
 ### 3.1 Test Cases
 | # | Test Name | Type | Description | Expected |
 |---|-----------|------|-------------|----------|
-| 1 | `merge-av args` | Unit (shell) | 인자 없으면 에러 | exit 1 |
+| 1 | `merge-av args` | Shell | 인자 없으면 에러 (test-merge-av.sh) | exit 1 |
 | 2 | `merge-av valid` | Integration | video + audio → mp4 | 파일 존재 |
-| 3 | `duration match` | Integration | ffprobe video vs audio | < 100ms 차이 |
+| 3 | `duration match` | Integration | ffprobe video vs audio | < 50ms 차이 |
 | 4 | `render:av E2E` | Integration | 전체 파이프라인 | .mp4 재생 가능 |
+| 5 | `ffmpeg args verify` | Unit (vitest) | execFile spy로 ffmpeg 인자 검증 | -c:v copy -c:a aac -b:a 320k |
 
 ### 3.2 Test File Location
 - `scripts/lib/render-av.test.ts` (신규, vitest)
