@@ -64,6 +64,14 @@ s.waitForBoot {
 			"WARNING: custom-fx.scd not found, FX modules not loaded".postln;
 		};
 
+		// Load genre presets system
+		var presetsPath = thisProcess.nowExecutingPath.dirname +/+ "genre-presets.scd";
+		if(File.exists(presetsPath)) {
+			presetsPath.load;
+		} {
+			"WARNING: genre-presets.scd not found".postln;
+		};
+
 		// Conditionally load OSC logger (--log flag)
 		if(~enableLogging == true) {
 			var loggerPath = thisProcess.nowExecutingPath.dirname +/+ "osc-logger.scd";

@@ -63,4 +63,27 @@ let cutoff = pF "cutoff"
     decay = pF "decay"
 :}
 
+-- B-PRESET: SynthDef-specific parameters
+-- Note: attack/release are Tidal builtins — no need to redefine
+:{
+let openness = pF "openness"
+    tone = pF "tone"
+    filterEnv = pF "filterEnv"
+    vibrato = pF "vibrato"
+    portamento = pF "portamento"
+    brightness = pF "brightness"
+    sweepRange = pF "sweepRange"
+    noiseAmount = pF "noiseAmount"
+    envAmount = pF "envAmount"
+    clapSpread = pF "spread"
+    sawMix = pF "mix"
+:}
+
+-- B-PRESET: Preset switching helpers
+:{
+let presetName = pS "presetName"
+    setPreset name = once $ s "setpreset" # presetName (pure name)
+    getPreset = once $ s "getpreset"
+:}
+
 :set prompt "tidal> "
