@@ -5,7 +5,7 @@ import {
   buildFfmpegExtractArgs,
   parseVideoMetadata,
   normalizeFramePair,
-} from "./frame-extractor";
+} from "./frame-extractor.js";
 
 describe("calcProportionalTimestamps", () => {
   it("returns 10 timestamps for 10s video at 1fps", () => {

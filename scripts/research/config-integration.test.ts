@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { applyMultiplier, resolveParam } from "./config-integration";
+import { applyMultiplier, resolveParam } from "./config-integration.js";
 
 describe("resolveParam", () => {
   it("returns config value when provided", () => {

@@ -5,7 +5,7 @@ import {
   compositeScore,
   type EvalResult,
   makeEvalResult,
-} from "./evaluate";
+} from "./evaluate.js";
 
 describe("clamp01", () => {
   it("clamps negative to 0", () => expect(clamp01(-0.5)).toBe(0));

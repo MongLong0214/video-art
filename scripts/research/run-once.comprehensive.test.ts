@@ -1,9 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { makeKeepDecision, formatTsvRow, parseTsvHeader, formatConsoleOutput, countExperiments } from "./run-once";
-import { computeStats, computeDeltaMin, buildCalibrationResult } from "./calibrate";
-import { CrashCounter, BudgetTracker } from "./git-automation";
-import { parseTsvRows, computeReportStats } from "./report";
-import { ResearchConfigSchema, getDefaultConfig } from "./research-config";
+import { makeKeepDecision, formatTsvRow, parseTsvHeader, formatConsoleOutput, countExperiments } from "./run-once.js";
+import { computeStats, computeDeltaMin, buildCalibrationResult } from "./calibrate.js";
+import { CrashCounter, BudgetTracker } from "./git-automation.js";
+import { parseTsvRows, computeReportStats } from "./report.js";
+import { ResearchConfigSchema, getDefaultConfig } from "./research-config.js";
 
 // ── Keep/Discard Decision Matrix ───────────────────────────
 
@@ -110,12 +110,19 @@ describe("calibration comprehensive", () => {
   });
 
   it("buildCalibrationResult produces valid structure", () => {
-    const r = buildCalibrationResult([0.6, 0.65, 0.62], "model-v1");
+    const mockResults = [0.6, 0.65, 0.62].map((score) => ({
+      metrics: { M1: score, M2: score, M3: score, M4: score, M5: score, M6: score, M7: score, M8: score, M9: score, M10: score },
+      gatePassed: true,
+      qualityScore: score,
+    }));
+    const r = buildCalibrationResult(mockResults, "model-v1");
     expect(r.baselineScore).toBeCloseTo(0.623, 2);
     expect(r.deltaMin).toBeGreaterThanOrEqual(0.01);
     expect(r.modelVersion).toBe("model-v1");
     expect(r.runCount).toBe(3);
-    expect(r.timestamp).toMatch(/^\d{4}-/);
+    expect(r.calibratedAt).toMatch(/^\d{4}-/);
+    expect(r.perMetricStats).toBeDefined();
+    expect(r.perMetricStats.M1.mean).toBeCloseTo(0.623, 2);
   });
 });
 
@@ -193,7 +200,7 @@ describe("report comprehensive", () => {
 describe("ResearchConfig comprehensive", () => {
   it("default config has all fields", () => {
     const c = getDefaultConfig();
-    expect(Object.keys(c).length).toBeGreaterThanOrEqual(25);
+    expect(Object.keys(c).length).toBeGreaterThanOrEqual(28);
   });
 
   it.each([

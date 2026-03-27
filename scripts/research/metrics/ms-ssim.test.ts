@@ -5,7 +5,7 @@ import {
   ssimSingleScale,
   msssim,
   computeMsssimYCbCr,
-} from "./ms-ssim";
+} from "./ms-ssim.js";
 
 function solidChannel(w: number, h: number, val: number): Float64Array {
   return new Float64Array(w * h).fill(val);

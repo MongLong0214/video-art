@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { srgbToLab, ciede2000, kmeanspp, sinkhornDistance, computeColorPaletteSimilarity } from "./color-palette";
+import { srgbToLab, ciede2000, kmeanspp, sinkhornDistance, computeColorPaletteSimilarity } from "./color-palette.js";
 
 // ── sRGB→Lab Comprehensive ─────────────────────────────────
 

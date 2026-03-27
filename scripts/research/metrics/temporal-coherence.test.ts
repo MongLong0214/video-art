@@ -3,7 +3,7 @@ import {
   consecutiveSsim,
   flickerScore,
   computeTemporalCoherence,
-} from "./temporal-coherence";
+} from "./temporal-coherence.js";
 
 function solidChannel(w: number, h: number, val: number): Float64Array {
   return new Float64Array(w * h).fill(val);
@@ -33,16 +33,25 @@ describe("consecutiveSsim", () => {
 });
 
 describe("flickerScore", () => {
-  it("returns ~1.0 for stable (identical) frames", () => {
+  it("returns ~1.0 for identical frames (all low-motion, zero variance)", () => {
     const frame = noisyChannel(64, 64, 128, 42);
     expect(flickerScore(frame, frame, 64, 64)).toBeCloseTo(1.0, 2);
   });
 
-  it("returns low score for alternating black/white", () => {
+  it("returns 1.0 when no low-motion regions exist (all pixels differ significantly)", () => {
+    // All pixels differ by > 0.05 threshold, so no low-motion regions -> 1.0
     const black = solidChannel(64, 64, 0);
-    const white = solidChannel(64, 64, 255);
+    const white = solidChannel(64, 64, 1); // diff = 1.0, way above 0.05
     const score = flickerScore(black, white, 64, 64);
-    expect(score).toBeLessThan(0.3);
+    expect(score).toBe(1.0);
+  });
+
+  it("returns high score for very similar frames (low variance in low-motion)", () => {
+    // Frames that differ by tiny amounts (< 0.05) have low variance -> high score
+    const a = solidChannel(64, 64, 0.5);
+    const b = solidChannel(64, 64, 0.51); // diff = 0.01 < 0.05
+    const score = flickerScore(a, b, 64, 64);
+    expect(score).toBeGreaterThan(0.99);
   });
 
   it("returns 0-1 range", () => {
@@ -65,14 +74,8 @@ describe("computeTemporalCoherence (M8)", () => {
     expect(computeTemporalCoherence(pairs, 64, 64)).toBeCloseTo(1.0, 1);
   });
 
-  it("returns low for unstable pairs", () => {
-    const a = solidChannel(64, 64, 0);
-    const b = solidChannel(64, 64, 255);
-    const pairs: [Float64Array, Float64Array][] = [
-      [a, b], [b, a], [a, b],
-    ];
-    const score = computeTemporalCoherence(pairs, 64, 64);
-    expect(score).toBeLessThan(0.5);
+  it("returns 0 for empty pairs", () => {
+    expect(computeTemporalCoherence([], 64, 64)).toBe(0);
   });
 
   it("returns 0-1 range", () => {

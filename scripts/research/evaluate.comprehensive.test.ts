@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { clamp01, hardGate, compositeScore, makeEvalResult, type MetricValues } from "./evaluate";
+import { clamp01, hardGate, compositeScore, makeEvalResult, type MetricValues } from "./evaluate.js";
 
 function makeMetrics(base: number, overrides?: Partial<MetricValues>): MetricValues {
   return { M1: base, M2: base, M3: base, M4: base, M5: base, M6: base, M7: base, M8: base, M9: base, M10: base, ...overrides };

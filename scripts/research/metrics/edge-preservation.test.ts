@@ -4,7 +4,7 @@ import {
   dilateEdgeMap,
   edgeF1Score,
   computeEdgePreservation,
-} from "./edge-preservation";
+} from "./edge-preservation.js";
 
 function solidGray(w: number, h: number, val: number): Float64Array {
   return new Float64Array(w * h).fill(val);

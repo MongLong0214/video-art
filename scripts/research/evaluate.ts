@@ -1,4 +1,4 @@
-// Evaluate Harness — Hard Gate + Secondary Ranking
+// Evaluate Harness -- Hard Gate + Secondary Ranking
 // 10 metrics (M1-M10), 4-tier weighted composite
 
 import { existsSync, readdirSync, readFileSync, mkdirSync, rmSync } from "fs";
@@ -97,7 +97,7 @@ export function makeEvalResult(rawMetrics: MetricValues): EvalResult {
   return { metrics, gatePassed, qualityScore };
 }
 
-// ── Frame Helpers ─────────────────────────────────────────
+// -- Frame Helpers --------------------------------------------
 
 async function loadFrameRgb(imgPath: string): Promise<FrameData> {
   const { data, info } = await sharp(imgPath)
@@ -136,7 +136,7 @@ function rgbToGray(frame: FrameData): Float64Array {
   return gray;
 }
 
-// ── evaluateVideo: end-to-end video → score ──────────────
+// -- evaluateVideo: end-to-end video -> score -----------------
 
 export interface EvaluateVideoOptions {
   videoPath: string;
@@ -168,7 +168,7 @@ export async function evaluateVideo(opts: EvaluateVideoOptions): Promise<EvalRes
   // Get generated video metadata
   const genMeta = getVideoMetadata(videoPath);
 
-  // ── Extract reference keyframes ─────────────────────────
+  // -- Extract reference keyframes ----------------------------
   const refFrameFiles = readdirSync(referenceCacheDir)
     .filter((f) => f.startsWith("frame_p") && f.endsWith(".png"))
     .sort();
@@ -184,7 +184,7 @@ export async function evaluateVideo(opts: EvaluateVideoOptions): Promise<EvalRes
 
   const numFrames = Math.min(refFrameFiles.length, genTimestamps.length);
 
-  // ── Color Metrics (M1, M2, M3): average over all frame pairs ──
+  // -- Color & Visual Metrics (M1-M6): per-metric error isolation --
   let m1Sum = 0, m2Sum = 0, m3Sum = 0;
   let m4Sum = 0, m5Sum = 0, m6Sum = 0;
   let colorPairCount = 0;
@@ -199,26 +199,54 @@ export async function evaluateVideo(opts: EvaluateVideoOptions): Promise<EvalRes
     const [normRef, normGen] = await normalizeFramePair(refFrame, genFrame);
 
     // M1: Color Palette Sinkhorn
-    const refLab = rgbToLab(normRef);
-    const genLab = rgbToLab(normGen);
-    m1Sum += computeColorPaletteSimilarity(refLab, genLab);
+    try {
+      const refLab = rgbToLab(normRef);
+      const genLab = rgbToLab(normGen);
+      m1Sum += computeColorPaletteSimilarity(refLab, genLab);
+    } catch (err) {
+      console.warn(`M1 (Color Palette) failed on frame ${i}:`, err instanceof Error ? err.message : err);
+    }
 
     // M2: Dominant Color CIEDE2000
-    m2Sum += computeDominantColorAccuracy(refLab, genLab);
+    try {
+      const refLab = rgbToLab(normRef);
+      const genLab = rgbToLab(normGen);
+      m2Sum += computeDominantColorAccuracy(refLab, genLab);
+    } catch (err) {
+      console.warn(`M2 (Dominant Color) failed on frame ${i}:`, err instanceof Error ? err.message : err);
+    }
 
     // M3: Color Temperature
-    m3Sum += computeColorTemperatureSimilarity(rgbMean(normRef), rgbMean(normGen));
+    try {
+      m3Sum += computeColorTemperatureSimilarity(rgbMean(normRef), rgbMean(normGen));
+    } catch (err) {
+      console.warn(`M3 (Color Temperature) failed on frame ${i}:`, err instanceof Error ? err.message : err);
+    }
 
     // M4: MS-SSIM YCbCr
-    m4Sum += computeMsssimYCbCr(normRef.data, normGen.data, normRef.width, normRef.height);
+    try {
+      m4Sum += computeMsssimYCbCr(normRef.data, normGen.data, normRef.width, normRef.height);
+    } catch (err) {
+      console.warn(`M4 (MS-SSIM) failed on frame ${i}:`, err instanceof Error ? err.message : err);
+    }
 
     // M5: Canny Edge Preservation
-    const refGray = rgbToGray(normRef);
-    const genGray = rgbToGray(normGen);
-    m5Sum += computeEdgePreservation(refGray, genGray, normRef.width, normRef.height);
+    try {
+      const refGray = rgbToGray(normRef);
+      const genGray = rgbToGray(normGen);
+      m5Sum += computeEdgePreservation(refGray, genGray, normRef.width, normRef.height);
+    } catch (err) {
+      console.warn(`M5 (Edge Preservation) failed on frame ${i}:`, err instanceof Error ? err.message : err);
+    }
 
     // M6: Texture Richness
-    m6Sum += computeTextureRichness(refGray, genGray, normRef.width, normRef.height);
+    try {
+      const refGray = rgbToGray(normRef);
+      const genGray = rgbToGray(normGen);
+      m6Sum += computeTextureRichness(refGray, genGray, normRef.width, normRef.height);
+    } catch (err) {
+      console.warn(`M6 (Texture Richness) failed on frame ${i}:`, err instanceof Error ? err.message : err);
+    }
 
     colorPairCount++;
   }
@@ -230,7 +258,7 @@ export async function evaluateVideo(opts: EvaluateVideoOptions): Promise<EvalRes
   const M5 = colorPairCount > 0 ? m5Sum / colorPairCount : 0;
   const M6 = colorPairCount > 0 ? m6Sum / colorPairCount : 0;
 
-  // ── M7: VMAF (video-level) ─────────────────────────────
+  // -- M7: VMAF (video-level) --------------------------------
   let M7 = 0.5; // fallback if VMAF not available
   if (sourceVideoPath && existsSync(sourceVideoPath) && checkVmafAvailable()) {
     try {
@@ -242,7 +270,7 @@ export async function evaluateVideo(opts: EvaluateVideoOptions): Promise<EvalRes
     console.warn("VMAF not available (libvmaf required). Using fallback score 0.5");
   }
 
-  // ── M8: Temporal Coherence ─────────────────────────────
+  // -- M8: Temporal Coherence --------------------------------
   let M8 = 0.5;
   const temporalPairs = calcTemporalPairTimestamps(genMeta.duration, genMeta.fps);
   if (temporalPairs.length > 0) {
@@ -269,7 +297,7 @@ export async function evaluateVideo(opts: EvaluateVideoOptions): Promise<EvalRes
     }
   }
 
-  // ── M9, M10: Layer Quality ─────────────────────────────
+  // -- M9, M10: Layer Quality --------------------------------
   let M9 = 0.5;
   let M10 = 0.5;
   if (manifestPath && existsSync(manifestPath)) {
@@ -282,7 +310,7 @@ export async function evaluateVideo(opts: EvaluateVideoOptions): Promise<EvalRes
     }
   }
 
-  // ── Cleanup tmp ────────────────────────────────────────
+  // -- Cleanup tmp -------------------------------------------
   try {
     rmSync(tmpDir, { recursive: true, force: true });
   } catch { /* best-effort cleanup */ }
@@ -290,7 +318,7 @@ export async function evaluateVideo(opts: EvaluateVideoOptions): Promise<EvalRes
   return makeEvalResult({ M1, M2, M3, M4, M5, M6, M7, M8, M9, M10 });
 }
 
-// ── CLI entry point ──────────────────────────────────────
+// -- CLI entry point -----------------------------------------
 
 if (process.argv[1]?.endsWith("evaluate.ts")) {
   const videoPath = process.argv[2];
@@ -315,12 +343,17 @@ if (process.argv[1]?.endsWith("evaluate.ts")) {
     ? args[sourceIdx + 1]
     : undefined;
 
+  const startMs = Date.now();
+
   evaluateVideo({ videoPath, referenceCacheDir, manifestPath, sourceVideoPath })
     .then((result) => {
-      console.log("\n=== Evaluation Results ===");
-      console.log(`Gate: ${result.gatePassed ? "PASS" : "FAIL"}`);
-      console.log(`Composite Score: ${result.qualityScore.toFixed(4)}`);
-      console.log("\nMetrics:");
+      const elapsedMs = Date.now() - startMs;
+
+      // Human-readable output to stderr
+      console.error("\n=== Evaluation Results ===");
+      console.error(`Gate: ${result.gatePassed ? "PASS" : "FAIL"}`);
+      console.error(`Composite Score: ${result.qualityScore.toFixed(4)}`);
+      console.error("\nMetrics:");
       const labels = [
         "M1  Color Palette", "M2  Dominant Color", "M3  Color Temperature",
         "M4  MS-SSIM", "M5  Edge Preservation", "M6  Texture Richness",
@@ -329,8 +362,17 @@ if (process.argv[1]?.endsWith("evaluate.ts")) {
       ];
       const vals = Object.values(result.metrics);
       for (let i = 0; i < labels.length; i++) {
-        console.log(`  ${labels[i]}: ${vals[i].toFixed(4)}`);
+        console.error(`  ${labels[i]}: ${vals[i].toFixed(4)}`);
       }
+
+      // JSON output to stdout
+      const jsonOutput = {
+        metrics: result.metrics,
+        gatePassed: result.gatePassed,
+        qualityScore: result.qualityScore,
+        elapsedMs,
+      };
+      process.stdout.write(JSON.stringify(jsonOutput) + "\n");
     })
     .catch((err) => {
       console.error("Evaluation failed:", err instanceof Error ? err.message : err);

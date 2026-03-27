@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { computeDominantColorAccuracy } from "./dominant-color";
-import { srgbToLab } from "./color-palette";
+import { computeDominantColorAccuracy } from "./dominant-color.js";
+import { srgbToLab } from "./color-palette.js";
 
 describe("computeDominantColorAccuracy (M2)", () => {
   it("returns 1.0 for identical palettes", () => {

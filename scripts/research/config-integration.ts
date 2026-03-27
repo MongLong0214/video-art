@@ -2,7 +2,7 @@
 // Used by existing pipeline modules to optionally consume ResearchConfig values
 // Pattern: resolveParam(config, key, hardcodedDefault) → value
 
-import type { ResearchConfig } from "./research-config";
+import type { ResearchConfig } from "./research-config.js";
 
 export function resolveParam<K extends keyof ResearchConfig>(
   config: Partial<ResearchConfig> | undefined,

@@ -5,7 +5,7 @@ import {
   kmeanspp,
   sinkhornDistance,
   computeColorPaletteSimilarity,
-} from "./color-palette";
+} from "./color-palette.js";
 
 describe("srgbToLab", () => {
   it("converts pure white correctly", () => {

@@ -5,7 +5,7 @@ import {
   parseTsvHeader,
   formatConsoleOutput,
   countExperiments,
-} from "./run-once";
+} from "./run-once.js";
 
 describe("makeKeepDecision", () => {
   it("returns KEEP when gate passes and score > baseline + δ_min", () => {

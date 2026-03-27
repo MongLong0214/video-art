@@ -30,6 +30,8 @@ import {
 } from "./lib/decomposition-manifest.js";
 import type { ManifestInput } from "./lib/decomposition-manifest.js";
 import { createRunContext, parseTitle } from "./lib/archive.js";
+import { maskToken } from "./lib/replicate-utils.js";
+import type { ResearchConfig } from "./research/research-config.js";
 import type { LayerCandidate } from "../src/lib/scene-schema.js";
 
 async function main() {
@@ -41,6 +43,17 @@ async function main() {
     );
     process.exit(1);
   }
+
+  // Optional ResearchConfig for threshold overrides (loaded if available)
+  let pipelineConfig: Partial<ResearchConfig> | undefined;
+  try {
+    const { loadConfig } = await import("./research/research-config.js");
+    pipelineConfig = loadConfig("scripts/research/research-config.ts");
+  } catch {
+    // Research config not available — use module defaults
+  }
+
+  const replicateToken = process.env.REPLICATE_API_TOKEN ?? "";
 
   const projectRoot = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
   const title = parseTitle(process.argv.slice(2), cliArgs.inputPath);
@@ -80,7 +93,7 @@ async function main() {
     // Extract candidates from manual layers
     candidates = [];
     for (const layerPath of workLayers) {
-      const extracted = await extractCandidates(layerPath, layersDir);
+      const extracted = await extractCandidates(layerPath, layersDir, pipelineConfig);
       candidates.push(...extracted);
     }
     passes.push({ type: "qwen-base", candidateCount: candidates.length });
@@ -104,7 +117,7 @@ async function main() {
     // If --layers not specified, use complexity scoring to determine layer count
     let selectedLayerCount = numLayers;
     if (!cliArgs.layerOverride) {
-      const complexity = await scoreComplexity(preparedPath);
+      const complexity = await scoreComplexity(preparedPath, pipelineConfig);
       selectedLayerCount = complexity.layerCount;
       console.log(`  Complexity: tier=${complexity.tier}, edgeDensity=${complexity.edgeDensity.toFixed(3)}, colorEntropy=${complexity.colorEntropy.toFixed(3)} → ${selectedLayerCount} layers`);
     } else {
@@ -127,7 +140,7 @@ async function main() {
     for (let fi = 0; fi < decomposeResult.files.length; fi++) {
       const file = decomposeResult.files[fi];
       const meta = decomposeResult.fileMeta?.[fi];
-      const extracted = await extractCandidates(file, layersDir);
+      const extracted = await extractCandidates(file, layersDir, pipelineConfig);
       for (const c of extracted) {
         if (meta?.source === "depth-split") {
           c.source = "depth-split";
@@ -145,7 +158,7 @@ async function main() {
     const recursiveChildren: LayerCandidate[] = [];
 
     for (const c of candidates) {
-      if (shouldRecurse(c)) {
+      if (shouldRecurse(c, pipelineConfig)) {
         console.log(`  Candidate ${c.id.slice(0, 8)} triggers recursive decompose (coverage=${(c.coverage * 100).toFixed(1)}%, components=${c.componentCount})`);
         const children = await recursiveDecompose(c, {
           outputDir: layersDir,
@@ -309,7 +322,8 @@ async function main() {
     console.log("Manifest written to archive.");
   } catch (manifestErr) {
     // Non-fatal: manifest generation failure should not block pipeline
-    console.warn(`Manifest generation warning: ${manifestErr instanceof Error ? manifestErr.message : String(manifestErr)}`);
+    const errMsg = manifestErr instanceof Error ? manifestErr.message : String(manifestErr);
+    console.warn(`Manifest generation warning: ${maskToken(errMsg, replicateToken)}`);
   }
 
   // --- Step 14: Copy source images to archive ---
@@ -342,6 +356,7 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error("Error:", err.message);
+  const token = process.env.REPLICATE_API_TOKEN ?? "";
+  console.error("Error:", maskToken(err.message, token));
   process.exit(1);
 });

@@ -117,15 +117,15 @@ replicate.run("qwen/qwen-image-layered", {
 
 ### 2.1 Goals
 
-- [ ] G1: 최종 retained layer들이 서로 `실질적으로 독립`되도록 만든다.
-- [ ] G2: 각 픽셀이 기본적으로 하나의 주 레이어에만 귀속되도록 `exclusive ownership`를 도입한다.
-- [ ] G3: 최종 layer ordering을 `role + geometry + optional depth hint` 기준으로 정한다.
-- [ ] G4: 최종 layer count를 기본적으로 `5~8개` 수준으로 제한한다.
-- [ ] G5: `scene-generator.ts`가 `role-based preset`을 사용할 수 있게 한다.
-- [ ] G6: 모든 decomposition run에 대해 `provenance manifest`를 저장한다.
-- [ ] G7: `Qwen-Only`와 `Qwen+ZoeDepth` 두 경로를 모두 production 수준으로 구현한다.
+- [x] G1: 최종 retained layer들이 서로 `실질적으로 독립`되도록 만든다.
+- [x] G2: 각 픽셀이 기본적으로 하나의 주 레이어에만 귀속되도록 `exclusive ownership`를 도입한다.
+- [x] G3: 최종 layer ordering을 `role + geometry + optional depth hint` 기준으로 정한다.
+- [x] G4: 최종 layer count를 기본적으로 `5~8개` 수준으로 제한한다.
+- [x] G5: `scene-generator.ts`가 `role-based preset`을 사용할 수 있게 한다.
+- [x] G6: 모든 decomposition run에 대해 `provenance manifest`를 저장한다.
+- [x] G7: `Qwen-Only`와 `Qwen+ZoeDepth` 두 경로를 모두 production 수준으로 구현한다.
 - [ ] G8: 같은 golden set에서 두 경로를 비교해 production default를 결정한다.
-- [ ] G9: 외부 모델 사용 방식을 production-safe하게 문서화하고 버전 고정이 가능하도록 한다.
+- [x] G9: 외부 모델 사용 방식을 production-safe하게 문서화하고 버전 고정이 가능하도록 한다.
 
 ### 2.2 Non-Goals
 
@@ -146,11 +146,11 @@ replicate.run("qwen/qwen-image-layered", {
 
 **Acceptance Criteria**
 
-- [ ] AC-1.1: 최종 retained layer의 대다수는 `uniqueCoverage >= 2%`를 만족한다.
-- [ ] AC-1.2: `uniqueCoverage < 2%`인 레이어는 기본적으로 drop되며, role-critical일 때만 예외 허용한다.
-- [ ] AC-1.3: 두 후보의 `IoU > 0.85`이고 geometry가 유사하면 merge 또는 drop한다.
-- [ ] AC-1.4: retained 레이어 중 `uniqueCoverage < 2%`인 것이 0개이다 (role-critical 예외 제외).
-- [ ] AC-1.5: 최종 retained layer count가 **8개 이하**이다 (G4).
+- [x] AC-1.1: 최종 retained layer의 대다수는 `uniqueCoverage >= 2%`를 만족한다.
+- [x] AC-1.2: `uniqueCoverage < 2%`인 레이어는 기본적으로 drop되며, role-critical일 때만 예외 허용한다.
+- [x] AC-1.3: 두 후보의 `IoU > 0.85`이고 geometry가 유사하면 merge 또는 drop한다.
+- [x] AC-1.4: retained 레이어 중 `uniqueCoverage < 2%`인 것이 0개이다 (role-critical 예외 제외).
+- [x] AC-1.5: 최종 retained layer count가 **8개 이하**이다 (G4).
 
 ### US-2: 역할 기반 ordering
 
@@ -158,10 +158,10 @@ replicate.run("qwen/qwen-image-layered", {
 
 **Acceptance Criteria**
 
-- [ ] AC-2.1: 최종 ordering은 coverage sort만으로 결정되지 않는다.
-- [ ] AC-2.2: `background plate`는 항상 가장 뒤 레이어로 배치된다.
-- [ ] AC-2.3: `foreground-occluder`는 가장 앞쪽 그룹에 배치된다.
-- [ ] AC-2.4: exclusive ownership 후 retained 레이어 간 pairwise pixel overlap이 **5% 이하**이다 (G2).
+- [x] AC-2.1: 최종 ordering은 coverage sort만으로 결정되지 않는다.
+- [x] AC-2.2: `background plate`는 항상 가장 뒤 레이어로 배치된다.
+- [x] AC-2.3: `foreground-occluder`는 가장 앞쪽 그룹에 배치된다.
+- [x] AC-2.4: exclusive ownership 후 retained 레이어 간 pairwise pixel overlap이 **5% 이하**이다 (G2).
 
 ### US-3: Qwen의 올바른 사용
 
@@ -169,10 +169,10 @@ replicate.run("qwen/qwen-image-layered", {
 
 **Acceptance Criteria**
 
-- [ ] AC-3.1: 기본 decomposition은 `3~4 layers`를 우선 사용한다.
-- [ ] AC-3.2: 복잡한 이미지에서만 `6` 또는 `8` layer 모드로 상승한다.
-- [ ] AC-3.3: finer control이 필요할 때는 전체 이미지가 아니라 `선택된 레이어만 재분해`한다.
-- [ ] AC-3.4: base pass와 recursive pass 여부가 manifest에 기록된다.
+- [x] AC-3.1: 기본 decomposition은 `3~4 layers`를 우선 사용한다.
+- [x] AC-3.2: 복잡한 이미지에서만 `6` 또는 `8` layer 모드로 상승한다.
+- [x] AC-3.3: finer control이 필요할 때는 전체 이미지가 아니라 `선택된 레이어만 재분해`한다.
+- [x] AC-3.4: base pass와 recursive pass 여부가 manifest에 기록된다.
 
 ### US-4: Variant A/B 비교 가능성
 
@@ -180,12 +180,12 @@ replicate.run("qwen/qwen-image-layered", {
 
 **Acceptance Criteria**
 
-- [ ] AC-4.1: `pipelineVariant = "qwen-only"` 경로가 구현된다.
-- [ ] AC-4.2: `pipelineVariant = "qwen-zoedepth"` 경로가 구현된다.
-- [ ] AC-4.3: 두 경로가 같은 input contract, 같은 archive contract, 같은 scene-generator contract를 사용한다.
-- [ ] AC-4.4: 비교 결과가 report와 manifest에 기록된다.
-- [ ] AC-4.5: production mode에서 model version이 immutable SHA가 아니면 **hard fail**한다 (G9).
-- [ ] AC-4.6: `decomposition-manifest.json`에 exact model version string이 기록된다 (`latest` 불허).
+- [x] AC-4.1: `pipelineVariant = "qwen-only"` 경로가 구현된다.
+- [x] AC-4.2: `pipelineVariant = "qwen-zoedepth"` 경로가 구현된다.
+- [x] AC-4.3: 두 경로가 같은 input contract, 같은 archive contract, 같은 scene-generator contract를 사용한다.
+- [x] AC-4.4: 비교 결과가 report와 manifest에 기록된다.
+- [x] AC-4.5: production mode에서 model version이 immutable SHA가 아니면 **hard fail**한다 (G9).
+- [x] AC-4.6: `decomposition-manifest.json`에 exact model version string이 기록된다 (`latest` 불허).
 
 ### US-5: 역할 기반 animation preset
 
@@ -193,9 +193,9 @@ replicate.run("qwen/qwen-image-layered", {
 
 **Acceptance Criteria**
 
-- [ ] AC-5.1: 최종 layer metadata에 `role`이 포함된다.
-- [ ] AC-5.2: `scene-generator.ts`는 role 기반으로 preset을 선택한다.
-- [ ] AC-5.3: index 기반 preset assignment를 제거한다.
+- [x] AC-5.1: 최종 layer metadata에 `role`이 포함된다.
+- [x] AC-5.2: `scene-generator.ts`는 role 기반으로 preset을 선택한다.
+- [x] AC-5.3: index 기반 preset assignment를 제거한다.
 
 ### US-6: 추적 가능성과 재현성
 
@@ -203,10 +203,10 @@ replicate.run("qwen/qwen-image-layered", {
 
 **Acceptance Criteria**
 
-- [ ] AC-6.1: archive에 `decomposition-manifest.json`이 저장된다.
-- [ ] AC-6.2: manifest에는 source image, prepared image, model id, model version, pipeline variant, candidate stats, drop reasons, `unsafeFlag`, `productionMode`, requested/selected layer counts가 포함된다.
-- [ ] AC-6.3: source image와 prepared image가 archive에 함께 저장된다.
-- [ ] AC-6.4: 기존 scene.json (`role` 필드 없음)이 새 스키마에서 정상 파싱된다 (backward compat).
+- [x] AC-6.1: archive에 `decomposition-manifest.json`이 저장된다.
+- [x] AC-6.2: manifest에는 source image, prepared image, model id, model version, pipeline variant, candidate stats, drop reasons, `unsafeFlag`, `productionMode`, requested/selected layer counts가 포함된다.
+- [x] AC-6.3: source image와 prepared image가 archive에 함께 저장된다.
+- [x] AC-6.4: 기존 scene.json (`role` 필드 없음)이 새 스키마에서 정상 파싱된다 (backward compat).
 
 ---
 

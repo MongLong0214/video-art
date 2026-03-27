@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { checkDirty, ensureBranch, gitCommitConfig, gitRestoreConfig, registerSigintHandler } from "./git-automation";
+import { checkDirty, ensureBranch, gitCommitConfig, gitRestoreConfig, registerSigintHandler } from "./git-automation.js";
 
 vi.mock("child_process", () => ({
   execFileSync: vi.fn(),

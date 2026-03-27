@@ -2,7 +2,7 @@
 // Saves config snapshot + score + model version to baseline-config.json
 
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from "fs";
-import { getDefaultConfig, ResearchConfigSchema } from "./research-config";
+import { getDefaultConfig, ResearchConfigSchema } from "./research-config.js";
 
 const CACHE_DIR = ".cache/research";
 const BASELINE_PATH = `${CACHE_DIR}/baseline-config.json`;

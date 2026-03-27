@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseTsvRows, computeReportStats, type ExperimentRow } from "./report";
+import { parseTsvRows, computeReportStats, type ExperimentRow } from "./report.js";
 
 const SAMPLE_TSV = `commit\tquality_score\tgate_pass\tM1\tM2\tM3\tM4\tM5\tM6\tM7\tM8\tM9\tM10\tmodel\tms\tstatus\tdesc
 abc1234\t0.65\t1\t0.8\t0.7\t0.6\t0.5\t0.6\t0.5\t0.7\t0.8\t0.6\t0.5\tv1\t1200\tkeep\tbaseline

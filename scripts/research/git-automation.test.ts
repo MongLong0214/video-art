@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { CrashCounter, BudgetTracker } from "./git-automation";
+import { CrashCounter, BudgetTracker } from "./git-automation.js";
 
 describe("CrashCounter", () => {
   it("starts at 0", () => {

@@ -5,7 +5,7 @@ import { existsSync, readFileSync, appendFileSync, mkdirSync } from "fs";
 import { execFileSync } from "child_process";
 import type { MetricValues } from "./evaluate.js";
 import { evaluateVideo } from "./evaluate.js";
-import { ResearchConfigSchema } from "./research-config.js";
+import { loadConfig } from "./research-config.js";
 import type { CalibrationResult } from "./calibrate.js";
 import { loadBaseline, type BaselineRecord } from "./promote.js";
 import {
@@ -13,7 +13,9 @@ import {
   gitRestoreConfig,
   registerSigintHandler,
   CrashCounter,
+  BudgetTracker,
   ensureBranch,
+  checkDirty,
 } from "./git-automation.js";
 
 const CALIBRATION_PATH = ".cache/research/calibration.json";
@@ -171,11 +173,47 @@ function runPipeline(
   return { videoPath, manifestPath };
 }
 
+// ── CLI argument parsing ──────────────────────────────────
+
+export function parseRunOnceArgs(argv: string[]): { tag?: string; budget?: number } {
+  let tag: string | undefined;
+  let budget: number | undefined;
+
+  for (let i = 0; i < argv.length; i++) {
+    if (argv[i] === "--tag" && argv[i + 1]) {
+      tag = argv[++i];
+    } else if (argv[i] === "--budget" && argv[i + 1]) {
+      const n = Number(argv[++i]);
+      if (Number.isFinite(n) && n > 0) budget = n;
+    }
+  }
+
+  return { tag, budget };
+}
+
 // ── main() ───────────────────────────────────────────────
 
 export async function main(): Promise<void> {
   const cwd = process.cwd();
-  const crashCounter = new CrashCounter();
+
+  // Parse CLI args: --tag <name>, --budget <N>
+  const cliArgs = parseRunOnceArgs(process.argv.slice(2));
+
+  // Step 0a: Check dirty working tree (T11-AC6)
+  if (checkDirty(cwd)) {
+    throw new Error("Working tree has uncommitted changes. Commit or stash first.");
+  }
+
+  const crashCounter = CrashCounter.persisted();
+
+  // Step 0b: Check budget (T11-AC7)
+  const budgetTracker = BudgetTracker.persisted(cliArgs.budget);
+  if (budgetTracker.isExhausted()) {
+    throw new Error(
+      `Experiment budget exhausted (${budgetTracker.current}/${cliArgs.budget ?? "unlimited"}). ` +
+      `Delete .cache/research/experiment-count.json to reset.`,
+    );
+  }
 
   // SIGINT handler: restore config on interrupt
   registerSigintHandler(
@@ -183,18 +221,13 @@ export async function main(): Promise<void> {
     (msg) => console.log(msg),
   );
 
-  // Step 0: Ensure autoresearch branch (AC-3.3)
-  const tag = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+  // Step 0c: Ensure autoresearch branch — use --tag or date-based (T11-AC1)
+  const tag = cliArgs.tag ?? new Date().toISOString().slice(0, 10).replace(/-/g, "");
   ensureBranch(tag, cwd);
 
-  // Step 1: Validate config
+  // Step 1: Load config from file (T10-AC2)
   const configPath = "scripts/research/research-config.ts";
-  let config: Record<string, unknown>;
-  try {
-    config = ResearchConfigSchema.parse({}) as Record<string, unknown>;
-  } catch (err) {
-    throw new Error(`Config validation failed: ${err instanceof Error ? err.message : err}`);
-  }
+  const config = loadConfig(configPath) as Record<string, unknown>;
 
   // Step 2: Load calibration
   const calibration = loadCalibration();
@@ -203,11 +236,11 @@ export async function main(): Promise<void> {
   const { score: baselineScore, deltaMin, modelVersion: baselineModelVersion } =
     loadBaselineScore();
 
-  // Step 4: A1.12 fix — version mismatch check
+  // Step 4: A1.12 fix — version mismatch → hard abort (T10-AC9)
   if (calibration.modelVersion !== baselineModelVersion) {
-    console.warn(
-      `[WARN] Model version mismatch: calibration=${calibration.modelVersion}, baseline=${baselineModelVersion}. ` +
-      `Baseline may be stale. Consider running \`npm run research:calibrate\` to recalibrate.`,
+    throw new Error(
+      `Model version mismatch: calibration=${calibration.modelVersion}, baseline=${baselineModelVersion}. ` +
+      `Run \`npm run research:calibrate\` to recalibrate before proceeding.`,
     );
   }
 
@@ -266,18 +299,20 @@ export async function main(): Promise<void> {
     }
 
     crashCounter.recordSuccess();
+    budgetTracker.increment();
 
     // Console output
     const elapsedMs = Date.now() - startMs;
     console.log(formatConsoleOutput(expNum, qualityScore, status, delta, elapsedMs));
   } catch (err) {
-    // Step 10: Crash handling
+    // Step 10: Crash handling (T11-AC4: persisted crash counter + error summary)
     const elapsedMs = Date.now() - startMs;
     status = "crash";
-    crashCounter.recordCrash();
+    const errMsg = err instanceof Error ? err.message : String(err);
+    crashCounter.recordCrash(errMsg);
 
     console.error(
-      `[exp #${expNum}] CRASH: ${err instanceof Error ? err.message : err}`,
+      `[exp #${expNum}] CRASH: ${errMsg}`,
     );
 
     // Restore config on crash
@@ -287,7 +322,8 @@ export async function main(): Promise<void> {
 
     if (crashCounter.shouldStop()) {
       throw new Error(
-        `${crashCounter.count} consecutive crashes — halting. Fix the issue and retry.`,
+        `${crashCounter.count} consecutive crashes — halting. Fix the issue and retry.\n` +
+        `Last ${crashCounter.errors.length} errors:\n${crashCounter.getErrorSummary()}`,
       );
     }
 

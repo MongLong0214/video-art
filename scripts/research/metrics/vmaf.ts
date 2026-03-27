@@ -1,6 +1,6 @@
 // M7: VMAF via ffmpeg libvmaf
 // Full-reference video quality, includes temporal information
-// Score 0-100 → normalized to 0-1
+// Score 0-100 -> normalized to 0-1
 
 import { execFileSync } from "child_process";
 import { readFileSync, unlinkSync } from "fs";
@@ -34,9 +34,15 @@ export function normalizeVmafScore(score: number): number {
   return clamp01(score / 100);
 }
 
+export interface VmafOptions {
+  refWidth?: number;
+  refHeight?: number;
+}
+
 export function computeVmaf(
   refVideoPath: string,
   genVideoPath: string,
+  options?: VmafOptions,
 ): number {
   if (!checkVmafAvailable()) {
     throw new Error(
@@ -45,17 +51,32 @@ export function computeVmaf(
   }
 
   // ffmpeg compares videos frame-by-frame
-  // Scale gen to match ref resolution if different
+  // Scale gen to match ref resolution before VMAF comparison
   const logPath = `/tmp/vmaf_${Date.now()}.json`;
 
+  // Build scale filter: if reference dimensions provided, scale to those;
+  // otherwise probe reference and scale gen to match
+  let scaleFilter: string;
+  if (options?.refWidth && options?.refHeight) {
+    scaleFilter = `scale=${options.refWidth}:${options.refHeight}:flags=lanczos`;
+  } else {
+    // Scale gen to match ref dimensions using [0:v] stream dimensions
+    scaleFilter = "scale='iw0':'ih0':flags=lanczos";
+  }
+
   try {
+    // Use two-pass filtergraph: ref passes through, gen is scaled to ref's dimensions
+    const lavfi = options?.refWidth && options?.refHeight
+      ? `[0:v]setpts=PTS-STARTPTS[ref];[1:v]setpts=PTS-STARTPTS,${scaleFilter}[gen];[ref][gen]libvmaf=log_fmt=json:log_path=${logPath}`
+      : `[0:v]setpts=PTS-STARTPTS[ref0];[ref0]split[ref][refsize];[refsize]scale=iw:ih,format=pix_fmts=yuv420p[dummy];[1:v]setpts=PTS-STARTPTS[gen0];[ref]scale=iw:ih[refout];[gen0][refout]scale2ref[genscaled][refout2];[refout2][genscaled]libvmaf=log_fmt=json:log_path=${logPath}`;
+
     execFileSync(
       "ffmpeg",
       [
         "-i", refVideoPath,
         "-i", genVideoPath,
         "-lavfi",
-        `[0:v]setpts=PTS-STARTPTS[ref];[1:v]setpts=PTS-STARTPTS,scale=iw:ih:flags=lanczos[gen];[ref][gen]libvmaf=log_fmt=json:log_path=${logPath}`,
+        lavfi,
         "-f", "null",
         "-",
       ],

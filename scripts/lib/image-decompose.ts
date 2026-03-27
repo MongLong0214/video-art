@@ -5,8 +5,9 @@ import fs from "node:fs";
 import path from "node:path";
 
 import { extractCandidates } from "./candidate-extraction.js";
-import { withRetry, validateReplicateUrl, enforceVersionPin } from "./replicate-utils.js";
+import { withRetry, validateReplicateUrl, enforceVersionPin, maskToken } from "./replicate-utils.js";
 import type { LayerCandidate } from "../../src/lib/scene-schema.js";
+import type { ResearchConfig } from "../research/research-config.js";
 
 function getToken(): string {
   const token = process.env.REPLICATE_API_TOKEN;
@@ -376,17 +377,25 @@ const RECURSIVE_EDGE_DENSITY_THRESHOLD = 0.15;
 
 /**
  * Determines whether a candidate should be recursively decomposed.
- * Trigger: coverage > 30% AND (componentCount > 3 OR edgeDensity > 0.15)
+ * Trigger: coverage > threshold AND (componentCount > threshold OR edgeDensity > threshold)
+ * Thresholds are configurable via ResearchConfig with fallback to module constants.
  */
-export function shouldRecurse(candidate: {
-  coverage: number;
-  componentCount: number;
-  edgeDensity: number;
-}): boolean {
+export function shouldRecurse(
+  candidate: {
+    coverage: number;
+    componentCount: number;
+    edgeDensity: number;
+  },
+  config?: Partial<ResearchConfig>,
+): boolean {
+  const coverageThreshold = config?.recurseCoverageThreshold ?? RECURSIVE_COVERAGE_THRESHOLD;
+  const componentThreshold = config?.recurseComponentThreshold ?? RECURSIVE_COMPONENT_COUNT_THRESHOLD;
+  const edgeDensityThreshold = config?.recurseEdgeDensityThreshold ?? RECURSIVE_EDGE_DENSITY_THRESHOLD;
+
   return (
-    candidate.coverage > RECURSIVE_COVERAGE_THRESHOLD &&
-    (candidate.componentCount > RECURSIVE_COMPONENT_COUNT_THRESHOLD ||
-      candidate.edgeDensity > RECURSIVE_EDGE_DENSITY_THRESHOLD)
+    candidate.coverage > coverageThreshold &&
+    (candidate.componentCount > componentThreshold ||
+      candidate.edgeDensity > edgeDensityThreshold)
   );
 }
 
@@ -467,8 +476,14 @@ export async function recursiveDecompose(
     }
 
     return allSubCandidates;
-  } catch {
+  } catch (err) {
     // API failure: return empty so caller retains parent (AC-5)
+    // Mask token in error output to prevent leaking API keys
+    const token = process.env.REPLICATE_API_TOKEN ?? "";
+    const safeMsg = err instanceof Error
+      ? maskToken(err.message, token)
+      : maskToken(String(err), token);
+    console.warn(`[recursive-decompose] API failure (parent retained): ${safeMsg}`);
     return [];
   }
 }

@@ -1,7 +1,7 @@
 // M2: Dominant Color Accuracy (CIEDE2000)
 // Top-3 dominant colors, weighted 0.5/0.3/0.2
 
-import { kmeanspp, ciede2000 } from "./color-palette";
+import { kmeanspp, ciede2000 } from "./color-palette.js";
 
 const WEIGHTS = [0.5, 0.3, 0.2];
 const MAX_DELTA_E = 50;

@@ -3,7 +3,7 @@ import {
   rgbToCCT,
   cctToMireds,
   computeColorTemperatureSimilarity,
-} from "./color-temperature";
+} from "./color-temperature.js";
 
 describe("rgbToCCT", () => {
   it("estimates D65 white correctly (~6500K)", () => {

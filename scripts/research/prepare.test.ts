@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { prepareReference } from "./prepare";
+import { prepareReference } from "./prepare.js";
 
 vi.mock("fs", async () => {
   const actual = await vi.importActual<typeof import("fs")>("fs");
@@ -14,7 +14,7 @@ vi.mock("./frame-extractor", () => ({
 }));
 
 import { existsSync, writeFileSync } from "fs";
-import { extractSingleFrame, checkFfmpegAvailable } from "./frame-extractor";
+import { extractSingleFrame, checkFfmpegAvailable } from "./frame-extractor.js";
 
 beforeEach(() => { vi.clearAllMocks(); });
 

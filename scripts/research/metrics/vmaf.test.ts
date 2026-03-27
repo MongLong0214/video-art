@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { parseVmafJson, normalizeVmafScore, checkVmafAvailable } from "./vmaf";
+import { parseVmafJson, normalizeVmafScore, checkVmafAvailable } from "./vmaf.js";
 
 describe("parseVmafJson", () => {
   it("extracts mean VMAF score from ffmpeg JSON output", () => {

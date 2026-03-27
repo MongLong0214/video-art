@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   computeLayerIndependence,
   computeRoleCoherence,
-} from "./layer-quality";
+} from "./layer-quality.js";
 
 describe("computeLayerIndependence (M9)", () => {
   it("returns high score for good independence (no duplicates)", () => {

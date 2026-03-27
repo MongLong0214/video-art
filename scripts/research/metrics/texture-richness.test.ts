@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { computeTextureRichness } from "./texture-richness";
+import { computeTextureRichness } from "./texture-richness.js";
 
 function solidGray(w: number, h: number): Float64Array {
   return new Float64Array(w * h).fill(128);

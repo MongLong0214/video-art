@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { rgbToYCbCr, gaussianKernel, ssimSingleScale, msssim, computeMsssimYCbCr } from "./ms-ssim";
-import { cannyEdgeDetect, dilateEdgeMap, edgeF1Score, computeEdgePreservation } from "./edge-preservation";
-import { computeTextureRichness } from "./texture-richness";
+import { rgbToYCbCr, gaussianKernel, ssimSingleScale, msssim, computeMsssimYCbCr } from "./ms-ssim.js";
+import { cannyEdgeDetect, dilateEdgeMap, edgeF1Score, computeEdgePreservation } from "./edge-preservation.js";
+import { computeTextureRichness } from "./texture-richness.js";
 
 // ── Helpers ────────────────────────────────────────────────
 

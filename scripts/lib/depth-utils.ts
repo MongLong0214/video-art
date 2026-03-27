@@ -9,6 +9,7 @@ import path from "node:path";
 import fs from "node:fs";
 import crypto from "node:crypto";
 import type { LayerCandidate } from "../../src/lib/scene-schema.js";
+import type { ResearchConfig } from "../research/research-config.js";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -117,10 +118,12 @@ export async function selectiveDepthSplit(
   candidate: LayerCandidate,
   depthMapPath: string,
   outputDir: string,
+  config?: Partial<ResearchConfig>,
 ): Promise<LayerCandidate[]> {
+  const threshold = config?.depthSplitThreshold ?? DEPTH_SPLIT_THRESHOLD;
   const depthStd = candidate.depthStd ?? 0;
 
-  if (depthStd <= DEPTH_SPLIT_THRESHOLD) {
+  if (depthStd <= threshold) {
     return [candidate];
   }
 

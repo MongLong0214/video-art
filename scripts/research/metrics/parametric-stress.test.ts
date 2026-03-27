@@ -1,13 +1,13 @@
 import { describe, it, expect } from "vitest";
-import { srgbToLab, ciede2000, computeColorPaletteSimilarity } from "./color-palette";
-import { computeDominantColorAccuracy } from "./dominant-color";
-import { computeColorTemperatureSimilarity, rgbToCCT, cctToMireds } from "./color-temperature";
-import { ssimSingleScale, computeMsssimYCbCr } from "./ms-ssim";
-import { computeEdgePreservation } from "./edge-preservation";
-import { computeTextureRichness } from "./texture-richness";
-import { consecutiveSsim, flickerScore } from "./temporal-coherence";
-import { computeLayerIndependence, computeRoleCoherence } from "./layer-quality";
-import { clamp01, hardGate, compositeScore, makeEvalResult, type MetricValues } from "../evaluate";
+import { srgbToLab, ciede2000, computeColorPaletteSimilarity } from "./color-palette.js";
+import { computeDominantColorAccuracy } from "./dominant-color.js";
+import { computeColorTemperatureSimilarity, rgbToCCT, cctToMireds } from "./color-temperature.js";
+import { ssimSingleScale, computeMsssimYCbCr } from "./ms-ssim.js";
+import { computeEdgePreservation } from "./edge-preservation.js";
+import { computeTextureRichness } from "./texture-richness.js";
+import { consecutiveSsim, flickerScore } from "./temporal-coherence.js";
+import { computeLayerIndependence, computeRoleCoherence } from "./layer-quality.js";
+import { clamp01, hardGate, compositeScore, makeEvalResult, type MetricValues } from "../evaluate.js";
 
 // ── Helper ─────────────────────────────────────────────────
 
@@ -143,7 +143,7 @@ describe("texture richness stress (sizes)", () => {
 
 describe("temporal flicker stress (10 magnitudes)", () => {
   for (let diff = 0; diff <= 255; diff += 25) {
-    it(`diff=${diff} → monotonic decrease`, () => {
+    it(`diff=${diff} → valid range [0, 1]`, () => {
       const a = new Float64Array(32*32).fill(128);
       const b = new Float64Array(32*32).fill(128 + Math.min(diff, 127));
       const s = flickerScore(a, b, 32, 32);

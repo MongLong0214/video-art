@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { existsSync, readFileSync } from "fs";
 
 export const ResearchConfigSchema = z
   .object({
@@ -43,6 +44,11 @@ export const ResearchConfigSchema = z
     // ── Variant Selection ────────────────────────────────────
     qualityThresholdPct: z.number().min(1).max(30).default(10),
 
+    // ── Recursive Decomposition ────────────────────────────
+    recurseCoverageThreshold: z.number().min(0.1).max(0.9).default(0.30),
+    recurseComponentThreshold: z.number().int().min(1).max(20).default(3),
+    recurseEdgeDensityThreshold: z.number().min(0.01).max(0.5).default(0.15),
+
     // ── Scene Generator Multipliers ──────────────────────────
     colorCycleSpeedMul: z.number().min(0.1).max(3.0).default(1.0),
     parallaxDepthMul: z.number().min(0.1).max(3.0).default(1.0),
@@ -60,4 +66,43 @@ export type ResearchConfig = z.infer<typeof ResearchConfigSchema>;
 
 export function getDefaultConfig(): ResearchConfig {
   return ResearchConfigSchema.parse({});
+}
+
+export function loadConfig(filePath?: string): ResearchConfig {
+  const targetPath = filePath ?? "scripts/research/research-config.ts";
+
+  if (!existsSync(targetPath)) {
+    console.warn(`Config file not found: ${targetPath}. Using defaults.`);
+    return getDefaultConfig();
+  }
+
+  try {
+    const raw = readFileSync(targetPath, "utf-8");
+
+    if (targetPath.endsWith(".json")) {
+      return ResearchConfigSchema.parse(JSON.parse(raw));
+    }
+
+    // For .ts files: extract object literal from the exported config
+    // Look for a JSON-like object between braces after parse({...})
+    const objMatch = raw.match(/\.parse\(\s*(\{[\s\S]*?\})\s*\)/);
+    if (objMatch?.[1]) {
+      try {
+        // The parse({}) call uses defaults, so an empty object is valid
+        const extracted = objMatch[1].replace(/\/\/.*$/gm, "").trim();
+        const parsed = JSON.parse(extracted);
+        return ResearchConfigSchema.parse(parsed);
+      } catch {
+        // Empty {} or unparseable — use defaults
+        return getDefaultConfig();
+      }
+    }
+
+    return getDefaultConfig();
+  } catch (err) {
+    console.warn(
+      `Failed to parse config from ${targetPath}: ${err instanceof Error ? err.message : err}. Using defaults.`,
+    );
+    return getDefaultConfig();
+  }
 }
