@@ -14,14 +14,26 @@ if (!inputPath) {
 
 const resolvedInput = path.resolve(inputPath);
 
-// Determine if input is file or directory
-const stat = fs.statSync(resolvedInput);
-const isDir = stat.isDirectory();
+// Verify path exists
+let isDir: boolean;
+try {
+  isDir = fs.statSync(resolvedInput).isDirectory();
+} catch {
+  console.error(`Path not found: ${resolvedInput}`);
+  process.exit(1);
+}
 
 if (isDir) {
-  // Directory must be within project root
-  if (!resolvedInput.startsWith(fs.realpathSync(PROJECT_ROOT) + path.sep)) {
-    console.error("Directory must be within project root.");
+  // Directory must be within project root (resolve symlinks for both)
+  try {
+    const realDir = fs.realpathSync(resolvedInput);
+    const realRoot = fs.realpathSync(PROJECT_ROOT);
+    if (!realDir.startsWith(realRoot + path.sep) && realDir !== realRoot) {
+      console.error("Directory must be within project root.");
+      process.exit(1);
+    }
+  } catch {
+    console.error("Failed to resolve directory path.");
     process.exit(1);
   }
 } else if (!validateFilePath(resolvedInput, PROJECT_ROOT, [".osclog"])) {

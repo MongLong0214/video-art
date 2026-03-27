@@ -50,6 +50,11 @@ describe("prod-pipeline", () => {
     expect(guide).toContain("48kHz");
   });
 
+  // TC-4a: masteringCommand throws on empty stems
+  it("throws when no stems provided", () => {
+    expect(() => buildMasteringCommand([], "/tmp/master.wav")).toThrow("No stem files");
+  });
+
   // TC-4: masteringCommand correct args
   it("builds mastering command with loudnorm", () => {
     const args = buildMasteringCommand(

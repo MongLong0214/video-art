@@ -69,6 +69,10 @@ export const buildMasteringCommand = (
   stemPaths: string[],
   outputPath: string,
 ): string[] => {
+  if (stemPaths.length === 0) {
+    throw new Error("No stem files provided for mastering");
+  }
+
   // Mix all stems + loudnorm
   const inputs: string[] = [];
   for (const stem of stemPaths) {
