@@ -1,0 +1,6 @@
+{"timestamp":"2026-03-27T03:04:03.418Z","type":"hook_dispatch","event":"turn-complete","source":"native","enabled":false,"reason":"plugins_disabled"}
+{"timestamp":"2026-03-27T03:52:04.822Z","type":"hook_dispatch","event":"turn-complete","source":"native","enabled":false,"reason":"plugins_disabled"}
+{"timestamp":"2026-03-27T03:52:47.361Z","type":"hook_dispatch","event":"turn-complete","source":"native","enabled":false,"reason":"plugins_disabled"}
+{"timestamp":"2026-03-27T08:18:28.000Z","type":"hook_dispatch","event":"turn-complete","source":"native","enabled":false,"reason":"plugins_disabled"}
+{"timestamp":"2026-03-27T08:23:21.127Z","type":"hook_dispatch","event":"turn-complete","source":"native","enabled":false,"reason":"plugins_disabled"}
+{"timestamp":"2026-03-27T08:43:07.406Z","type":"hook_dispatch","event":"turn-complete","source":"native","enabled":false,"reason":"plugins_disabled"}

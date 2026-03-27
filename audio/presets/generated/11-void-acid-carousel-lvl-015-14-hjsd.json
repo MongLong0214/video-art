@@ -1,0 +1,88 @@
+{
+  "name": "11-void-acid-carousel-lvl-015-14-hjsd",
+  "bpm": {
+    "min": 132,
+    "max": 142,
+    "default": 137
+  },
+  "synthParams": {
+    "kick": {
+      "drive": 0.85,
+      "click": 0.6,
+      "decay": 0.2
+    },
+    "bass": {
+      "cutoff": 1200,
+      "resonance": 0.45,
+      "envAmount": 0.55
+    },
+    "hat": {
+      "openness": 0.15,
+      "tone": 0.4
+    },
+    "clap": {
+      "spread": 0.5,
+      "decay": 0.3
+    },
+    "supersaw": {
+      "detune": 0.3,
+      "mix": 0.5,
+      "cutoff": 2000
+    },
+    "pad": {
+      "attack": 0.5,
+      "release": 2,
+      "filterEnv": 0.3
+    },
+    "lead": {
+      "vibrato": 0.2,
+      "portamento": 0.1,
+      "drive": 0.4
+    },
+    "arp_pluck": {
+      "decay": 0.2,
+      "brightness": 0.4
+    },
+    "riser": {
+      "sweepRange": 0.6,
+      "noiseAmount": 0.3
+    }
+  },
+  "fxDefaults": {
+    "compress": 0.5,
+    "threshold": -10,
+    "ratio": 4,
+    "compAttack": 0.02,
+    "compRelease": 0.1,
+    "saturate": 0.4,
+    "drive": 0.32000000000000006,
+    "loGain": 3,
+    "midGain": 0,
+    "hiGain": 0,
+    "loFreq": 200,
+    "hiFreq": 4000,
+    "sideGain": 0.8,
+    "sideRelease": 0.15
+  },
+  "stemGroups": {
+    "drums": [
+      "kick",
+      "hat",
+      "clap"
+    ],
+    "bass": [
+      "bass"
+    ],
+    "lead": [
+      "lead",
+      "arp_pluck"
+    ],
+    "pad": [
+      "pad",
+      "supersaw"
+    ],
+    "fx": [
+      "riser"
+    ]
+  }
+}

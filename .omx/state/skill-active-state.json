@@ -1,10 +1,11 @@
 {
   "version": 1,
-  "active": false,
-  "skill": "ralph",
-  "keyword": "Ralph",
-  "phase": "completing",
-  "activated_at": "2026-03-26T14:03:11.966Z",
-  "updated_at": "2026-03-26T14:03:11.967Z",
-  "source": "keyword-detector"
+  "active": true,
+  "skill": "code-review",
+  "keyword": "code review",
+  "phase": "reviewing",
+  "activated_at": "2026-03-27T03:04:03.430Z",
+  "updated_at": "2026-03-27T08:43:07.419Z",
+  "source": "keyword-detector",
+  "input_lock": null
 }

@@ -6,33 +6,33 @@
 
 import Sound.Tidal.Context
 
-:{
-let target = superdirtTarget
-      { oAddress = "127.0.0.1"
-      , oPort = 57120
-      }
-:}
+tidal <- startTidal (superdirtTarget {oAddress = "127.0.0.1", oPort = 57120}) (defaultConfig {cFrameTimespan = 1/20})
 
 :{
-let orbits = [0..7]
-    sdConfig = defaultConfig
-      { cFrameTimespan = 1/20 }
-:}
-
-stream <- startStream sdConfig [(target, orbits)]
-
-:{
-let d1 = streamReplace stream 1
-    d2 = streamReplace stream 2
-    d3 = streamReplace stream 3
-    d4 = streamReplace stream 4
-    d5 = streamReplace stream 5
-    d6 = streamReplace stream 6
-    d7 = streamReplace stream 7
-    d8 = streamReplace stream 8
-    hush = streamHush stream
-    solo = streamSolo stream
-    unsolo = streamUnsolo stream
+let only = (hush >>)
+    p = streamReplace tidal
+    hush = streamHush tidal
+    list = streamList tidal
+    mute = streamMute tidal
+    unmute = streamUnmute tidal
+    unmuteAll = streamUnmuteAll tidal
+    solo = streamSolo tidal
+    unsolo = streamUnsolo tidal
+    unsoloAll = streamUnsoloAll tidal
+    once = streamOnce tidal
+    asap = once
+    nudgeAll = streamNudgeAll tidal
+    all = streamAll tidal
+    resetCycles = streamResetCycles tidal
+    setcps = asap . cps
+    d1 = p 1 . (|< orbit 0)
+    d2 = p 2 . (|< orbit 1)
+    d3 = p 3 . (|< orbit 2)
+    d4 = p 4 . (|< orbit 3)
+    d5 = p 5 . (|< orbit 4)
+    d6 = p 6 . (|< orbit 5)
+    d7 = p 7 . (|< orbit 6)
+    d8 = p 8 . (|< orbit 7)
 :}
 
 -- Custom FX parameters
