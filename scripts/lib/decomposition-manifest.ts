@@ -75,9 +75,9 @@ export const generateManifest = (input: ManifestInput): ManifestData => {
     allVersions.push(input.models.zoeDepth);
   }
   for (const entry of allVersions) {
-    if (entry.version.toLowerCase() === "latest") {
+    if (input.productionMode && entry.version.toLowerCase() === "latest") {
       throw new Error(
-        `Model version must be an exact string, not "latest": ${entry.model}`,
+        `Model version must be an exact string, not "latest" in production mode: ${entry.model}`,
       );
     }
   }

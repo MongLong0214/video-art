@@ -1,4 +1,5 @@
 import sharp from "sharp";
+import type { ResearchConfig } from "../research/research-config.js";
 
 // Sobel kernels for edge detection
 const SOBEL_X = {
@@ -14,13 +15,13 @@ const SOBEL_Y = {
 };
 
 // Sobel magnitude threshold for classifying a pixel as an edge
-const EDGE_PIXEL_THRESHOLD = 30;
+const DEFAULT_EDGE_PIXEL_THRESHOLD = 30;
 
 // Tier classification thresholds
-const SIMPLE_EDGE_MAX = 0.10;
-const SIMPLE_ENTROPY_MAX = 5.5;
-const COMPLEX_EDGE_MIN = 0.20;
-const COMPLEX_ENTROPY_MIN = 7.0;
+const DEFAULT_SIMPLE_EDGE_MAX = 0.10;
+const DEFAULT_SIMPLE_ENTROPY_MAX = 5.5;
+const DEFAULT_COMPLEX_EDGE_MIN = 0.20;
+const DEFAULT_COMPLEX_ENTROPY_MIN = 7.0;
 
 // Hue histogram resolution (10 degrees per bin)
 const HUE_BINS = 36;
@@ -39,7 +40,7 @@ interface ComplexityResult {
  * Compute edge density via Sobel convolution.
  * Returns ratio of edge pixels to total pixels (0..1).
  */
-async function computeEdgeDensity(imagePath: string): Promise<number> {
+async function computeEdgeDensity(imagePath: string, edgePixelThreshold: number): Promise<number> {
   const base = sharp(imagePath).grayscale();
 
   // Apply horizontal and vertical Sobel kernels
@@ -56,7 +57,7 @@ async function computeEdgeDensity(imagePath: string): Promise<number> {
   for (let i = 0; i < total; i++) {
     // sharp convolve clamps to 0-255 unsigned: 0 = no gradient (uniform regions)
     const magnitude = Math.sqrt(gx[i] * gx[i] + gy[i] * gy[i]);
-    if (magnitude > EDGE_PIXEL_THRESHOLD) {
+    if (magnitude > edgePixelThreshold) {
       edgeCount++;
     }
   }
@@ -121,19 +122,28 @@ async function computeColorEntropy(imagePath: string): Promise<number> {
   return entropy;
 }
 
-export async function scoreComplexity(imagePath: string): Promise<ComplexityResult> {
+export async function scoreComplexity(
+  imagePath: string,
+  config?: Partial<ResearchConfig>,
+): Promise<ComplexityResult> {
+  const edgePixelThreshold = config?.edgePixelThreshold ?? DEFAULT_EDGE_PIXEL_THRESHOLD;
+  const simpleEdgeMax = config?.simpleEdgeMax ?? DEFAULT_SIMPLE_EDGE_MAX;
+  const simpleEntropyMax = config?.simpleEntropyMax ?? DEFAULT_SIMPLE_ENTROPY_MAX;
+  const complexEdgeMin = config?.complexEdgeMin ?? DEFAULT_COMPLEX_EDGE_MIN;
+  const complexEntropyMin = config?.complexEntropyMin ?? DEFAULT_COMPLEX_ENTROPY_MIN;
+
   const [edgeDensity, colorEntropy] = await Promise.all([
-    computeEdgeDensity(imagePath),
+    computeEdgeDensity(imagePath, edgePixelThreshold),
     computeColorEntropy(imagePath),
   ]);
 
   let tier: "simple" | "medium" | "complex";
   let layerCount: 3 | 4 | 6;
 
-  if (edgeDensity < SIMPLE_EDGE_MAX && colorEntropy < SIMPLE_ENTROPY_MAX) {
+  if (edgeDensity < simpleEdgeMax && colorEntropy < simpleEntropyMax) {
     tier = "simple";
     layerCount = 3;
-  } else if (edgeDensity > COMPLEX_EDGE_MIN || colorEntropy > COMPLEX_ENTROPY_MIN) {
+  } else if (edgeDensity > complexEdgeMin || colorEntropy > complexEntropyMin) {
     tier = "complex";
     layerCount = 6;
   } else {

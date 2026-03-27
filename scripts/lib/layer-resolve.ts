@@ -1,19 +1,20 @@
 import path from "node:path";
 import sharp from "sharp";
 import type { LayerCandidate, LayerRole } from "../../src/lib/scene-schema.js";
+import type { ResearchConfig } from "../research/research-config.js";
 
-const ALPHA_THRESHOLD = 128;
-const IOU_DEDUPE_THRESHOLD = 0.70;
+const DEFAULT_ALPHA_THRESHOLD = 128;
+const DEFAULT_IOU_DEDUPE_THRESHOLD = 0.85;
 
 // ---------- T5 constants ----------
 
-const UNIQUE_COVERAGE_THRESHOLD = 0.02;
+const DEFAULT_UNIQUE_COVERAGE_THRESHOLD = 0.02;
 const DEFAULT_MAX_LAYERS = 8;
-const MIN_RETAINED_LAYERS = 3;
+const DEFAULT_MIN_RETAINED_LAYERS = 3;
 const HOLE_WARNING_THRESHOLD = 0.5;
-const EDGE_TOLERANCE_PX = 2;
-const CENTRALITY_THRESHOLD = 0.25;
-const BG_PLATE_MIN_BBOX_RATIO = 0.3;
+const DEFAULT_EDGE_TOLERANCE_PX = 2;
+const DEFAULT_CENTRALITY_THRESHOLD = 0.25;
+const DEFAULT_BG_PLATE_MIN_BBOX_RATIO = 0.3;
 
 /**
  * Role-critical roles are retained even when uniqueCoverage < 2%.
@@ -58,6 +59,7 @@ async function loadBinaryMask(
   filePath: string,
   width: number,
   height: number,
+  alphaThreshold: number = DEFAULT_ALPHA_THRESHOLD,
 ): Promise<Uint8Array> {
   const { data } = await sharp(filePath)
     .ensureAlpha()
@@ -69,7 +71,7 @@ async function loadBinaryMask(
   const mask = new Uint8Array(totalPixels);
 
   for (let i = 0; i < totalPixels; i++) {
-    mask[i] = rgba[i * 4 + 3] > ALPHA_THRESHOLD ? 1 : 0;
+    mask[i] = rgba[i * 4 + 3] > alphaThreshold ? 1 : 0;
   }
 
   return mask;
@@ -143,8 +145,11 @@ function computeIoU(maskA: Uint8Array, maskB: Uint8Array): number {
  */
 export async function deduplicateCandidates(
   candidates: LayerCandidate[],
+  config?: Partial<ResearchConfig>,
 ): Promise<LayerCandidate[]> {
   if (candidates.length <= 1) return candidates;
+
+  const iouDedupeThreshold = config?.iouDedupeThreshold ?? DEFAULT_IOU_DEDUPE_THRESHOLD;
 
   // Load all masks once
   const masks = await Promise.all(
@@ -166,7 +171,7 @@ export async function deduplicateCandidates(
       if (pi && pj && pi === pj) continue;
 
       const iou = computeIoU(masks[i], masks[j]);
-      if (iou > IOU_DEDUPE_THRESHOLD) {
+      if (iou > iouDedupeThreshold) {
         // Drop the one with lower coverage
         const dropIdx = candidates[i].coverage >= candidates[j].coverage ? j : i;
         dropped.add(dropIdx);
@@ -177,7 +182,7 @@ export async function deduplicateCandidates(
   // Build result: attach droppedReason to dropped candidates
   return candidates.map((c, idx) => {
     if (dropped.has(idx)) {
-      return { ...c, droppedReason: `dedupe: IoU > ${IOU_DEDUPE_THRESHOLD}` };
+      return { ...c, droppedReason: `dedupe: IoU > ${iouDedupeThreshold}` };
     }
     return c;
   });
@@ -267,11 +272,12 @@ function touchesEdge(
   bbox: { x: number; y: number; w: number; h: number },
   imageWidth: number,
   imageHeight: number,
+  edgeTolerancePx: number = DEFAULT_EDGE_TOLERANCE_PX,
 ): boolean {
-  const touchLeft = bbox.x <= EDGE_TOLERANCE_PX;
-  const touchTop = bbox.y <= EDGE_TOLERANCE_PX;
-  const touchRight = bbox.x + bbox.w >= imageWidth - EDGE_TOLERANCE_PX;
-  const touchBottom = bbox.y + bbox.h >= imageHeight - EDGE_TOLERANCE_PX;
+  const touchLeft = bbox.x <= edgeTolerancePx;
+  const touchTop = bbox.y <= edgeTolerancePx;
+  const touchRight = bbox.x + bbox.w >= imageWidth - edgeTolerancePx;
+  const touchBottom = bbox.y + bbox.h >= imageHeight - edgeTolerancePx;
   return touchLeft || touchTop || touchRight || touchBottom;
 }
 
@@ -283,12 +289,13 @@ function isCentral(
   centroid: { x: number; y: number },
   imageWidth: number,
   imageHeight: number,
+  centralityThreshold: number = DEFAULT_CENTRALITY_THRESHOLD,
 ): boolean {
   const cx = imageWidth / 2;
   const cy = imageHeight / 2;
   const dx = Math.abs(centroid.x - cx) / imageWidth;
   const dy = Math.abs(centroid.y - cy) / imageHeight;
-  return dx <= CENTRALITY_THRESHOLD && dy <= CENTRALITY_THRESHOLD;
+  return dx <= centralityThreshold && dy <= centralityThreshold;
 }
 
 /**
@@ -318,8 +325,13 @@ export function assignRoles(
   candidates: LayerCandidate[],
   imageWidth: number,
   imageHeight: number,
+  config?: Partial<ResearchConfig>,
 ): LayerCandidate[] {
   if (candidates.length === 0) return [];
+
+  const bgPlateMinBboxRatio = config?.bgPlateMinBboxRatio ?? DEFAULT_BG_PLATE_MIN_BBOX_RATIO;
+  const edgeTolerancePx = config?.edgeTolerancePx ?? DEFAULT_EDGE_TOLERANCE_PX;
+  const centralityThreshold = config?.centralityThreshold ?? DEFAULT_CENTRALITY_THRESHOLD;
 
   // Sort by coverage descending to identify the widest candidate
   const sorted = [...candidates].sort((a, b) => b.coverage - a.coverage);
@@ -328,7 +340,7 @@ export function assignRoles(
 
   // Step 1: background-plate = widest candidate with large bbox coverage
   const bgPlateCandidate = sorted[0];
-  if (bgPlateCandidate && bboxCoverageRatio(bgPlateCandidate.bbox, imageWidth, imageHeight) >= BG_PLATE_MIN_BBOX_RATIO) {
+  if (bgPlateCandidate && bboxCoverageRatio(bgPlateCandidate.bbox, imageWidth, imageHeight) >= bgPlateMinBboxRatio) {
     assigned.set(bgPlateCandidate.id, "background-plate");
   }
 
@@ -337,8 +349,8 @@ export function assignRoles(
     if (assigned.has(candidate.id)) continue;
 
     const bboxRatio = bboxCoverageRatio(candidate.bbox, imageWidth, imageHeight);
-    const isEdgeTouching = touchesEdge(candidate.bbox, imageWidth, imageHeight);
-    const isCentralBbox = isCentral(candidate.centroid, imageWidth, imageHeight);
+    const isEdgeTouching = touchesEdge(candidate.bbox, imageWidth, imageHeight, edgeTolerancePx);
+    const isCentralBbox = isCentral(candidate.centroid, imageWidth, imageHeight, centralityThreshold);
 
     // foreground-occluder: edge-touching + not the bg-plate + moderate coverage
     if (isEdgeTouching && candidate.coverage < 0.5) {
@@ -403,7 +415,7 @@ export function orderByRole(candidates: LayerCandidate[]): LayerCandidate[] {
  * PRD §5.9, §5.11.
  *
  * 1. Drop candidates with uniqueCoverage below threshold (unless role-critical)
- * 2. Progressive relaxation: if retained < MIN_RETAINED_LAYERS, lower threshold
+ * 2. Progressive relaxation: if retained < minRetainedLayers, lower threshold
  * 3. If count > maxLayers, drop lowest-priority roles first
  * 4. Guarantee bg-plate: synthesize from original if none exists
  *
@@ -413,13 +425,17 @@ export function applyRetentionRules(
   candidates: LayerCandidate[],
   maxLayers: number = DEFAULT_MAX_LAYERS,
   originalImagePath?: string,
+  config?: Partial<ResearchConfig>,
 ): LayerCandidate[] {
+  const uniqueCoverageThreshold = config?.uniqueCoverageThreshold ?? DEFAULT_UNIQUE_COVERAGE_THRESHOLD;
+  const minRetainedLayers = config?.minRetainedLayers ?? DEFAULT_MIN_RETAINED_LAYERS;
+
   // Progressive threshold relaxation to guarantee minimum retained layers
-  const thresholds = [UNIQUE_COVERAGE_THRESHOLD, 0.01, 0.005, 0.001, 0];
+  const thresholds = [uniqueCoverageThreshold, 0.01, 0.005, 0.001, 0];
 
   let result: LayerCandidate[] = [];
   let retained: LayerCandidate[] = [];
-  let usedThreshold = UNIQUE_COVERAGE_THRESHOLD;
+  let usedThreshold = uniqueCoverageThreshold;
 
   for (const threshold of thresholds) {
     result = [];
@@ -440,10 +456,10 @@ export function applyRetentionRules(
       }
     }
 
-    if (retained.length >= MIN_RETAINED_LAYERS) break;
+    if (retained.length >= minRetainedLayers) break;
   }
 
-  if (usedThreshold < UNIQUE_COVERAGE_THRESHOLD && retained.length > 1) {
+  if (usedThreshold < uniqueCoverageThreshold && retained.length > 1) {
     console.log(`  Retention relaxed: threshold ${(usedThreshold * 100).toFixed(1)}% → ${retained.length} layers retained`);
   }
 
@@ -542,7 +558,7 @@ export async function fillBackgroundPlate(
     const px = i * 4;
     const bgAlpha = bgRgba[px + 3];
 
-    if (bgAlpha > ALPHA_THRESHOLD) {
+    if (bgAlpha > DEFAULT_ALPHA_THRESHOLD) {
       // Keep bg plate pixel
       outputRgba[px] = bgRgba[px];
       outputRgba[px + 1] = bgRgba[px + 1];

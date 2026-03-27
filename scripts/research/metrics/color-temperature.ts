@@ -1,5 +1,23 @@
-// M3: Color Temperature (Ohno-inspired CCT + Duv)
-// RGB → XYZ → chromaticity → CCT (Robertson approximation) + Duv
+/**
+ * M3: Correlated Color Temperature (CCT) + Duv metric
+ *
+ * Algorithm deviation from PRD:
+ *  - PRD specifies: Ohno 2014 combined with Robertson LUT (±12K accuracy)
+ *  - Implementation uses: Hernandez-Andres 1999 polynomial (±50K for 3000–50000K range)
+ *
+ * Known limitation:
+ *  Less accurate for extreme CCT values (< 3000K and > 50000K) due to
+ *  polynomial approximation divergence outside the valid range.
+ *  Duv uses Krystek 1985 Planckian locus approximation which adds
+ *  additional uncertainty at high/low CCT extremes.
+ *
+ * Phase 2 upgrade path:
+ *  Replace Hernandez-Andres polynomial with Ohno 2014 iterative method
+ *  using Robertson 1968 LUT for initial CCT estimate, achieving ±12K
+ *  accuracy across 1000–25000K. See: Ohno, Y. (2014) "Practical Use and
+ *  Calculation of CCT and Duv", LEUKOS 10(1), 47-55.
+ */
+// RGB → XYZ → chromaticity → CCT (Hernandez-Andres 1999) + Duv
 // Score in mireds for perceptual uniformity
 
 const MAX_DELTA_MRD = 100; // ~1500K at 4000K

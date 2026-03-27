@@ -2,9 +2,10 @@ import sharp from "sharp";
 import path from "node:path";
 import crypto from "node:crypto";
 import type { LayerCandidate } from "../../src/lib/scene-schema.js";
+import type { ResearchConfig } from "../research/research-config.js";
 
-const ALPHA_THRESHOLD = 128;
-const MIN_COVERAGE = 0.005;
+const DEFAULT_ALPHA_THRESHOLD = 128;
+const DEFAULT_MIN_COVERAGE = 0.005;
 
 /**
  * Extract layer candidates from an RGBA PNG using BFS connected component analysis.
@@ -18,7 +19,10 @@ const MIN_COVERAGE = 0.005;
 export async function extractCandidates(
   rgbaPath: string,
   outputDir: string,
+  config?: Partial<ResearchConfig>,
 ): Promise<LayerCandidate[]> {
+  const alphaThreshold = config?.alphaThreshold ?? DEFAULT_ALPHA_THRESHOLD;
+  const minCoverage = config?.minCoverage ?? DEFAULT_MIN_COVERAGE;
   const { data, info } = await sharp(rgbaPath)
     .ensureAlpha()
     .raw()
@@ -32,7 +36,7 @@ export async function extractCandidates(
   // Binarize alpha channel
   const binary = new Uint8Array(totalPixels);
   for (let i = 0; i < totalPixels; i++) {
-    binary[i] = rgba[i * 4 + 3] > ALPHA_THRESHOLD ? 1 : 0;
+    binary[i] = rgba[i * 4 + 3] > alphaThreshold ? 1 : 0;
   }
 
   // --- Pass 1: BFS flood-fill with Uint32Array label map ---
@@ -132,7 +136,7 @@ export async function extractCandidates(
 
   for (let ci = 0; ci < numComponents; ci++) {
     const coverage = counts[ci] / totalPixels;
-    if (coverage < MIN_COVERAGE) continue;
+    if (coverage < minCoverage) continue;
 
     const lbl = ci + 1;
     const edgeDensity = counts[ci] > 0 ? edgeCounts[ci] / counts[ci] : 0;

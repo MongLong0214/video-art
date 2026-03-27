@@ -2,7 +2,6 @@ import "dotenv/config";
 import fs from "node:fs";
 import path from "node:path";
 import sharp from "sharp";
-import Replicate from "replicate";
 import {
   validateAndPrepare,
   detectManualLayers,
@@ -21,11 +20,6 @@ import {
   fillBackgroundPlate,
   buildExclusiveMasks,
 } from "./lib/layer-resolve.js";
-import {
-  computeDepthStats,
-  selectiveDepthSplit,
-  runVariantB,
-} from "./lib/depth-utils.js";
 import { shouldRecurse, recursiveDecompose } from "./lib/image-decompose.js";
 import { generateSceneJson } from "./lib/scene-generator.js";
 import type { RetainedLayer } from "./lib/scene-generator.js";
@@ -36,7 +30,6 @@ import {
 } from "./lib/decomposition-manifest.js";
 import type { ManifestInput } from "./lib/decomposition-manifest.js";
 import { createRunContext, parseTitle } from "./lib/archive.js";
-import { postprocessLayers } from "./lib/postprocess.js";
 import type { LayerCandidate } from "../src/lib/scene-schema.js";
 
 async function main() {
@@ -286,7 +279,11 @@ async function main() {
       qwenImageLayered: {
         model: "qwen/qwen-image-layered",
         version: "latest",
-        numLayersBase: cliArgs.layerOverride ?? 8,
+        numLayersBase: (() => {
+          if (cliArgs.layerOverride) return cliArgs.layerOverride;
+          const active = candidates.filter((c) => !c.droppedReason);
+          return active.length || 4;
+        })(),
       },
       ...(cliArgs.variant === "qwen-zoedepth"
         ? {
