@@ -3,12 +3,13 @@ import sharp from "sharp";
 import type { LayerCandidate, LayerRole } from "../../src/lib/scene-schema.js";
 
 const ALPHA_THRESHOLD = 128;
-const IOU_DEDUPE_THRESHOLD = 0.85;
+const IOU_DEDUPE_THRESHOLD = 0.70;
 
 // ---------- T5 constants ----------
 
 const UNIQUE_COVERAGE_THRESHOLD = 0.02;
 const DEFAULT_MAX_LAYERS = 8;
+const MIN_RETAINED_LAYERS = 3;
 const HOLE_WARNING_THRESHOLD = 0.5;
 const EDGE_TOLERANCE_PX = 2;
 const CENTRALITY_THRESHOLD = 0.25;
@@ -153,11 +154,16 @@ export async function deduplicateCandidates(
   // Track which indices are dropped
   const dropped = new Set<number>();
 
-  // Pairwise comparison
+  // Pairwise comparison (skip depth-split siblings sharing the same parentId)
   for (let i = 0; i < candidates.length; i++) {
     if (dropped.has(i)) continue;
     for (let j = i + 1; j < candidates.length; j++) {
       if (dropped.has(j)) continue;
+
+      // Depth-split siblings: exempt from IoU dedup
+      const pi = candidates[i].parentId;
+      const pj = candidates[j].parentId;
+      if (pi && pj && pi === pj) continue;
 
       const iou = computeIoU(masks[i], masks[j]);
       if (iou > IOU_DEDUPE_THRESHOLD) {
@@ -396,9 +402,10 @@ export function orderByRole(candidates: LayerCandidate[]): LayerCandidate[] {
  * Apply retention rules: drop low uniqueCoverage + cap at maxLayers.
  * PRD §5.9, §5.11.
  *
- * 1. Drop candidates with uniqueCoverage < 2% (unless role-critical)
- * 2. If count > maxLayers, drop lowest-priority roles first
- * 3. If all candidates drop, fallback to a single background-plate from original
+ * 1. Drop candidates with uniqueCoverage below threshold (unless role-critical)
+ * 2. Progressive relaxation: if retained < MIN_RETAINED_LAYERS, lower threshold
+ * 3. If count > maxLayers, drop lowest-priority roles first
+ * 4. Guarantee bg-plate: synthesize from original if none exists
  *
  * Returns all candidates with droppedReason populated for dropped ones.
  */
@@ -407,38 +414,51 @@ export function applyRetentionRules(
   maxLayers: number = DEFAULT_MAX_LAYERS,
   originalImagePath?: string,
 ): LayerCandidate[] {
-  const result: LayerCandidate[] = [];
-  const retained: LayerCandidate[] = [];
+  // Progressive threshold relaxation to guarantee minimum retained layers
+  const thresholds = [UNIQUE_COVERAGE_THRESHOLD, 0.01, 0.005, 0.001, 0];
 
-  // Step 1: Drop by uniqueCoverage threshold (role-critical exempted)
-  for (const c of candidates) {
-    const uc = c.uniqueCoverage ?? 0;
-    const role = c.role ?? "midground";
-    const isRoleCritical = ROLE_CRITICAL.has(role);
+  let result: LayerCandidate[] = [];
+  let retained: LayerCandidate[] = [];
+  let usedThreshold = UNIQUE_COVERAGE_THRESHOLD;
 
-    if (uc < UNIQUE_COVERAGE_THRESHOLD && !isRoleCritical) {
-      result.push({ ...c, droppedReason: `uniqueCoverage ${(uc * 100).toFixed(1)}% < 2%` });
-    } else {
-      result.push(c);
-      retained.push(c);
+  for (const threshold of thresholds) {
+    result = [];
+    retained = [];
+    usedThreshold = threshold;
+
+    for (const c of candidates) {
+      const uc = c.uniqueCoverage ?? 0;
+      const role = c.role ?? "midground";
+      const isRoleCritical = ROLE_CRITICAL.has(role);
+
+      if (uc < threshold && !isRoleCritical) {
+        const pct = (threshold * 100).toFixed(1);
+        result.push({ ...c, droppedReason: `uniqueCoverage ${(uc * 100).toFixed(1)}% < ${pct}%` });
+      } else {
+        result.push(c);
+        retained.push(c);
+      }
     }
+
+    if (retained.length >= MIN_RETAINED_LAYERS) break;
+  }
+
+  if (usedThreshold < UNIQUE_COVERAGE_THRESHOLD && retained.length > 1) {
+    console.log(`  Retention relaxed: threshold ${(usedThreshold * 100).toFixed(1)}% → ${retained.length} layers retained`);
   }
 
   // Step 2: Cap at maxLayers by dropping lowest-priority roles first
   if (retained.length > maxLayers) {
-    // Sort retained by priority ascending (lowest priority first = drop first)
     const sortedByPriority = [...retained].sort((a, b) => {
       const pa = ROLE_PRIORITY[a.role ?? "midground"];
       const pb = ROLE_PRIORITY[b.role ?? "midground"];
       if (pa !== pb) return pa - pb;
-      // Within same priority: lower uniqueCoverage dropped first
       return (a.uniqueCoverage ?? 0) - (b.uniqueCoverage ?? 0);
     });
 
     const toDrop = retained.length - maxLayers;
     const dropIds = new Set(sortedByPriority.slice(0, toDrop).map((c) => c.id));
 
-    // Mark additional drops in result
     for (let i = 0; i < result.length; i++) {
       if (dropIds.has(result[i].id) && !result[i].droppedReason) {
         result[i] = { ...result[i], droppedReason: `cap: exceeded ${maxLayers} layers` };
@@ -446,10 +466,11 @@ export function applyRetentionRules(
     }
   }
 
-  // Step 3: All-drop fallback (PRD E4)
+  // Step 3: Guarantee bg-plate exists
   const finalRetained = result.filter((c) => !c.droppedReason);
-  if (finalRetained.length === 0 && originalImagePath) {
-    // Insert a synthetic background-plate from the original image
+  const hasBgPlate = finalRetained.some((c) => c.role === "background-plate");
+
+  if (!hasBgPlate && originalImagePath) {
     const fallbackPlate: LayerCandidate = {
       id: "fallback-bg-plate",
       source: "qwen-base",

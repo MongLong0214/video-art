@@ -299,11 +299,11 @@ describe("API token log suppression", () => {
 // ---------------------------------------------------------------------------
 
 describe("Fallback on all candidates drop", () => {
-  it("should fallback to original when all candidates drop", async () => {
+  it("should guarantee bg-plate even when tiny candidates survive via relaxation", async () => {
     const { applyRetentionRules } = await import("./layer-resolve.js");
 
-    // Create a candidate with proper LayerCandidate shape that will be dropped
-    // (uniqueCoverage = 0 < 2% threshold, role = midground = not role-critical)
+    // Single tiny candidate (no bg-plate role): progressive relaxation keeps it,
+    // and bg-plate guarantee adds a synthetic plate from original
     const candidates = [
       {
         id: "c0",
@@ -322,16 +322,14 @@ describe("Fallback on all candidates drop", () => {
     ];
 
     const result = applyRetentionRules(candidates, 6, "/tmp/original.png");
-
-    // The original candidate should be dropped (uniqueCoverage 0% < 2%)
-    const dropped = result.filter((c) => !!c.droppedReason);
-    expect(dropped.length).toBeGreaterThanOrEqual(1);
-
-    // Fallback: a synthetic background-plate should be added
     const retained = result.filter((c) => !c.droppedReason);
-    expect(retained.length).toBe(1);
-    expect(retained[0].id).toBe("fallback-bg-plate");
-    expect(retained[0].role).toBe("background-plate");
+
+    // bg-plate guaranteed from original
+    const bgPlate = retained.find((c) => c.role === "background-plate");
+    expect(bgPlate).toBeDefined();
+    expect(bgPlate!.id).toBe("fallback-bg-plate");
+    // c0 survives via progressive relaxation (only 1 candidate → can't reach MIN_RETAINED)
+    expect(retained.find((c) => c.id === "c0")).toBeDefined();
   });
 });
 

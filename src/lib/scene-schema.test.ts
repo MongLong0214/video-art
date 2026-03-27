@@ -411,7 +411,6 @@ describe("sceneSchema", () => {
     const result = sceneSchema.parse(validScene);
     expect(result.effects.bloom.strength).toBe(0.6);
     expect(result.effects.chromaticAberration.offset).toBe(1.5);
-    expect(result.effects.sparkle.count).toBe(80);
   });
 });
 

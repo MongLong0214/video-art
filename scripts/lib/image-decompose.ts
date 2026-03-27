@@ -25,10 +25,16 @@ interface DecomposeOptions {
   method?: "hybrid" | "depth-only" | "qwen-only";
 }
 
+interface FileSourceMeta {
+  source: "qwen-semantic" | "depth-split";
+  depthGroupId?: string;
+}
+
 interface DecomposeResult {
   files: string[];
   coverages: number[];
   method: string;
+  fileMeta: FileSourceMeta[];
 }
 
 // --- ZoeDepth ---
@@ -236,7 +242,15 @@ export async function decomposeHybrid(
 
   fs.mkdirSync(outputDir, { recursive: true });
 
-  const allLayers: { pixels: Buffer; coverage: number; width: number; height: number }[] = [];
+  interface LayerEntry {
+    pixels: Buffer;
+    coverage: number;
+    width: number;
+    height: number;
+    meta: FileSourceMeta;
+  }
+
+  const allLayers: LayerEntry[] = [];
 
   if (method === "depth-only") {
     // Pure depth approach
@@ -244,7 +258,9 @@ export async function decomposeHybrid(
     const depthBuf = await getDepthMap(replicate, imagePath);
     const totalZones = numLayers * depthZones;
     const zones = await splitByDepthZones(originalImage, depthBuf, totalZones);
-    allLayers.push(...zones.filter(z => z.coverage > 0.001));
+    allLayers.push(...zones.filter(z => z.coverage > 0.001).map(z => ({
+      ...z, meta: { source: "depth-split" as const, depthGroupId: "depth-full" },
+    })));
   } else if (method === "qwen-only") {
     // Pure qwen approach
     console.log("  Qwen-only decomposition...");
@@ -255,7 +271,10 @@ export async function decomposeHybrid(
       for (let i = 3; i < data.length; i += info.channels) { if (data[i] > 10) opaque++; }
       const coverage = opaque / (info.width * info.height);
       if (coverage > 0.001) {
-        allLayers.push({ pixels: data, coverage, width: info.width, height: info.height });
+        allLayers.push({
+          pixels: data, coverage, width: info.width, height: info.height,
+          meta: { source: "qwen-semantic" },
+        });
       }
     }
   } else {
@@ -281,6 +300,8 @@ export async function decomposeHybrid(
         continue;
       }
 
+      const depthGroupId = `qwen-${q}`;
+
       if (coverage > 0.10) {
         // Large layer: split further by depth
         const subZones = coverage > 0.5 ? depthZones : Math.max(2, Math.floor(depthZones / 2));
@@ -291,7 +312,9 @@ export async function decomposeHybrid(
           subZones,
           qwenBuffers[q],
         );
-        allLayers.push(...subLayers.filter(s => s.coverage > 0.001));
+        allLayers.push(...subLayers.filter(s => s.coverage > 0.001).map(s => ({
+          ...s, meta: { source: "depth-split" as const, depthGroupId },
+        })));
       } else {
         // Small layer: upscale to original resolution using qwen alpha as mask
         console.log(`  qwen[${q}]: ${(coverage * 100).toFixed(1)}% — kept (upscaled to original res)`);
@@ -312,7 +335,10 @@ export async function decomposeHybrid(
             opaqueCount++;
           }
         }
-        allLayers.push({ pixels: layerBuf, coverage: opaqueCount / oTotal, width: ow, height: oh });
+        allLayers.push({
+          pixels: layerBuf, coverage: opaqueCount / oTotal, width: ow, height: oh,
+          meta: { source: "qwen-semantic" },
+        });
       }
     }
   }
@@ -323,6 +349,7 @@ export async function decomposeHybrid(
   // Save layers
   const files: string[] = [];
   const coverages: number[] = [];
+  const fileMeta: FileSourceMeta[] = [];
   for (let i = 0; i < allLayers.length; i++) {
     const layer = allLayers[i];
     const fp = path.join(outputDir, `layer-${i}.png`);
@@ -333,10 +360,11 @@ export async function decomposeHybrid(
       .toFile(fp);
     files.push(fp);
     coverages.push(layer.coverage);
+    fileMeta.push(layer.meta);
   }
 
   console.log(`  Total: ${files.length} layers`);
-  return { files, coverages, method };
+  return { files, coverages, method, fileMeta };
 }
 
 // --- Selective Recursive Qwen ---

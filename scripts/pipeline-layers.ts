@@ -131,8 +131,16 @@ async function main() {
     // --- Step 4: Extract candidates from each RGBA layer ---
     console.log("\nExtracting candidates from layers...");
     candidates = [];
-    for (const file of decomposeResult.files) {
+    for (let fi = 0; fi < decomposeResult.files.length; fi++) {
+      const file = decomposeResult.files[fi];
+      const meta = decomposeResult.fileMeta?.[fi];
       const extracted = await extractCandidates(file, layersDir);
+      for (const c of extracted) {
+        if (meta?.source === "depth-split") {
+          c.source = "depth-split";
+          if (meta.depthGroupId) c.parentId = meta.depthGroupId;
+        }
+      }
       candidates.push(...extracted);
     }
     console.log(`  ${candidates.length} candidates extracted`);
@@ -215,7 +223,8 @@ async function main() {
   const maxLayers = 8;
   candidates = applyRetentionRules(candidates, maxLayers, path.resolve(cliArgs.inputPath));
 
-  const retained = candidates.filter((c) => !c.droppedReason);
+  // Re-sort retained by role z-ladder (handles fallback bg-plate inserted at end)
+  let retained = orderByRole(candidates.filter((c) => !c.droppedReason));
   const dropped = candidates.filter((c) => !!c.droppedReason);
   console.log(`  ${retained.length} retained, ${dropped.length} dropped`);
 

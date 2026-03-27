@@ -69,17 +69,9 @@ const chromaticAberrationSchema = z.object({
   offset: z.number().min(0).default(1.5),
 });
 
-const sparkleSchema = z.object({
-  count: z.number().int().min(0).default(80),
-  sizeMin: z.number().min(0).default(2),
-  sizeMax: z.number().min(0).default(6),
-  speed: z.number().min(0).default(1),
-});
-
 const effectsSchema = z.object({
   bloom: bloomSchema.default({ strength: 0.6, radius: 0.4, threshold: 0.7 }),
   chromaticAberration: chromaticAberrationSchema.default({ offset: 1.5 }),
-  sparkle: sparkleSchema.default({ count: 80, sizeMin: 2, sizeMax: 6, speed: 1 }),
 });
 
 const audioSchema = z.object({
@@ -113,7 +105,6 @@ export const sceneSchema = z
     effects: effectsSchema.default({
       bloom: { strength: 0.6, radius: 0.4, threshold: 0.7 },
       chromaticAberration: { offset: 1.5 },
-      sparkle: { count: 80, sizeMin: 2, sizeMax: 6, speed: 1 },
     }),
     audio: audioSchema.optional(),
   })

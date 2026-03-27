@@ -151,7 +151,7 @@ afterAll(() => {
 // ---------- tests ----------
 
 describe("deduplicateCandidates", () => {
-  it("should merge candidates with IoU > 0.85", async () => {
+  it("should merge candidates with IoU > 0.70", async () => {
     const candA = await makeCandidate(
       (() => {
         const b = createRgbaBuffer(W, H);
@@ -184,7 +184,7 @@ describe("deduplicateCandidates", () => {
     expect(dropped).toHaveLength(1);
   });
 
-  it("should keep candidates with IoU < 0.85", async () => {
+  it("should keep candidates with IoU < 0.70", async () => {
     const candA = await makeCandidate(
       (() => {
         const b = createRgbaBuffer(W, H);
@@ -212,6 +212,38 @@ describe("deduplicateCandidates", () => {
 
     const retained = result.filter((c) => !c.droppedReason);
 
+    expect(retained).toHaveLength(2);
+  });
+
+  it("should exempt depth-split siblings from IoU dedup", async () => {
+    // Two high-overlap candidates sharing the same parentId (depth-split siblings)
+    const candA = await makeCandidate(
+      (() => {
+        const b = createRgbaBuffer(W, H);
+        paintRect(b, W, { x: 0, y: 0, w: 180, h: 200 }, { r: 255, g: 0, b: 0, a: 255 });
+        return b;
+      })(),
+      W,
+      H,
+      highOverlapAPath,
+      { id: "depth-a", source: "depth-split", parentId: "qwen-0", bbox: { x: 0, y: 0, w: 180, h: 200 }, centroid: { x: 89.5, y: 99.5 } },
+    );
+    const candB = await makeCandidate(
+      (() => {
+        const b = createRgbaBuffer(W, H);
+        paintRect(b, W, { x: 10, y: 0, w: 180, h: 200 }, { r: 0, g: 0, b: 255, a: 255 });
+        return b;
+      })(),
+      W,
+      H,
+      highOverlapBPath,
+      { id: "depth-b", source: "depth-split", parentId: "qwen-0", bbox: { x: 10, y: 0, w: 180, h: 200 }, centroid: { x: 99.5, y: 99.5 } },
+    );
+
+    const result = await deduplicateCandidates([candA, candB]);
+    const retained = result.filter((c) => !c.droppedReason);
+
+    // Both kept despite high IoU because they share parentId
     expect(retained).toHaveLength(2);
   });
 
@@ -661,7 +693,51 @@ describe("fillBackgroundPlate", () => {
 });
 
 describe("applyRetentionRules", () => {
-  it("should drop uniqueCoverage < 2% non-critical", () => {
+  it("should drop uniqueCoverage < 2% non-critical when enough layers remain", () => {
+    const candidates: LayerCandidate[] = [
+      {
+        id: "bg", source: "qwen-base", filePath: bgPlatePath,
+        width: W, height: H, coverage: 0.81, uniqueCoverage: 0.5,
+        edgeDensity: 0.05, componentCount: 1,
+        bbox: { x: 10, y: 10, w: 180, h: 180 }, centroid: { x: 100, y: 100 },
+        role: "background-plate",
+      },
+      {
+        id: "sub-1", source: "qwen-base", filePath: subjectPath,
+        width: W, height: H, coverage: 0.09, uniqueCoverage: 0.08,
+        edgeDensity: 0.15, componentCount: 1,
+        bbox: { x: 70, y: 70, w: 60, h: 60 }, centroid: { x: 100, y: 100 },
+        role: "subject",
+      },
+      {
+        id: "mid-1", source: "qwen-base", filePath: midgroundPath,
+        width: W, height: H, coverage: 0.12, uniqueCoverage: 0.06,
+        edgeDensity: 0.1, componentCount: 1,
+        bbox: { x: 20, y: 30, w: 80, h: 60 }, centroid: { x: 60, y: 60 },
+        role: "midground",
+      },
+      {
+        id: "tiny-detail", source: "qwen-base", filePath: detailPath,
+        width: W, height: H, coverage: 0.01, uniqueCoverage: 0.01,
+        edgeDensity: 0.1, componentCount: 1,
+        bbox: { x: 160, y: 20, w: 20, h: 20 }, centroid: { x: 170, y: 30 },
+        role: "detail",
+      },
+    ];
+
+    const result = applyRetentionRules(candidates);
+    const retained = result.filter((c) => !c.droppedReason);
+    const dropped = result.filter((c) => c.droppedReason);
+
+    // 3 layers remain above 2% threshold → detail (1%) gets dropped
+    expect(retained).toHaveLength(3);
+    expect(retained.find((c) => c.id === "bg")).toBeDefined();
+    expect(dropped).toHaveLength(1);
+    expect(dropped[0].id).toBe("tiny-detail");
+    expect(dropped[0].droppedReason).toContain("uniqueCoverage");
+  });
+
+  it("should relax threshold when retained < 3 (progressive relaxation)", () => {
     const candidates: LayerCandidate[] = [
       {
         id: "bg", source: "qwen-base", filePath: bgPlatePath,
@@ -681,13 +757,10 @@ describe("applyRetentionRules", () => {
 
     const result = applyRetentionRules(candidates);
     const retained = result.filter((c) => !c.droppedReason);
-    const dropped = result.filter((c) => c.droppedReason);
 
-    expect(retained).toHaveLength(1);
-    expect(retained[0].id).toBe("bg");
-    expect(dropped).toHaveLength(1);
-    expect(dropped[0].id).toBe("tiny-detail");
-    expect(dropped[0].droppedReason).toContain("uniqueCoverage");
+    // Only 2 candidates total: progressive relaxation keeps both
+    expect(retained).toHaveLength(2);
+    expect(retained.find((c) => c.id === "tiny-detail")).toBeDefined();
   });
 
   it("should keep role-critical despite low uniqueCoverage", () => {
@@ -751,8 +824,8 @@ describe("applyRetentionRules", () => {
     expect(retained.find((c) => c.role === "foreground-occluder")).toBeDefined();
   });
 
-  it("should fallback to original as bg plate when all drop", () => {
-    // All candidates have uniqueCoverage < 2% and none are role-critical
+  it("should guarantee bg-plate from original when none exists in retained", () => {
+    // No candidate has role background-plate
     const candidates: LayerCandidate[] = [
       {
         id: "det-a", source: "qwen-base", filePath: detailPath,
@@ -773,9 +846,10 @@ describe("applyRetentionRules", () => {
     const result = applyRetentionRules(candidates, 8, originalImagePath);
     const retained = result.filter((c) => !c.droppedReason);
 
-    // Fallback: should produce exactly 1 background-plate from original
-    expect(retained).toHaveLength(1);
-    expect(retained[0].role).toBe("background-plate");
-    expect(retained[0].coverage).toBe(1.0);
+    // Progressive relaxation keeps both details + bg-plate synthesized from original
+    const bgPlate = retained.find((c) => c.role === "background-plate");
+    expect(bgPlate).toBeDefined();
+    expect(bgPlate!.coverage).toBe(1.0);
+    expect(retained.length).toBeGreaterThanOrEqual(3);
   });
 });

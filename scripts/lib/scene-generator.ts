@@ -128,7 +128,6 @@ export async function generateSceneJson(
     effects: {
       bloom: { strength: 0.6, radius: 0.4, threshold: 0.7 },
       chromaticAberration: { offset: 1.5 },
-      sparkle: { count: 80, sizeMin: 2, sizeMax: 6, speed: 1.0 },
     },
   };
 }
