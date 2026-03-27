@@ -2,6 +2,12 @@
 // Loads SuperDirt with Phase A SynthDefs + Dirt-Samples + custom samples
 
 (
+// Audio device settings
+s.options.numInputBusChannels = 0;  // No mic input needed (prevents sample rate mismatch)
+s.options.numBuffers = 1024 * 256;  // 262144 buffers (Dirt-Samples 218 banks)
+s.options.memSize = 8192 * 32;      // 256MB memory for samples
+// sampleRate: use hardware default (AirPods=24kHz, speakers=48kHz)
+
 s.waitForBoot {
 	var loaded = 0;
 	var total = 9;

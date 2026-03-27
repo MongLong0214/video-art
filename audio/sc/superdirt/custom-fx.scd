@@ -2,6 +2,9 @@
 // Registered via ~dirt.addModule for orbit chain integration
 
 (
+// Allocate sidechain bus for cross-orbit signal
+~sidechainBus = Bus.audio(s, 1);
+
 // --- Compressor ---
 SynthDef(\customCompressor, { |out, compress=0, threshold=(-20), ratio=4, compAttack=0.01, compRelease=0.1|
 	var sig = In.ar(out, 2);
