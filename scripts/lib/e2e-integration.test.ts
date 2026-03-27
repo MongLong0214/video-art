@@ -233,10 +233,14 @@ describe("T4: render-stems.ts full implementation", () => {
 
 // --- SC Integration (sclang required) ---
 describe.skipIf(!hasSclang)("SC Integration (requires sclang)", () => {
-  it("boot.scd + genre-presets.scd parse without error", () => {
-    // sclang -i none just parses, doesn't boot server
-    const bootScd = path.join(SC_DIR, "boot.scd");
-    // This would need actual SC boot — mark as manual verification
-    expect(true).toBe(true);
+  it("render-stems-nrt.scd parses without SC error", () => {
+    const scdPath = path.join(SCORES_DIR, "render-stems-nrt.scd");
+    const result = execSync(`sclang -i none -e "(\\"${scdPath}\\".load; 0.exit)"`, {
+      timeout: 15000,
+      encoding: "utf-8",
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    // If sclang exits 0, parse succeeded
+    expect(result).toBeDefined();
   });
 });

@@ -33,8 +33,9 @@ if(entries.isNil || (entries.size == 0)) {
 
 // Load SynthDefs (14 total: 9 instruments + 4 FX + 1 NRT sidechain send)
 (
-	var projectRoot = thisProcess.nowExecutingPath.dirname.dirname;
-	var synthDefsDir = projectRoot +/+ "sc" +/+ "synthdefs";
+	var scDir = thisProcess.nowExecutingPath.dirname.dirname;  // audio/sc/
+	var synthDefsDir = scDir +/+ "synthdefs";
+	var fxPath = scDir +/+ "superdirt" +/+ "custom-fx.scd";
 	var synthDefFiles = [
 		"kick", "bass", "hat", "clap", "supersaw", "pad", "lead", "arp_pluck", "riser"
 	];
@@ -45,7 +46,6 @@ if(entries.isNil || (entries.size == 0)) {
 	};
 
 	// Load custom FX SynthDefs
-	var fxPath = projectRoot +/+ "sc" +/+ "superdirt" +/+ "custom-fx.scd";
 	if(File.exists(fxPath)) { fxPath.load };
 
 	// NRT sidechain send SynthDef (inline)

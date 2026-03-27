@@ -53,11 +53,15 @@ s.waitForBoot {
 
 	// Wait for SuperDirt to fully initialize before loading FX modules
 	Routine({
+		var baseDir = thisProcess.nowExecutingPath.dirname;
+		var fxPath = baseDir +/+ "custom-fx.scd";
+		var presetsPath = baseDir +/+ "genre-presets.scd";
+		var loggerPath = baseDir +/+ "osc-logger.scd";
+
 		1.wait;
 		s.sync;
 
 		// Load custom FX modules (comp/sidechain/sat/eq + addModule + orderModules)
-		var fxPath = thisProcess.nowExecutingPath.dirname +/+ "custom-fx.scd";
 		if(File.exists(fxPath)) {
 			fxPath.load;
 		} {
@@ -65,7 +69,6 @@ s.waitForBoot {
 		};
 
 		// Load genre presets system
-		var presetsPath = thisProcess.nowExecutingPath.dirname +/+ "genre-presets.scd";
 		if(File.exists(presetsPath)) {
 			presetsPath.load;
 		} {
@@ -74,7 +77,6 @@ s.waitForBoot {
 
 		// Conditionally load OSC logger (--log flag)
 		if(~enableLogging == true) {
-			var loggerPath = thisProcess.nowExecutingPath.dirname +/+ "osc-logger.scd";
 			if(File.exists(loggerPath)) {
 				loggerPath.load;
 				"OSC logging enabled".postln;
