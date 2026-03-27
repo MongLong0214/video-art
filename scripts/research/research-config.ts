@@ -20,7 +20,7 @@ export const ResearchConfigSchema = z
     edgePixelThreshold: z.number().int().min(10).max(100).default(30),
 
     // ── Dedupe & Ownership ───────────────────────────────────
-    iouDedupeThreshold: z.number().min(0.3).max(0.95).default(0.7),
+    iouDedupeThreshold: z.number().min(0.3).max(0.95).default(0.85),
     uniqueCoverageThreshold: z
       .number()
       .min(0.005)

@@ -278,7 +278,7 @@ async function main() {
     models: {
       qwenImageLayered: {
         model: "qwen/qwen-image-layered",
-        version: "latest",
+        version: cliArgs.production ? "MUST_BE_PINNED" : "unversioned",
         numLayersBase: (() => {
           if (cliArgs.layerOverride) return cliArgs.layerOverride;
           const active = candidates.filter((c) => !c.droppedReason);

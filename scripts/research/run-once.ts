@@ -13,6 +13,7 @@ import {
   gitRestoreConfig,
   registerSigintHandler,
   CrashCounter,
+  ensureBranch,
 } from "./git-automation.js";
 
 const CALIBRATION_PATH = ".cache/research/calibration.json";
@@ -181,6 +182,10 @@ export async function main(): Promise<void> {
     () => gitRestoreConfig(cwd),
     (msg) => console.log(msg),
   );
+
+  // Step 0: Ensure autoresearch branch (AC-3.3)
+  const tag = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+  ensureBranch(tag, cwd);
 
   // Step 1: Validate config
   const configPath = "scripts/research/research-config.ts";

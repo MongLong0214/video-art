@@ -27,7 +27,7 @@ describe("getDefaultConfig", () => {
     expect(config.complexEdgeMin).toBe(0.2);
     expect(config.complexEntropyMin).toBe(7.0);
     expect(config.edgePixelThreshold).toBe(30);
-    expect(config.iouDedupeThreshold).toBe(0.7);
+    expect(config.iouDedupeThreshold).toBe(0.85);
     expect(config.uniqueCoverageThreshold).toBe(0.02);
     expect(config.centralityThreshold).toBe(0.25);
     expect(config.bgPlateMinBboxRatio).toBe(0.3);

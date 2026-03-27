@@ -68,7 +68,7 @@ describe("getDefaultConfig", () => {
     const config = getDefaultConfig();
     expect(config.numLayers).toBe(4);
     expect(config.maxLayers).toBe(8);
-    expect(config.iouDedupeThreshold).toBe(0.70);
+    expect(config.iouDedupeThreshold).toBe(0.85);
     expect(config.uniqueCoverageThreshold).toBe(0.02);
   });
 
