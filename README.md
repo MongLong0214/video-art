@@ -96,7 +96,7 @@ npm run pipeline input.png -- --title sunset
 |---------|-------------|
 | `npm run dev` | Vite 개발서버 (실시간 미리보기, hot reload) |
 | `npm run build` | TypeScript 체크 + Vite 프로덕션 빌드 |
-| `npm run test` | Vitest 유닛 테스트 (1072 tests, 48 files) |
+| `npm run test` | Vitest 유닛 테스트 (1586 tests, 60 files) |
 | `npm run test:watch` | Vitest watch 모드 |
 
 ### Sketch 모드
@@ -237,62 +237,217 @@ type LayerRole =
 
 ---
 
-## Autoresearch System
+## Autoresearch System — 자가 개선 루프
 
-[Karpathy autoresearch](https://github.com/karpathy/autoresearch) 패턴을 레이어 분해에 적용. 자율 실험 루프로 파라미터를 최적화한다.
+[Karpathy autoresearch](https://github.com/karpathy/autoresearch) 패턴을 레이어 분해에 적용.
+**사용할수록 퀄리티가 자동으로 올라가는 시스템.** AI 에이전트가 파라미터를 수정 → 파이프라인 실행 → 10개 메트릭으로 평가 → 개선되면 keep, 아니면 discard를 무한 반복한다.
 
-### 구조 (3파일 원칙)
+### 핵심 원칙: 3-File Boundary
 
-| File | 편집자 | 역할 |
-|------|--------|------|
-| `research-config.ts` | AI 에이전트 | 25개 튜닝 파라미터 (유일한 수정 대상) |
-| `evaluate.ts` + `metrics/*` | 수정 금지 | 고정된 평가 harness |
-| `program.md` | Isaac | 에이전트 연구 지시서 |
+| 파일 | 누가 수정 | 역할 |
+|------|-----------|------|
+| `scripts/research/research-config.ts` | AI 에이전트 | 28개 튜닝 파라미터 (**유일한 수정 대상**) |
+| `scripts/research/evaluate.ts` + `metrics/*` | **아무도 안 건드림** | 고정된 평가 harness (ground truth) |
+| `scripts/research/program.md` | 사람 (Isaac) | 에이전트 연구 지시서 (방향 설정) |
+
+evaluate.ts를 고정하면 에이전트가 "점수를 해킹"하는 게 불가능. 실제 품질만 올려야 keep된다.
+
+### 사용법: 처음부터 끝까지
+
+#### Step 1. 레퍼런스 준비 (최초 1회)
+
+source.mp4를 프로젝트 루트 또는 원하는 경로에 준비한다.
+
+```bash
+npm run research:prepare -- /path/to/source.mp4
+```
+
+source.mp4에서 **1fps 비례 샘플링**으로 keyframe을 추출한다 (10초 영상 → 10장, 20초 → 20장).
+추가로 25%/50%/75% 위치에서 **temporal pair 3쌍**을 추출한다.
+
+```
+.cache/research/reference/
+├── frame_p000.png .. frame_p100.png   # 1fps keyframe
+├── temporal_pair_25_a.png / _b.png    # 25% 위치 연속 2프레임
+├── temporal_pair_50_a.png / _b.png    # 50% 위치
+├── temporal_pair_75_a.png / _b.png    # 75% 위치
+└── metadata.json                       # source duration, dims, fps
+```
+
+#### Step 2. Noise Floor 측정 (실험 세트 당 1회)
+
+```bash
+npm run research:calibrate            # 기본 10회 반복
+npm run research:calibrate -- --runs 20  # 20회로 늘리기
+```
+
+**동일한 config로 N회 파이프라인을 반복**하여 메트릭의 자연 변동폭을 측정한다.
+
+```
+δ_min = max(2σ, 0.01)
+```
+
+- σ = composite score의 표준편차
+- δ_min = 최소 개선 임계값 (이보다 작은 차이는 노이즈로 간주)
+- 95% 신뢰도로 **진짜 개선만 keep**
+
+결과는 `.cache/research/calibration.json`에 저장:
+```json
+{
+  "baselineScore": 0.6234,
+  "deltaMin": 0.0089,
+  "compositeStats": { "mean": 0.6234, "std": 0.0045, "min": 0.6150, "max": 0.6320 },
+  "perMetricStats": { "M1": {...}, "M2": {...}, ... },
+  "modelVersion": "local-2026-03-27",
+  "runCount": 10
+}
+```
+
+#### Step 3. 자율 실험 루프 실행
+
+Claude Code에서 `program.md`를 읽고 실험을 반복한다:
+
+```bash
+# Claude Code가 이 과정을 자율적으로 반복한다:
+
+# 1. research-config.ts 파라미터 수정 (예: iouDedupeThreshold 0.70 → 0.80)
+# 2. 단일 실험 실행
+npm run research:run
+
+# 3. 결과 확인 후 다음 파라미터 수정 계획 → 1번으로 반복
+```
+
+`run-once.ts`가 하나의 실험을 수행하는 흐름:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  1. 안전 체크                                                │
+│     ├─ git working tree clean? (dirty → abort)              │
+│     ├─ experiment budget 남아있나?                            │
+│     └─ autoresearch/{tag} 브랜치로 이동                      │
+│                                                              │
+│  2. Config 로드                                              │
+│     └─ research-config.ts → Zod 검증                        │
+│                                                              │
+│  3. 파이프라인 실행                                           │
+│     └─ pipeline-layers.ts (이미지 → 레이어 → 영상 생성)     │
+│                                                              │
+│  4. 평가 (evaluate.ts)                                       │
+│     ├─ 생성 영상에서 keyframe 추출 (비례 위치)               │
+│     ├─ 해상도 정규화 (작은 쪽 기준 리사이즈)                 │
+│     ├─ 10개 메트릭 계산 (M1-M10)                            │
+│     ├─ Hard Gate: 전부 ≥ 0.15?                              │
+│     └─ Composite Score (4-tier 가중합)                       │
+│                                                              │
+│  5. 판정                                                     │
+│     ├─ KEEP  = gate 통과 + score ≥ baseline + δ_min         │
+│     │   → git commit research-config.ts                     │
+│     └─ DISCARD = 나머지                                      │
+│         → git checkout -- research-config.ts (원복)          │
+│                                                              │
+│  6. results.tsv에 기록                                       │
+│     commit  quality_score  gate_pass  M1..M10  status  ...  │
+│                                                              │
+│  7. 콘솔 출력                                                │
+│     [exp #42] quality: 0.6823 (keep) | Δ+0.0134 | 45320ms  │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**자동 안전장치:**
+- 5회 연속 crash → 자동 중단 + 진단 로그
+- Ctrl+C (SIGINT) → config 복원 후 graceful exit
+- `--budget N` → 최대 실험 횟수 제한
+- model version mismatch → 즉시 abort (recalibrate 요구)
+
+#### Step 4. 결과 확인
+
+```bash
+npm run research:report
+```
+
+```
+=== Experiment Report ===
+Total: 42 experiments (28 keep, 12 discard, 2 crash)
+Best:  #37  score=0.7123  (Δ+0.0889 from baseline)
+Worst: #3   score=0.5801
+Mean:  0.6542
+Trend (last 10): ↑ +0.012/exp
+
+Top-5 config diffs:
+  #37: iouDedupeThreshold 0.70→0.82, complexEdgeMin 0.20→0.18
+  #35: parallaxDepthMul 1.0→1.15, luminanceKeyMul 1.0→0.85
+  ...
+```
+
+실시간 모니터링:
+```bash
+tail -f .cache/research/results.tsv
+watch -n 10 'tail -5 .cache/research/results.tsv'
+```
+
+#### Step 5. Best Config 승격
+
+```bash
+npm run research:promote
+```
+
+현재 best config를 **baseline으로 승격**한다. 다음 실험 세트의 출발점이 된다.
+이전 baseline은 history에 보존된다.
+
+#### Step 6. 단일 영상 평가 (선택)
+
+파이프라인 밖에서 임의의 영상을 평가할 수 있다:
+
+```bash
+npm run research:eval -- generated.mp4 --source original.mp4 --manifest manifest.json
+```
+
+JSON 결과가 stdout으로 출력된다:
+```json
+{"metrics":{"M1":0.72,"M2":0.68,...},"gatePassed":true,"qualityScore":0.6823,"elapsedMs":12340}
+```
 
 ### 10 메트릭 (4-Tier Hard Gate + Composite Score)
+
+레퍼런스 영상과 생성 영상의 **색감 충실도 + 시각 품질**만 측정한다.
+해상도, fps, 길이, 비율 등 포맷은 일체 비교하지 않는다.
 
 | Tier | Weight | Metric | 구현 |
 |------|--------|--------|------|
 | Color (0.35) | M1 | Color Palette Sinkhorn | k-means++(k=12) CIELAB + Sinkhorn EMD |
 | | M2 | Dominant Color CIEDE2000 | top-3 가중 ΔE |
-| | M3 | Color Temperature CCT+Duv | Hernandez-Andres CCT + Mireds |
-| Visual (0.25) | M4 | MS-SSIM YCbCr | 5-scale Wang et al. weights |
-| | M5 | Canny Edge Preservation | 2px tolerance + F1 |
-| | M6 | Bidirectional Texture Richness | 8×8 block entropy |
-| Temporal (0.20) | M7 | VMAF | ffmpeg libvmaf |
-| | M8 | Temporal Coherence | consecutive SSIM + flicker |
-| Layer (0.20) | M9 | Layer Independence | uniqueCoverage × (1-duplicateRatio) |
-| | M10 | Role Coherence | role 할당률 + bgPlate bonus |
+| | M3 | Color Temperature CCT+Duv | Ohno 2014 CCT + Mireds + Duv |
+| Visual (0.25) | M4 | MS-SSIM YCbCr | 5-scale Wang et al. (0.8Y + 0.1Cb + 0.1Cr) |
+| | M5 | Canny Edge Preservation | 2px morphological dilation + F1 |
+| | M6 | Bidirectional Texture Richness | 8×8 block variance → Shannon entropy |
+| Temporal (0.20) | M7 | VMAF | ffmpeg libvmaf (full-frame) |
+| | M8 | Temporal Coherence | 0.5×consecutive SSIM + 0.5×low-motion flicker |
+| Layer (0.20) | M9 | Layer Independence | mean(uniqueCoverage) × (1 - duplicateRatio) |
+| | M10 | Role Coherence | 0.6×할당률 + 0.2×bgPlate + 0.2×diversity |
 
-**판정:** Hard Gate(all M >= 0.15) + quality_score > baseline + δ_min → keep
-
-### 실험 루프
-
+**판정 로직:**
 ```
-[prepare.ts]  source.mp4 → 1fps keyframe + 3 temporal pairs
-[calibrate.ts]  동일 config 10-20회 → δ_min = 2σ 측정
-
-AI Agent Loop (Claude Code가 program.md 읽고 반복):
-  1. research-config.ts 수정
-  2. npm run research:run
-  3. keep → git commit / discard → git restore
-  4. results.tsv 기록
-  5. 다음 config 계획 → 반복
+Hard Gate:  all(M1..M10 ≥ 0.15)  →  하나라도 미달이면 즉시 discard
+Composite:  0.35×color + 0.25×visual + 0.20×temporal + 0.20×layer
+Keep:       gate 통과 AND score ≥ baseline + δ_min
 ```
 
-### research-config.ts 파라미터 (25개)
+### research-config.ts 파라미터 (28개)
 
-| Group | Parameters |
-|-------|-----------|
-| Decomposition | numLayers, method |
-| Candidate Extraction | alphaThreshold, minCoverage |
-| Complexity Scoring | simpleEdgeMax, simpleEntropyMax, complexEdgeMin, complexEntropyMin, edgePixelThreshold |
-| Dedupe & Ownership | iouDedupeThreshold, uniqueCoverageThreshold |
-| Role Assignment | centralityThreshold, bgPlateMinBboxRatio, edgeTolerancePx |
-| Retention | maxLayers, minRetainedLayers |
-| Depth (Variant B) | depthZones, depthSplitThreshold |
-| Variant Selection | qualityThresholdPct |
-| Scene Multipliers | colorCycleSpeedMul, parallaxDepthMul, waveAmplitudeMul, glowIntensityMul, saturationBoostMul, luminanceKeyMul |
+| Group | Parameters | 설명 |
+|-------|-----------|------|
+| Decomposition | `numLayers`, `method` | 레이어 수, 분해 방식 |
+| Candidate Extraction | `alphaThreshold`, `minCoverage` | alpha 이진화, 최소 커버리지 |
+| Complexity Scoring | `simpleEdgeMax`, `simpleEntropyMax`, `complexEdgeMin`, `complexEntropyMin`, `edgePixelThreshold` | 복잡도 tier 경계값 |
+| Dedupe & Ownership | `iouDedupeThreshold`, `uniqueCoverageThreshold` | IoU 중복 제거, 최소 고유 커버리지 |
+| Role Assignment | `centralityThreshold`, `bgPlateMinBboxRatio`, `edgeTolerancePx` | 역할 할당 휴리스틱 |
+| Retention | `maxLayers`, `minRetainedLayers` | 레이어 수 상/하한 |
+| Depth (Variant B) | `depthZones`, `depthSplitThreshold` | 깊이 분할 설정 |
+| Variant Selection | `qualityThresholdPct` | A/B 선택 임계값 |
+| Recursive Decomposition | `recurseCoverageThreshold`, `recurseComponentThreshold`, `recurseEdgeDensityThreshold` | 재귀 분해 트리거 |
+| Scene Multipliers | `colorCycleSpeedMul`, `parallaxDepthMul`, `waveAmplitudeMul`, `glowIntensityMul`, `saturationBoostMul`, `luminanceKeyMul` | 애니메이션 프리셋 승수 (1.0=기본) |
+
+모든 파라미터는 Zod schema로 **min/max 범위 + default 값**이 정의되어 있다. 범위 밖 값은 validation error.
 
 ---
 
@@ -340,19 +495,20 @@ video-art/
 │   │   └── ...
 │   └── research/                     ★ Autoresearch System
 │       ├── program.md                에이전트 연구 지시서
-│       ├── research-config.ts        25개 튜닝 파라미터 (Zod)
+│       ├── research-config.ts        28개 튜닝 파라미터 (Zod)
 │       ├── evaluate.ts               평가 harness (수정 금지)
 │       ├── prepare.ts                레퍼런스 keyframe 추출
-│       ├── calibrate.ts              noise floor 측정
+│       ├── calibrate.ts              noise floor 측정 (δ_min = 2σ)
 │       ├── run-once.ts               단일 실험 실행기
-│       ├── frame-extractor.ts        비례 위치 프레임 추출
-│       ├── git-automation.ts         autoresearch/{tag} 브랜치 관리
-│       ├── report.ts                 실험 이력 분석
+│       ├── frame-extractor.ts        비례 위치 프레임 추출 + 해상도 정규화
+│       ├── config-integration.ts     모듈 config 연동 (resolveParam/applyMultiplier)
+│       ├── git-automation.ts         autoresearch/{tag} 브랜치 + crash counter + budget
+│       ├── report.ts                 실험 이력 분석 (best/worst/trend/top-5 diff)
 │       ├── promote.ts                baseline 승격
 │       ├── metrics/
 │       │   ├── color-palette.ts      M1: Sinkhorn Distance
 │       │   ├── dominant-color.ts     M2: CIEDE2000
-│       │   ├── color-temperature.ts  M3: CCT + Duv
+│       │   ├── color-temperature.ts  M3: Ohno CCT + Duv
 │       │   ├── ms-ssim.ts            M4: MS-SSIM YCbCr
 │       │   ├── edge-preservation.ts  M5: Canny F1
 │       │   ├── texture-richness.ts   M6: Bidirectional Texture
@@ -371,6 +527,7 @@ video-art/
 │   ├── render/                       렌더 셸 스크립트
 │   └── setup.sh                      의존성 검증
 │
+├── test/fixtures/golden/              E2E 골든 테스트 이미지 (5종)
 ├── docs/prd/                         PRD (설계 스펙)
 ├── docs/tickets/                     개발 티켓
 ├── .claude/skills/video-blueprint/   영상 분석 → 셰이더 생성 스킬
@@ -447,7 +604,7 @@ Layered: 1080x1080, 60fps, scene.json duration (기본 20초)
 | **typescript** | ^5.7.0 | strict 타입 체크 |
 | **@types/three** | ^0.172.0 | Three.js 타입 |
 | **tsx** | ^4.21.0 | TS 스크립트 직접 실행 |
-| **vitest** | ^4.1.1 | 1072 tests (48 files) |
+| **vitest** | ^4.1.1 | 1586 tests (60 files) |
 
 ### External
 
