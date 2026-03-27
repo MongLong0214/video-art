@@ -27,7 +27,8 @@
     "render:stems": "tsx scripts/render-stems.ts",
     "render:prod": "tsx scripts/render-prod.ts",
     "preset:save": "tsx scripts/preset-save.ts",
-    "preset:list": "tsx scripts/preset-list.ts"
+    "preset:list": "tsx scripts/preset-list.ts",
+    "analyze:track": "tsx scripts/analyze-track.ts"
   },
   "dependencies": {
     "dotenv": "^17.3.1",

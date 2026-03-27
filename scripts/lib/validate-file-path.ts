@@ -1,7 +1,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 
-const ALLOWED_EXTENSIONS = new Set([".osclog", ".osc", ".wav", ".json"]);
+const ALLOWED_EXTENSIONS = new Set([".osclog", ".osc", ".wav", ".json", ".flac", ".mp3", ".aiff"]);
 
 export const validateFilePath = (
   filePath: string,
