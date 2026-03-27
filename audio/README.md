@@ -1,137 +1,374 @@
-# Audio System — Techno/Trance Music Generation
+# Audio System v2 — Live Performance + Production Pipeline
 
-SuperCollider 기반 코드 생성 음악 시스템. video-art 비주얼에 동기화되는 테크노/트랜스 사운드트랙을 NRT(Non-Realtime) 렌더링합니다.
+SuperCollider + TidalCycles 기반 전자음악 시스템. 라이브 퍼포먼스(실시간 코딩) + 프로덕션 파이프라인(NRT 스템 렌더 + 마스터링) + 5종 장르 프리셋.
 
 ## Quick Start
 
 ```bash
-# 1. 의존성 설치 (SuperCollider, ffmpeg, sox)
+# 0. 의존성 설치
 npm run audio:setup
 
-# 2. 오디오 렌더 (scene.json → master.wav)
-npm run render:audio
-# → out/audio/master/master.wav (48kHz 16-bit, -14 LUFS)
+# 1. 라이브 모드 — 실시간 코딩 + 퍼포먼스
+npm run live:start              # SC + SuperDirt + Tidal 스택 부팅
+npm run live:start -- --log     # + OSC 이벤트 로깅 (프로덕션용)
+npm run live:log                # 위와 동일 (shortcut)
+npm run live:record             # 라이브 녹음 (master WAV)
+npm run live:stop               # 전체 스택 종료
 
-# 3. 비디오 + 오디오 합성 (→ final.mp4)
-npm run render:av
+# 2. 프로덕션 모드 — 라이브 세션 → 상업 품질 트랙
+npm run prod:convert <session.osclog>     # OSC 로그 → NRT Score
+npm run render:stems <score.nrt.json>     # NRT Score → 4스템 WAV
+npm run render:prod <session.osclog>      # 원커맨드 (변환→스템→마스터)
+
+# 3. NRT 모드 — scene.json 기반 자동 생성
+npm run render:audio            # scene.json → master.wav
+npm run render:av               # 비디오 + 오디오 합성 → final.mp4
+
+# 4. 프리셋
+npm run preset:list             # 장르 프리셋 목록
+npm run preset:save my_custom   # 현재 프리셋 저장
+
+# 5. 테스트
+npm run test                    # 338 vitest (전체)
+npm run audio:test              # SC SynthDef NRT 검증
 ```
+
+---
 
 ## 의존성
 
-| Tool | 설치 | 용도 |
-|------|------|------|
-| SuperCollider 3.13+ | `brew install --cask supercollider` | 신스 엔진 + NRT 렌더 |
-| ffmpeg 5+ | `brew install ffmpeg` | LUFS 믹스다운 + AV 합성 |
-| sox | `brew install sox` | seamless loop 크로스페이드 |
+| Tool | 설치 | 용도 | 필수 |
+|------|------|------|------|
+| SuperCollider 3.13+ | `brew install --cask supercollider` | 신스 엔진 + NRT 렌더 | 필수 |
+| ffmpeg 5+ | `brew install ffmpeg` | LUFS 마스터링 + AV 합성 + 스템 분리 | 필수 |
+| sox | `brew install sox` | seamless loop 크로스페이드 | NRT만 |
+| GHCup + GHC 9.6 | `brew install ghcup` | Haskell 툴체인 (TidalCycles) | 라이브만 |
+| TidalCycles | `cabal install tidal` | 라이브 코딩 엔진 | 라이브만 |
+| SuperDirt | SC Quarks.install("SuperDirt") | 샘플러 + 이펙트 | 라이브만 |
+| VS Code + tidalvscode | marketplace | 에디터 Tidal 통합 | 라이브만 |
+
+sclang PATH 설정 (macOS):
+```bash
+export PATH="/Applications/SuperCollider.app/Contents/MacOS:$PATH"
+```
+
+---
 
 ## 디렉토리 구조
 
 ```
 audio/
-├── sc/                         # SuperCollider 소스
-│   ├── synthdefs/              # SynthDef 정의 (9종)
-│   │   ├── kick.scd            # 사인파 + pitch env + distortion
-│   │   ├── bass.scd            # 톱니파 + LP filter + amp env
-│   │   ├── hat.scd             # 노이즈 + BP filter + short decay
-│   │   ├── clap.scd            # 노이즈 버스트 + short reverb
-│   │   ├── supersaw.scd        # 7-voice detuned saw + LP filter
-│   │   ├── pad.scd             # Saw/Pulse mix + slow attack + LP sweep
-│   │   ├── lead.scd            # Saw + vibrato + drive
-│   │   ├── arp_pluck.scd       # Saw + fast decay + brightness
-│   │   └── riser.scd           # XLine pitch sweep + noise blend
-│   ├── patterns/               # Pbind/Pdef 시퀀스
-│   │   ├── techno-kick.scd     # Bjorklund(4,16) + Pwrand 확률 트리거
-│   │   ├── techno-hat.scd      # Bjorklund(7,16) + Pseg density 변형
-│   │   ├── techno-clap.scd     # Bjorklund(3,8) + Prand position shift
-│   │   ├── techno-master.scd   # 3종 Ppar 조합
-│   │   ├── trance-layers.scd   # 6레이어 독립 Pbind (sub_bass/rolling_bass/arp/pad/lead/riser)
-│   │   ├── trance-macro.scd    # filter/reverb/width Env 자동화 (32bars)
-│   │   └── trance-master.scd   # 코드 진행 + 아르페지오 + macro wiring
-│   ├── lib/                    # SC 라이브러리
-│   │   ├── bjorklund.scd       # 유클리드 리듬 알고리즘 (Euclidean rhythm)
-│   │   ├── scales.scd          # 스케일 정의 (5종) + MIDI 매핑 (24키)
-│   │   ├── chords.scd          # 다이어토닉 코드 진행 엔진
-│   │   ├── arp.scd             # 아르페지에이터 (up/down/random + octave span + gate)
-│   │   └── scene-score.scd     # SceneScore: 에너지 → 파라미터/레이어 자동 매핑
-│   ├── scenes/                 # SceneScore 프리셋
-│   │   ├── techno-default.scd  # 5섹션 48bars (intro→build→drop→break→outro)
-│   │   └── trance-default.scd  # 5섹션 64bars (intro→build→break→main→outro)
+├── sc/                              # SuperCollider 소스
+│   ├── synthdefs/                   # SynthDef 9종
+│   │   ├── kick.scd                 # 사인파 + pitch env + distortion
+│   │   ├── bass.scd                 # 톱니파 + LP filter + envAmount
+│   │   ├── hat.scd                  # 노이즈 + openness/tone
+│   │   ├── clap.scd                 # 노이즈 버스트 + spread(FreeVerb mix)
+│   │   ├── supersaw.scd             # 7-voice detuned saw + mix + LP
+│   │   ├── pad.scd                  # slow attack/release + filterEnv
+│   │   ├── lead.scd                 # vibrato + portamento + drive
+│   │   ├── arp_pluck.scd            # fast decay + brightness
+│   │   └── riser.scd                # sweepRange + noiseAmount
+│   ├── superdirt/                   # SuperDirt 설정 (라이브 모드)
+│   │   ├── boot.scd                 # SuperDirt.start + SynthDef 로드 + FX + Presets + Logger
+│   │   ├── custom-fx.scd            # FX 4종: compressor, sidechain, saturator, EQ (addModule)
+│   │   ├── genre-presets.scd        # SC 프리셋 로더 + OSC 핸들러 (setPreset/getPreset)
+│   │   └── osc-logger.scd           # OSC 이벤트 JSONL 캡처 (--log 시 활성)
+│   ├── lib/                         # SC 라이브러리
+│   │   ├── bjorklund.scd            # 유클리드 리듬 알고리즘
+│   │   ├── scales.scd               # 5종 스케일 + 24키 MIDI 매핑
+│   │   ├── chords.scd               # 다이어토닉 코드 진행
+│   │   ├── arp.scd                  # 아르페지에이터 (up/down/random)
+│   │   └── scene-score.scd          # 에너지 → 파라미터/레이어 매핑
+│   ├── patterns/                    # NRT 패턴 시퀀스
+│   │   ├── techno-*.scd             # 테크노 킥/햇/클랩/마스터
+│   │   └── trance-*.scd             # 트랜스 레이어/매크로/마스터
+│   ├── scenes/                      # SceneScore 프리셋
+│   │   ├── techno-default.scd       # 48bars: intro→build→drop→break→outro
+│   │   └── trance-default.scd       # 64bars: intro→build→break→main→outro
 │   ├── scores/
-│   │   └── render-nrt.scd      # NRT 스코어 생성기 (config → SceneScore → scsynth -N)
-│   ├── startup.scd             # SC 부팅 + SynthDef 자동 로더
-│   ├── test-synthdefs.scd      # SynthDef 로드 + NRT + RMS > 0.001 검증
-│   ├── test-patterns.scd       # Bjorklund + Pwrand/Pseg 소스 검증 (11 tests)
-│   └── test-trance.scd         # 코드/아르페지오/레이어/macro 검증 (12 tests)
-├── render/                     # 렌더 파이프라인 스크립트
-│   ├── loop-crossfade.sh       # sox tail 2s → head 2s crossfade → exact trim
-│   ├── merge-av.sh             # ffmpeg -c:v copy -c:a aac -b:a 320k
-│   └── test-output/            # NRT 테스트 출력
-├── setup.sh                    # brew 의존성 설치 + SC headless 부팅 검증
-└── README.md
+│   │   ├── render-nrt.scd           # NRT 스코어 생성 (scene.json → scsynth -N)
+│   │   └── render-stems-nrt.scd     # NRT 멀티스템 렌더 (8ch, 14 SynthDef + Buffer.read)
+│   ├── startup.scd                  # SC 부팅 + SynthDef 자동 로더
+│   ├── test-synthdefs.scd           # SynthDef NRT + RMS 검증 (9종)
+│   ├── test-patterns.scd            # Bjorklund + 패턴 검증 (11 tests)
+│   └── test-trance.scd              # 코드/arp/레이어/매크로 (12 tests)
+├── tidal/                           # TidalCycles
+│   ├── BootTidal.hs                 # Tidal 부트: 127.0.0.1:57120, d1-d8, pF 31개, setPreset/getPreset
+│   └── sessions/                    # 라이브 세션 .tidal 파일
+├── presets/                         # 장르 프리셋
+│   ├── genres/                      # 기본 5종
+│   │   ├── hard_techno.json         # BPM 140-155, heavy comp/sat, aggressive kick
+│   │   ├── melodic_techno.json      # BPM 120-130, warm pads, subtle FX
+│   │   ├── industrial.json          # BPM 130-145, harsh distortion, dark EQ
+│   │   ├── psytrance.json           # BPM 138-148, acid bass, bright top
+│   │   └── progressive_trance.json  # BPM 128-138, lush pads, wide supersaw
+│   └── user/                        # 유저 커스텀 프리셋
+├── samples/                         # 커스텀 샘플 (audio/samples/ 하위만 허용)
+├── render/                          # 렌더 파이프라인 스크립트
+│   ├── loop-crossfade.sh            # sox seamless loop
+│   └── merge-av.sh                  # ffmpeg AV 합성
+├── setup.sh                         # 의존성 설치 + SC 검증
+└── README.md                        # 이 파일
 ```
 
-## 렌더 파이프라인
+---
 
+## 모드별 상세 사용법
+
+### 1. 라이브 모드
+
+```bash
+# 전체 스택 부팅 (SC + SuperDirt + 8 orbits)
+npm run live:start
+
+# 라이브 + OSC 로깅 (프로덕션 변환용)
+npm run live:log
 ```
+
+부팅 후:
+1. VS Code에서 `.tidal` 파일 열기
+2. `Ctrl+Enter`로 코드 블록 실행
+3. `audio/tidal/sessions/` 에 세션 파일 저장
+
+**Tidal 기본 사용:**
+```haskell
+-- 킥 패턴
+d1 $ s "kick" # drive 0.5 # click 0.7
+
+-- 하이햇 + 커스텀 파라미터
+d2 $ s "hat" # openness 0.3 # tone 0.5
+
+-- 슈퍼소우 + FX
+d3 $ s "supersaw" # n "0 4 7" # cutoff 3000 # compress 0.7 # sawMix 0.8
+
+-- 프리셋 전환 (라이브 중 즉시)
+setPreset "hard_techno"
+setPreset "psytrance"
+getPreset  -- 현재 프리셋 확인
+
+-- 모든 정지
+hush
+```
+
+**사용 가능한 Tidal 파라미터:**
+
+| 카테고리 | 파라미터 | 설명 |
+|---------|---------|------|
+| **SynthDef 공통** | cutoff, resonance, detune, width, click, decay | Phase A 기본 |
+| **SynthDef 확장** | openness, tone, filterEnv, vibrato, portamento, brightness, sweepRange, noiseAmount, envAmount | B-PRESET |
+| **앨리어스** | clapSpread (→spread), sawMix (→mix) | Tidal 빌트인 충돌 회피 |
+| **FX** | compress, threshold, ratio, compAttack, compRelease | 컴프레서 |
+| **FX** | saturate, drive | 새츄레이터 |
+| **FX** | loGain, midGain, hiGain, loFreq, hiFreq | EQ |
+| **FX** | sideGain, sideRelease | 사이드체인 |
+| **빌트인** | attack, release, room, size, delay, delaytime, delayfeedback | Tidal/SuperDirt 기본 |
+| **프리셋** | presetName | setPreset 헬퍼용 |
+
+> `attack`, `release`는 Tidal 빌트인 — 별도 pF 불필요. `spread`는 `clapSpread`, `mix`는 `sawMix`으로 사용 (Tidal 콤비네이터 충돌 방지).
+
+**라이브 녹음:**
+```bash
+npm run live:record    # SC s.record 시작 → out/audio/{date}_{title}/live-recording.wav
+npm run live:stop      # 녹음 종료 + 파일 finalize
+```
+
+**라이브 종료:**
+```bash
+npm run live:stop      # SIGTERM → 3초 대기 → SIGKILL. 좀비 0. 녹음 중이면 자동 finalize
+```
+
+---
+
+### 2. 프로덕션 모드 (라이브 세션 → 트랙)
+
+라이브 세션을 상업 품질 트랙으로 변환하는 3단계 파이프라인:
+
+```bash
+# Step 1: OSC 로그 → NRT Score 변환
+npm run prod:convert out/osclog/session_2026-03-27_21-00_part0.osclog
+# 디렉토리 입력도 가능 (멀티파트 자동 병합):
+npm run prod:convert out/osclog/
+
+# Step 2: NRT Score → 4스템 WAV
+npm run render:stems out/osclog/nrt-score.nrt.json -- --title=my-track
+# → out/audio/2026-03-27_my-track/stems/stem-{drums,bass,synth,fx}.wav
+
+# Step 3: 스템 → 마스터 (loudnorm -14 LUFS)
+# (render:prod는 1-3을 원커맨드로 실행)
+npm run render:prod out/osclog/session.osclog
+```
+
+**프로덕션 출력 구조:**
+```
+out/audio/2026-03-27_my-track/
+├── stems/
+│   ├── stem-drums.wav       # 48kHz 32-bit float
+│   ├── stem-bass.wav
+│   ├── stem-synth.wav
+│   └── stem-fx.wav
+├── master.wav               # 48kHz 16-bit PCM, -14 LUFS, TP ≤ -2 dBTP
+├── session-info.json         # BPM, key, duration, stems, event summary
+├── IMPORT-GUIDE.md           # DAW 임포트 안내
+└── raw/
+    ├── session.osclog        # 원본 OSC 로그
+    └── nrt-score.osc         # NRT 바이너리 Score
+```
+
+**OSC 로그 형식 (JSONL):**
+```jsonl
+{"ts":0.000,"s":"kick","n":0,"orbit":0,"amp":1.0,"compress":0.7}
+{"ts":0.125,"s":"hat","n":0,"orbit":1,"openness":0.3,"tone":0.5}
+{"ts":0.250,"s":"supersaw","n":4,"orbit":2,"cutoff":3000,"room":0.5}
+```
+
+10분마다 자동 분할: `session_YYYY-MM-DD_HH-MM_partN.osclog`
+
+**NRT 스템 라우팅:**
+
+| 스템 | Bus | SynthDefs |
+|------|-----|-----------|
+| drums | 0-1 | kick, hat, clap + Dirt-Samples (bd, sd, hh, cp...) |
+| bass | 2-3 | bass |
+| synth | 4-5 | supersaw, pad, lead, arp_pluck |
+| fx | 6-7 | riser |
+
+**NRT FX 체인** (각 스템에 적용):
+```
+sidechain → compressor → saturator → EQ → reverb → delay
+```
+
+**NRT 지원 SynthDef (14종):**
+- Instruments 9종: kick, bass, hat, clap, supersaw, pad, lead, arp_pluck, riser
+- FX 4종: customCompressor, customSaturator, customEQ, customSidechain
+- NRT 전용: nrtPlayBuf (Dirt-Samples), nrtReverb (FreeVerb), nrtDelay (CombL), nrt_sidechain_send
+
+**Dirt-Samples NRT** (v0.2):
+- 라이브에서 사용한 Dirt-Samples (bd, sd, hh 등 15종)가 NRT에서도 재생
+- Buffer.read + PlayBuf 방식으로 샘플 파일 해석
+- n 파라미터 → 폴더 내 N번째 파일 (래핑)
+
+---
+
+### 3. NRT 모드 (scene.json 기반)
+
+```bash
 npm run render:audio
-
-scene.json (duration, audio config)
-     │
-     ▼
-[1] Dependencies check (sclang, scsynth, ffmpeg, sox)
-     │
-     ▼
-[2] BPM 역산 — bars × 4 × 60 / bpm = duration (±0.001s 정밀도)
-    소수점 BPM 허용. SC TempoClock 소수점 지원.
-     │
-     ▼
-[3] SC config 생성 → sclang render-nrt.scd
-     ├── SynthDefs 로드 + writeDefFile (디스크 저장)
-     ├── SceneScore 빌드 (에너지 기반 섹션 → NRT OSC 이벤트)
-     ├── thisThread.randSeed_(42)  ← 결정론적 출력 보장
-     ├── Score.write → binary OSC 파일
-     └── scsynth -N → stem-master.wav (48kHz 32-bit float)
-     │
-     ▼
-[4] loop-crossfade.sh (seamless loop)
-     └── sox: tail 2s crossfade into head 2s → trim to exact duration
-     │
-     ▼
-[5] ffmpeg mixdown
-     └── loudnorm I=-14 TP=-1 LRA=11 → master.wav (48kHz 16-bit PCM)
-     │
-     ▼
-[6] 검증 — ffprobe duration match + 디스크 공간 2x 사전 체크
-     │
-     ▼
-out/audio/master/master.wav
+# scene.json → BPM 역산 → SC NRT → loop crossfade → loudnorm → master.wav
 ```
 
-## SynthDef 파라미터
+**scene.json audio 설정:**
+```jsonc
+{
+  "audio": {
+    "bpm": 128,                 // optional — 없으면 duration에서 자동 역산
+    "key": "Am",                // 24키 (C, Cm, C#, C#m, ... B, Bm). default: "Am"
+    "scale": "minor",           // major | minor | dorian | phrygian | mixolydian
+    "genre": "techno",          // techno | trance | house | dnb | ambient
+    "energy": 0.7,              // 0~1 전체 에너지
+    "preset": "hard_techno"     // optional, 사운드 프리셋 (genre와 독립)
+  }
+}
+```
 
-모든 SynthDef는 공통 인터페이스를 공유합니다:
+**NRT 렌더 파이프라인:**
+```
+scene.json → [1] deps check → [2] BPM 역산 (bars×4×60/bpm = duration ±0.001s)
+→ [3] SC config → sclang render-nrt.scd → scsynth -N → stem-master.wav
+→ [4] loop-crossfade.sh (sox 2s crossfade) → [5] ffmpeg loudnorm (-14 LUFS)
+→ [6] ffprobe 검증 → master.wav (48kHz 16-bit PCM)
+```
 
-| 파라미터 | 기본값 | 설명 |
-|---------|--------|------|
-| `out` | 0 | 출력 버스 |
-| `freq` | varies | 주파수 (Hz) |
-| `amp` | 0.5-0.8 | 진폭 |
-| `dur` | varies | 지속 시간 (초) |
-| `pan` | 0 | 스테레오 패닝 (-1 ~ 1) |
+---
 
-각 SynthDef별 고유 파라미터:
+### 4. 프리셋
 
-| SynthDef | 파라미터 | 설명 |
-|----------|---------|------|
-| **kick** | `drive`, `click`, `decay` | 사인파 킥 + pitch envelope + 선택적 distortion |
-| **bass** | `cutoff`, `resonance`, `envAmount` | 톱니파 + 레조넌트 LP 필터 |
-| **hat** | `openness`, `tone` | 노이즈 하이햇 (0=closed, 1=open) |
-| **clap** | `spread`, `decay` | 다중 노이즈 버스트 + reverb |
-| **supersaw** | `detune`, `mix`, `cutoff` | 7-voice detuned saw (trance lead) |
-| **pad** | `attack`, `release`, `filterEnv` | 느린 attack + LP sweep (ambient) |
-| **lead** | `vibrato`, `portamento`, `drive` | 모노 리드 + SinOsc 비브라토 |
-| **arp_pluck** | `decay`, `brightness` | 짧은 pluck (아르페지오용) |
-| **riser** | `sweepRange`, `noiseAmount` | 상승 pitch sweep (빌드업용) |
+**기본 5종:**
+
+| 프리셋 | BPM | 특성 |
+|--------|-----|------|
+| `hard_techno` | 140-155 | aggressive kick (drive 0.8), heavy compression (0.85), saturation (0.65) |
+| `melodic_techno` | 120-130 | warm pads (attack 2.5), subtle FX (compress 0.4), wide supersaw (mix 0.8) |
+| `industrial` | 130-145 | max distortion (drive 0.95), harsh EQ (hiGain -1), extreme compression (0.9) |
+| `psytrance` | 138-148 | acid bass (resonance 0.75, envAmount 0.85), bright top (hiGain 3), fast arp |
+| `progressive_trance` | 128-138 | lush pads (attack 3.5), gentle FX (compress 0.3), wide supersaw (mix 0.9) |
+
+**Tidal에서 전환:**
+```haskell
+setPreset "hard_techno"    -- 즉시 전환 (다음 사이클부터 적용)
+setPreset "psytrance"
+getPreset                  -- 현재 프리셋 확인
+```
+
+**커스텀 프리셋:**
+```bash
+npm run preset:save my_sound           # 현재 프리셋 → audio/presets/user/my_sound.json
+npm run preset:save my_sound --force   # 덮어쓰기
+npm run preset:list                    # 기본 5종 + 유저 프리셋 목록
+```
+
+Tidal에서 유저 프리셋도 동일하게 호출:
+```haskell
+setPreset "my_sound"
+```
+
+**프리셋 JSON 구조:**
+```json
+{
+  "name": "hard_techno",
+  "bpm": { "min": 140, "max": 155, "default": 145 },
+  "synthParams": {
+    "kick": { "drive": 0.8, "click": 0.7, "decay": 0.3 },
+    "bass": { "cutoff": 1500, "resonance": 0.5, "envAmount": 0.7 },
+    "...": "..."
+  },
+  "fxDefaults": {
+    "compress": 0.85, "threshold": -8, "ratio": 6,
+    "compAttack": 0.005, "compRelease": 0.05,
+    "saturate": 0.65, "drive": 0.5,
+    "loGain": 3, "midGain": -1, "hiGain": 1,
+    "loFreq": 200, "hiFreq": 3500,
+    "sideGain": 1.2, "sideRelease": 0.15
+  },
+  "stemGroups": {
+    "drums": ["kick", "hat", "clap"],
+    "bass": ["bass"],
+    "synth": ["supersaw", "pad", "lead", "arp_pluck"],
+    "fx": ["riser"]
+  }
+}
+```
+
+---
+
+## SynthDef 파라미터 레퍼런스
+
+모든 SynthDef 공통: `out`, `freq`, `amp`, `dur`, `pan`
+
+| SynthDef | 고유 파라미터 | 설명 |
+|----------|-------------|------|
+| **kick** | `drive` (0-1), `click` (0-1), `decay` (초) | 사인파 킥 + pitch env + distortion |
+| **bass** | `cutoff` (Hz), `resonance` (0-1), `envAmount` (0-1) | 톱니파 + 레조넌트 LP 필터 |
+| **hat** | `openness` (0=closed, 1=open), `tone` (0-1) | 노이즈 하이햇 |
+| **clap** | `spread` (0-1, FreeVerb mix), `decay` (초) | 다중 노이즈 버스트 + reverb |
+| **supersaw** | `detune` (0-1), `mix` (0-1), `cutoff` (Hz) | 7-voice detuned saw |
+| **pad** | `attack` (초), `release` (초), `filterEnv` (0-1) | 느린 attack + LP sweep |
+| **lead** | `vibrato` (0-1), `portamento` (초), `drive` (0-1) | 모노 리드 + 비브라토 |
+| **arp_pluck** | `decay` (초), `brightness` (0-1) | 짧은 pluck (아르페지오) |
+| **riser** | `sweepRange` (Hz), `noiseAmount` (0-1) | 상승 pitch sweep (빌드업) |
+
+## FX 파라미터 레퍼런스
+
+| FX | 파라미터 | 설명 |
+|----|---------|------|
+| **Compressor** | `compress` (0-1), `threshold` (dB), `ratio`, `compAttack` (초), `compRelease` (초) | 다이나믹 압축 |
+| **Sidechain** | `sideGain` (0-2), `sideRelease` (초) | kick-driven ducking (cross-orbit bus 100) |
+| **Saturator** | `saturate` (0-1), `drive` (0-1) | 웜 디스토션 |
+| **EQ** | `loGain` (dB), `midGain` (dB), `hiGain` (dB), `loFreq` (Hz), `hiFreq` (Hz) | 3밴드 EQ |
+| **Reverb** | `room` (0-1), `size` (0-1), `dry` (0-1) | FreeVerb (NRT: nrtReverb) |
+| **Delay** | `delaytime` (초), `delayfeedback` (0-1), `dry` (0-1) | CombL (NRT: nrtDelay) |
+
+---
 
 ## 에너지 씬 시스템
 
@@ -147,71 +384,58 @@ SceneScore는 곡 구조를 에너지 값(0~1)으로 제어합니다:
 | 0.7 | + lead | 멜로디 추가 |
 | 0.8 | + riser | 풀 에너지 |
 
-에너지 → 파라미터 자동 매핑:
-
-| 파라미터 | energy=0 | energy=1 | 커브 |
-|---------|----------|----------|------|
-| openness | 0.1 | 0.9 | linear |
-| brightness | 0.2 | 1.0 | linear |
-| distortion | 0.0 | 0.5 | linear |
-| filterCutoff | 200 Hz | 8000 Hz | exponential |
-| reverbSize | 0.6 | 0.2 | linear (inverse) |
-| amp | 0.3 | 0.9 | linear |
-
-## scene.json audio 필드
-
-```jsonc
-{
-  "audio": {                    // optional — 없으면 기본값 적용
-    "bpm": 128,                 // optional — 없으면 duration에서 자동 역산
-    "key": "Am",                // 24키 지원 (C, Cm, C#, C#m, ... B, Bm). default: "Am"
-    "scale": "minor",           // major | minor | dorian | phrygian | mixolydian
-    "genre": "techno",          // "techno" (BPM 125-150) | "trance" (BPM 130-145)
-    "energy": 0.7,              // 0~1, 전체 에너지 스케일링
-    "preset": "techno-default"  // optional, /^[a-zA-Z0-9_-]+$/ (sanitized)
-  }
-}
-```
-
-audio 필드가 없으면: techno, Am, minor, energy 0.7, BPM은 duration에서 역산.
+---
 
 ## 테스트
 
 ```bash
-# 전체 vitest (106 tests)
-npx vitest run
+# 전체 vitest (338 tests)
+npm run test
 
-# SC SynthDef 로드 + NRT + RMS 검증 (9종)
+# SC SynthDef NRT + RMS 검증
 npm run audio:test
 
 # SC 개별 테스트
-sclang -i none audio/sc/test-patterns.scd   # Bjorklund + Pwrand/Pseg (11 tests)
-sclang -i none audio/sc/test-trance.scd     # 코드 + arp + layers + macro (12 tests)
+sclang audio/sc/test-synthdefs.scd   # SynthDef 9종 NRT + RMS (9 tests)
+sclang audio/sc/test-patterns.scd    # Bjorklund + 패턴 (11 tests)
+sclang audio/sc/test-trance.scd      # 코드/arp/레이어/매크로 (12 tests)
 ```
 
-### 테스트 커버리지
+### 테스트 커버리지 (338 tests)
 
-| 영역 | 테스트 수 | 검증 항목 |
-|------|----------|----------|
-| scene-schema | 30 | audio 필드 Zod 검증, 하위 호환, preset injection 방어 |
-| bpm-calculator | 10 | duration invariant, 극단값 (0.5s~60s), genre 범위 |
-| render-audio-utils | 11 | config 생성, lock file, disk space, invariant |
-| render-av | 10 | merge-av args, shell safety, ffmpeg args, execFile 준수 |
-| SC SynthDefs | 9 NRT | 9종 로드 + NRT 렌더 + RMS > 0.001 (무음 아님) |
-| SC patterns | 11 | Bjorklund 4종, Pdef 로드, Pwrand/Pseg 소스 검증 |
-| SC trance | 12 | 코드 스케일 검증, arp 5방향, 6레이어, macro Env |
-| 결정론적 출력 | 1 | randSeed_(42) 2회 렌더 → 동일 프레임 수 |
+| 영역 | 파일 | 테스트 수 |
+|------|------|----------|
+| scene-schema | `src/lib/scene-schema.test.ts` | 30 |
+| bpm-calculator | `src/lib/bpm-calculator.test.ts` | 10 |
+| render-audio-utils | `scripts/lib/render-audio.test.ts` | 11 |
+| render-av | `scripts/lib/render-av.test.ts` | 10 |
+| scene-loader | `src/lib/scene-loader.test.ts` | 8 |
+| osc-logger | `scripts/lib/osc-logger.test.ts` | 15 |
+| osc-to-nrt | `scripts/lib/osc-to-nrt.test.ts` | 28 |
+| stem-render | `scripts/lib/stem-render.test.ts` | 18 |
+| prod-pipeline | `scripts/lib/prod-pipeline.test.ts` | 17 |
+| genre-preset | `scripts/lib/genre-preset.test.ts` | 31 |
+| e2e-integration | `scripts/lib/e2e-integration.test.ts` | 44 |
+| 기타 (validators, shaders) | 여러 파일 | 나머지 |
+| **SC SynthDefs** | test-synthdefs/patterns/trance.scd | 32 (별도) |
+
+---
 
 ## 보안
 
 | 위협 | 방어 |
 |------|------|
-| Shell injection | `child_process.execFile` (array-form) 전용. `exec`/`spawn(shell:true)` 금지 |
-| SC code injection | Zod enum 검증된 값만 SC config에 보간. 사용자 입력 직접 보간 없음 |
-| Preset injection | `/^[a-zA-Z0-9_-]+$/` regex 검증 |
-| Shell variable expansion | 모든 .sh 스크립트에서 `"$VAR"` 따옴표 + `set -euo pipefail` |
-| Concurrent render | PID lock file (`out/audio/.render.lock`) + try/finally cleanup |
+| Shell injection | `execFile` (array-form) 전용. `exec`/`spawn(shell:true)` 금지. 정적 검증 테스트 |
+| SC code injection | Zod enum 검증 값만 SC config 보간. 사용자 입력 직접 보간 없음 |
+| Path traversal | `validateFilePath()` — realpathSync + startsWith(root + sep). SC: matchRegexp 입력 검증 |
+| Preset injection | `/^[a-zA-Z0-9_-]+$/` regex. SC/TS 양쪽 독립 검증 |
+| OSC binding | 127.0.0.1:57120 강제 (BootTidal.hs). 0.0.0.0 금지 |
+| JSON parsing | SC: try/catch parseJSON (크래시 방지). TS: JSON.parse + Zod 이중 검증 |
+| Concurrent execution | `.live.lock` + `.render.lock` + try/finally cleanup |
 | Disk exhaustion | `df -k` 기반 2x 안전 마진 사전 체크 |
+| Variable expansion | 모든 .sh: `"$VAR"` 따옴표 + `set -euo pipefail` |
+
+---
 
 ## 출력 스펙
 
@@ -220,13 +444,78 @@ sclang -i none audio/sc/test-trance.scd     # 코드 + arp + layers + macro (12 
 | 스템 포맷 | WAV 48kHz 32-bit float |
 | 마스터 포맷 | WAV 48kHz 16-bit PCM |
 | Loudness | -14 LUFS integrated |
-| True peak | ≤ -1 dBTP |
+| True peak | ≤ -2 dBTP |
 | Duration 정밀도 | scene.json duration ± 0.001s |
 | AV sync | < 50ms (ffprobe 검증) |
-| 결정론적 출력 | `thisThread.randSeed_(42)` — 동일 입력 → 동일 WAV |
+| 결정론적 NRT | `thisThread.randSeed_(42)` — 동일 입력 → 동일 WAV |
+| 스템 위상 정합 | RMS diff < -60dB (4스템 합산 = 원본) |
 
-## Phase 로드맵
+---
 
-- **Phase A (현재)**: SuperCollider 코어 — 9종 SynthDef, 테크노/트랜스 패턴, 에너지 씬, NRT 렌더
-- **Phase B (후속)**: TidalCycles 라이브 패턴 + OSC dump → SC NRT 변환
-- **Phase C (후속)**: FAUST 커스텀 DSP 이펙트 (acid filter, trance gate, saturator)
+## npm scripts 전체
+
+| Script | 설명 |
+|--------|------|
+| `audio:setup` | 의존성 설치 + SC 검증 |
+| `audio:test` | SC SynthDef NRT 테스트 |
+| `live:start` | SC + SuperDirt + Tidal 스택 부팅 |
+| `live:stop` | 전체 스택 종료 (SIGTERM → SIGKILL) |
+| `live:record` | 라이브 녹음 (SC s.record) |
+| `live:log` | 라이브 + OSC 로깅 (= live:start --log) |
+| `prod:convert` | OSC 로그 → NRT Score 변환 |
+| `render:stems` | NRT Score → 4스템 WAV (sclang + ffmpeg) |
+| `render:prod` | 원커맨드 프로덕션 (변환→스템→마스터) |
+| `render:audio` | scene.json → master.wav (NRT) |
+| `render:av` | 비디오 + 오디오 → final.mp4 |
+| `preset:save` | 유저 프리셋 저장 |
+| `preset:list` | 프리셋 목록 |
+
+---
+
+## 아키텍처
+
+```
+                    ┌─────────────────────────────────────────────┐
+                    │            Audio System v2                   │
+                    │                                             │
+  ┌─────────────────┴─────────────────┐  ┌───────────────────────┴──┐
+  │         LIVE MODE                  │  │    PRODUCTION MODE       │
+  │                                    │  │                          │
+  │  VS Code (tidalvscode)             │  │  .osclog (JSONL)         │
+  │       │ Ctrl+Enter                 │  │       │ prod:convert     │
+  │  TidalCycles (GHCi)               │  │  osclog2nrt.ts            │
+  │       │ OSC 127.0.0.1:57120       │  │       │ SynthDef 매핑     │
+  │  SuperDirt (SC)                   │  │  .nrt.json                │
+  │       ├── Dirt-Samples             │  │       │ render:stems     │
+  │       ├── SynthDefs (9종)          │  │  render-stems-nrt.scd    │
+  │       ├── FX (comp/side/sat/eq)    │  │       │ scsynth -N -o 8  │
+  │       ├── Genre Presets (5종)      │  │  8ch WAV → ffmpeg split  │
+  │       └── OSC Logger (--log)       │  │       │                  │
+  │       │                            │  │  stems/*.wav (4x 2ch)    │
+  │  Audio Output + s.record           │  │       │ loudnorm         │
+  │                                    │  │  master.wav (-14 LUFS)   │
+  └────────────────────────────────────┘  └──────────────────────────┘
+
+  ┌──────────────────────────────────────────────────────────────────┐
+  │                        NRT MODE                                  │
+  │  scene.json → BPM 역산 → render-nrt.scd → scsynth -N            │
+  │  → loop-crossfade.sh → loudnorm → master.wav                    │
+  └──────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 트러블슈팅
+
+| 문제 | 해결 |
+|------|------|
+| `sclang not found` | `export PATH="/Applications/SuperCollider.app/Contents/MacOS:$PATH"` |
+| `ffmpeg not found` | `brew install ffmpeg` |
+| `SuperDirt not found` | SC에서 `Quarks.install("SuperDirt"); thisProcess.recompile` |
+| `live:start` 실패 | `npm run live:stop` 후 재시도. `.live.lock` 수동 삭제 |
+| `render:stems` 실패 | `.render.lock` 수동 삭제. sclang PATH 확인 |
+| 포트 57120 사용 중 | `lsof -i :57120` 으로 확인 후 프로세스 종료 |
+| OSC 로그 비어있음 | `live:log`로 시작했는지 확인 (일반 `live:start`는 로깅 안 함) |
+| 프리셋 전환 안 됨 | `setPreset` 사용 (NOT `setGenre`). 프리셋명 확인: `npm run preset:list` |
+| SC 크래시 | 자동 재시작 (live-start.ts onCrash). 10초 내 복구 |
+| 디스크 부족 녹음 중단 | 녹음 자동 중단 + 기존 파일 보호. 디스크 정리 후 재시작 |
