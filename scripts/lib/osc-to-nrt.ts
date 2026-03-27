@@ -1,7 +1,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { parseOscEvent, type OscEvent } from "./osc-logger";
-import { mapSynthDef, normalizeParams, SUPPORTED_SYNTHDEFS } from "./synth-stem-map";
+import { mapSynthDef, mapDirtSample, isSampleEvent, normalizeParams, SUPPORTED_SYNTHDEFS } from "./synth-stem-map";
 
 export interface NrtEvent {
   time: number;
@@ -90,7 +90,8 @@ export const convertToNrt = (events: OscEvent[]): NrtScore => {
   let nodeIdCounter = 1000;
 
   for (const event of events) {
-    const mapping = mapSynthDef(event.s);
+    // Try SynthDef first, then Dirt-Samples
+    const mapping = mapSynthDef(event.s) ?? mapDirtSample(event.s);
     if (!mapping) {
       skipped++;
       continue;

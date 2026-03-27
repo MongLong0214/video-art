@@ -53,6 +53,8 @@ const FX_CHAIN_ORDER = [
   "customCompressor",
   "customSaturator",
   "customEQ",
+  "nrtReverb",
+  "nrtDelay",
 ];
 
 interface ScoreEntry {

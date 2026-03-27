@@ -54,6 +54,29 @@ if(entries.isNil || (entries.size == 0)) {
 		Out.ar(outBus, Mix.ar(sig));
 	}).writeDefFile;
 
+	// NRT sample playback (Dirt-Samples via Buffer.read + b_allocRead)
+	SynthDef(\nrtPlayBuf, { |out=0, bufnum=0, amp=0.5, pan=0, speed=1, dur=1|
+		var sig = PlayBuf.ar(2, bufnum, BufRateScale.kr(bufnum) * speed, doneAction: 2);
+		sig = sig * amp * EnvGen.kr(Env.linen(0.001, dur, 0.01), doneAction: 2);
+		sig = Balance2.ar(sig[0], sig[1], pan);
+		Out.ar(out, sig);
+	}).writeDefFile;
+
+	// NRT Reverb (replaces SuperDirt built-in)
+	SynthDef(\nrtReverb, { |out=0, room=0.5, size=0.8, dry=0.5|
+		var sig = In.ar(out, 2);
+		sig = FreeVerb.ar(sig, room, size, dry);
+		ReplaceOut.ar(out, sig);
+	}).writeDefFile;
+
+	// NRT Delay (replaces SuperDirt built-in)
+	SynthDef(\nrtDelay, { |out=0, delaytime=0.3, delayfeedback=0.5, dry=0.5|
+		var sig = In.ar(out, 2);
+		var delayed = CombL.ar(sig, 1.0, delaytime, delayfeedback * 4);
+		sig = (sig * dry) + (delayed * (1 - dry));
+		ReplaceOut.ar(out, sig);
+	}).writeDefFile;
+
 	// Write all loaded SynthDefs to disk for NRT
 	SynthDescLib.global.synthDescs.do { |desc|
 		if(desc.def.notNil) { desc.def.writeDefFile };

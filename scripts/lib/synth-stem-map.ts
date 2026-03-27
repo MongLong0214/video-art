@@ -35,13 +35,32 @@ export const FX_PARAMS = new Set([
   "saturate", "drive",
   "loGain", "midGain", "hiGain", "loFreq", "hiFreq",
   "sideGain", "sideRelease",
+  "room", "size", "dry", "delaytime", "delayfeedback",
 ]);
 
 // Parameters to skip (Tidal context — captured for reference only, not used in NRT)
 export const TIDAL_CONTEXT_PARAMS = new Set(["cps", "cycle", "delta"]);
 
+// Dirt-Samples → stem mapping (NRT Buffer.read playback)
+export const DIRT_SAMPLE_STEMS: Record<string, string> = {
+  bd: "drums", sd: "drums", hh: "drums", cp: "drums",
+  cb: "drums", mt: "drums", ht: "drums", lt: "drums",
+  oh: "drums", ch: "drums", cr: "drums", rd: "drums",
+  sn: "drums", rim: "drums", tom: "drums",
+};
+
+export const isSampleEvent = (s: string): boolean =>
+  s in DIRT_SAMPLE_STEMS;
+
 export const mapSynthDef = (s: string): StemMapping | null => {
   return SYNTH_STEM_MAP[s] ?? null;
+};
+
+export const mapDirtSample = (s: string): StemMapping | null => {
+  const stem = DIRT_SAMPLE_STEMS[s];
+  if (!stem) return null;
+  const bus = stem === "drums" ? 0 : stem === "bass" ? 2 : stem === "synth" ? 4 : 6;
+  return { synthDef: s, stem, bus };
 };
 
 export const normalizeParams = (

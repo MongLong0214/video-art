@@ -231,6 +231,41 @@ describe("T4: render-stems.ts full implementation", () => {
   });
 });
 
+// --- B-PROD v0.2: NRT SynthDefs ---
+describe("B-PROD v0.2: NRT SynthDefs", () => {
+  const scdPath = path.join(SCORES_DIR, "render-stems-nrt.scd");
+
+  it("render-stems-nrt.scd has nrtPlayBuf", () => {
+    const content = fs.readFileSync(scdPath, "utf-8");
+    expect(content).toContain("nrtPlayBuf");
+  });
+
+  it("render-stems-nrt.scd has Buffer.read", () => {
+    const content = fs.readFileSync(scdPath, "utf-8");
+    expect(content).toContain("Buffer");
+  });
+
+  it("render-stems-nrt.scd has nrtReverb", () => {
+    const content = fs.readFileSync(scdPath, "utf-8");
+    expect(content).toContain("nrtReverb");
+  });
+
+  it("render-stems-nrt.scd has nrtDelay", () => {
+    const content = fs.readFileSync(scdPath, "utf-8");
+    expect(content).toContain("nrtDelay");
+  });
+
+  it("render-stems-nrt.scd has FreeVerb", () => {
+    const content = fs.readFileSync(scdPath, "utf-8");
+    expect(content).toContain("FreeVerb");
+  });
+
+  it("render-stems-nrt.scd has CombL", () => {
+    const content = fs.readFileSync(scdPath, "utf-8");
+    expect(content).toContain("CombL");
+  });
+});
+
 // --- SC Integration (sclang required) ---
 describe.skipIf(!hasSclang)("SC Integration (requires sclang)", () => {
   it("render-stems-nrt.scd parses without SC error", () => {

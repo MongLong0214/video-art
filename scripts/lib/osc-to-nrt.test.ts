@@ -10,7 +10,7 @@ import {
   generateSummary,
   writeNrtScore,
 } from "./osc-to-nrt";
-import { mapSynthDef, normalizeParams, SUPPORTED_SYNTHDEFS } from "./synth-stem-map";
+import { mapSynthDef, mapDirtSample, isSampleEvent, normalizeParams, SUPPORTED_SYNTHDEFS, DIRT_SAMPLE_STEMS, FX_PARAMS } from "./synth-stem-map";
 import { validateFilePath } from "./validate-file-path";
 
 // Test fixtures
@@ -196,6 +196,48 @@ describe("osc-to-nrt", () => {
     const files = listOscLogFiles(path.join(tmpDir, "session"));
     expect(files).toHaveLength(2);
     expect(files.every((f) => f.endsWith(".osclog"))).toBe(true);
+  });
+
+  // --- B-PROD v0.2: Dirt-Samples ---
+  it("isSampleEvent bd is true", () => {
+    expect(isSampleEvent("bd")).toBe(true);
+  });
+
+  it("isSampleEvent kick is false (SynthDef)", () => {
+    expect(isSampleEvent("kick")).toBe(false);
+  });
+
+  it("mapDirtSample bd → drums", () => {
+    const result = mapDirtSample("bd");
+    expect(result).not.toBeNull();
+    expect(result!.stem).toBe("drums");
+  });
+
+  it("mapDirtSample unknown → null", () => {
+    expect(mapDirtSample("unknown_sample")).toBeNull();
+  });
+
+  it("convertToNrt maps sample events (bd)", () => {
+    const events = [{ ts: 0, s: "bd", n: 0, gain: 1.0 } as any];
+    const nrt = convertToNrt(events);
+    expect(nrt.metadata.mapped).toBe(1);
+    expect(nrt.metadata.skipped).toBe(0);
+  });
+
+  it("DIRT_SAMPLE_STEMS has bd, sd, hh, cp", () => {
+    expect(DIRT_SAMPLE_STEMS.bd).toBe("drums");
+    expect(DIRT_SAMPLE_STEMS.sd).toBe("drums");
+    expect(DIRT_SAMPLE_STEMS.hh).toBe("drums");
+    expect(DIRT_SAMPLE_STEMS.cp).toBe("drums");
+  });
+
+  // --- B-PROD v0.2: FX_PARAMS ---
+  it("FX_PARAMS includes reverb/delay params", () => {
+    expect(FX_PARAMS.has("room")).toBe(true);
+    expect(FX_PARAMS.has("size")).toBe(true);
+    expect(FX_PARAMS.has("dry")).toBe(true);
+    expect(FX_PARAMS.has("delaytime")).toBe(true);
+    expect(FX_PARAMS.has("delayfeedback")).toBe(true);
   });
 
   // TC-19a: convertToNrt throws on empty events
