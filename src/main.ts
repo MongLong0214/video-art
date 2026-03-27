@@ -124,7 +124,7 @@ async function init() {
     const { createComposer } = await import("@/lib/effect-composer");
     const layeredSketch = sketch as import("@/sketches/layered-psychedelic").LayeredSketch;
     const config = layeredSketch.sceneConfig;
-    const { composer, sparkleEffect } = createComposer(
+    const { composer } = createComposer(
       renderer,
       sketch.scene,
       sketch.camera,
@@ -132,9 +132,7 @@ async function init() {
       config.resolution,
     );
     composerRender = () => composer.render();
-    updatePostUniforms = (time: number) => {
-      sparkleEffect.setTime(time);
-    };
+    updatePostUniforms = () => {};
   } else if (sketchConfig.postProcessing === "none") {
     composerRender = () => renderer.render(sketch.scene, sketch.camera);
     updatePostUniforms = () => {};

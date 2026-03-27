@@ -31,3 +31,7 @@ audio/render/test-output/
 
 # Recordings (legacy)
 recordings/
+
+# Autoresearch
+.cache/research/
+results.tsv
