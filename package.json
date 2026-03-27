@@ -28,7 +28,14 @@
     "render:prod": "tsx scripts/render-prod.ts",
     "preset:save": "tsx scripts/preset-save.ts",
     "preset:list": "tsx scripts/preset-list.ts",
-    "analyze:track": "tsx scripts/analyze-track.ts"
+    "analyze:track": "tsx scripts/analyze-track.ts",
+    "pipeline:compare": "tsx scripts/compare-variants.ts",
+    "research:prepare": "tsx scripts/research/prepare.ts",
+    "research:calibrate": "tsx scripts/research/calibrate.ts",
+    "research:run": "tsx scripts/research/run-once.ts",
+    "research:eval": "tsx scripts/research/evaluate.ts",
+    "research:report": "tsx scripts/research/report.ts",
+    "research:promote": "tsx scripts/research/promote.ts"
   },
   "dependencies": {
     "dotenv": "^17.3.1",

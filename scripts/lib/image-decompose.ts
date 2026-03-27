@@ -1,7 +1,13 @@
 import Replicate from "replicate";
 import sharp from "sharp";
+import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
+
+import { extractCandidates } from "./candidate-extraction.js";
+import { withRetry, validateReplicateUrl, enforceVersionPin, maskToken } from "./replicate-utils.js";
+import type { LayerCandidate } from "../../src/lib/scene-schema.js";
+import type { ResearchConfig } from "../research/research-config.js";
 
 function getToken(): string {
   const token = process.env.REPLICATE_API_TOKEN;
@@ -20,17 +26,33 @@ interface DecomposeOptions {
   method?: "hybrid" | "depth-only" | "qwen-only";
 }
 
+interface FileSourceMeta {
+  source: "qwen-semantic" | "depth-split";
+  depthGroupId?: string;
+}
+
 interface DecomposeResult {
   files: string[];
   coverages: number[];
   method: string;
+  fileMeta: FileSourceMeta[];
 }
 
 // --- ZoeDepth ---
 async function getDepthMap(
   replicate: Replicate,
   imagePath: string,
+  options?: { versionPin?: string; production?: boolean },
 ): Promise<Buffer> {
+  const versionPin = options?.versionPin;
+  const production = options?.production ?? false;
+  const defaultVersion = "6375723d97400d3ac7b88e3022b738bf6f433ae165c4a2acd1955eaa6b8fcb62";
+  const version = versionPin ?? defaultVersion;
+
+  if (production) {
+    enforceVersionPin(version, true);
+  }
+
   const imageData = fs.readFileSync(imagePath);
   const ext = path.extname(imagePath).toLowerCase().replace(".", "");
   const mime =
@@ -39,28 +61,51 @@ async function getDepthMap(
   const dataUri = `data:${mime};base64,${imageData.toString("base64")}`;
 
   console.log("  Running ZoeDepth...");
-  const output = await replicate.run(
-    "cjwbw/zoedepth:6375723d97400d3ac7b88e3022b738bf6f433ae165c4a2acd1955eaa6b8fcb62",
-    { input: { image: dataUri, model_type: "ZoeD_NK" } },
-  );
+  return withRetry(async () => {
+    const output = await replicate.run(
+      `cjwbw/zoedepth:${version}`,
+      { input: { image: dataUri, model_type: "ZoeD_NK" } },
+    );
 
-  const url =
-    typeof output === "string"
-      ? output
-      : typeof (output as { url?: unknown }).url === "function"
-        ? ((output as { url: () => string }).url)()
-        : String(output);
+    const url =
+      typeof output === "string"
+        ? output
+        : typeof (output as { url?: unknown }).url === "function"
+          ? ((output as { url: () => string }).url)()
+          : String(output);
 
-  const resp = await fetch(url);
-  return Buffer.from(await resp.arrayBuffer());
+    validateReplicateUrl(url);
+    const resp = await fetch(url);
+    return Buffer.from(await resp.arrayBuffer());
+  });
 }
 
 // --- Qwen Image Layered ---
+export interface QwenLayerOptions {
+  numLayers?: number;
+  disableSafetyChecker?: boolean;
+  versionPin?: string;
+  production?: boolean;
+}
+
 async function getQwenLayers(
   replicate: Replicate,
   imagePath: string,
-  numLayers: number,
+  numLayersOrOpts?: number | QwenLayerOptions,
 ): Promise<Buffer[]> {
+  // Backward-compatible: accept number (legacy) or options object
+  const opts: QwenLayerOptions = typeof numLayersOrOpts === "number"
+    ? { numLayers: numLayersOrOpts }
+    : numLayersOrOpts ?? {};
+
+  const numLayers = opts.numLayers ?? 8;
+  const disableSafetyChecker = opts.disableSafetyChecker ?? false;
+  const production = opts.production ?? false;
+
+  if (production && opts.versionPin) {
+    enforceVersionPin(opts.versionPin, true);
+  }
+
   const imageData = fs.readFileSync(imagePath);
   const ext = path.extname(imagePath).toLowerCase().replace(".", "");
   const mime =
@@ -68,32 +113,39 @@ async function getQwenLayers(
     "image/png";
   const dataUri = `data:${mime};base64,${imageData.toString("base64")}`;
 
-  console.log(`  Running qwen-image-layered (${numLayers} layers)...`);
-  const output = (await replicate.run("qwen/qwen-image-layered", {
-    input: {
-      image: dataUri,
-      num_layers: numLayers,
-      go_fast: false,
-      disable_safety_checker: true,
-      output_format: "png",
-      output_quality: 100,
-    },
-  })) as unknown[];
+  const modelRef = (opts.versionPin
+    ? `qwen/qwen-image-layered:${opts.versionPin}`
+    : "qwen/qwen-image-layered") as `${string}/${string}`;
 
-  const buffers: Buffer[] = [];
-  for (const item of output) {
-    let url: string;
-    if (typeof item === "string") url = item;
-    else if (item && typeof item === "object" && "url" in item) {
-      const urlVal = (item as Record<string, unknown>).url;
-      url = typeof urlVal === "function" ? (urlVal as () => string)() : String(urlVal);
-    } else {
-      url = String(item);
+  console.log(`  Running qwen-image-layered (${numLayers} layers)...`);
+  return withRetry(async () => {
+    const output = (await replicate.run(modelRef, {
+      input: {
+        image: dataUri,
+        num_layers: numLayers,
+        go_fast: false,
+        disable_safety_checker: disableSafetyChecker,
+        output_format: "png",
+        output_quality: 100,
+      },
+    })) as unknown[];
+
+    const buffers: Buffer[] = [];
+    for (const item of output) {
+      let url: string;
+      if (typeof item === "string") url = item;
+      else if (item && typeof item === "object" && "url" in item) {
+        const urlVal = (item as Record<string, unknown>).url;
+        url = typeof urlVal === "function" ? (urlVal as () => string)() : String(urlVal);
+      } else {
+        url = String(item);
+      }
+      validateReplicateUrl(url);
+      const resp = await fetch(url);
+      buffers.push(Buffer.from(await resp.arrayBuffer()));
     }
-    const resp = await fetch(url);
-    buffers.push(Buffer.from(await resp.arrayBuffer()));
-  }
-  return buffers;
+    return buffers;
+  });
 }
 
 // --- Depth-based splitting ---
@@ -191,7 +243,15 @@ export async function decomposeHybrid(
 
   fs.mkdirSync(outputDir, { recursive: true });
 
-  const allLayers: { pixels: Buffer; coverage: number; width: number; height: number }[] = [];
+  interface LayerEntry {
+    pixels: Buffer;
+    coverage: number;
+    width: number;
+    height: number;
+    meta: FileSourceMeta;
+  }
+
+  const allLayers: LayerEntry[] = [];
 
   if (method === "depth-only") {
     // Pure depth approach
@@ -199,7 +259,9 @@ export async function decomposeHybrid(
     const depthBuf = await getDepthMap(replicate, imagePath);
     const totalZones = numLayers * depthZones;
     const zones = await splitByDepthZones(originalImage, depthBuf, totalZones);
-    allLayers.push(...zones.filter(z => z.coverage > 0.001));
+    allLayers.push(...zones.filter(z => z.coverage > 0.001).map(z => ({
+      ...z, meta: { source: "depth-split" as const, depthGroupId: "depth-full" },
+    })));
   } else if (method === "qwen-only") {
     // Pure qwen approach
     console.log("  Qwen-only decomposition...");
@@ -210,7 +272,10 @@ export async function decomposeHybrid(
       for (let i = 3; i < data.length; i += info.channels) { if (data[i] > 10) opaque++; }
       const coverage = opaque / (info.width * info.height);
       if (coverage > 0.001) {
-        allLayers.push({ pixels: data, coverage, width: info.width, height: info.height });
+        allLayers.push({
+          pixels: data, coverage, width: info.width, height: info.height,
+          meta: { source: "qwen-semantic" },
+        });
       }
     }
   } else {
@@ -236,6 +301,8 @@ export async function decomposeHybrid(
         continue;
       }
 
+      const depthGroupId = `qwen-${q}`;
+
       if (coverage > 0.10) {
         // Large layer: split further by depth
         const subZones = coverage > 0.5 ? depthZones : Math.max(2, Math.floor(depthZones / 2));
@@ -246,7 +313,9 @@ export async function decomposeHybrid(
           subZones,
           qwenBuffers[q],
         );
-        allLayers.push(...subLayers.filter(s => s.coverage > 0.001));
+        allLayers.push(...subLayers.filter(s => s.coverage > 0.001).map(s => ({
+          ...s, meta: { source: "depth-split" as const, depthGroupId },
+        })));
       } else {
         // Small layer: upscale to original resolution using qwen alpha as mask
         console.log(`  qwen[${q}]: ${(coverage * 100).toFixed(1)}% — kept (upscaled to original res)`);
@@ -267,7 +336,10 @@ export async function decomposeHybrid(
             opaqueCount++;
           }
         }
-        allLayers.push({ pixels: layerBuf, coverage: opaqueCount / oTotal, width: ow, height: oh });
+        allLayers.push({
+          pixels: layerBuf, coverage: opaqueCount / oTotal, width: ow, height: oh,
+          meta: { source: "qwen-semantic" },
+        });
       }
     }
   }
@@ -278,6 +350,7 @@ export async function decomposeHybrid(
   // Save layers
   const files: string[] = [];
   const coverages: number[] = [];
+  const fileMeta: FileSourceMeta[] = [];
   for (let i = 0; i < allLayers.length; i++) {
     const layer = allLayers[i];
     const fp = path.join(outputDir, `layer-${i}.png`);
@@ -288,8 +361,129 @@ export async function decomposeHybrid(
       .toFile(fp);
     files.push(fp);
     coverages.push(layer.coverage);
+    fileMeta.push(layer.meta);
   }
 
   console.log(`  Total: ${files.length} layers`);
-  return { files, coverages, method };
+  return { files, coverages, method, fileMeta };
+}
+
+// --- Selective Recursive Qwen ---
+
+// Trigger thresholds for recursive decomposition (AC-1)
+const RECURSIVE_COVERAGE_THRESHOLD = 0.30;
+const RECURSIVE_COMPONENT_COUNT_THRESHOLD = 3;
+const RECURSIVE_EDGE_DENSITY_THRESHOLD = 0.15;
+
+/**
+ * Determines whether a candidate should be recursively decomposed.
+ * Trigger: coverage > threshold AND (componentCount > threshold OR edgeDensity > threshold)
+ * Thresholds are configurable via ResearchConfig with fallback to module constants.
+ */
+export function shouldRecurse(
+  candidate: {
+    coverage: number;
+    componentCount: number;
+    edgeDensity: number;
+  },
+  config?: Partial<ResearchConfig>,
+): boolean {
+  const coverageThreshold = config?.recurseCoverageThreshold ?? RECURSIVE_COVERAGE_THRESHOLD;
+  const componentThreshold = config?.recurseComponentThreshold ?? RECURSIVE_COMPONENT_COUNT_THRESHOLD;
+  const edgeDensityThreshold = config?.recurseEdgeDensityThreshold ?? RECURSIVE_EDGE_DENSITY_THRESHOLD;
+
+  return (
+    candidate.coverage > coverageThreshold &&
+    (candidate.componentCount > componentThreshold ||
+      candidate.edgeDensity > edgeDensityThreshold)
+  );
+}
+
+interface RecursiveDecomposeOptions {
+  outputDir: string;
+  apiCallCount: { current: number };
+  maxRecursiveCalls: number;
+}
+
+/**
+ * Recursively decomposes a complex candidate via Qwen.
+ * - Checks API call cap before proceeding
+ * - On success: returns sub-candidates extracted from Qwen layers
+ * - On failure: returns empty array (caller retains parent)
+ * - EC-1: if recursive results are worse (lower total coverage or fewer components),
+ *   returns empty so the caller keeps the parent
+ */
+export async function recursiveDecompose(
+  candidate: LayerCandidate,
+  options: RecursiveDecomposeOptions,
+): Promise<LayerCandidate[]> {
+  const { outputDir, apiCallCount, maxRecursiveCalls } = options;
+
+  // Cap check: no more API calls allowed
+  if (apiCallCount.current >= maxRecursiveCalls) {
+    return [];
+  }
+
+  // Increment before the call (the attempt counts even if it fails)
+  apiCallCount.current++;
+
+  try {
+    const replicate = new Replicate({ auth: getToken() });
+
+    // Re-send the candidate's alpha mask to Qwen for sub-decomposition
+    const subDir = path.join(outputDir, `recursive-${candidate.id}`);
+    fs.mkdirSync(subDir, { recursive: true });
+
+    const qwenBuffers = await withRetry(
+      () => getQwenLayers(replicate, candidate.filePath, 4),
+      { maxAttempts: 2, backoffMs: [1000, 2000] },
+    );
+
+    // Save Qwen output layers and extract candidates from each
+    const allSubCandidates: LayerCandidate[] = [];
+
+    for (let i = 0; i < qwenBuffers.length; i++) {
+      const layerPath = path.join(subDir, `sub-layer-${i}.png`);
+      await sharp(qwenBuffers[i]).png().toFile(layerPath);
+
+      const subCandidates = await extractCandidates(layerPath, subDir);
+
+      for (const sub of subCandidates) {
+        allSubCandidates.push({
+          ...sub,
+          id: crypto.randomUUID(),
+          source: "qwen-recursive",
+          parentId: candidate.id,
+        });
+      }
+    }
+
+    if (allSubCandidates.length === 0) {
+      return [];
+    }
+
+    // EC-1: Compare recursive results with parent
+    // Use raw coverage sum and component count (uniqueCoverage not computed yet)
+    const totalChildCoverage = allSubCandidates.reduce((sum, c) => sum + c.coverage, 0);
+    const totalChildComponents = allSubCandidates.reduce((sum, c) => sum + c.componentCount, 0);
+
+    if (
+      totalChildCoverage < candidate.coverage &&
+      totalChildComponents <= candidate.componentCount
+    ) {
+      // Recursive result is worse: discard children, parent is retained by caller
+      return [];
+    }
+
+    return allSubCandidates;
+  } catch (err) {
+    // API failure: return empty so caller retains parent (AC-5)
+    // Mask token in error output to prevent leaking API keys
+    const token = process.env.REPLICATE_API_TOKEN ?? "";
+    const safeMsg = err instanceof Error
+      ? maskToken(err.message, token)
+      : maskToken(String(err), token);
+    console.warn(`[recursive-decompose] API failure (parent retained): ${safeMsg}`);
+    return [];
+  }
 }

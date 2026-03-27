@@ -32,9 +32,6 @@ export async function postprocessLayers(
     // Remove small noise islands (< 50px area)
     await removeNoiseIslands(filePath);
 
-    // Alpha dilate (expand edges slightly)
-    await alphaDilate(filePath);
-
     // Calculate alpha coverage
     const coverage = await calculateAlphaCoverage(filePath);
     coverages.push({ file: filePath, coverage, index: i });
@@ -118,57 +115,6 @@ async function removeNoiseIslands(filePath: string): Promise<void> {
   }
 
   await sharp(Buffer.from(pixels), { raw: { width, height, channels } })
-    .png()
-    .toFile(filePath + ".tmp");
-
-  fs.renameSync(filePath + ".tmp", filePath);
-}
-
-async function alphaDilate(filePath: string): Promise<void> {
-  const { data, info } = await sharp(filePath)
-    .ensureAlpha()
-    .raw()
-    .toBuffer({ resolveWithObject: true });
-
-  const { width, height, channels } = info;
-  const pixels = new Uint8Array(data);
-  const result = new Uint8Array(pixels);
-
-  // Simple 3x3 dilation on alpha channel
-  for (let y = 1; y < height - 1; y++) {
-    for (let x = 1; x < width - 1; x++) {
-      const idx = (y * width + x) * channels + 3;
-      if (pixels[idx] > 0) continue;
-
-      // Check 3x3 neighborhood
-      let maxAlpha = 0;
-      for (let dy = -1; dy <= 1; dy++) {
-        for (let dx = -1; dx <= 1; dx++) {
-          const nIdx = ((y + dy) * width + (x + dx)) * channels + 3;
-          maxAlpha = Math.max(maxAlpha, pixels[nIdx]);
-        }
-      }
-
-      if (maxAlpha > 128) {
-        result[idx] = Math.floor(maxAlpha * 0.5);
-        // Copy color from nearest opaque neighbor
-        let found = false;
-        for (let dy = -1; dy <= 1 && !found; dy++) {
-          for (let dx = -1; dx <= 1 && !found; dx++) {
-            const nIdx = ((y + dy) * width + (x + dx)) * channels;
-            if (pixels[nIdx + 3] > 128) {
-              result[(y * width + x) * channels] = pixels[nIdx];
-              result[(y * width + x) * channels + 1] = pixels[nIdx + 1];
-              result[(y * width + x) * channels + 2] = pixels[nIdx + 2];
-              found = true;
-            }
-          }
-        }
-      }
-    }
-  }
-
-  await sharp(Buffer.from(result), { raw: { width, height, channels } })
     .png()
     .toFile(filePath + ".tmp");
 
