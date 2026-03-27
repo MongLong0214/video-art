@@ -97,7 +97,10 @@ export const convertToNrt = (events: OscEvent[]): NrtScore => {
     }
 
     const { s, ts, ...rawParams } = event;
-    const { normalized } = normalizeParams(rawParams as Record<string, unknown>);
+    const { normalized, warnings } = normalizeParams(rawParams as Record<string, unknown>);
+    if (warnings.length > 0) {
+      for (const w of warnings) console.warn(`[WARN] Event ts=${ts}: ${w}`);
+    }
 
     nrtEvents.push({
       time: Number((ts - startTs).toFixed(3)),

@@ -18,7 +18,13 @@ const resolvedInput = path.resolve(inputPath);
 const stat = fs.statSync(resolvedInput);
 const isDir = stat.isDirectory();
 
-if (!isDir && !validateFilePath(resolvedInput, PROJECT_ROOT, [".osclog"])) {
+if (isDir) {
+  // Directory must be within project root
+  if (!resolvedInput.startsWith(fs.realpathSync(PROJECT_ROOT) + path.sep)) {
+    console.error("Directory must be within project root.");
+    process.exit(1);
+  }
+} else if (!validateFilePath(resolvedInput, PROJECT_ROOT, [".osclog"])) {
   console.error("Invalid file path or extension. Only .osclog files within project root allowed.");
   process.exit(1);
 }
