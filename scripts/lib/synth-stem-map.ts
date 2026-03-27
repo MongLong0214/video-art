@@ -66,7 +66,10 @@ export const normalizeParams = (
       !FX_PARAMS.has(resolvedKey) &&
       !["n", "orbit", "amp", "midinote", "freq", "dur", "pan", "speed", "out",
         "cutoff", "resonance", "detune", "width", "click", "decay",
-        "begin", "end", "hcutoff"].includes(resolvedKey)
+        "begin", "end", "hcutoff",
+        "openness", "tone", "filterEnv", "vibrato", "portamento",
+        "brightness", "sweepRange", "noiseAmount", "envAmount", "mix", "spread",
+        "attack", "release"].includes(resolvedKey)
     ) {
       warnings.push(`${key}: unknown alias → ${resolvedKey}`);
     }

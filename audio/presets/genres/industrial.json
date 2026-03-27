@@ -1,0 +1,29 @@
+{
+  "name": "industrial",
+  "bpm": { "min": 130, "max": 145, "default": 138 },
+  "synthParams": {
+    "kick": { "drive": 0.95, "click": 0.8, "decay": 0.2 },
+    "bass": { "cutoff": 1800, "resonance": 0.7, "envAmount": 0.8, "amp": 0.9 },
+    "hat": { "openness": 0.1, "tone": 0.2, "freq": 6500, "amp": 0.65 },
+    "supersaw": { "detune": 0.2, "mix": 0.3, "cutoff": 2000, "amp": 0.4 },
+    "pad": { "attack": 1.5, "release": 1.5, "filterEnv": 0.15, "amp": 0.25 },
+    "lead": { "drive": 0.85, "vibrato": 0.05, "portamento": 0, "amp": 0.5 },
+    "clap": { "decay": 0.2, "spread": 0.6 },
+    "arp_pluck": { "decay": 0.04, "brightness": 0.5 },
+    "riser": { "sweepRange": 5000, "noiseAmount": 0.7, "amp": 0.5 }
+  },
+  "fxDefaults": {
+    "compress": 0.9, "threshold": -6, "ratio": 8,
+    "compAttack": 0.003, "compRelease": 0.04,
+    "saturate": 0.8, "drive": 0.7,
+    "loGain": 3, "midGain": 1, "hiGain": -1,
+    "loFreq": 220, "hiFreq": 3000,
+    "sideGain": 1.0, "sideRelease": 0.1
+  },
+  "stemGroups": {
+    "drums": ["kick", "hat", "clap"],
+    "bass": ["bass"],
+    "synth": ["supersaw", "pad", "lead", "arp_pluck"],
+    "fx": ["riser"]
+  }
+}

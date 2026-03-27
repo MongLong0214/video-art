@@ -25,7 +25,9 @@
     "live:log": "tsx scripts/live-start.ts --log",
     "prod:convert": "tsx scripts/prod-convert.ts",
     "render:stems": "tsx scripts/render-stems.ts",
-    "render:prod": "tsx scripts/render-prod.ts"
+    "render:prod": "tsx scripts/render-prod.ts",
+    "preset:save": "tsx scripts/preset-save.ts",
+    "preset:list": "tsx scripts/preset-list.ts"
   },
   "dependencies": {
     "dotenv": "^17.3.1",

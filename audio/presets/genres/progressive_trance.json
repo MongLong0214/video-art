@@ -1,0 +1,29 @@
+{
+  "name": "progressive_trance",
+  "bpm": { "min": 128, "max": 138, "default": 132 },
+  "synthParams": {
+    "kick": { "drive": 0.1, "click": 0.3, "decay": 0.45 },
+    "bass": { "cutoff": 550, "resonance": 0.2, "envAmount": 0.3, "amp": 0.8 },
+    "hat": { "openness": 0.2, "tone": 0.55, "freq": 8500, "amp": 0.45 },
+    "supersaw": { "detune": 0.55, "mix": 0.9, "cutoff": 6000, "amp": 0.55 },
+    "pad": { "attack": 3.5, "release": 3.0, "filterEnv": 0.7, "amp": 0.6 },
+    "lead": { "drive": 0.1, "vibrato": 0.3, "portamento": 0.05, "amp": 0.45 },
+    "clap": { "decay": 0.18, "spread": 0.55 },
+    "arp_pluck": { "decay": 0.12, "brightness": 0.55 },
+    "riser": { "sweepRange": 4000, "noiseAmount": 0.2, "amp": 0.4 }
+  },
+  "fxDefaults": {
+    "compress": 0.3, "threshold": -16, "ratio": 2,
+    "compAttack": 0.02, "compRelease": 0.15,
+    "saturate": 0.15, "drive": 0.1,
+    "loGain": 1, "midGain": 0, "hiGain": 2,
+    "loFreq": 150, "hiFreq": 4500,
+    "sideGain": 0.6, "sideRelease": 0.25
+  },
+  "stemGroups": {
+    "drums": ["kick", "hat", "clap"],
+    "bass": ["bass"],
+    "synth": ["supersaw", "pad", "lead", "arp_pluck"],
+    "fx": ["riser"]
+  }
+}
