@@ -64,6 +64,17 @@ s.waitForBoot {
 			"WARNING: custom-fx.scd not found, FX modules not loaded".postln;
 		};
 
+		// Conditionally load OSC logger (--log flag)
+		if(~enableLogging == true) {
+			var loggerPath = thisProcess.nowExecutingPath.dirname +/+ "osc-logger.scd";
+			if(File.exists(loggerPath)) {
+				loggerPath.load;
+				"OSC logging enabled".postln;
+			} {
+				"WARNING: osc-logger.scd not found".postln;
+			};
+		};
+
 		"=== SuperDirt ready (8 orbits, port 57120) ===".postln;
 	}).play;
 };

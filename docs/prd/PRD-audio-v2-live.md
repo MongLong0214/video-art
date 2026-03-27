@@ -255,7 +255,7 @@ scripts/
 ## 11. Open Questions
 
 - [x] ~~OQ-1: SuperDirt orbit↔커스텀 FX 충돌~~ → **해결: `addModule` API 사용**
-- [ ] OQ-2: `addModule`로 sidechain (cross-orbit) 구현 가능 여부 → B-3에서 technical spike
+- [x] ~~OQ-2: `addModule`로 sidechain (cross-orbit) 구현 가능 여부~~ → **해결: `In.ar` + `~sidechainBus` (dedicated audio bus)로 cross-orbit 신호 전달 성공. T3에서 구현 완료**
 - [ ] OQ-3: Ableton Live Lite 트랙 수 제한 → B-PROD 범위로 이관
 
 ---

@@ -13,6 +13,7 @@ interface BootConfig {
 
 interface StartOptions {
   restart?: boolean;
+  enableLogging?: boolean;
 }
 
 export class LiveOrchestrator {
@@ -77,7 +78,12 @@ export class LiveOrchestrator {
     );
 
     return new Promise<void>((resolve, reject) => {
-      const proc = execFile("sclang", ["-i", "stdin", bootScd]);
+      const args = ["-i", "stdin"];
+      if (options?.enableLogging) {
+        args.push("-d", "~enableLogging = true;");
+      }
+      args.push(bootScd);
+      const proc = execFile("sclang", args);
       this.sclangProc = proc;
       this.processes.add(proc);
       this.writeLock(proc.pid);

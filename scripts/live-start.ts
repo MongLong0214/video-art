@@ -3,6 +3,7 @@ import { LiveOrchestrator } from "./lib/live-orchestrator";
 import { LiveHealthMonitor } from "./lib/live-health-monitor";
 
 const PROJECT_ROOT = path.resolve(import.meta.dirname, "..");
+const enableLogging = process.argv.includes("--log");
 
 const orchestrator = new LiveOrchestrator(PROJECT_ROOT);
 
@@ -35,9 +36,13 @@ const gracefulShutdown = () => {
 process.on("SIGINT", gracefulShutdown);
 process.on("SIGTERM", gracefulShutdown);
 
+if (enableLogging) {
+  console.log("OSC logging enabled — events will be captured to .osclog");
+}
+
 console.log("Starting live stack...");
 orchestrator
-  .start()
+  .start({ enableLogging })
   .then(() => {
     console.log("Live stack ready.");
     console.log("Open VS Code and use Ctrl+Enter to evaluate Tidal code.");

@@ -21,7 +21,11 @@
     "render:av": "tsx scripts/render-av.ts",
     "live:start": "tsx scripts/live-start.ts",
     "live:stop": "tsx scripts/live-stop.ts",
-    "live:record": "tsx scripts/live-record.ts"
+    "live:record": "tsx scripts/live-record.ts",
+    "live:log": "tsx scripts/live-start.ts --log",
+    "prod:convert": "tsx scripts/prod-convert.ts",
+    "render:stems": "tsx scripts/render-stems.ts",
+    "render:prod": "tsx scripts/render-prod.ts"
   },
   "dependencies": {
     "dotenv": "^17.3.1",
