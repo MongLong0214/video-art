@@ -169,6 +169,15 @@ describe("genre-preset T1", () => {
     expect(preset.bpm.default).toBe(145);
   });
 
+  // TC-18a: loadPreset malformed JSON
+  it("rejects malformed JSON with clear error", () => {
+    const tmpDir = path.join("/tmp", `preset-bad-${Date.now()}`);
+    fs.mkdirSync(tmpDir, { recursive: true });
+    fs.writeFileSync(path.join(tmpDir, "broken.json"), "{bad json content}");
+    expect(() => loadPreset("broken", tmpDir)).toThrow("Invalid JSON");
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  });
+
   // TC-18: mergeWithDefaults empty preset
   it("merge with empty preset returns all defaults", () => {
     const defaults = {

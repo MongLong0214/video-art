@@ -92,7 +92,12 @@ export const loadPreset = (
   }
 
   const content = fs.readFileSync(filePath, "utf-8");
-  const parsed = JSON.parse(content);
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(content);
+  } catch {
+    throw new Error(`Invalid JSON in preset file: ${filePath}`);
+  }
   return presetSchema.parse(parsed);
 };
 
