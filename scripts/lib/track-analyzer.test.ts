@@ -56,7 +56,8 @@ describe("T1: Hybrid Analysis Engine", () => {
     const content = fs.readFileSync(REQUIREMENTS_FILE, "utf-8");
     expect(content).toContain("essentia");
     expect(content).not.toContain("madmom");
-    expect(content).not.toContain("pyloudnorm");
+    // Phase 2: pyloudnorm is now a valid dependency (LUFS calibration)
+    expect(content).toContain("pyloudnorm");
   });
 
   it("test-sine.wav fixture exists", () => {
