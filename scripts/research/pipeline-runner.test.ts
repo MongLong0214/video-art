@@ -308,6 +308,21 @@ describe("patchSceneJson", () => {
     expect(written.resolution).toEqual([720, 720]);
   });
 
+  it("preserves aspect ratio for non-square scenes", () => {
+    const scene = { resolution: [1920, 1080], duration: 5 };
+    mockedFs.existsSync.mockReturnValue(true);
+    mockedFs.readFileSync.mockReturnValue(JSON.stringify(scene));
+    mockedFs.writeFileSync.mockReturnValue(undefined);
+
+    patchSceneJson("/project");
+
+    const writeCall = mockedFs.writeFileSync.mock.calls[0];
+    const written = JSON.parse(writeCall[1] as string);
+    // 1920x1080 → longest edge 1920 → scale = 1080/1920 = 0.5625
+    expect(written.resolution).toEqual([1080, 608]);
+    expect(written.duration).toBe(5);
+  });
+
   it("preserves original under 1080 (no change)", () => {
     const scene = { resolution: [720, 720], duration: 5 };
     mockedFs.existsSync.mockReturnValue(true);

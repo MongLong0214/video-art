@@ -190,8 +190,16 @@ if (process.argv[1]?.endsWith("calibrate.ts")) {
       evaluate: evaluateVideo,
     });
 
+    const minRequired = Math.max(3, Math.ceil(runs * 0.5));
     if (results.length === 0) {
       console.error("No successful runs. Cannot calibrate.");
+      process.exit(1);
+    }
+    if (results.length < minRequired) {
+      console.error(
+        `Insufficient successful runs: ${results.length}/${runs} (need at least ${minRequired}). ` +
+        `Calibration aborted — sigma estimate unreliable with too few samples.`,
+      );
       process.exit(1);
     }
 

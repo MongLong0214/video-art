@@ -26,7 +26,8 @@ export function patchSceneJson(cwd: string): void {
   if (Array.isArray(scene.resolution)) {
     const [w, h] = scene.resolution;
     if (w > 1080 || h > 1080) {
-      scene.resolution = [1080, 1080];
+      const scale = 1080 / Math.max(w, h);
+      scene.resolution = [Math.round(w * scale), Math.round(h * scale)];
       patched = true;
     }
   }
