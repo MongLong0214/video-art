@@ -21,7 +21,7 @@ describe("CLI arg parsing", () => {
   // Dynamically import to pick up the module once created
   let parseCliArgs: (argv: string[]) => {
     inputPath: string;
-    variant: "qwen-only" | "qwen-zoedepth";
+    description?: string;
     layerOverride?: number;
     unsafe: boolean;
     duration?: number;
@@ -33,9 +33,9 @@ describe("CLI arg parsing", () => {
     parseCliArgs = mod.parseCliArgs;
   });
 
-  it("should parse --variant qwen-only", () => {
-    const result = parseCliArgs(["input.png", "--variant", "qwen-only"]);
-    expect(result.variant).toBe("qwen-only");
+  it("should parse --description", () => {
+    const result = parseCliArgs(["input.png", "--description", "a sunset scene"]);
+    expect(result.description).toBe("a sunset scene");
   });
 
   it("should parse --layers 6", () => {
@@ -53,18 +53,9 @@ describe("CLI arg parsing", () => {
     expect(result.unsafe).toBe(false);
   });
 
-  it("should emit deprecation warning for --depth-only", () => {
-    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-    try {
-      const result = parseCliArgs(["input.png", "--depth-only"]);
-      expect(warnSpy).toHaveBeenCalledWith(
-        expect.stringContaining("deprecated"),
-      );
-      // --depth-only should still map to qwen-only as the default variant
-      expect(result.variant).toBe("qwen-only");
-    } finally {
-      warnSpy.mockRestore();
-    }
+  it("should default description to undefined when not specified", () => {
+    const result = parseCliArgs(["input.png"]);
+    expect(result.description).toBeUndefined();
   });
 
   it("should activate production mode with --production", () => {
@@ -72,9 +63,9 @@ describe("CLI arg parsing", () => {
     expect(result.production).toBe(true);
   });
 
-  it("should default variant to qwen-only when not specified", () => {
+  it("should parse inputPath as first positional argument", () => {
     const result = parseCliArgs(["input.png"]);
-    expect(result.variant).toBe("qwen-only");
+    expect(result.inputPath).toBe("input.png");
   });
 });
 

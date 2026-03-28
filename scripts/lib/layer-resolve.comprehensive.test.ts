@@ -335,7 +335,7 @@ describe("deduplicateCandidates", () => {
       makeCandidate({ id: "b", filePath: f2, coverage: 0.5 }),
     ]);
     const dropped = result.find((c) => c.droppedReason);
-    expect(dropped?.droppedReason).toContain("0.85");
+    expect(dropped?.droppedReason).toContain("0.92");
   });
 });
 
@@ -805,35 +805,44 @@ describe("applyRetentionRules", () => {
     expect(result.filter((c) => !c.droppedReason).length).toBe(4);
   });
 
-  it("should drop uniqueCoverage below 2% (non-critical)", () => {
+  it("should drop uniqueCoverage below 0.5% (non-critical)", () => {
     const candidates = [
       makeCandidate({ id: "good1", role: "midground" as LayerRole, uniqueCoverage: 0.1 }),
       makeCandidate({ id: "good2", role: "detail" as LayerRole, uniqueCoverage: 0.05 }),
       makeCandidate({ id: "good3", role: "midground" as LayerRole, uniqueCoverage: 0.03 }),
-      makeCandidate({ id: "bad", role: "detail" as LayerRole, uniqueCoverage: 0.01 }),
+      makeCandidate({ id: "good4", role: "midground" as LayerRole, uniqueCoverage: 0.02 }),
+      makeCandidate({ id: "good5", role: "detail" as LayerRole, uniqueCoverage: 0.01 }),
+      makeCandidate({ id: "good6", role: "midground" as LayerRole, uniqueCoverage: 0.006 }),
+      makeCandidate({ id: "bad", role: "detail" as LayerRole, uniqueCoverage: 0.003 }),
     ];
     const result = applyRetentionRules(candidates);
     const retained = result.filter((c) => !c.droppedReason);
-    expect(retained.length).toBe(3);
+    expect(retained.length).toBe(6);
     expect(result.find((c) => c.id === "bad")?.droppedReason).toBeDefined();
   });
 
-  it("should keep uniqueCoverage exactly at 2%", () => {
+  it("should keep uniqueCoverage exactly at 0.5%", () => {
     const candidates = [
-      makeCandidate({ id: "at2", role: "midground" as LayerRole, uniqueCoverage: 0.02 }),
+      makeCandidate({ id: "at05", role: "midground" as LayerRole, uniqueCoverage: 0.005 }),
       makeCandidate({ id: "above", role: "midground" as LayerRole, uniqueCoverage: 0.1 }),
       makeCandidate({ id: "above2", role: "midground" as LayerRole, uniqueCoverage: 0.05 }),
+      makeCandidate({ id: "above3", role: "midground" as LayerRole, uniqueCoverage: 0.03 }),
+      makeCandidate({ id: "above4", role: "detail" as LayerRole, uniqueCoverage: 0.02 }),
+      makeCandidate({ id: "above5", role: "midground" as LayerRole, uniqueCoverage: 0.01 }),
     ];
     const result = applyRetentionRules(candidates);
-    expect(result.find((c) => c.id === "at2")?.droppedReason).toBeUndefined();
+    expect(result.find((c) => c.id === "at05")?.droppedReason).toBeUndefined();
   });
 
-  it("should drop uniqueCoverage just below 2% (1.9%)", () => {
+  it("should drop uniqueCoverage just below 0.5% (0.4%)", () => {
     const candidates = [
-      makeCandidate({ id: "below", role: "midground" as LayerRole, uniqueCoverage: 0.019 }),
+      makeCandidate({ id: "below", role: "midground" as LayerRole, uniqueCoverage: 0.004 }),
       makeCandidate({ id: "above1", role: "midground" as LayerRole, uniqueCoverage: 0.1 }),
       makeCandidate({ id: "above2", role: "midground" as LayerRole, uniqueCoverage: 0.05 }),
       makeCandidate({ id: "above3", role: "detail" as LayerRole, uniqueCoverage: 0.03 }),
+      makeCandidate({ id: "above4", role: "midground" as LayerRole, uniqueCoverage: 0.02 }),
+      makeCandidate({ id: "above5", role: "detail" as LayerRole, uniqueCoverage: 0.01 }),
+      makeCandidate({ id: "above6", role: "midground" as LayerRole, uniqueCoverage: 0.006 }),
     ];
     const result = applyRetentionRules(candidates);
     expect(result.find((c) => c.id === "below")?.droppedReason).toBeDefined();
@@ -861,30 +870,30 @@ describe("applyRetentionRules", () => {
     expect(result.find((c) => c.id === "subj")?.droppedReason).toBeUndefined();
   });
 
-  it("should apply progressive relaxation when retained < MIN_RETAINED=3", () => {
-    // All non-critical candidates have very low uniqueCoverage
+  it("should apply progressive relaxation when retained < MIN_RETAINED=6", () => {
+    // All non-critical candidates have very low uniqueCoverage (below 0.5%)
     const candidates = [
-      makeCandidate({ id: "c1", role: "midground" as LayerRole, uniqueCoverage: 0.015 }),
-      makeCandidate({ id: "c2", role: "detail" as LayerRole, uniqueCoverage: 0.012 }),
-      makeCandidate({ id: "c3", role: "midground" as LayerRole, uniqueCoverage: 0.008 }),
+      makeCandidate({ id: "c1", role: "midground" as LayerRole, uniqueCoverage: 0.004 }),
+      makeCandidate({ id: "c2", role: "detail" as LayerRole, uniqueCoverage: 0.003 }),
+      makeCandidate({ id: "c3", role: "midground" as LayerRole, uniqueCoverage: 0.002 }),
     ];
     const result = applyRetentionRules(candidates);
     const retained = result.filter((c) => !c.droppedReason);
-    // Progressive relaxation should keep at least 3
+    // Progressive relaxation should keep all 3 (can't reach 6 with only 3 candidates)
     expect(retained.length).toBe(3);
   });
 
-  it("should cap at maxLayers (default 8) with priority ladder", () => {
-    const candidates = Array.from({ length: 12 }, (_, i) =>
+  it("should cap at maxLayers (default 16) with priority ladder", () => {
+    const candidates = Array.from({ length: 20 }, (_, i) =>
       makeCandidate({
         id: `c${i}`,
         role: (i < 2 ? "background-plate" : i < 4 ? "subject" : "detail") as LayerRole,
         uniqueCoverage: 0.1,
       }),
     );
-    const result = applyRetentionRules(candidates, 8);
+    const result = applyRetentionRules(candidates, 16);
     const retained = result.filter((c) => !c.droppedReason);
-    expect(retained.length).toBeLessThanOrEqual(8);
+    expect(retained.length).toBeLessThanOrEqual(16);
   });
 
   it("should cap at custom maxLayers", () => {
@@ -955,6 +964,9 @@ describe("applyRetentionRules", () => {
       makeCandidate({ id: "g1", role: "midground" as LayerRole, uniqueCoverage: 0.1 }),
       makeCandidate({ id: "g2", role: "detail" as LayerRole, uniqueCoverage: 0.05 }),
       makeCandidate({ id: "g3", role: "midground" as LayerRole, uniqueCoverage: 0.03 }),
+      makeCandidate({ id: "g4", role: "detail" as LayerRole, uniqueCoverage: 0.02 }),
+      makeCandidate({ id: "g5", role: "midground" as LayerRole, uniqueCoverage: 0.01 }),
+      makeCandidate({ id: "g6", role: "midground" as LayerRole, uniqueCoverage: 0.006 }),
     ];
     const result = applyRetentionRules(candidates);
     // nouc has undefined uniqueCoverage → treated as 0 → dropped

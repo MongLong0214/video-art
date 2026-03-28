@@ -66,22 +66,22 @@ afterAll(() => {
 });
 
 describe("scoreComplexity", () => {
-  it("should return 3 for simple image", async () => {
+  it("should return 6 for simple image", async () => {
     const result = await scoreComplexity(path.join(TMP, "simple.png"));
     expect(result.tier).toBe("simple");
-    expect(result.layerCount).toBe(3);
-  });
-
-  it("should return 6 for complex image", async () => {
-    const result = await scoreComplexity(path.join(TMP, "complex.png"));
-    expect(result.tier).toBe("complex");
     expect(result.layerCount).toBe(6);
   });
 
-  it("should return 4 for medium image", async () => {
+  it("should return 8 for complex image", async () => {
+    const result = await scoreComplexity(path.join(TMP, "complex.png"));
+    expect(result.tier).toBe("complex");
+    expect(result.layerCount).toBe(8);
+  });
+
+  it("should return 7 for medium image", async () => {
     const result = await scoreComplexity(path.join(TMP, "medium.png"));
     expect(result.tier).toBe("medium");
-    expect(result.layerCount).toBe(4);
+    expect(result.layerCount).toBe(7);
   });
 
   it("should return edgeDensity in 0-1 range", async () => {

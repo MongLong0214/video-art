@@ -95,19 +95,19 @@ const H = 200;
 beforeAll(async () => {
   tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "layer-resolve-test-"));
 
-  // --- High overlap (90%): nearly identical masks ---
-  // A: cols 0-179, rows 0-199 (180x200 = 36000 opaque)
-  // B: cols 10-189, rows 0-199 (180x200 = 36000 opaque)
-  // Intersection: cols 10-179, rows 0-199 = 170x200 = 34000
-  // Union: cols 0-189, rows 0-199 = 190x200 = 38000
-  // IoU = 34000/38000 = 0.8947 > 0.85
+  // --- High overlap (95%): nearly identical masks ---
+  // A: cols 0-189, rows 0-199 (190x200 = 38000 opaque)
+  // B: cols 5-194, rows 0-199 (190x200 = 38000 opaque)
+  // Intersection: cols 5-189, rows 0-199 = 185x200 = 37000
+  // Union: cols 0-194, rows 0-199 = 195x200 = 39000
+  // IoU = 37000/39000 = 0.9487 > 0.92
   const highA = createRgbaBuffer(W, H);
-  paintRect(highA, W, { x: 0, y: 0, w: 180, h: 200 }, { r: 255, g: 0, b: 0, a: 255 });
+  paintRect(highA, W, { x: 0, y: 0, w: 190, h: 200 }, { r: 255, g: 0, b: 0, a: 255 });
   highOverlapAPath = path.join(tmpDir, "high-a.png");
   await sharp(highA, { raw: { width: W, height: H, channels: 4 } }).png().toFile(highOverlapAPath);
 
   const highB = createRgbaBuffer(W, H);
-  paintRect(highB, W, { x: 10, y: 0, w: 180, h: 200 }, { r: 0, g: 0, b: 255, a: 255 });
+  paintRect(highB, W, { x: 5, y: 0, w: 190, h: 200 }, { r: 0, g: 0, b: 255, a: 255 });
   highOverlapBPath = path.join(tmpDir, "high-b.png");
   await sharp(highB, { raw: { width: W, height: H, channels: 4 } }).png().toFile(highOverlapBPath);
 
@@ -151,28 +151,28 @@ afterAll(() => {
 // ---------- tests ----------
 
 describe("deduplicateCandidates", () => {
-  it("should merge candidates with IoU > 0.70", async () => {
+  it("should merge candidates with IoU > 0.92", async () => {
     const candA = await makeCandidate(
       (() => {
         const b = createRgbaBuffer(W, H);
-        paintRect(b, W, { x: 0, y: 0, w: 180, h: 200 }, { r: 255, g: 0, b: 0, a: 255 });
+        paintRect(b, W, { x: 0, y: 0, w: 190, h: 200 }, { r: 255, g: 0, b: 0, a: 255 });
         return b;
       })(),
       W,
       H,
       highOverlapAPath,
-      { id: "high-a", bbox: { x: 0, y: 0, w: 180, h: 200 }, centroid: { x: 89.5, y: 99.5 } },
+      { id: "high-a", bbox: { x: 0, y: 0, w: 190, h: 200 }, centroid: { x: 94.5, y: 99.5 } },
     );
     const candB = await makeCandidate(
       (() => {
         const b = createRgbaBuffer(W, H);
-        paintRect(b, W, { x: 10, y: 0, w: 180, h: 200 }, { r: 0, g: 0, b: 255, a: 255 });
+        paintRect(b, W, { x: 5, y: 0, w: 190, h: 200 }, { r: 0, g: 0, b: 255, a: 255 });
         return b;
       })(),
       W,
       H,
       highOverlapBPath,
-      { id: "high-b", bbox: { x: 10, y: 0, w: 180, h: 200 }, centroid: { x: 99.5, y: 99.5 } },
+      { id: "high-b", bbox: { x: 5, y: 0, w: 190, h: 200 }, centroid: { x: 99.5, y: 99.5 } },
     );
 
     const result = await deduplicateCandidates([candA, candB]);
@@ -184,7 +184,7 @@ describe("deduplicateCandidates", () => {
     expect(dropped).toHaveLength(1);
   });
 
-  it("should keep candidates with IoU < 0.70", async () => {
+  it("should keep candidates with IoU < 0.92", async () => {
     const candA = await makeCandidate(
       (() => {
         const b = createRgbaBuffer(W, H);
@@ -220,24 +220,24 @@ describe("deduplicateCandidates", () => {
     const candA = await makeCandidate(
       (() => {
         const b = createRgbaBuffer(W, H);
-        paintRect(b, W, { x: 0, y: 0, w: 180, h: 200 }, { r: 255, g: 0, b: 0, a: 255 });
+        paintRect(b, W, { x: 0, y: 0, w: 190, h: 200 }, { r: 255, g: 0, b: 0, a: 255 });
         return b;
       })(),
       W,
       H,
       highOverlapAPath,
-      { id: "depth-a", source: "depth-split", parentId: "qwen-0", bbox: { x: 0, y: 0, w: 180, h: 200 }, centroid: { x: 89.5, y: 99.5 } },
+      { id: "depth-a", source: "depth-split", parentId: "qwen-0", bbox: { x: 0, y: 0, w: 190, h: 200 }, centroid: { x: 94.5, y: 99.5 } },
     );
     const candB = await makeCandidate(
       (() => {
         const b = createRgbaBuffer(W, H);
-        paintRect(b, W, { x: 10, y: 0, w: 180, h: 200 }, { r: 0, g: 0, b: 255, a: 255 });
+        paintRect(b, W, { x: 5, y: 0, w: 190, h: 200 }, { r: 0, g: 0, b: 255, a: 255 });
         return b;
       })(),
       W,
       H,
       highOverlapBPath,
-      { id: "depth-b", source: "depth-split", parentId: "qwen-0", bbox: { x: 10, y: 0, w: 180, h: 200 }, centroid: { x: 99.5, y: 99.5 } },
+      { id: "depth-b", source: "depth-split", parentId: "qwen-0", bbox: { x: 5, y: 0, w: 190, h: 200 }, centroid: { x: 99.5, y: 99.5 } },
     );
 
     const result = await deduplicateCandidates([candA, candB]);
@@ -251,24 +251,24 @@ describe("deduplicateCandidates", () => {
     const candA = await makeCandidate(
       (() => {
         const b = createRgbaBuffer(W, H);
-        paintRect(b, W, { x: 0, y: 0, w: 180, h: 200 }, { r: 255, g: 0, b: 0, a: 255 });
+        paintRect(b, W, { x: 0, y: 0, w: 190, h: 200 }, { r: 255, g: 0, b: 0, a: 255 });
         return b;
       })(),
       W,
       H,
       highOverlapAPath,
-      { id: "drop-a", bbox: { x: 0, y: 0, w: 180, h: 200 }, centroid: { x: 89.5, y: 99.5 } },
+      { id: "drop-a", bbox: { x: 0, y: 0, w: 190, h: 200 }, centroid: { x: 94.5, y: 99.5 } },
     );
     const candB = await makeCandidate(
       (() => {
         const b = createRgbaBuffer(W, H);
-        paintRect(b, W, { x: 10, y: 0, w: 180, h: 200 }, { r: 0, g: 0, b: 255, a: 255 });
+        paintRect(b, W, { x: 5, y: 0, w: 190, h: 200 }, { r: 0, g: 0, b: 255, a: 255 });
         return b;
       })(),
       W,
       H,
       highOverlapBPath,
-      { id: "drop-b", bbox: { x: 10, y: 0, w: 180, h: 200 }, centroid: { x: 99.5, y: 99.5 } },
+      { id: "drop-b", bbox: { x: 5, y: 0, w: 190, h: 200 }, centroid: { x: 99.5, y: 99.5 } },
     );
 
     const result = await deduplicateCandidates([candA, candB]);
@@ -693,7 +693,7 @@ describe("fillBackgroundPlate", () => {
 });
 
 describe("applyRetentionRules", () => {
-  it("should drop uniqueCoverage < 2% non-critical when enough layers remain", () => {
+  it("should drop uniqueCoverage < 0.5% non-critical when enough layers remain", () => {
     const candidates: LayerCandidate[] = [
       {
         id: "bg", source: "qwen-base", filePath: bgPlatePath,
@@ -717,8 +717,29 @@ describe("applyRetentionRules", () => {
         role: "midground",
       },
       {
+        id: "mid-2", source: "qwen-base", filePath: midgroundPath,
+        width: W, height: H, coverage: 0.10, uniqueCoverage: 0.04,
+        edgeDensity: 0.1, componentCount: 1,
+        bbox: { x: 30, y: 40, w: 70, h: 50 }, centroid: { x: 65, y: 65 },
+        role: "midground",
+      },
+      {
+        id: "mid-3", source: "qwen-base", filePath: midgroundPath,
+        width: W, height: H, coverage: 0.08, uniqueCoverage: 0.03,
+        edgeDensity: 0.1, componentCount: 1,
+        bbox: { x: 40, y: 50, w: 60, h: 40 }, centroid: { x: 70, y: 70 },
+        role: "midground",
+      },
+      {
+        id: "det-1", source: "qwen-base", filePath: detailPath,
+        width: W, height: H, coverage: 0.03, uniqueCoverage: 0.02,
+        edgeDensity: 0.1, componentCount: 1,
+        bbox: { x: 150, y: 30, w: 30, h: 30 }, centroid: { x: 165, y: 45 },
+        role: "detail",
+      },
+      {
         id: "tiny-detail", source: "qwen-base", filePath: detailPath,
-        width: W, height: H, coverage: 0.01, uniqueCoverage: 0.01,
+        width: W, height: H, coverage: 0.01, uniqueCoverage: 0.003,
         edgeDensity: 0.1, componentCount: 1,
         bbox: { x: 160, y: 20, w: 20, h: 20 }, centroid: { x: 170, y: 30 },
         role: "detail",
@@ -729,15 +750,15 @@ describe("applyRetentionRules", () => {
     const retained = result.filter((c) => !c.droppedReason);
     const dropped = result.filter((c) => c.droppedReason);
 
-    // 3 layers remain above 2% threshold → detail (1%) gets dropped
-    expect(retained).toHaveLength(3);
+    // 6 layers remain above 0.5% threshold → tiny-detail (0.3%) gets dropped
+    expect(retained).toHaveLength(6);
     expect(retained.find((c) => c.id === "bg")).toBeDefined();
     expect(dropped).toHaveLength(1);
     expect(dropped[0].id).toBe("tiny-detail");
     expect(dropped[0].droppedReason).toContain("uniqueCoverage");
   });
 
-  it("should relax threshold when retained < 3 (progressive relaxation)", () => {
+  it("should relax threshold when retained < minRetainedLayers (progressive relaxation)", () => {
     const candidates: LayerCandidate[] = [
       {
         id: "bg", source: "qwen-base", filePath: bgPlatePath,
@@ -748,7 +769,7 @@ describe("applyRetentionRules", () => {
       },
       {
         id: "tiny-detail", source: "qwen-base", filePath: detailPath,
-        width: W, height: H, coverage: 0.01, uniqueCoverage: 0.01,
+        width: W, height: H, coverage: 0.01, uniqueCoverage: 0.003,
         edgeDensity: 0.1, componentCount: 1,
         bbox: { x: 160, y: 20, w: 20, h: 20 }, centroid: { x: 170, y: 30 },
         role: "detail",

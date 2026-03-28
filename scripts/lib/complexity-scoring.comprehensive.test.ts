@@ -187,18 +187,18 @@ describe("complexity tiers", () => {
     expect(result.tier).toBe("simple");
   });
 
-  it("should produce layerCount=3 for simple", async () => {
+  it("should produce layerCount=6 for simple", async () => {
     const buf = createRgbBuffer(50, 50, 128, 128, 128);
     const f = await saveRgbPng(buf, 50, 50, "tier-simple-lc.png");
     const result = await scoreComplexity(f);
-    expect(result.layerCount).toBe(3);
+    expect(result.layerCount).toBe(6);
   });
 
-  it("should only return 3, 4, or 6 for layerCount", async () => {
+  it("should only return 6, 7, or 8 for layerCount", async () => {
     const buf = createRgbBuffer(30, 30, 100, 100, 100);
     const f = await saveRgbPng(buf, 30, 30, "tier-valid-lc.png");
     const result = await scoreComplexity(f);
-    expect([3, 4, 6]).toContain(result.layerCount);
+    expect([6, 7, 8]).toContain(result.layerCount);
   });
 
   it("should classify checkerboard with gradients as complex", async () => {
@@ -218,7 +218,7 @@ describe("complexity tiers", () => {
     const result = await scoreComplexity(f);
     // High edges + high entropy → complex
     expect(result.tier).toBe("complex");
-    expect(result.layerCount).toBe(6);
+    expect(result.layerCount).toBe(8);
   });
 
   it("should respect custom thresholds via config", async () => {

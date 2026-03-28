@@ -68,9 +68,6 @@ describe("generateSceneJson (role-based)", () => {
       if (animation.colorCycle) {
         expect(validPeriods).toContain(animation.colorCycle.period);
       }
-      if (animation.wave) {
-        expect(validPeriods).toContain(animation.wave.period);
-      }
       if (animation.glow) {
         expect(validPeriods).toContain(animation.glow.period);
       }
@@ -88,19 +85,6 @@ describe("generateSceneJson (role-based)", () => {
   });
 
   // --- T8 Role-Based Preset Tests ---
-
-  it("should assign slowest parallax to background-plate", () => {
-    const bgPlate = roleScene.layers.find((l) => l.role === "background-plate");
-    expect(bgPlate).toBeDefined();
-    const bgPlateDepth = bgPlate!.animation.parallax!.depth;
-
-    // background-plate should have the smallest parallax depth (slowest movement)
-    for (const layer of roleScene.layers) {
-      if (layer.role !== "background-plate" && layer.animation.parallax) {
-        expect(bgPlateDepth).toBeLessThanOrEqual(layer.animation.parallax.depth);
-      }
-    }
-  });
 
   it("should assign fastest hue to detail", () => {
     const detail = roleScene.layers.find((l) => l.role === "detail");
@@ -182,16 +166,6 @@ describe("generateSceneJson (role-based)", () => {
     }
   });
 
-  it("should include wave preset with valid periods", () => {
-    const validPeriods = getValidPeriods(roleScene.duration);
-
-    for (const layer of roleScene.layers) {
-      expect(layer.animation.wave).toBeDefined();
-      expect(validPeriods).toContain(layer.animation.wave!.period);
-      expect(layer.animation.wave!.amplitude).toBeGreaterThan(0);
-    }
-  });
-
   it("should include glow preset with valid periods", () => {
     const validPeriods = getValidPeriods(roleScene.duration);
 
@@ -226,3 +200,4 @@ describe("generateSceneJson (role-based)", () => {
     expect(scenePromise).resolves.toBeDefined();
   });
 });
+

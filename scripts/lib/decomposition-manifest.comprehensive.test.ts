@@ -41,7 +41,7 @@ function makeCandidate(overrides: Partial<LayerCandidate> & { id: string }): Lay
 function makeBaseInput(overrides?: Partial<ManifestInput>): ManifestInput {
   return {
     runId: "test-run-001",
-    pipelineVariant: "qwen-only",
+    pipelineVariant: "qwen-luminance",
     sourceImage: "/tmp/source.jpg",
     preparedImage: "/tmp/prepared.png",
     models: {
@@ -71,7 +71,7 @@ describe("generateManifest", () => {
     const input = makeBaseInput();
     const manifest = generateManifest(input);
     expect(manifest.runId).toBe("test-run-001");
-    expect(manifest.pipelineVariant).toBe("qwen-only");
+    expect(manifest.pipelineVariant).toBe("qwen-luminance");
     expect(manifest.createdAt).toBeDefined();
     expect(manifest.sourceImage).toBe("/tmp/source.jpg");
     expect(manifest.preparedImage).toBe("/tmp/prepared.png");
@@ -97,13 +97,11 @@ describe("generateManifest", () => {
     expect(() => generateManifest(input)).not.toThrow();
   });
 
-  it("should throw for latest zoeDepth version in production mode", () => {
+  it("should throw for latest qwenImageLayered version in production mode (case: LATEST)", () => {
     const input = makeBaseInput({
       productionMode: true,
-      pipelineVariant: "qwen-zoedepth",
       models: {
-        qwenImageLayered: { model: "qwen-vl", version: "v1.0.0", numLayersBase: 4 },
-        zoeDepth: { model: "zoe-depth", version: "latest" },
+        qwenImageLayered: { model: "qwen-vl", version: "LATEST", numLayersBase: 4 },
       },
     });
     expect(() => generateManifest(input)).toThrow(/latest/i);
@@ -215,16 +213,14 @@ describe("generateManifest", () => {
     expect(manifest.passes[1].parentId).toBe("l1");
   });
 
-  it("should include models data with zoeDepth", () => {
+  it("should include models data with qwenImageLayered version", () => {
     const input = makeBaseInput({
-      pipelineVariant: "qwen-zoedepth",
       models: {
         qwenImageLayered: { model: "qwen-vl", version: "v1.0.0", numLayersBase: 4 },
-        zoeDepth: { model: "zoe-depth", version: "v2.0.0" },
       },
     });
     const manifest = generateManifest(input);
-    expect(manifest.models.zoeDepth?.version).toBe("v2.0.0");
+    expect(manifest.models.qwenImageLayered.version).toBe("v1.0.0");
   });
 
   it("should handle case-insensitive 'Latest' in production mode", () => {
@@ -404,16 +400,14 @@ describe("copySourceImages", () => {
 // ==========================================================================
 
 describe("ManifestInput combinations", () => {
-  it("should handle qwen-zoedepth variant", () => {
+  it("should handle qwen-luminance variant", () => {
     const input = makeBaseInput({
-      pipelineVariant: "qwen-zoedepth",
       models: {
         qwenImageLayered: { model: "qwen-vl", version: "v1.0.0", numLayersBase: 4 },
-        zoeDepth: { model: "zoe-depth", version: "v2.0.0" },
       },
     });
     const manifest = generateManifest(input);
-    expect(manifest.pipelineVariant).toBe("qwen-zoedepth");
+    expect(manifest.pipelineVariant).toBe("qwen-luminance");
   });
 
   it("should handle multiple passes", () => {
@@ -421,7 +415,7 @@ describe("ManifestInput combinations", () => {
       passes: [
         { type: "qwen-base", candidateCount: 4 },
         { type: "qwen-recursive", candidateCount: 2, parentId: "l1" },
-        { type: "depth-split", candidateCount: 3 },
+        { type: "qwen-recursive", candidateCount: 3 },
       ],
     });
     const manifest = generateManifest(input);
