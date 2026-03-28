@@ -4,7 +4,7 @@ import { existsSync, readFileSync } from "fs";
 export const ResearchConfigSchema = z
   .object({
     // ── Decomposition ────────────────────────────────────────
-    numLayers: z.number().int().min(2).max(12).default(4),
+    numLayers: z.number().int().min(2).max(8).default(8),
     method: z
       .enum(["qwen-only", "qwen-zoedepth"])
       .default("qwen-only"),
@@ -21,12 +21,12 @@ export const ResearchConfigSchema = z
     edgePixelThreshold: z.number().int().min(10).max(100).default(30),
 
     // ── Dedupe & Ownership ───────────────────────────────────
-    iouDedupeThreshold: z.number().min(0.3).max(0.95).default(0.85),
+    iouDedupeThreshold: z.number().min(0.3).max(0.98).default(0.92),
     uniqueCoverageThreshold: z
       .number()
-      .min(0.005)
+      .min(0.001)
       .max(0.1)
-      .default(0.02),
+      .default(0.005),
 
     // ── Role Assignment ──────────────────────────────────────
     centralityThreshold: z.number().min(0.1).max(0.4).default(0.25),
@@ -34,11 +34,11 @@ export const ResearchConfigSchema = z
     edgeTolerancePx: z.number().int().min(1).max(10).default(2),
 
     // ── Retention ────────────────────────────────────────────
-    maxLayers: z.number().int().min(3).max(16).default(8),
-    minRetainedLayers: z.number().int().min(1).max(6).default(3),
+    maxLayers: z.number().int().min(3).max(16).default(16),
+    minRetainedLayers: z.number().int().min(1).max(12).default(6),
 
     // ── Depth (Variant B only) ───────────────────────────────
-    depthZones: z.number().int().min(2).max(8).default(4),
+    depthZones: z.number().int().min(2).max(8).default(6),
     depthSplitThreshold: z.number().min(0.05).max(0.4).default(0.15),
 
     // ── Variant Selection ────────────────────────────────────

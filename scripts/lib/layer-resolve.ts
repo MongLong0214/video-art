@@ -4,13 +4,13 @@ import type { LayerCandidate, LayerRole } from "../../src/lib/scene-schema.js";
 import type { ResearchConfig } from "../research/research-config.js";
 
 const DEFAULT_ALPHA_THRESHOLD = 128;
-const DEFAULT_IOU_DEDUPE_THRESHOLD = 0.85;
+const DEFAULT_IOU_DEDUPE_THRESHOLD = 0.92;
 
 // ---------- T5 constants ----------
 
-const DEFAULT_UNIQUE_COVERAGE_THRESHOLD = 0.02;
-const DEFAULT_MAX_LAYERS = 8;
-const DEFAULT_MIN_RETAINED_LAYERS = 3;
+const DEFAULT_UNIQUE_COVERAGE_THRESHOLD = 0.005;
+const DEFAULT_MAX_LAYERS = 16;
+const DEFAULT_MIN_RETAINED_LAYERS = 6;
 const HOLE_WARNING_THRESHOLD = 0.5;
 const DEFAULT_EDGE_TOLERANCE_PX = 2;
 const DEFAULT_CENTRALITY_THRESHOLD = 0.25;

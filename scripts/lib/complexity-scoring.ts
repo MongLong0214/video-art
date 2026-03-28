@@ -33,7 +33,7 @@ interface ComplexityResult {
   edgeDensity: number;
   colorEntropy: number;
   tier: "simple" | "medium" | "complex";
-  layerCount: 3 | 4 | 6;
+  layerCount: 6 | 7 | 8;
 }
 
 /**
@@ -138,17 +138,17 @@ export async function scoreComplexity(
   ]);
 
   let tier: "simple" | "medium" | "complex";
-  let layerCount: 3 | 4 | 6;
+  let layerCount: 6 | 7 | 8;
 
   if (edgeDensity < simpleEdgeMax && colorEntropy < simpleEntropyMax) {
     tier = "simple";
-    layerCount = 3;
+    layerCount = 6;
   } else if (edgeDensity > complexEdgeMin || colorEntropy > complexEntropyMin) {
     tier = "complex";
-    layerCount = 6;
+    layerCount = 8;
   } else {
     tier = "medium";
-    layerCount = 4;
+    layerCount = 7;
   }
 
   return { edgeDensity, colorEntropy, tier, layerCount };

@@ -35,6 +35,8 @@ recordings/
 # Autoresearch
 .cache/research/
 results.tsv
+source.mp4
+input.png
 
 # Reference tracks (copyright)
 audio/references/

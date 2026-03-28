@@ -48,51 +48,54 @@ function getRolePreset(
     return periods[idx];
   };
 
+  // Global tempo scale: 0.7 = 30% slower across all animations
+  const tempo = 0.7;
+
   const presets: Record<LayerRole, AnimationConfig> = {
     "background-plate": {
-      colorCycle: { speed: 5 * mul.colorCycleSpeedMul, period: pickPeriod(0), phaseOffset },
-      wave: { amplitude: 1 * mul.waveAmplitudeMul, frequency: 0.2, period: pickPeriod(0) },
-      glow: { intensity: 0.1 * mul.glowIntensityMul, pulse: 0.2, period: pickPeriod(0) },
+      colorCycle: { speed: 5 * mul.colorCycleSpeedMul * tempo, period: pickPeriod(0), phaseOffset },
+      wave: { amplitude: 1 * mul.waveAmplitudeMul, frequency: 0.2 * tempo, period: pickPeriod(0) },
+      glow: { intensity: 0.1 * mul.glowIntensityMul, pulse: 0.2 * tempo, period: pickPeriod(0) },
       parallax: { depth: 0.1 * mul.parallaxDepthMul },
       saturationBoost: 2.5 * mul.saturationBoostMul,
       luminanceKey: 0.4 * mul.luminanceKeyMul,
     },
     background: {
-      colorCycle: { speed: 8 * mul.colorCycleSpeedMul, period: pickPeriod(1), phaseOffset },
-      wave: { amplitude: 1.5 * mul.waveAmplitudeMul, frequency: 0.3, period: pickPeriod(1) },
-      glow: { intensity: 0.15 * mul.glowIntensityMul, pulse: 0.3, period: pickPeriod(1) },
+      colorCycle: { speed: 8 * mul.colorCycleSpeedMul * tempo, period: pickPeriod(1), phaseOffset },
+      wave: { amplitude: 1.5 * mul.waveAmplitudeMul, frequency: 0.3 * tempo, period: pickPeriod(1) },
+      glow: { intensity: 0.15 * mul.glowIntensityMul, pulse: 0.3 * tempo, period: pickPeriod(1) },
       parallax: { depth: 0.2 * mul.parallaxDepthMul },
       saturationBoost: 2.3 * mul.saturationBoostMul,
       luminanceKey: 0.45 * mul.luminanceKeyMul,
     },
     midground: {
-      colorCycle: { speed: 10 * mul.colorCycleSpeedMul, period: pickPeriod(2), phaseOffset },
-      wave: { amplitude: 2 * mul.waveAmplitudeMul, frequency: 0.35, period: pickPeriod(2) },
-      glow: { intensity: 0.2 * mul.glowIntensityMul, pulse: 0.4, period: pickPeriod(2) },
+      colorCycle: { speed: 10 * mul.colorCycleSpeedMul * tempo, period: pickPeriod(2), phaseOffset },
+      wave: { amplitude: 2 * mul.waveAmplitudeMul, frequency: 0.35 * tempo, period: pickPeriod(2) },
+      glow: { intensity: 0.2 * mul.glowIntensityMul, pulse: 0.4 * tempo, period: pickPeriod(2) },
       parallax: { depth: 0.3 * mul.parallaxDepthMul },
       saturationBoost: 2.5 * mul.saturationBoostMul,
       luminanceKey: 0.55 * mul.luminanceKeyMul,
     },
     subject: {
-      colorCycle: { speed: 10 * mul.colorCycleSpeedMul, period: pickPeriod(2), phaseOffset },
-      wave: { amplitude: 2 * mul.waveAmplitudeMul, frequency: 0.4, period: pickPeriod(2) },
-      glow: { intensity: 0.25 * mul.glowIntensityMul, pulse: 0.45, period: pickPeriod(3) },
+      colorCycle: { speed: 10 * mul.colorCycleSpeedMul * tempo, period: pickPeriod(2), phaseOffset },
+      wave: { amplitude: 2 * mul.waveAmplitudeMul, frequency: 0.4 * tempo, period: pickPeriod(2) },
+      glow: { intensity: 0.25 * mul.glowIntensityMul, pulse: 0.45 * tempo, period: pickPeriod(3) },
       parallax: { depth: 0.35 * mul.parallaxDepthMul },
       saturationBoost: 2.8 * mul.saturationBoostMul,
       luminanceKey: 0.6 * mul.luminanceKeyMul,
     },
     detail: {
-      colorCycle: { speed: 15 * mul.colorCycleSpeedMul, period: pickPeriod(4), phaseOffset },
-      wave: { amplitude: 0.5 * mul.waveAmplitudeMul, frequency: 0.5, period: pickPeriod(4) },
-      glow: { intensity: 0.3 * mul.glowIntensityMul, pulse: 0.5, period: pickPeriod(4) },
+      colorCycle: { speed: 15 * mul.colorCycleSpeedMul * tempo, period: pickPeriod(4), phaseOffset },
+      wave: { amplitude: 0.5 * mul.waveAmplitudeMul, frequency: 0.5 * tempo, period: pickPeriod(4) },
+      glow: { intensity: 0.3 * mul.glowIntensityMul, pulse: 0.5 * tempo, period: pickPeriod(4) },
       parallax: { depth: 0.4 * mul.parallaxDepthMul },
       saturationBoost: 2.2 * mul.saturationBoostMul,
       luminanceKey: 0.65 * mul.luminanceKeyMul,
     },
     "foreground-occluder": {
-      colorCycle: { speed: 8 * mul.colorCycleSpeedMul, period: pickPeriod(3), phaseOffset },
-      wave: { amplitude: 1.2 * mul.waveAmplitudeMul, frequency: 0.3, period: pickPeriod(3) },
-      glow: { intensity: 0.15 * mul.glowIntensityMul, pulse: 0.3, period: pickPeriod(3) },
+      colorCycle: { speed: 8 * mul.colorCycleSpeedMul * tempo, period: pickPeriod(3), phaseOffset },
+      wave: { amplitude: 1.2 * mul.waveAmplitudeMul, frequency: 0.3 * tempo, period: pickPeriod(3) },
+      glow: { intensity: 0.15 * mul.glowIntensityMul, pulse: 0.3 * tempo, period: pickPeriod(3) },
       parallax: { depth: 0.45 * mul.parallaxDepthMul },
       saturationBoost: 1.8 * mul.saturationBoostMul,
       luminanceKey: 0.5 * mul.luminanceKeyMul,

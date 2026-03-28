@@ -9,7 +9,7 @@ import {
 } from "./lib/input-validator.js";
 import { parseCliArgs } from "./lib/pipeline-cli.js";
 import { scoreComplexity } from "./lib/complexity-scoring.js";
-import { decomposeHybrid } from "./lib/image-decompose.js";
+import { decomposeImage } from "./lib/image-decompose.js";
 import { extractCandidates } from "./lib/candidate-extraction.js";
 import {
   deduplicateCandidates,
@@ -39,7 +39,7 @@ async function main() {
   const cliArgs = parseCliArgs(process.argv.slice(2));
   if (!cliArgs.inputPath) {
     console.error(
-      "Usage: npm run pipeline:layers <input.png> [--variant qwen-only|qwen-zoedepth] [--layers N] [--unsafe] [--duration N] [--production]",
+      "Usage: npm run pipeline:layers <input.png> [--layers N] [--description \"text\"] [--unsafe] [--duration N] [--production]",
     );
     process.exit(1);
   }
@@ -124,12 +124,13 @@ async function main() {
       console.log(`  Layer count override: ${selectedLayerCount}`);
     }
 
-    // --- Step 3: Qwen semantic decomposition ---
-    console.log(`\nDecomposing image (variant: ${cliArgs.variant}, layers: ${selectedLayerCount})...`);
-    const decomposeResult = await decomposeHybrid(preparedPath, layersDir, {
+    // --- Step 3: Decomposition (Qwen + Luminance) ---
+    const descLabel = cliArgs.description ? `"${cliArgs.description}"` : "auto";
+    console.log(`\nDecomposing image (qwen-luminance, layers: ${selectedLayerCount}, description: ${descLabel})...`);
+    const decomposeResult = await decomposeImage(preparedPath, layersDir, {
       numLayers: selectedLayerCount,
-      depthZones: 4,
-      method: cliArgs.variant === "qwen-zoedepth" ? "hybrid" : "qwen-only",
+      luminanceZones: 6,
+      description: cliArgs.description,
     });
 
     console.log(`  ${decomposeResult.files.length} raw layers generated (${decomposeResult.method})`);
@@ -154,7 +155,7 @@ async function main() {
 
     // --- Step 4b: Selective recursive decomposition (T9) ---
     const apiCallCount = { current: 0 };
-    const maxRecursiveCalls = 3;
+    const maxRecursiveCalls = 5;
     const recursiveChildren: LayerCandidate[] = [];
 
     for (const c of candidates) {
@@ -226,7 +227,7 @@ async function main() {
 
   // --- Step 9: Apply retention rules ---
   console.log("Applying retention rules...");
-  const maxLayers = 8;
+  const maxLayers = 16;
   candidates = applyRetentionRules(candidates, maxLayers, path.resolve(cliArgs.inputPath));
 
   // Re-sort retained by role z-ladder (handles fallback bg-plate inserted at end)
@@ -285,7 +286,7 @@ async function main() {
   // --- Step 13: Generate + write manifest ---
   const manifestInput: ManifestInput = {
     runId: ctx.runId,
-    pipelineVariant: cliArgs.variant,
+    pipelineVariant: "qwen-luminance",
     sourceImage: path.resolve(cliArgs.inputPath),
     preparedImage: preparedPath,
     models: {
@@ -298,14 +299,6 @@ async function main() {
           return active.length || 4;
         })(),
       },
-      ...(cliArgs.variant === "qwen-zoedepth"
-        ? {
-            zoeDepth: {
-              model: "cjwbw/zoedepth",
-              version: "6375723d97400d3ac7b88e3022b738bf6f433ae165c4a2acd1955eaa6b8fcb62",
-            },
-          }
-        : {}),
     },
     passes,
     retainedLayers: retained,
