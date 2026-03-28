@@ -1,14 +1,15 @@
-// Calibrate: measure noise floor by running same config N times
+// Calibrate: measure noise floor by running full pipeline N times with identical config
 // Outputs: per-metric stats, composite stats, delta_min = max(2*sigma, 0.01)
 
 import { mkdirSync, writeFileSync, readFileSync, existsSync } from "fs";
 import type { EvalResult, MetricValues } from "./evaluate.js";
 import { compositeScore } from "./evaluate.js";
+import { runFullPipeline, resolveInputImagePath } from "./pipeline-runner.js";
 
 const DELTA_MIN_FLOOR = 0.01;
 const CALIBRATION_DIR = ".cache/research";
 const CALIBRATION_PATH = `${CALIBRATION_DIR}/calibration.json`;
-const MANIFEST_PATH = "public/manifest.json";
+const REFERENCE_CACHE_DIR = ".cache/research/reference";
 
 export interface Stats {
   mean: number;
@@ -92,9 +93,10 @@ export function saveCalibration(result: CalibrationResult): string {
 }
 
 export function readModelVersion(): string {
-  if (existsSync(MANIFEST_PATH)) {
+  const manifestPath = "public/manifest.json";
+  if (existsSync(manifestPath)) {
     try {
-      const manifest = JSON.parse(readFileSync(MANIFEST_PATH, "utf-8"));
+      const manifest = JSON.parse(readFileSync(manifestPath, "utf-8"));
       if (manifest.modelVersion) return manifest.modelVersion;
       if (manifest.model_version) return manifest.model_version;
       if (manifest.version) return manifest.version;
@@ -118,25 +120,47 @@ export function parseRunsArg(argv: string[]): number {
 if (process.argv[1]?.endsWith("calibrate.ts")) {
   const runs = parseRunsArg(process.argv);
   const modelVersion = readModelVersion();
+  const cwd = process.cwd();
 
   console.log(`Calibration: ${runs} runs, model=${modelVersion}`);
-  console.log("Running pipeline with identical config...\n");
+
+  // Verify prerequisites
+  if (!existsSync(`${REFERENCE_CACHE_DIR}/metadata.json`)) {
+    console.error("Reference not prepared. Run: npm run research:prepare -- source.mp4");
+    process.exit(1);
+  }
+
+  const inputPath = resolveInputImagePath(cwd);
+  console.log(`Input image: ${inputPath}`);
+  console.log("Running full pipeline (layers → video → evaluate) per run...\n");
 
   // Dynamic import to avoid pulling heavy deps at module load
   import("./evaluate.js").then(async ({ evaluateVideo }) => {
+    const refMeta = JSON.parse(readFileSync(`${REFERENCE_CACHE_DIR}/metadata.json`, "utf-8"));
     const results: EvalResult[] = [];
 
     for (let i = 1; i <= runs; i++) {
-      console.log(`[calibrate ${i}/${runs}] Running...`);
+      console.log(`[calibrate ${i}/${runs}] Running full pipeline...`);
+      const runStart = Date.now();
+
       try {
+        // Run full pipeline: decompose → capture → encode
+        const pipeline = await runFullPipeline(cwd, inputPath);
+
+        // Evaluate generated video against reference
         const result = await evaluateVideo({
-          videoPath: "public/video.mp4",
-          referenceCacheDir: ".cache/research/reference",
+          videoPath: pipeline.videoPath,
+          referenceCacheDir: REFERENCE_CACHE_DIR,
+          manifestPath: pipeline.manifestPath || undefined,
+          sourceVideoPath: refMeta.sourcePath,
         });
+
         results.push(result);
-        console.log(`[calibrate ${i}/${runs}] composite=${compositeScore(result.metrics).toFixed(4)}`);
+        const elapsed = ((Date.now() - runStart) / 1000).toFixed(1);
+        console.log(`[calibrate ${i}/${runs}] composite=${compositeScore(result.metrics).toFixed(4)} (${elapsed}s)\n`);
       } catch (err) {
-        console.error(`[calibrate ${i}/${runs}] FAILED: ${err instanceof Error ? err.message : err}`);
+        const elapsed = ((Date.now() - runStart) / 1000).toFixed(1);
+        console.error(`[calibrate ${i}/${runs}] FAILED (${elapsed}s): ${err instanceof Error ? err.message : err}\n`);
       }
     }
 

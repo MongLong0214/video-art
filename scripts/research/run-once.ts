@@ -2,7 +2,6 @@
 // config → pipeline → evaluate → keep/discard → results.tsv
 
 import { existsSync, readFileSync, appendFileSync, mkdirSync } from "fs";
-import { execFileSync } from "child_process";
 import type { MetricValues } from "./evaluate.js";
 import { evaluateVideo } from "./evaluate.js";
 import { loadConfig } from "./research-config.js";
@@ -17,6 +16,7 @@ import {
   ensureBranch,
   checkDirty,
 } from "./git-automation.js";
+import { runFullPipeline, resolveInputImagePath } from "./pipeline-runner.js";
 
 const CALIBRATION_PATH = ".cache/research/calibration.json";
 const RESULTS_TSV_PATH = ".cache/research/results.tsv";
@@ -126,52 +126,7 @@ function loadCalibration(): CalibrationResult {
   return JSON.parse(readFileSync(CALIBRATION_PATH, "utf-8"));
 }
 
-// ── Pipeline Execution ───────────────────────────────────
-
-function runPipeline(
-  config: Record<string, unknown>,
-  cwd: string,
-): { videoPath: string; manifestPath: string } {
-  const args = ["scripts/pipeline-layers.ts"];
-
-  // Derive CLI args from config
-  if (config.method) {
-    args.push("--variant", String(config.method));
-  }
-  if (config.numLayers) {
-    args.push("--layers", String(config.numLayers));
-  }
-
-  // Input image: use source from reference metadata
-  const metaPath = `${REFERENCE_CACHE_DIR}/metadata.json`;
-  if (!existsSync(metaPath)) {
-    throw new Error("Reference metadata not found. Run `npm run research:prepare` first.");
-  }
-  const refMeta = JSON.parse(readFileSync(metaPath, "utf-8"));
-
-  // The pipeline takes an input image — use the first reference frame as proxy
-  const inputPath = refMeta.sourcePath ?? "input.png";
-  args.unshift(inputPath);
-
-  const output = execFileSync("npx", ["tsx", ...args], {
-    cwd,
-    encoding: "utf-8",
-    timeout: 300_000, // 5 min timeout
-    stdio: ["pipe", "pipe", "pipe"],
-  });
-
-  // Parse output for video path and manifest path
-  // Pipeline writes to public/archive/<run>/video.mp4 and manifest.json
-  const videoMatch = output.match(/video:\s*(.+\.mp4)/i) ??
-    output.match(/output:\s*(.+\.mp4)/i);
-  const manifestMatch = output.match(/manifest:\s*(.+\.json)/i);
-
-  // Default paths based on pipeline convention
-  const videoPath = videoMatch?.[1]?.trim() ?? "public/video.mp4";
-  const manifestPath = manifestMatch?.[1]?.trim() ?? "";
-
-  return { videoPath, manifestPath };
-}
+// ── Pipeline Execution (delegated to pipeline-runner) ────
 
 // ── CLI argument parsing ──────────────────────────────────
 
@@ -266,17 +221,18 @@ export async function main(): Promise<void> {
   let commitHash = "none";
 
   try {
-    // Step 5: Run pipeline
-    console.log(`[exp #${expNum}] Running pipeline...`);
-    const { videoPath, manifestPath } = runPipeline(config, cwd);
+    // Step 5: Run full pipeline (layers → video capture → encode)
+    console.log(`[exp #${expNum}] Running full pipeline...`);
+    const inputPath = resolveInputImagePath(cwd);
+    const pipeline = await runFullPipeline(cwd, inputPath, config);
 
     // Step 6: Evaluate generated video
     console.log(`[exp #${expNum}] Evaluating...`);
     const refMeta = JSON.parse(readFileSync(`${REFERENCE_CACHE_DIR}/metadata.json`, "utf-8"));
     const evalResult = await evaluateVideo({
-      videoPath,
+      videoPath: pipeline.videoPath,
       referenceCacheDir: REFERENCE_CACHE_DIR,
-      manifestPath: manifestPath || undefined,
+      manifestPath: pipeline.manifestPath || undefined,
       sourceVideoPath: refMeta.sourcePath,
     });
 

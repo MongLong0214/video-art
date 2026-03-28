@@ -2,6 +2,13 @@
 
 This is an experiment to have the LLM autonomously optimize video layer decomposition parameters.
 
+## Reference (고정)
+
+**단일 레퍼런스**: `source.mp4` (프로젝트 루트, 16MB)
+- 원본 경로: `/Users/isaac/Downloads/source.mp4`
+- 이 파일이 모든 실험의 유일한 기준. 변경 금지.
+- prepare 명령: `npm run research:prepare -- source.mp4`
+
 ## Setup
 
 To set up a new experiment, work with the user to:
@@ -12,7 +19,7 @@ To set up a new experiment, work with the user to:
    - `program.md` — this file. Research instructions.
    - `research-config.ts` — the file you modify. All tuning parameters.
    - `evaluate.ts` + `metrics/*` — fixed evaluation. Do not modify.
-4. **Verify reference exists**: Check that `.cache/research/reference/` contains keyframes. If not, tell the human to run `npm run research:prepare`.
+4. **Verify reference exists**: Check that `.cache/research/reference/` contains keyframes. If not, run `npm run research:prepare -- source.mp4`.
 5. **Verify calibration exists**: Check `.cache/research/calibration.json`. If not, run `npm run research:calibrate`.
 6. **Initialize results.tsv**: Create with just the header row if not present.
 7. **Confirm and go**: Confirm setup looks good.
@@ -37,7 +44,7 @@ Each experiment runs the full pipeline once (~2 minutes). You launch it as: `npm
 
 | Parameter | Range | Default | Description |
 |-----------|-------|---------|-------------|
-| numLayers | 2-12 | 4 | Qwen decomposition layer count |
+| numLayers | 2-8 | 8 | Qwen decomposition layer count |
 | method | qwen-only / qwen-zoedepth | qwen-only | Decomposition variant |
 | alphaThreshold | 1-254 | 128 | RGBA alpha binarization |
 | minCoverage | 0.001-0.05 | 0.005 | Minimum component coverage |
@@ -46,14 +53,14 @@ Each experiment runs the full pipeline once (~2 minutes). You launch it as: `npm
 | complexEdgeMin | 0.05-0.5 | 0.20 | Complexity: complex floor |
 | complexEntropyMin | 4.0-9.0 | 7.0 | Complexity: complex entropy floor |
 | edgePixelThreshold | 10-100 | 30 | Sobel edge threshold |
-| iouDedupeThreshold | 0.3-0.95 | 0.70 | IoU for duplicate detection |
-| uniqueCoverageThreshold | 0.005-0.1 | 0.02 | Minimum exclusive pixel ratio |
+| iouDedupeThreshold | 0.3-0.98 | 0.92 | IoU for duplicate detection |
+| uniqueCoverageThreshold | 0.001-0.1 | 0.005 | Minimum exclusive pixel ratio |
 | centralityThreshold | 0.1-0.4 | 0.25 | Subject centrality |
 | bgPlateMinBboxRatio | 0.1-0.6 | 0.30 | Background plate bbox ratio |
 | edgeTolerancePx | 1-10 | 2 | Edge tolerance in pixels |
-| maxLayers | 3-16 | 8 | Maximum retained layers |
-| minRetainedLayers | 1-6 | 3 | Minimum retained layers |
-| depthZones | 2-8 | 4 | ZoeDepth zones (variant B) |
+| maxLayers | 3-16 | 16 | Maximum retained layers |
+| minRetainedLayers | 1-12 | 6 | Minimum retained layers |
+| depthZones | 2-8 | 6 | ZoeDepth zones (variant B) |
 | depthSplitThreshold | 0.05-0.4 | 0.15 | Depth split threshold |
 | qualityThresholdPct | 1-30 | 10 | Variant selection threshold |
 | colorCycleSpeedMul | 0.1-3.0 | 1.0 | Animation: color cycle speed multiplier |
