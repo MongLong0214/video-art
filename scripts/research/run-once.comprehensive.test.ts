@@ -200,15 +200,15 @@ describe("report comprehensive", () => {
 describe("ResearchConfig comprehensive", () => {
   it("default config has all fields", () => {
     const c = getDefaultConfig();
-    expect(Object.keys(c).length).toBeGreaterThanOrEqual(28);
+    expect(Object.keys(c).length).toBeGreaterThanOrEqual(23);
   });
 
   it.each([
-    ["numLayers", 2, 12],
+    ["numLayers", 2, 8],
     ["alphaThreshold", 1, 254],
     ["minCoverage", 0.001, 0.05],
     ["maxLayers", 3, 16],
-    ["iouDedupeThreshold", 0.3, 0.95],
+    ["iouDedupeThreshold", 0.3, 0.98],
   ] as [string, number, number][])("%s accepts range [%d, %d]", (key, min, max) => {
     expect(() => ResearchConfigSchema.parse({ [key]: min })).not.toThrow();
     expect(() => ResearchConfigSchema.parse({ [key]: max })).not.toThrow();
@@ -232,7 +232,7 @@ describe("ResearchConfig comprehensive", () => {
 
   it("all multipliers default to 1.0", () => {
     const c = getDefaultConfig();
-    const muls = ["colorCycleSpeedMul", "parallaxDepthMul", "waveAmplitudeMul", "glowIntensityMul", "saturationBoostMul", "luminanceKeyMul"] as const;
+    const muls = ["colorCycleSpeedMul", "glowIntensityMul", "saturationBoostMul", "luminanceKeyMul"] as const;
     for (const m of muls) expect(c[m]).toBe(1.0);
   });
 });

@@ -10,16 +10,13 @@ import { mkdirSync, writeFileSync, rmSync } from "fs";
 describe("ResearchConfigSchema", () => {
   it("parses default config from empty object", () => {
     const config = ResearchConfigSchema.parse({});
-    expect(config.numLayers).toBe(4);
-    expect(config.method).toBe("qwen-only");
+    expect(config.numLayers).toBe(8);
     expect(config.alphaThreshold).toBe(128);
   });
 
   it("all multiplier defaults are 1.0", () => {
     const config = ResearchConfigSchema.parse({});
     expect(config.colorCycleSpeedMul).toBe(1.0);
-    expect(config.parallaxDepthMul).toBe(1.0);
-    expect(config.waveAmplitudeMul).toBe(1.0);
     expect(config.glowIntensityMul).toBe(1.0);
     expect(config.saturationBoostMul).toBe(1.0);
     expect(config.luminanceKeyMul).toBe(1.0);
@@ -28,7 +25,7 @@ describe("ResearchConfigSchema", () => {
   it("allows partial override", () => {
     const config = ResearchConfigSchema.parse({ numLayers: 6 });
     expect(config.numLayers).toBe(6);
-    expect(config.method).toBe("qwen-only"); // default kept
+    expect(config.alphaThreshold).toBe(128); // default kept
   });
 
   it("rejects numLayers out of range", () => {
@@ -38,12 +35,6 @@ describe("ResearchConfigSchema", () => {
   it("rejects negative minCoverage", () => {
     expect(() =>
       ResearchConfigSchema.parse({ minCoverage: -0.1 }),
-    ).toThrow();
-  });
-
-  it("rejects invalid method", () => {
-    expect(() =>
-      ResearchConfigSchema.parse({ method: "invalid" }),
     ).toThrow();
   });
 
@@ -64,9 +55,9 @@ describe("ResearchConfigSchema", () => {
     expect(config.simpleEdgeMax).toBe(0.05);
   });
 
-  it("has 28+ parameters", () => {
+  it("has 23+ parameters", () => {
     const config = ResearchConfigSchema.parse({});
-    expect(Object.keys(config).length).toBeGreaterThanOrEqual(28);
+    expect(Object.keys(config).length).toBeGreaterThanOrEqual(23);
   });
 });
 
@@ -124,10 +115,10 @@ describe("recursive decomposition parameters", () => {
 describe("getDefaultConfig", () => {
   it("returns a valid config with all defaults", () => {
     const config = getDefaultConfig();
-    expect(config.numLayers).toBe(4);
-    expect(config.maxLayers).toBe(8);
-    expect(config.iouDedupeThreshold).toBe(0.85);
-    expect(config.uniqueCoverageThreshold).toBe(0.02);
+    expect(config.numLayers).toBe(8);
+    expect(config.maxLayers).toBe(16);
+    expect(config.iouDedupeThreshold).toBe(0.92);
+    expect(config.uniqueCoverageThreshold).toBe(0.005);
   });
 
   it("passes schema validation", () => {
@@ -152,7 +143,7 @@ describe("loadConfig", () => {
 
   it("returns defaults when file does not exist", () => {
     const config = loadConfig("/nonexistent/path/config.ts");
-    expect(config.numLayers).toBe(4);
+    expect(config.numLayers).toBe(8);
     expect(config.recurseCoverageThreshold).toBe(0.30);
   });
 
@@ -161,8 +152,8 @@ describe("loadConfig", () => {
     const jsonPath = `${testDir}/config.json`;
     writeFileSync(jsonPath, JSON.stringify({ numLayers: 8, recurseCoverageThreshold: 0.5 }));
     const config = loadConfig(jsonPath);
-    expect(config.numLayers).toBe(8);
-    expect(config.recurseCoverageThreshold).toBe(0.5);
+    expect(config.numLayers).toBe(8); // overridden
+    expect(config.recurseCoverageThreshold).toBe(0.5); // overridden
   });
 
   it("returns defaults for invalid JSON file", () => {
@@ -170,13 +161,13 @@ describe("loadConfig", () => {
     const jsonPath = `${testDir}/bad.json`;
     writeFileSync(jsonPath, "not json");
     const config = loadConfig(jsonPath);
-    expect(config.numLayers).toBe(4);
+    expect(config.numLayers).toBe(8);
   });
 
   it("defaults to scripts/research/research-config.ts when no path given", () => {
     // This should work because the actual file exists
     const config = loadConfig();
-    expect(config.numLayers).toBe(4);
+    expect(config.numLayers).toBe(8);
   });
 
   it("loads from .ts file by extracting parse({}) pattern", () => {
@@ -187,6 +178,6 @@ import { z } from "zod";
 export const schema = z.object({}).parse({});
 `);
     const config = loadConfig(tsPath);
-    expect(config.numLayers).toBe(4); // defaults
+    expect(config.numLayers).toBe(8); // defaults
   });
 });

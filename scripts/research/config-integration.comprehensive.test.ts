@@ -18,8 +18,7 @@ describe("getDefaultConfig", () => {
 
   it("should match all expected default values", () => {
     const config = getDefaultConfig();
-    expect(config.numLayers).toBe(4);
-    expect(config.method).toBe("qwen-only");
+    expect(config.numLayers).toBe(8);
     expect(config.alphaThreshold).toBe(128);
     expect(config.minCoverage).toBe(0.005);
     expect(config.simpleEdgeMax).toBe(0.1);
@@ -27,23 +26,19 @@ describe("getDefaultConfig", () => {
     expect(config.complexEdgeMin).toBe(0.2);
     expect(config.complexEntropyMin).toBe(7.0);
     expect(config.edgePixelThreshold).toBe(30);
-    expect(config.iouDedupeThreshold).toBe(0.85);
-    expect(config.uniqueCoverageThreshold).toBe(0.02);
+    expect(config.iouDedupeThreshold).toBe(0.92);
+    expect(config.uniqueCoverageThreshold).toBe(0.005);
     expect(config.centralityThreshold).toBe(0.25);
     expect(config.bgPlateMinBboxRatio).toBe(0.3);
     expect(config.edgeTolerancePx).toBe(2);
-    expect(config.maxLayers).toBe(8);
-    expect(config.minRetainedLayers).toBe(3);
-    expect(config.depthZones).toBe(4);
-    expect(config.depthSplitThreshold).toBe(0.15);
-    expect(config.qualityThresholdPct).toBe(10);
+    expect(config.maxLayers).toBe(16);
+    expect(config.minRetainedLayers).toBe(6);
+    expect(config.luminanceZones).toBe(6);
   });
 
-  it("should match multiplier defaults (all 1.0 except wave/glow)", () => {
+  it("should match multiplier defaults (all 1.0)", () => {
     const config = getDefaultConfig();
     expect(config.colorCycleSpeedMul).toBe(1.0);
-    expect(config.parallaxDepthMul).toBe(1.0);
-    expect(config.waveAmplitudeMul).toBe(1.0);
     expect(config.glowIntensityMul).toBe(1.0);
     expect(config.saturationBoostMul).toBe(1.0);
     expect(config.luminanceKeyMul).toBe(1.0);
@@ -58,18 +53,13 @@ describe("partial config overrides", () => {
   it("should accept partial override of 1 param", () => {
     const result = ResearchConfigSchema.parse({ numLayers: 6 });
     expect(result.numLayers).toBe(6);
-    expect(result.method).toBe("qwen-only"); // default preserved
+    expect(result.alphaThreshold).toBe(128); // default preserved
   });
 
   it("should accept override of only alphaThreshold", () => {
     const result = ResearchConfigSchema.parse({ alphaThreshold: 200 });
     expect(result.alphaThreshold).toBe(200);
-    expect(result.numLayers).toBe(4);
-  });
-
-  it("should accept override of method to qwen-zoedepth", () => {
-    const result = ResearchConfigSchema.parse({ method: "qwen-zoedepth" });
-    expect(result.method).toBe("qwen-zoedepth");
+    expect(result.numLayers).toBe(8);
   });
 
   it("should accept multiple overrides", () => {
@@ -114,9 +104,9 @@ describe("min boundary values", () => {
     expect(result.colorCycleSpeedMul).toBe(0.1);
   });
 
-  it("should accept waveAmplitudeMul=0.0 (min)", () => {
-    const result = ResearchConfigSchema.parse({ waveAmplitudeMul: 0.0 });
-    expect(result.waveAmplitudeMul).toBe(0.0);
+  it("should accept glowIntensityMul=0.0 (min)", () => {
+    const result = ResearchConfigSchema.parse({ glowIntensityMul: 0.0 });
+    expect(result.glowIntensityMul).toBe(0.0);
   });
 });
 
@@ -125,9 +115,9 @@ describe("min boundary values", () => {
 // ==========================================================================
 
 describe("max boundary values", () => {
-  it("should accept numLayers=12 (max)", () => {
-    const result = ResearchConfigSchema.parse({ numLayers: 12 });
-    expect(result.numLayers).toBe(12);
+  it("should accept numLayers=8 (max)", () => {
+    const result = ResearchConfigSchema.parse({ numLayers: 8 });
+    expect(result.numLayers).toBe(8);
   });
 
   it("should accept alphaThreshold=254 (max)", () => {
@@ -160,8 +150,8 @@ describe("invalid out-of-range values", () => {
     expect(() => ResearchConfigSchema.parse({ numLayers: 1 })).toThrow();
   });
 
-  it("should reject numLayers=13 (above max)", () => {
-    expect(() => ResearchConfigSchema.parse({ numLayers: 13 })).toThrow();
+  it("should reject numLayers=9 (above max)", () => {
+    expect(() => ResearchConfigSchema.parse({ numLayers: 9 })).toThrow();
   });
 
   it("should reject alphaThreshold=0 (below min)", () => {
@@ -194,10 +184,6 @@ describe("invalid out-of-range values", () => {
 
   it("should reject non-integer alphaThreshold", () => {
     expect(() => ResearchConfigSchema.parse({ alphaThreshold: 128.5 })).toThrow();
-  });
-
-  it("should reject invalid method", () => {
-    expect(() => ResearchConfigSchema.parse({ method: "invalid" })).toThrow();
   });
 
   it("should reject colorCycleSpeedMul=0 (below min)", () => {
@@ -248,31 +234,31 @@ describe("constraint validation", () => {
 describe("multiplier values", () => {
   it("should accept multiplier at 0.1x", () => {
     const result = ResearchConfigSchema.parse({
-      parallaxDepthMul: 0.1,
+      colorCycleSpeedMul: 0.1,
       saturationBoostMul: 0.1,
       luminanceKeyMul: 0.1,
     });
-    expect(result.parallaxDepthMul).toBe(0.1);
+    expect(result.colorCycleSpeedMul).toBe(0.1);
     expect(result.saturationBoostMul).toBe(0.1);
     expect(result.luminanceKeyMul).toBe(0.1);
   });
 
   it("should accept multiplier at 1.0x", () => {
-    const result = ResearchConfigSchema.parse({ parallaxDepthMul: 1.0 });
-    expect(result.parallaxDepthMul).toBe(1.0);
+    const result = ResearchConfigSchema.parse({ saturationBoostMul: 1.0 });
+    expect(result.saturationBoostMul).toBe(1.0);
   });
 
   it("should accept multiplier at 3.0x", () => {
-    const result = ResearchConfigSchema.parse({ parallaxDepthMul: 3.0 });
-    expect(result.parallaxDepthMul).toBe(3.0);
+    const result = ResearchConfigSchema.parse({ saturationBoostMul: 3.0 });
+    expect(result.saturationBoostMul).toBe(3.0);
   });
 
-  it("should reject negative multiplier for parallaxDepthMul", () => {
-    expect(() => ResearchConfigSchema.parse({ parallaxDepthMul: -0.1 })).toThrow();
+  it("should reject multiplier below min for colorCycleSpeedMul", () => {
+    expect(() => ResearchConfigSchema.parse({ colorCycleSpeedMul: 0 })).toThrow();
   });
 
-  it("should reject multiplier > 3.0 for parallaxDepthMul", () => {
-    expect(() => ResearchConfigSchema.parse({ parallaxDepthMul: 3.1 })).toThrow();
+  it("should reject multiplier > 3.0 for saturationBoostMul", () => {
+    expect(() => ResearchConfigSchema.parse({ saturationBoostMul: 3.1 })).toThrow();
   });
 });
 
@@ -283,12 +269,12 @@ describe("multiplier values", () => {
 describe("additional parameter ranges", () => {
   it("should accept iouDedupeThreshold at bounds", () => {
     expect(ResearchConfigSchema.parse({ iouDedupeThreshold: 0.3 }).iouDedupeThreshold).toBe(0.3);
-    expect(ResearchConfigSchema.parse({ iouDedupeThreshold: 0.95 }).iouDedupeThreshold).toBe(0.95);
+    expect(ResearchConfigSchema.parse({ iouDedupeThreshold: 0.98 }).iouDedupeThreshold).toBe(0.98);
   });
 
   it("should reject iouDedupeThreshold out of bounds", () => {
     expect(() => ResearchConfigSchema.parse({ iouDedupeThreshold: 0.2 })).toThrow();
-    expect(() => ResearchConfigSchema.parse({ iouDedupeThreshold: 0.96 })).toThrow();
+    expect(() => ResearchConfigSchema.parse({ iouDedupeThreshold: 0.99 })).toThrow();
   });
 
   it("should accept edgeTolerancePx at bounds", () => {
@@ -296,13 +282,8 @@ describe("additional parameter ranges", () => {
     expect(ResearchConfigSchema.parse({ edgeTolerancePx: 10 }).edgeTolerancePx).toBe(10);
   });
 
-  it("should accept depthZones at bounds", () => {
-    expect(ResearchConfigSchema.parse({ depthZones: 2 }).depthZones).toBe(2);
-    expect(ResearchConfigSchema.parse({ depthZones: 8 }).depthZones).toBe(8);
-  });
-
-  it("should accept qualityThresholdPct at bounds", () => {
-    expect(ResearchConfigSchema.parse({ qualityThresholdPct: 1 }).qualityThresholdPct).toBe(1);
-    expect(ResearchConfigSchema.parse({ qualityThresholdPct: 30 }).qualityThresholdPct).toBe(30);
+  it("should accept luminanceZones at bounds", () => {
+    expect(ResearchConfigSchema.parse({ luminanceZones: 2 }).luminanceZones).toBe(2);
+    expect(ResearchConfigSchema.parse({ luminanceZones: 8 }).luminanceZones).toBe(8);
   });
 });
