@@ -28,6 +28,7 @@ ANALYSIS_FIELDS = [
     "energy_curve", "onset_density", "frequency_balance", "dynamic_range",
     "stereo_width", "kick_pattern", "hat_pattern", "bass_profile",
     "structure", "loudness", "mfcc", "spectral_contrast", "danceability",
+    "pitch_contour",
 ]
 
 
@@ -400,6 +401,113 @@ def analyze_stem(stem_path, sr, stem_type):
     return None
 
 
+def extract_pitch_contour(audio_path, sr=22050):
+    """3-tier pitch extraction: torchcrepe → PESTO → pyin."""
+    tracker_used = None
+
+    # Tier 1: torchcrepe (Viterbi 303 glide capture)
+    try:
+        import torchcrepe
+        import torch
+        audio, sr_loaded = torchcrepe.load.audio(audio_path)
+        hop_length = int(sr_loaded / 200)
+        pitch, periodicity = torchcrepe.predict(
+            audio, sr_loaded, hop_length,
+            fmin=30, fmax=1000, model='full', device='cpu',
+            batch_size=256, return_periodicity=True,
+            decoder=torchcrepe.decode.viterbi,
+        )
+        periodicity = torchcrepe.filter.median(periodicity, win_length=3)
+        pitch = torchcrepe.threshold.At(0.21)(pitch, periodicity)
+        pitch = torchcrepe.filter.mean(pitch, win_length=3)
+        return pitch.numpy().flatten(), periodicity.numpy().flatten(), 'torchcrepe'
+    except ImportError:
+        pass
+
+    # Tier 2: PESTO (120KB, 12x realtime)
+    try:
+        import pesto
+        import torchaudio
+        audio, sr_loaded = torchaudio.load(audio_path)
+        timesteps, pitch, confidence, _ = pesto.predict(audio, sr_loaded)
+        return pitch.numpy().flatten(), confidence.numpy().flatten(), 'pesto'
+    except ImportError:
+        pass
+
+    # Tier 3: pyin (librosa built-in, no dependency)
+    try:
+        audio, sr_loaded = librosa.load(audio_path, sr=sr, mono=True)
+        f0, voiced_flag, voiced_probs = librosa.pyin(
+            audio, fmin=30, fmax=1047, sr=sr,
+            frame_length=2048, hop_length=512,
+        )
+        return f0, voiced_probs, 'pyin'
+    except Exception:
+        return None, None, None
+
+
+def pitch_to_note_events(pitch, confidence, sr=22050, hop_length=512,
+                         conf_threshold=0.5, note_threshold=1.5, min_slide_dur=0.02):
+    """Frame-continuity slide detection. slide=True when pitch transitions gradually."""
+    if pitch is None:
+        return []
+
+    def semitone_diff(f1, f2):
+        if f1 <= 0 or f2 <= 0:
+            return float('inf')
+        return abs(12 * np.log2(f1 / f2))
+
+    min_slide_frames = max(2, int(min_slide_dur * sr / hop_length))
+    events = []
+    current_note = None
+    note_start = 0
+    transition_frames = 0
+    prev_freq = 0
+
+    for i, (freq, conf) in enumerate(zip(pitch, confidence)):
+        time = i * hop_length / sr
+        is_voiced = (conf is not None and conf > conf_threshold
+                     and freq is not None and freq > 0
+                     and not np.isnan(freq))
+
+        if is_voiced:
+            if current_note is None:
+                current_note = freq
+                prev_freq = freq
+                note_start = time
+                transition_frames = 0
+            else:
+                total_drift = semitone_diff(freq, current_note)
+                frame_delta = semitone_diff(freq, prev_freq)
+                if total_drift > note_threshold:
+                    is_slide = transition_frames >= min_slide_frames
+                    events.append({
+                        "time": round(note_start, 3),
+                        "freq": round(float(current_note), 1),
+                        "duration": round(time - note_start, 3),
+                        "velocity": round(float(np.nanmean(confidence[max(0,i-5):i])), 2),
+                        "slide": is_slide,
+                    })
+                    current_note = freq
+                    note_start = time
+                    transition_frames = 0
+                elif frame_delta > 0.1:
+                    transition_frames += 1
+                prev_freq = freq
+        elif current_note is not None:
+            events.append({
+                "time": round(note_start, 3),
+                "freq": round(float(current_note), 1),
+                "duration": round(time - note_start, 3),
+                "velocity": round(float(np.nanmean(confidence[max(0,i-5):i])), 2),
+                "slide": transition_frames >= min_slide_frames,
+            })
+            current_note = None
+            transition_frames = 0
+
+    return events
+
+
 def run_demucs_pipeline(file_path, output_dir, sr, warnings_list):
     """Full demucs pipeline: separate + per-stem analysis."""
     if not has_demucs():
@@ -503,7 +611,24 @@ def analyze(file_path, output_dir):
     safe("mfcc", analyze_mfcc, y_mono, sr)
     safe("spectral_contrast", analyze_spectral_contrast, y_mono, sr)
 
-    # 6. demucs stems (T3 — optional)
+    # 6. Pitch contour (Phase 2 — 3-tier fallback)
+    try:
+        pitch_f0, pitch_conf, tracker = extract_pitch_contour(file_path, sr)
+        if pitch_f0 is not None:
+            note_events = pitch_to_note_events(pitch_f0, pitch_conf, sr)
+            results["pitch_contour"] = {
+                "tracker_used": tracker,
+                "note_events": note_events,
+                "frame_count": len(pitch_f0),
+            }
+        else:
+            results["pitch_contour"] = None
+            warn.append("pitch tracking: all 3 tiers unavailable — skipped")
+    except Exception as e:
+        results["pitch_contour"] = None
+        warn.append(f"pitch tracking: {e}")
+
+    # 7. demucs stems (T3 — optional)
     stems = run_demucs_pipeline(file_path, output_dir, sr, warn)
     if stems is not None:
         results["stems"] = stems

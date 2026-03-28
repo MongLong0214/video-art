@@ -10,7 +10,10 @@
     "lead": { "drive": 0.3, "vibrato": 0.5, "portamento": 0.03, "amp": 0.5 },
     "clap": { "decay": 0.12, "spread": 0.4 },
     "arp_pluck": { "decay": 0.08, "brightness": 0.9 },
-    "riser": { "sweepRange": 5000, "noiseAmount": 0.4, "amp": 0.5 }
+    "riser": { "sweepRange": 5000, "noiseAmount": 0.4, "amp": 0.5 },
+    "acid_bass": { "cutoff": 2200, "resonance": 2.5, "envDepth": 5000, "envDecay": 0.15, "accent": 0, "slide": 0, "slideTime": 0.1, "wave": 0, "dist": 0.4 },
+    "layered_kick": { "subDecay": 0.4, "bodyDecay": 0.1, "clickAmp": 0.6, "bodyFreq": 200, "drive": 0.3, "punch": 0.6 },
+    "squelch": { "sweepStart": 300, "sweepEnd": 6000, "sweepCurve": -4, "resonance": 0.85, "source": 1, "lfoRate": 0, "lfoDepth": 0 }
   },
   "fxDefaults": {
     "compress": 0.5, "threshold": -12, "ratio": 3,
@@ -21,9 +24,10 @@
     "sideGain": 1.2, "sideRelease": 0.15
   },
   "stemGroups": {
-    "drums": ["kick", "hat", "clap"],
-    "bass": ["bass"],
-    "synth": ["supersaw", "pad", "lead", "arp_pluck"],
+    "drums": ["kick", "layered_kick", "hat", "clap"],
+    "bass": ["bass", "acid_bass"],
+    "synth": ["supersaw", "lead", "arp_pluck", "squelch"],
+    "pad": ["pad"],
     "fx": ["riser"]
   }
 }
