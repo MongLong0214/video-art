@@ -29,7 +29,7 @@ npm run export:sketch -- --sketch ocean-wave --title ocean-wave
 ```bash
 npm run pipeline sunset.png -- --title sunset
 
-# 1. 이미지 복잡도 분석 → 적정 레이어 수 결정 (3/4/6)
+# 1. 이미지 복잡도 분석 → 적정 레이어 수 결정 (6/7/8)
 # 2. Replicate API로 레이어 분해 (Qwen-Only 또는 Qwen+ZoeDepth)
 # 3. BFS 연결 성분 분석 + IoU 중복 제거 + 배타적 소유권
 # 4. 역할 할당 (background-plate/subject/detail/foreground-occluder)
@@ -96,7 +96,7 @@ npm run pipeline input.png -- --title sunset
 |---------|-------------|
 | `npm run dev` | Vite 개발서버 (실시간 미리보기, hot reload) |
 | `npm run build` | TypeScript 체크 + Vite 프로덕션 빌드 |
-| `npm run test` | Vitest 유닛 테스트 (1586 tests, 60 files) |
+| `npm run test` | Vitest 유닛 테스트 (2465 tests, 62 files) |
 | `npm run test:watch` | Vitest watch 모드 |
 
 ### Sketch 모드
@@ -112,6 +112,7 @@ npm run pipeline input.png -- --title sunset
 | `npm run pipeline <img> -- --title <name>` | 풀 파이프라인: 분해 → 미리보기 → mp4 |
 | `npm run pipeline:layers <img>` | 레이어 분해 + 역할 할당 + scene.json 생성 |
 | `npm run pipeline:validate` | 루프 이음새 검증 (pixel RMSE < 2.0) |
+| `npm run pipeline:preview` | Vite 미리보기 서버 |
 | `npm run pipeline:compare <img>` | Variant A/B (Qwen-Only vs Qwen+ZoeDepth) 비교 리포트 |
 | `npm run export:layered -- --title <name>` | layered mp4 익스포트만 |
 
@@ -126,6 +127,13 @@ npm run pipeline input.png -- --title sunset
 | `npm run live:record` | 라이브 녹음 |
 | `npm run render:audio` | scene.json → master.wav (NRT) |
 | `npm run render:av` | 비디오 + 오디오 → final.mp4 |
+| `npm run render:stems` | SynthDef별 개별 stem 렌더 |
+| `npm run render:prod` | 프로덕션 마스터 렌더 |
+| `npm run live:log` | SC + Tidal 스택 부팅 (OSC 로깅 모드) |
+| `npm run prod:convert` | 프로덕션 변환 |
+| `npm run preset:save` | 현재 설정을 프리셋으로 저장 |
+| `npm run preset:list` | 저장된 프리셋 목록 |
+| `npm run analyze:track` | 트랙 분석 |
 
 ### Autoresearch (자율 파라미터 최적화)
 
@@ -166,7 +174,7 @@ input.png
     ├── input-validator.ts (포맷/크기 검증)
     │
     ├── complexity-scoring.ts
-    │   Sobel edge density + color entropy → simple(3) / medium(4) / complex(6)
+    │   Sobel edge density + color entropy → simple(6) / medium(7) / complex(8)
     │
     ├── image-decompose.ts
     │   Qwen API → RGBA candidates
@@ -177,11 +185,11 @@ input.png
     │   → bbox / centroid / coverage / edgeDensity 계산
     │
     ├── layer-resolve.ts
-    │   1. deduplicateCandidates (IoU > 0.70 → drop)
+    │   1. deduplicateCandidates (IoU > 0.92 → drop)
     │   2. resolveExclusiveOwnership (pixel → 단일 레이어)
     │   3. assignRoles (background-plate/subject/detail/foreground-occluder)
     │   4. orderByRole (role z-order + coverage tie-break)
-    │   5. applyRetentionRules (uniqueCoverage >= 2%, cap 8)
+    │   5. applyRetentionRules (uniqueCoverage >= 0.5%, cap 16)
     │
     ├── scene-generator.ts
     │   getRolePreset(role) → 역할별 animation 파라미터
@@ -222,9 +230,10 @@ type LayerRole =
       "animation": {
         "colorCycle": { "speed": 0.5, "period": 20, "phaseOffset": 0 },
         "wave":       { "amplitude": 1, "frequency": 0.2, "period": 20 },
+        "glow":       { "intensity": 0.3, "pulse": 1.0, "period": 20 },
         "parallax":   { "depth": 0.02 },
-        "saturationBoost": 2.0,
-        "luminanceKey": 0.5
+        "saturationBoost": 2.5,
+        "luminanceKey": 0.6
       }
     }
   ],
@@ -462,13 +471,14 @@ video-art/
 │   │   ├── scene-schema.ts           Zod 스키마 (LayerRole, LayerCandidate 타입 포함)
 │   │   ├── scene-loader.ts           scene.json fetch + 검증
 │   │   ├── sketch-configs.ts         스케치 레지스트리
+│   │   ├── sketch-registry.ts        스케치 동적 로드
 │   │   ├── bpm-calculator.ts         BPM → 루프 계산
 │   │   ├── palette.ts                24색 팔레트
 │   │   ├── shader-plane.ts           풀스크린 쿼드
 │   │   └── effect-composer.ts        포스트프로세싱
 │   ├── shaders/
 │   │   ├── sketches/*.frag           작품 셰이더 (8종)
-│   │   ├── layer.frag / sparkle.frag / post.frag
+│   │   ├── layer.frag / post.frag / psy-v3-post.frag / signal-post.frag
 │   │   └── *.vert                    버텍스 셰이더
 │   └── sketches/*.ts                 스케치 셋업
 │
@@ -480,19 +490,26 @@ video-art/
 │   ├── validate-loop.ts              루프 RMSE 검증
 │   ├── render-audio.ts / render-av.ts
 │   ├── live-start.ts / live-stop.ts / live-record.ts
+│   ├── render-stems.ts               SynthDef별 stem 렌더
+│   ├── prod-convert.ts / preset-save.ts / preset-list.ts
+│   ├── analyze-track.ts / capture-rendered.ts
 │   ├── lib/
 │   │   ├── candidate-extraction.ts   BFS 연결 성분 분석 + 통계
 │   │   ├── layer-resolve.ts          IoU dedupe + exclusive ownership + role assignment
 │   │   ├── complexity-scoring.ts     Sobel edge + color entropy
 │   │   ├── decomposition-manifest.ts provenance manifest 생성
-│   │   ├── depth-utils.ts            ZoeDepth 통합 (Variant B)
 │   │   ├── variant-comparison.ts     A/B 비교 리포트
 │   │   ├── replicate-utils.ts        version pin + retry + URL 검증
 │   │   ├── pipeline-cli.ts           CLI 인자 파싱
 │   │   ├── image-decompose.ts        Qwen/ZoeDepth API + recursive decompose
 │   │   ├── scene-generator.ts        역할 기반 preset (getRolePreset)
-│   │   ├── archive.ts / check-deps.ts / input-validator.ts / postprocess.ts
-│   │   └── ...
+│   │   ├── archive.ts / check-deps.ts / input-validator.ts
+│   │   ├── validate-file-path.ts     경로 검증 (realpathSync + startsWith)
+│   │   ├── genre-preset.ts / browser-utils.ts
+│   │   ├── live-orchestrator.ts / live-health-monitor.ts / live-recording.ts
+│   │   ├── osc-logger.ts / osc-to-nrt.ts
+│   │   ├── render-audio-utils.ts / stem-render.ts / synth-stem-map.ts
+│   │   └── track-analyzer.ts
 │   └── research/                     ★ Autoresearch System
 │       ├── program.md                에이전트 연구 지시서
 │       ├── research-config.ts        28개 튜닝 파라미터 (Zod)
@@ -604,7 +621,7 @@ Layered: 1080x1080, 60fps, scene.json duration (기본 20초)
 | **typescript** | ^5.7.0 | strict 타입 체크 |
 | **@types/three** | ^0.172.0 | Three.js 타입 |
 | **tsx** | ^4.21.0 | TS 스크립트 직접 실행 |
-| **vitest** | ^4.1.1 | 1586 tests (60 files) |
+| **vitest** | ^4.1.1 | 2465 tests (62 files) |
 
 ### External
 
