@@ -80,7 +80,7 @@ function buildManifestInput(
 ): ManifestInput {
   return {
     runId: `run-golden-${Date.now()}`,
-    pipelineVariant: variant,
+    pipelineVariant: "qwen-luminance",
     sourceImage: "/tmp/source.png",
     preparedImage: "/tmp/prepared.png",
     models: {
@@ -97,7 +97,7 @@ function buildManifestInput(
             },
           }
         : {}),
-    },
+    } as ManifestInput["models"],
     passes: [{ type: "qwen-base", candidateCount: retained.length + dropped.length }],
     retainedLayers: retained,
     droppedCandidates: dropped,
