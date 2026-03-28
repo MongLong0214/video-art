@@ -17,14 +17,13 @@ export interface PipelineResult {
 
 // ── Step 1: Layer Decomposition ─────────────────────────────
 
-function runLayerDecomposition(
+export function runLayerDecomposition(
   inputPath: string,
   cwd: string,
   config?: Record<string, unknown>,
 ): string {
   const args = ["tsx", "scripts/pipeline-layers.ts", inputPath];
 
-  if (config?.method) args.push("--variant", String(config.method));
   if (config?.numLayers) args.push("--layers", String(config.numLayers));
 
   const output = execFileSync("npx", args, {
@@ -41,7 +40,7 @@ function runLayerDecomposition(
 
 // ── Step 2: Export Video (subprocess) ───────────────────────
 
-function runExportLayered(cwd: string): string {
+export function runExportLayered(cwd: string): string {
   // Use export-layered.ts as subprocess — it manages its own Vite + Puppeteer lifecycle
   // Title "_research" gives predictable archive path
   // Use stdio: inherit to avoid stdout buffer deadlock on large ffmpeg output
@@ -77,7 +76,7 @@ function runExportLayered(cwd: string): string {
 
 // ── Step 3: Copy Video to Research Dir ──────────────────────
 
-function copyToResearchDir(videoPath: string, cwd: string): string {
+export function copyToResearchDir(videoPath: string, cwd: string): string {
   const destDir = path.join(cwd, RESEARCH_DIR);
   fs.mkdirSync(destDir, { recursive: true });
   const dest = path.join(cwd, RESEARCH_VIDEO_PATH);
@@ -87,7 +86,7 @@ function copyToResearchDir(videoPath: string, cwd: string): string {
 
 // ── Step 4: Find Manifest ───────────────────────────────────
 
-function findManifest(archiveDir: string): string {
+export function findManifest(archiveDir: string): string {
   if (!archiveDir) return "";
   const manifestPath = path.join(archiveDir, "decomposition-manifest.json");
   return fs.existsSync(manifestPath) ? manifestPath : "";
@@ -135,7 +134,13 @@ export function resolveInputImagePath(cwd: string): string {
   );
   if (rootFiles.length === 1) return rootFiles[0];
 
+  if (rootFiles.length === 0) {
+    throw new Error(
+      "No .png files found. Place input.png at the project root.",
+    );
+  }
+
   throw new Error(
-    "No input image found. Place input.png at the project root.",
+    `Multiple .png files found (expected 1): ${rootFiles.join(", ")}. Place a single input.png.`,
   );
 }
