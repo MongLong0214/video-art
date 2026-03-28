@@ -1,6 +1,6 @@
 # PRD: Track Analyzer Phase 2 — SynthDef 확장 + 90-95% 재현
 
-**Version**: 0.5
+**Version**: 0.5.2
 **Author**: Isaac (AI-assisted)
 **Date**: 2026-03-28
 **Status**: Draft
@@ -62,7 +62,7 @@ Phase 1 (분석 엔진)은 완료: 하이브리드 librosa+essentia 18종 지표
 - [ ] AC-1.1: `acid_bass` SynthDef — MoogFF 기반 레조넌트 LPF + filter envelope + accent + slide + distortion
 - [ ] AC-1.2: 파라미터: `freq, amp, dur, pan, cutoff(100-8000), resonance(0-3.9), envDepth(0-8000), envDecay(0.01-1.0), accent(0-1), slide(0/1), slideTime(0.01-0.5), wave(0=saw,1=pulse), dist(0-1)`
 - [ ] AC-1.3: SC3-plugins 감지 시 RLPFD(TB303 전용 필터) 자동 사용. 미설치 시 MoogFF 폴백
-- [ ] AC-1.4: accent=1 시 filter env depth 2배 + resonance +0.5 + filter decay 1.5배. **amplitude dur 불변**. amp 30% boost
+- [ ] AC-1.4: accent=1 시 filter env depth 2배 + resonance +0.5 + filter decay 2배(accentMul). **amplitude dur 불변**. amp 30% boost
 - [ ] AC-1.5: slide=1 시 `Lag.kr(freq, slideTime)` 포르타멘토 활성화
 - [ ] AC-1.6: NRT 호환. doneAction:2 필수
 
@@ -108,8 +108,8 @@ Phase 1 (분석 엔진)은 완료: 하이브리드 librosa+essentia 18종 지표
 - [ ] AC-5.1: `layered_kick` SynthDef — 3-layer: sub(sine+multi-stage pitchEnv) + body(Formant UGen) + click(Impulse+BPF transient)
 - [ ] AC-5.2: 파라미터: `freq, amp, dur, pan, subDecay(0.1-0.8), bodyDecay(0.05-0.3), clickAmp(0-1), bodyFreq(100-500), drive(0-1), punch(0-1)`
 - [ ] AC-5.3: Sub layer: SinOsc + pitch envelope (freq*8 → freq, 50ms)
-- [ ] AC-5.4: Body layer: WhiteNoise → BPF(bodyFreq, rq=0.5) → percussive env
-- [ ] AC-5.5: Click layer: WhiteNoise → HPF(4000) → ultra-short env (1ms attack, 5ms decay)
+- [ ] AC-5.4: Body layer: Formant UGen (bodyFreq 기반) → LPF → percussive env
+- [ ] AC-5.5: Click layer: Impulse → BPF(6100Hz) → ultra-short transient
 - [ ] AC-5.6: punch 파라미터: 킥 초기 피크 부스트 (transient shaper)
 - [ ] AC-5.7: `.tanh` distortion stage (drive 파라미터)
 - [ ] AC-5.8: NRT 호환
@@ -406,7 +406,7 @@ SynthDef(\fm_lead, { |out=0, freq=440, amp=0.5, dur=0.5, pan=0,
 SynthDef(\wavetable_pad, { |out=0, freq=220, amp=0.4, dur=4, pan=0,
     morph=0.5, attack=1, release=1.5,
     filterCutoff=4000, filterRes=0.4, detune=0.005,
-    bufBase=0|  // 8개 연속 버퍼의 시작 인덱스
+    bufBase=8|  // 8개 연속 버퍼 시작 (0-7 SC reserved)
 
     var sig, sig2, env, fenv, bufPos;
 
@@ -1075,11 +1075,11 @@ out/
     ├── analysis.json       # (기존) + pitch_contour 추가
     ├── samples/            # (신규) 추출된 개별 히트/루프
     │   ├── manifest.json   # 샘플 메타데이터
-    │   ├── kick_000.wav
-    │   ├── snare_000.wav
-    │   ├── hat_000.wav
-    │   ├── bass_000.wav
-    │   └── fx_000.wav
+    │   ├── kick_001.wav
+    │   ├── snare_001.wav
+    │   ├── hat_001.wav
+    │   ├── bass_001.wav
+    │   └── fx_001.wav
     ├── calibration.json    # (신규) 복합 유사도 스코어
     └── ...                 # (기존) stems/, preset.json, patterns.tidal
 ```
@@ -1173,7 +1173,7 @@ out/
 | T7 | granular_pad SynthDef + Buffer 로드 | M | T1 |
 | T8 | sample_player SynthDef + sample_extract.py (demucs stem → 개별 히트 추출) | L | T1 |
 | T9 | pitch contour 추출 (torchcrepe → PESTO → pyin 3단 폴백) | M | — |
-| T10 | temporal dynamics 매핑 재설계 (섹션별 분기 + envelope following + accent 추출) | L | T1, T2, T9 |
+| T10 | temporal dynamics 매핑 재설계 (섹션별 분기 + envelope following + accent 추출). **`buildNrtScore`를 `nrt-builder.ts`(신규) 또는 `osc-to-nrt.ts` 확장으로 구현** | L | T1, T2, T9 |
 | T11 | 캘리브레이션 프레임워크 (calibrate.py + calibrate.ts, 5-metric 복합 스코어) | M | — |
 | T12 | 기존 장르 프리셋 업데이트 (신규 SynthDef + 샘플 하이브리드 파라미터) | S | T1-T8 |
 | T13 | sample-utils.ts (manifest 파싱 + NRT buffer 로드 + 하이브리드 stemGroup 해석) | M | T8 |
@@ -1243,6 +1243,9 @@ out/
 ---
 
 ## Changelog
+### v0.5.2 (2026-03-28) — Round 3 P2×5 텍스트 정렬
+- AC-1.4 decay 2배 정렬, AC-5.4/5.5 Formant/Impulse 정렬, §4.7 _001, bufBase=8, T10 파일 위치
+
 ### v0.5.1 (2026-03-28) — Round 2 재리뷰 P1×3 수정 (N1 코드/AC 정렬, N2 NrtScore optional, N3 bufBase)
 
 ### v0.5 (2026-03-28) — 3자 팀 리뷰 (strategist+guardian+boomer) 전면 재설계 (P0×2 + P1×11 + P2×14 해결)
