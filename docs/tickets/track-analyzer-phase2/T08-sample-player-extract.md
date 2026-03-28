@@ -22,6 +22,8 @@ PlayBuf 샘플 재생기 (buf sentinel=-1) + demucs stem 히트 추출 파이프
 - [ ] AC-8: stem_type 우선 분류 (AC-11.3, E18)
 - [ ] AC-9: NRT b_allocRead 상대 경로 (§4.3.1, E22)
 - [ ] AC-10: Python __main__ 경로 검증 (§6)
+- [ ] AC-11: demucs bass stem → bass 원샷 추출 (AC-11.4)
+- [ ] AC-12: demucs other stem → FX 샘플 추출 (AC-11.5)
 
 ## 3. TDD Spec (Red Phase)
 
@@ -61,7 +63,7 @@ PlayBuf 샘플 재생기 (buf sentinel=-1) + demucs stem 히트 추출 파이프
 ### 4.2 Implementation Steps (Green Phase)
 1. sample_player.scd (buf=-1 sentinel)
 2. sample_extract.py (classify_hit, extract_hits, per-type naming, fade, MAX_HITS)
-3. sample-utils.ts (generateSampleBufferCommands, relative paths)
+3. sample-utils.ts (generateSampleBufferCommands, relative paths). **parseStemGroupRef는 T13 범위 — 여기서 구현 금지**
 4. Python unit tests + TS unit tests
 5. NRT 통합 테스트
 

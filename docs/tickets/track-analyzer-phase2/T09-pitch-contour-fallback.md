@@ -58,6 +58,10 @@ torchcrepe→PESTO→pyin 3단 폴백 피치 추적. 프레임 연속성 기반 
 ### 4.3 Refactor Phase
 - 코드 정리, 타입 강화 (Green 이후)
 
+## 4.4 Scope Exclusions
+- AC-12.7 (스케일 양자화) — Phase 3 범위
+- AC-12.8 (Basic Pitch) — Phase 3 범위
+
 ## 5. Edge Cases
 - E2 (전부 미설치), E5 (bass stem 부재), E10 (unvoiced 과다), E20 (MPS 호환)
 

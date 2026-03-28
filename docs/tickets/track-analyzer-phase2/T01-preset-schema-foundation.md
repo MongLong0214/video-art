@@ -21,7 +21,8 @@ Phase 2 신규 7종 SynthDef의 기반 인프라 구축: SYNTHDEF_PARAMS 16종 �
 - [ ] AC-7: BufferAllocator — wavetable:8-39, samples:100-299, granular:300-319
 - [ ] AC-8: allocateConsecutive(wavetable, 8) 성공. allocate(samples, label) 성공
 - [ ] AC-9: 기존 E2E 테스트 assertion 업데이트 (`.toBe(9)` → `.toBe(16)`)
-- [ ] AC-10: 기존 2781 테스트 regression 0
+- [ ] AC-10: 기존 테스트 regression 0
+- [ ] AC-11: **AC-10.3 stemGroups 기본값 확장** — drums/bass/synth/pad/fx에 신규 SynthDef + hybrid ref 포함
 
 ## 3. TDD Spec (Red Phase)
 
@@ -40,6 +41,7 @@ Phase 2 신규 7종 SynthDef의 기반 인프라 구축: SYNTHDEF_PARAMS 16종 �
 | 10 | `BufferAllocator samples range 100-299` | Unit | allocate(samples, 'kick') | 100 |
 | 11 | `BufferAllocator exhaustion throws` | Unit | Fill range then allocate | Error |
 | 12 | `existing presets backward compatible` | Integration | Load all 5 genre presets | all pass |
+| 13 | `stemGroups defaults include hybrid refs` | Unit | default stemGroups | sample_player:kick_001 present |
 
 ### 3.2 Test File Location
 - scripts/lib/genre-preset.test.ts, scripts/lib/synth-stem-map.test.ts, scripts/lib/buffer-allocator.test.ts (신규)

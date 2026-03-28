@@ -8,6 +8,8 @@
 
 ---
 
+> **Scope Warning**: 이 티켓은 6개 독립 모듈(sections schema, RMS envelope, accent 추출, buildNrtScore, n_set 생성, Tidal 섹션)을 포함. 구현 시 nrt-builder.ts를 별도 파일로 분리하고, 각 모듈을 순차 구현할 것.
+
 ## 1. Objective
 정적 매핑→동적 매핑 재설계. 섹션별 파라미터 분기 + envelope following + accent 추출. buildNrtScore를 nrt-builder.ts(신규) 또는 osc-to-nrt.ts 확장으로 구현.
 
@@ -20,6 +22,7 @@
 - [ ] AC-6: NRT: NrtCommand + NrtControlEvent + buildNrtScore (AC-8.6, §4.3.4)
 - [ ] AC-7: Tidal: 섹션별 코드 블록 (AC-8.7)
 - [ ] AC-8: NrtScore 확장 필드 optional (Phase 1 호환)
+- [ ] AC-9: **AC-10.5 조건부 라우팅**: bass_profile.type=acid → acid_bass 대체(synthParams.bass=기본값, stemGroups.bass=["acid_bass"]). type≠acid → acid_bass 미생성
 
 ## 3. TDD Spec (Red Phase)
 
@@ -35,6 +38,13 @@
 | 7 | `buildNrtScore buffer commands at time=0` | Unit | output | bufCmds first |
 | 8 | `buildNrtScore controlEvents at section boundaries` | Unit | 2 sections | n_set events |
 | 9 | `NrtScore optional fields backward compat` | Unit | convertToNrt output | no bufferCommands |
+| 10 | `generatePreset acid → acid_bass in stemGroups` | Unit | bass_profile.type=acid | stemGroups.bass=["acid_bass"] |
+| 11 | `generatePreset sub → no acid_bass` | Unit | bass_profile.type=sub | acid_bass absent |
+| 12 | `Tidal output has section comments` | Unit | 2 sections | drop/break blocks in output |
+| 13 | `RMS envelope maps to compress/drive` | Unit | high-RMS segment | higher drive value |
+| 14 | `overlapping sections → Error` | Unit | start1<end0 | throw |
+| 15 | `section.start < 0 → clamp` | Unit | negative start | clamped to 0 |
+| 16 | `empty sections[] → no controlEvents` | Unit | [] | controlEvents empty |
 
 ### 3.2 Test File Location
 - scripts/lib/track-analyzer.test.ts, scripts/lib/nrt-builder.test.ts (신규)

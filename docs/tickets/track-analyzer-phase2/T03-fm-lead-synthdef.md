@@ -28,6 +28,7 @@
 | 2 | `fm_lead in SYNTH_STEM_MAP` | Unit | map lookup | stem:synth, bus:4 |
 | 3 | `fm_lead.scd compiles` | Integration | sclang load | exit 0 |
 | 4 | `fm_lead NRT render` | Integration | NRT render | WAV > 0 bytes |
+| 5 | `mapFmLead includes iScale/vibrato` | Unit | mapping output | params present |
 
 ### 3.2 Test File Location
 - scripts/lib/track-analyzer.test.ts

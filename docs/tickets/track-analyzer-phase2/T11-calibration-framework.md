@@ -34,6 +34,8 @@ calibrate.py (LUFS pyloudnorm + 5-metric composite + bipartite onset F1) + calib
 | 5 | `onset F1 no double counting` | Unit | [1.0,1.04] vs [1.02] | recall=50% |
 | 6 | `per-stem breakdown present` | Unit | with stems | drums/bass keys |
 | 7 | `calibration JSON schema valid` | Unit | output | all required fields |
+| 8 | `output has mode and lufs_normalized` | Unit | JSON check | both fields present |
+| 9 | `benchmark-tracks.json schema loads` | Unit | JSON load | valid schema |
 
 ### 3.2 Test File Location
 - audio/analyzer/test_calibrate.py (신규), scripts/lib/calibrate.test.ts (신규)

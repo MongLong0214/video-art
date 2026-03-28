@@ -26,6 +26,7 @@ Resonant filter sweep SynthDef. MoogFF self-oscillation (gain→4). LFO 모듈�
 | 1 | `squelch params registered` | Unit | SYNTHDEF_PARAMS | 7 params |
 | 2 | `squelch.scd compiles` | Integration | sclang | exit 0 |
 | 3 | `squelch NRT render` | Integration | NRT render | WAV > 0 bytes |
+| 4 | `squelch high resonance self-osc` | Integration | resonance=0.95 NRT | spectral peak present |
 
 ### 3.2 Test File Location
 - scripts/lib/track-analyzer.test.ts

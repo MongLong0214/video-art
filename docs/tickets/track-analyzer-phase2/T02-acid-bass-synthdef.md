@@ -33,6 +33,7 @@ MoogFF 기반 303-style acid bass SynthDef 구현. accent(filter only, amp boost
 | 6 | `acid_bass.scd compiles` | Integration | sclang load | exit 0 |
 | 7 | `acid_bass NRT render produces WAV` | Integration | NRT render 1 bar | WAV > 0 bytes |
 | 8 | `RLPFD fallback to MoogFF` | Integration | SC3-plugins absent | no error, WAV output |
+| 9 | `acid_bass slide=1 produces slideTime` | Unit | mapAcidBass slide context | slideTime > 0 |
 
 ### 3.2 Test File Location
 - scripts/lib/track-analyzer.test.ts, audio/sc/test-synthdefs.scd

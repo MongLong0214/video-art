@@ -13,7 +13,7 @@ VOsc 8-buffer morphing pad + NRT Score wavetable buffer 할당 (b_alloc + b_gen 
 
 ## 2. Acceptance Criteria
 - [ ] AC-1: wavetable_pad.scd — VOsc morphing + RLPF (AC-3.1)
-- [ ] AC-2: 11개 파라미터 + bufBase (AC-3.2, AC-10.1)
+- [ ] AC-2: 7개 SynthDef-specific 파라미터 (bufBase 포함, AC-10.1). 전체 SynthDef args = 7 specific + 4 universal = 11 total
 - [ ] AC-3: 8개 연속 buffer sine1Msg (AC-3.3)
 - [ ] AC-4: morph→bufpos 매핑 (AC-3.4)
 - [ ] AC-5: 2-voice detune (AC-3.5)

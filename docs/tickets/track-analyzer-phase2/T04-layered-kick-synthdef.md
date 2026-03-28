@@ -20,6 +20,7 @@
 - [ ] AC-6: punch transient shaper (AC-5.6)
 - [ ] AC-7: DetectSilence(0.001, 0.1, doneAction:2)
 - [ ] AC-8: NRT 호환 (AC-5.8)
+- [ ] AC-9: `.tanh` distortion stage — drive=0 vs drive=1 출력 차이 (AC-5.7)
 
 ## 3. TDD Spec (Red Phase)
 
@@ -30,6 +31,7 @@
 | 2 | `layered_kick.scd compiles` | Integration | sclang load | exit 0 |
 | 3 | `layered_kick NRT render` | Integration | NRT render | WAV > 0 bytes |
 | 4 | `layered_kick NRT node frees` | Integration | DetectSilence | no hanging nodes |
+| 5 | `layered_kick drive affects output` | Integration | drive=0 vs 1 | spectral difference |
 
 ### 3.2 Test File Location
 - scripts/lib/track-analyzer.test.ts

@@ -27,10 +27,13 @@
 | # | Test Name | Type | Description | Expected |
 |---|-----------|------|-------------|----------|
 | 1 | `full pipeline acid track` | E2E | Void - Acid Carousel | calibration JSON exists |
-| 2 | `synthesis_only_score > 0` | E2E | score check | > 0 |
-| 3 | `hybrid_score > synthesis_only` | E2E | comparison | hybrid > synth |
+| 2 | `synthesis_only_score > 30` | E2E | score check | > 30 (Phase 1 baseline 초과) |
+| 3 | `hybrid_score >= 60` | E2E | target check | >= 60 (Production Ready 근접) |
 | 4 | `all 16 SynthDefs compile` | Integration | sclang all .scd | exit 0 |
-| 5 | `no test regression` | Regression | full suite | 2781+ PASS |
+| 5 | `no test regression` | Regression | full suite | baseline+ PASS |
+| 6 | `preset has sections with overrides` | E2E | pipeline output | sections[] non-empty |
+| 7 | `sample manifest has typed entries` | E2E | manifest.json | kick/snare keys |
+| 8 | `Tidal output has section blocks` | E2E | patterns.tidal | section comments |
 
 ### 3.2 Test File Location
 - scripts/lib/comprehensive-e2e.test.ts, scripts/lib/pipeline-e2e.test.ts (신규)
