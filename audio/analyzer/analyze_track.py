@@ -410,6 +410,9 @@ def extract_pitch_contour(audio_path, sr=22050):
         import torchcrepe
         import torch
         audio, sr_loaded = torchcrepe.load.audio(audio_path)
+        # Force mono (stereo stems cause squeeze error)
+        if audio.dim() > 1 and audio.shape[0] > 1:
+            audio = audio.mean(dim=0, keepdim=True)
         hop_length = int(sr_loaded / 200)
         pitch, periodicity = torchcrepe.predict(
             audio, sr_loaded, hop_length,
