@@ -1,8 +1,8 @@
 # PRD: Track Analyzer Phase 2 — SynthDef 확장 + 90-95% 재현
 
-**Version**: 0.4
+**Version**: 0.5
 **Author**: Isaac (AI-assisted)
-**Date**: 2026-03-27
+**Date**: 2026-03-28
 **Status**: Draft
 **Size**: XL
 **Depends On**: PRD-track-analyzer.md (Phase 1, v0.3 — Approved/Implemented)
@@ -38,7 +38,7 @@ Phase 1 (분석 엔진)은 완료: 하이브리드 librosa+essentia 18종 지표
 - [ ] G2: **필터 모델링** — MoogFF (core SC) 기반 303-style 레조넌트 필터. accent/slide/distortion 지원. SC3-plugins(RLPFD/DFM1) 감지 시 자동 업그레이드
 - [ ] G3: **피치 추적** — crepe/torchcrepe 또는 librosa pyin 기반 acid bass pitch contour 추출 → 노트 이벤트 변환
 - [ ] G4: **매핑 재설계** — 정적 룩업 → temporal dynamics 매핑. 섹션별(drop/break/build) 파라미터 분기 + envelope following
-- [ ] G5: **캘리브레이션 프레임워크** — 복합 유사도 이중 스코어. `synthesis_only_score` (합성만, 목표 75-85) + `hybrid_score` (합성+샘플, 목표 **98**). MFCC+DTW 30% + spectral 20% + envelope 20% + onset 15% + chroma 15%. 벤치마크 5곡 + LUFS 정규화 + 인간 청취 평가
+- [ ] G5: **캘리브레이션 프레임워크** — 복합 유사도 이중 스코어. `synthesis_only_score` (합성만, 목표 65-75) + `hybrid_score` (합성+샘플, 목표 **80**). MFCC+DTW 30% + spectral 20% + envelope 20% + onset 15% + chroma 15%. 벤치마크 5곡 + LUFS 정규화(pyloudnorm) + MUSHRA 청취 평가
 - [ ] G6: **presetSchema 확장** — 신규 7종 SynthDef 파라미터 + stemGroups 확장. 하위 호환 유지
 - [ ] G7: **Wavetable 인프라** — NRT Score 내 Buffer 할당 + wavetable 생성 파이프라인
 - [ ] G8: **샘플 하이브리드** — demucs stem에서 킥/스네어/기타 샘플 추출 → Buffer 로드 → PlayBuf 재생. 합성 + 샘플링 병행으로 최대 재현율
@@ -62,7 +62,7 @@ Phase 1 (분석 엔진)은 완료: 하이브리드 librosa+essentia 18종 지표
 - [ ] AC-1.1: `acid_bass` SynthDef — MoogFF 기반 레조넌트 LPF + filter envelope + accent + slide + distortion
 - [ ] AC-1.2: 파라미터: `freq, amp, dur, pan, cutoff(100-8000), resonance(0-3.9), envDepth(0-8000), envDecay(0.01-1.0), accent(0-1), slide(0/1), slideTime(0.01-0.5), wave(0=saw,1=pulse), dist(0-1)`
 - [ ] AC-1.3: SC3-plugins 감지 시 RLPFD(TB303 전용 필터) 자동 사용. 미설치 시 MoogFF 폴백
-- [ ] AC-1.4: accent=1 시 filter env depth 2배 + resonance +0.5 + decay 1.5배
+- [ ] AC-1.4: accent=1 시 filter env depth 2배 + resonance +0.5 + filter decay 1.5배. **amplitude dur 불변**. amp 30% boost
 - [ ] AC-1.5: slide=1 시 `Lag.kr(freq, slideTime)` 포르타멘토 활성화
 - [ ] AC-1.6: NRT 호환. doneAction:2 필수
 
@@ -105,7 +105,7 @@ Phase 1 (분석 엔진)은 완료: 하이브리드 librosa+essentia 18종 지표
 **As a** 프로듀서, **I want** 3-layer 킥 드럼 (sub + body + click)으로 프로 수준 킥을 재현하기를.
 
 **Acceptance Criteria:**
-- [ ] AC-5.1: `layered_kick` SynthDef — 3-layer: sub(sine+pitchEnv) + body(filtered noise) + click(HP noise burst)
+- [ ] AC-5.1: `layered_kick` SynthDef — 3-layer: sub(sine+multi-stage pitchEnv) + body(Formant UGen) + click(Impulse+BPF transient)
 - [ ] AC-5.2: 파라미터: `freq, amp, dur, pan, subDecay(0.1-0.8), bodyDecay(0.05-0.3), clickAmp(0-1), bodyFreq(100-500), drive(0-1), punch(0-1)`
 - [ ] AC-5.3: Sub layer: SinOsc + pitch envelope (freq*8 → freq, 50ms)
 - [ ] AC-5.4: Body layer: WhiteNoise → BPF(bodyFreq, rq=0.5) → percussive env
@@ -131,7 +131,7 @@ Phase 1 (분석 엔진)은 완료: 하이브리드 librosa+essentia 18종 지표
 - [ ] AC-7.1: Python analyze_track.py에 피치 추적 추가 (crepe/torchcrepe 또는 librosa pyin)
 - [ ] AC-7.2: demucs bass stem에서 프레임 단위 pitch + confidence 추출
 - [ ] AC-7.3: pitch contour → 노트 이벤트 변환: `[{time, freq, duration, velocity}]`
-- [ ] AC-7.4: slide 감지: 연속 프레임 간 pitch 변화 > **1.5 semitones** 시 slide=1 마킹. 비교 단위: `12 * log2(f1/f2)` (cents 기반, 옥타브 무관)
+- [ ] AC-7.4: slide 감지: **프레임 연속성 기반**. 연속 N프레임(N>=ceil(20ms/hop)) pitch 단조 변화=slide. 즉시 1.5+st 점프=step(slide=0). 단위: `12*log2(f1/f2)`
 - [ ] AC-7.5: 노트 이벤트 → Tidal 패턴 또는 SC Score 이벤트로 변환
 - [ ] AC-7.6: 분석 JSON에 `pitch_contour` 필드 추가
 - [ ] AC-7.7: 피치 추적은 US-12의 3단 폴백 체인을 따른다 (torchcrepe → PESTO → pyin). 전부 미설치 시 skip + warning
@@ -148,7 +148,7 @@ Phase 1 (분석 엔진)은 완료: 하이브리드 librosa+essentia 18종 지표
 - [ ] AC-8.3: envelope following: RMS envelope 기반 동적 파라미터 (compress, drive 등)
 - [ ] AC-8.4: accent pattern 추출: onset strength envelope에서 accent 위치 감지 → acid_bass accent 패턴으로 변환
 - [ ] AC-8.5: 기존 generatePreset 함수와 하위 호환 (sections 미지원 시 단일 프리셋으로 동작)
-- [ ] AC-8.6: **NRT 렌더 경로**: sections[] → NRT Score에서 섹션 전환 시 파라미터 오버라이드 메시지 생성. `osc-to-nrt.ts`에서 sections 읽고 시간 기반 `n_set` 메시지 삽입
+- [ ] AC-8.6: **NRT 렌더 경로** (상세 §4.3.4): `NrtCommand{time,msg}` + `NrtControlEvent{time,nodeId,params,type:n_set}` 타입 정의. `buildNrtScore(oscEvents,bufCmds,sections)` 오케스트레이션. 좌표=절대초. n_set=섹션경계 활성노드
 - [ ] AC-8.7: **Tidal 렌더 경로**: sections[] → 섹션별 Tidal 코드 블록 생성 (drop 패턴, break 패턴 등 분리). `patterns.tidal` 출력에 섹션 주석 포함
 
 ### US-9: 캘리브레이션 프레임워크
@@ -170,12 +170,13 @@ Phase 1 (분석 엔진)은 완료: 하이브리드 librosa+essentia 18종 지표
 - [ ] AC-9.3: 결과 JSON 스키마 (dual-score 통일):
   ```json
   {
-    "synthesis_only_score": 78.5,
-    "hybrid_score": 96.2,
+    "synthesis_only_score": 68.5,
+    "hybrid_score": 78.2,
     "mode": "hybrid",
     "breakdown": {
-      "synthesis_only": {"mfcc": 72, "spectral": 65, "envelope": 80, "attacks": 85, "chroma": 70},
-      "hybrid": {"mfcc": 95, "spectral": 97, "envelope": 96, "attacks": 98, "chroma": 94}
+      "synthesis_only": {"mfcc": 72, "spectral": 55, "envelope": 70, "attacks": 75, "chroma": 65},
+      "hybrid": {"mfcc": 82, "spectral": 72, "envelope": 80, "attacks": 85, "chroma": 76},
+      "per_stem": {"drums": {"hybrid": 82}, "bass": {"hybrid": 76}}
     },
     "weights": {"mfcc": 0.30, "spectral": 0.20, "envelope": 0.20, "attacks": 0.15, "chroma": 0.15},
     "lufs_normalized": true,
@@ -185,10 +186,11 @@ Phase 1 (분석 엔진)은 완료: 하이브리드 librosa+essentia 18종 지표
 - [ ] AC-9.4: 저장: `out/analysis/{filename}/calibration.json`
 - [ ] AC-9.5: per-stem 비교 (demucs 출력 가용 시): drums, bass, vocals, other 개별 스코어
 - [ ] AC-9.6: **이중 스코어 체계**:
-  - `synthesis_only_score`: 합성 SynthDef만 사용한 출력 vs 레퍼런스. 목표 **75-85**
-  - `hybrid_score`: 합성 + 샘플 하이브리드 출력 vs 레퍼런스. 목표 **98**
-  - hybrid >= 95 = "Production Ready", >= 85 = "Good", < 85 = "Needs Work"
-- [ ] AC-9.7: **벤치마크 프로토콜**: 최소 5곡 고정 세트 (psytrance, techno, acid, trance, progressive). **LUFS 정규화** (EBU R128 -14 LUFS) 후 비교. 인간 청취 평가(MOS 1-5) 병행
+  - `synthesis_only_score`: 합성 SynthDef만 vs 레퍼런스(원곡). 목표 **65-75**
+  - `hybrid_score`: 합성+샘플 하이브리드 vs 레퍼런스(원곡). 목표 **80**
+  - hybrid >= 75 = "Production Ready", >= 65 = "Good", < 65 = "Needs Work"
+  - **per-stem 목표**: drums ≥80, bass ≥75, synth ≥70
+- [ ] AC-9.7: **벤치마크 프로토콜**: 5곡 고정(`benchmark-tracks.json`, T11 확정). LUFS=pyloudnorm -14. MUSHRA(ITU-R BS.1534) 최소3명. MOS=informational(gate 아님)
 - [ ] AC-9.8: 캘리브레이션 결과에 `mode: "synthesis_only" | "hybrid"` + `lufs_normalized: boolean` 필드 포함
 
 ### US-10: presetSchema + synth-stem-map 확장
@@ -199,7 +201,7 @@ Phase 1 (분석 엔진)은 완료: 하이브리드 librosa+essentia 18종 지표
   ```
   acid_bass: [cutoff, resonance, envDepth, envDecay, accent, slide, slideTime, wave, dist]
   fm_lead: [mRatio, cRatio, index, iScale, vibrato, drive]
-  wavetable_pad: [morph, attack, release, filterCutoff, filterRes, detune]
+  wavetable_pad: [morph, attack, release, filterCutoff, filterRes, detune, bufBase]
   granular_pad: [buf, density, grainDur, rate, posRand, panWidth]
   layered_kick: [subDecay, bodyDecay, clickAmp, bodyFreq, drive, punch]
   squelch: [sweepStart, sweepEnd, sweepCurve, resonance, source, lfoRate, lfoDepth]
@@ -215,8 +217,8 @@ Phase 1 (분석 엔진)은 완료: 하이브리드 librosa+essentia 18종 지표
   fx: [riser, "sample_player:fx_001"]
   ```
 - [ ] AC-10.4: 기존 5종 장르 프리셋(psytrance.json 등) + 생성 프리셋 하위 호환 유지
-- [ ] AC-10.5: generatePreset 함수에서 bass_profile.type=acid 시 acid_bass 파라미터 자동 매핑
-- [ ] AC-10.6: stemGroups에서 `"sample_player:kick_001"` 형태의 하이브리드 레퍼런스 파싱 지원
+- [ ] AC-10.5: generatePreset: bass_profile.type=acid→acid_bass **대체**(synthParams.bass=기본값 유지(schema required), stemGroups.bass=["acid_bass"]). type≠acid→acid_bass 미생성. 반환: 9 required+7 conditional optional
+- [ ] AC-10.6: stemGroups 파싱: `parseStemGroupRef("sample_player:kick_001")`→`{synthDef,sampleRef}`→manifest→BufferAllocator→buf. 위치: sample-utils.ts
 - [ ] AC-10.7: **synth-stem-map.ts 완전 계약**: (1) `SYNTH_STEM_MAP`에 7종 추가 (acid_bass→bass:2, fm_lead→synth:4, wavetable_pad→synth:4, granular_pad→synth:4, layered_kick→drums:0, squelch→synth:4, sample_player→동적). (2) `SUPPORTED_SYNTHDEFS` size=16. (3) `normalizeParams` 화이트리스트에 신규 파라미터 전부 추가. (4) `mapSamplePlayerBus(hitType)` 함수 추가 (kick/snare/hat→0, bass→2, fx→6, default→4). (5) 기존 E2E 테스트의 하드코딩 assertion (`size).toBe(9)` 등) 업데이트
 
 ### US-11: 샘플 하이브리드 (demucs stem 직접 샘플링)
@@ -228,7 +230,8 @@ Phase 1 (분석 엔진)은 완료: 하이브리드 librosa+essentia 18종 지표
 - [ ] AC-11.3: demucs drums stem에서 개별 킥/스네어/하이햇 히트 자동 추출:
   - onset detection → 개별 히트 세그먼트 분리 (onset ~ 다음 onset 또는 silence)
   - 각 히트를 개별 WAV 파일로 저장: `out/analysis/{name}/samples/kick_001.wav`, `snare_001.wav` 등
-  - 히트 분류: 주파수 스펙트럼 기반 (kick: <200Hz dominant, snare: 200-2kHz peak, hat: >5kHz dominant)
+  - 세그먼트 경계 1ms fade-in/fade-out (클릭 아티팩트 방지). per-type 순번 파일명
+  - 히트 분류: **다중 특성**(low_energy_ratio>.4=kick, high_energy_ratio>.5=hat, flatness>.3=snare, else=unknown). stem_type 우선. MAX_HITS_PER_TYPE=32
 - [ ] AC-11.4: demucs bass stem → bass 원샷 또는 루프 샘플 추출 (pitched segments)
 - [ ] AC-11.5: demucs other stem → FX/atmosphere 샘플 추출 (에너지 기반 세그먼트)
 - [ ] AC-11.6: 추출 샘플을 NRT Score에 Buffer로 로드하여 sample_player 또는 granular_pad에서 재생
@@ -258,9 +261,9 @@ Phase 1 (분석 엔진)은 완료: 하이브리드 librosa+essentia 18종 지표
 - [ ] AC-12.1: 3단 폴백 체인: torchcrepe → PESTO → librosa pyin
 - [ ] AC-12.2: torchcrepe: Viterbi decoder, 5ms hop, fmin=30 fmax=1000, model='full' (CPU 가능)
 - [ ] AC-12.3: PESTO: `pip install pesto-pitch`, 120KB 모델, 12x 실시간 속도
-- [ ] AC-12.4: pyin: librosa 내장, fmin=C1(32.7Hz) fmax=C5(523Hz), 무의존
+- [ ] AC-12.4: pyin: librosa 내장, fmin=C1(32.7Hz) fmax=C6(1047Hz), 무의존. torchcrepe fmax=1000과 동등
 - [ ] AC-12.5: 각 추적기의 periodicity/confidence 기반 품질 자가 평가 → 결과에 `tracker_used` 필드
-- [ ] AC-12.6: 글라이드 감지: 프레임 간 pitch delta > **1.5 semitones** = slide 마킹. 단위: `12 * log2(f1/f2)`. AC-7.4와 동일 기준
+- [ ] AC-12.6: 글라이드 감지: **프레임 연속성** (AC-7.4 동일). N프레임 pitch 단조 변화=slide. 즉시 점프=step
 - [ ] AC-12.7: 스케일 양자화: 분석된 key에 맞는 스케일로 pitch 양자화 (옵션)
 - [ ] AC-12.8: Basic Pitch (Spotify) 옵션: pitch bend 네이티브 캡처 + MIDI 직접 출력 (추가 설치 시)
 
@@ -347,11 +350,11 @@ SynthDef(\acid_bass, { |out=0, freq=110, amp=0.7, dur=0.3, pan=0,
 
     // Amplitude envelope
     aenv = EnvGen.kr(
-        Env.perc(0.005, dur * accentMul, curve: -4),
+        Env.perc(0.005, dur, curve: -4),  // dur 불변 (303: accent는 길이 아닌 음량)
         doneAction: 2
     );
 
-    sig = sig * aenv * amp;
+    sig = sig * aenv * amp * (1 + (accent * 0.3));  // accent amp boost
     sig = Pan2.ar(sig, pan);
     Out.ar(out, sig);
 }).add;
@@ -448,11 +451,10 @@ SynthDef(\granular_pad, { |out=0, freq=220, amp=0.4, dur=4, pan=0,
     pos = TRand.kr(0.1, 0.9, trig) * posRand + ((1 - posRand) * 0.5);
 
     // Granular synthesis
-    sig = GrainBuf.ar(2, trig, grainDur, buf,
-        rate + LFNoise1.kr(4).range(-0.05, 0.05),  // subtle pitch scatter
+    sig = GrainBuf.ar(1, trig, grainDur, buf,  // mono→Pan2 (bus 아키텍처 일관성)
+        rate + LFNoise1.kr(4).range(-0.05, 0.05),
         pos,
-        2,  // interp
-        pan: LFNoise1.kr(2).range(panWidth.neg, panWidth),
+        2,
         envbufnum: -1
     );
 
@@ -464,6 +466,7 @@ SynthDef(\granular_pad, { |out=0, freq=220, amp=0.4, dur=4, pan=0,
 
     sig = sig * env * amp;
     sig = LeakDC.ar(sig);
+    sig = Pan2.ar(sig, pan);
     Out.ar(out, sig);
 }).add;
 ```
@@ -510,7 +513,7 @@ SynthDef(\layered_kick, { |out=0, freq=50, amp=0.8, dur=0.5, pan=0,
     sig = (sig * (1 + (drive * 4))).tanh;
 
     sig = sig * amp;
-    DetectSilence.ar(sig, doneAction: 2);
+    DetectSilence.ar(sig, 0.001, 0.1, doneAction: 2);  // -60dB, 100ms
     sig = Pan2.ar(sig, pan);
     Out.ar(out, sig);
 }).add;
@@ -563,16 +566,17 @@ sig = DFM1.ar(sig, fenv.clip(20, 20000), resonance * 1.5,
 #### 4.2.7 sample_player (PlayBuf 기반 샘플 재생기)
 
 ```supercollider
-SynthDef(\sample_player, { |out=0, buf=0, amp=0.8, dur=1, pan=0,
+SynthDef(\sample_player, { |out=0, buf=(-1), amp=0.8, dur=1, pan=0,
     rate=1.0, startPos=0, attack=0.005, release=0.05,
     hpFreq=20, lpFreq=20000|
 
-    var sig, env, frames;
+    var sig, env, frames, playing;
 
-    frames = BufFrames.kr(buf);
+    playing = (buf >= 0);  // buf sentinel: -1=미할당→무음
+    frames = BufFrames.kr(buf.max(0));
 
     // PlayBuf with rate and start position
-    sig = PlayBuf.ar(1, buf,
+    sig = PlayBuf.ar(1, buf.max(0),  // mono input (sample_extract mono WAV)
         BufRateScale.kr(buf) * rate,
         startPos: startPos * frames,
         doneAction: 0  // envelope handles free
@@ -588,7 +592,7 @@ SynthDef(\sample_player, { |out=0, buf=0, amp=0.8, dur=1, pan=0,
         doneAction: 2
     );
 
-    sig = sig * env * amp;
+    sig = sig * env * amp * playing;  // playing=0 when buf<0
     sig = Pan2.ar(sig, pan);
     Out.ar(out, sig);
 }).add;
@@ -598,58 +602,61 @@ SynthDef(\sample_player, { |out=0, buf=0, amp=0.8, dur=1, pan=0,
 
 ```python
 # audio/analyzer/sample_extract.py
-def extract_hits(stem_path, output_dir, stem_type, sr=22050):
-    """Extract individual hits from demucs drum/bass/other stems."""
-    y, _ = librosa.load(stem_path, sr=sr, mono=True)
+MAX_HITS_PER_TYPE = 32
+FADE_SAMPLES_1MS = 22  # ~1ms at 22050Hz
 
-    # Onset detection
-    onsets = librosa.onset.onset_detect(y=y, sr=sr, units='samples',
-                                         backtrack=True)
+def classify_hit(segment, sr, stem_type):
+    """Multi-feature classification (AC-11.3). stem_type overrides spectral."""
+    if stem_type == 'bass': return 'bass'
+    if stem_type == 'other': return 'fx'
+    S = np.abs(librosa.stft(segment, n_fft=1024))
+    freqs = librosa.fft_frequencies(sr=sr, n_fft=1024)
+    total = np.sum(S) + 1e-10
+    low_ratio = np.sum(S[freqs < 300]) / total
+    high_ratio = np.sum(S[freqs > 3000]) / total
+    flatness = float(np.mean(librosa.feature.spectral_flatness(y=segment)))
+    if low_ratio > 0.4: return 'kick'
+    if high_ratio > 0.5: return 'hat'
+    if flatness > 0.3: return 'snare'
+    return 'unknown'
+
+def extract_hits(stem_path, output_dir, stem_type, sr=22050):
+    """Extract hits with multi-feature classification + per-type naming + fade."""
+    y, _ = librosa.load(stem_path, sr=sr, mono=True)
+    onsets = librosa.onset.onset_detect(y=y, sr=sr, units='samples', backtrack=True)
 
     hits = []
+    type_counters = {}  # per-type sequential numbering
+
     for i, start in enumerate(onsets):
-        # End: next onset or +0.5s (whichever first)
-        end = onsets[i + 1] if i + 1 < len(onsets) else min(start + int(0.5 * sr), len(y))
+        end = onsets[i+1] if i+1 < len(onsets) else min(start + int(0.5*sr), len(y))
+        segment = y[start:end].copy()
+        if len(segment) < int(0.01 * sr): continue
 
-        segment = y[start:end]
-        if len(segment) < int(0.01 * sr):  # skip < 10ms
-            continue
+        # 1ms fade-in/out (E19: click artifact prevention)
+        fade = min(FADE_SAMPLES_1MS, len(segment) // 4)
+        segment[:fade] *= np.linspace(0, 1, fade)
+        segment[-fade:] *= np.linspace(1, 0, fade)
 
-        # Classify hit by spectral centroid
-        centroid = float(np.mean(librosa.feature.spectral_centroid(y=segment, sr=sr)))
-        if stem_type == 'drums':
-            if centroid < 200:
-                hit_type = 'kick'
-            elif centroid < 2000:
-                hit_type = 'snare'
-            else:
-                hit_type = 'hat'
-        elif stem_type == 'bass':
-            hit_type = 'bass'
-        else:
-            hit_type = 'fx'
-
-        # Save individual WAV
-        fname = f"{hit_type}_{i:03d}.wav"
+        hit_type = classify_hit(segment, sr, stem_type)
+        type_counters[hit_type] = type_counters.get(hit_type, 0) + 1
+        fname = f"{hit_type}_{type_counters[hit_type]:03d}.wav"  # per-type sequential
         sf.write(os.path.join(output_dir, fname), segment, sr)
 
-        hits.append({
-            'file': fname,
-            'type': hit_type,
-            'duration': round(len(segment) / sr, 3),
-            'peak_freq': round(centroid, 1),
-            'onset_time': round(start / sr, 3),
-        })
+        hits.append({'file': fname, 'type': hit_type,
+                     'duration': round(len(segment)/sr, 3),
+                     'onset_time': round(start/sr, 3)})
 
-    # Write manifest — 단수형 키 (AC-11.8 명명 규약)
+    # MAX_HITS_PER_TYPE pruning (E17)
     manifest = {}
     for h in hits:
-        key = h['type']  # kick, snare, hat, bass, fx (단수형)
-        manifest.setdefault(key, []).append(h)
+        manifest.setdefault(h['type'], []).append(h)
+    for t in manifest:
+        if len(manifest[t]) > MAX_HITS_PER_TYPE:
+            manifest[t] = manifest[t][:MAX_HITS_PER_TYPE]
 
     with open(os.path.join(output_dir, 'manifest.json'), 'w') as f:
         json.dump(manifest, f, indent=2)
-
     return manifest
 ```
 
@@ -660,7 +667,7 @@ def extract_hits(stem_path, output_dir, stem_type, sr=22050):
 ```typescript
 // scripts/lib/buffer-allocator.ts
 const BUFFER_RANGES = {
-  wavetable: { start: 0, end: 7 },       // 8 buffers (VOsc consecutive)
+  wavetable: { start: 8, end: 39 },      // 32 buffers (max 4 VOsc sets). 0-7 SC reserved
   samples:   { start: 100, end: 299 },   // 200 buffers (extracted hits/loops)
   granular:  { start: 300, end: 319 },   // 20 buffers (grain sources)
   reserved:  { start: 320, end: 1023 },  // future use
@@ -703,6 +710,7 @@ export class BufferAllocator {
 export const generateSampleBufferCommands = (
   manifestPath: string,
   allocator: BufferAllocator,
+  basePath: string,  // NrtScore.metadata.basePath
 ): NrtCommand[] => {
   const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
   const commands: NrtCommand[] = [];
@@ -710,10 +718,11 @@ export const generateSampleBufferCommands = (
   for (const [type, hits] of Object.entries(manifest)) {
     for (const hit of hits as { file: string }[]) {
       const bufNum = allocator.allocate('samples', hit.file);
-      const filePath = path.join(path.dirname(manifestPath), hit.file);
+      const absPath = path.join(path.dirname(manifestPath), hit.file);
+      const relPath = path.relative(basePath, absPath);  // 이식성
       commands.push({
         time: 0,
-        msg: ["/b_allocRead", bufNum, filePath, 0, 0], // full file
+        msg: ["/b_allocRead", bufNum, relPath, 0, 0], // relative to basePath
       });
     }
   }
@@ -793,6 +802,38 @@ export const generateWavetableCommands = (bufBase: number): NrtCommand[] => {
 };
 ```
 
+
+### 4.3.4 NRT Integration Architecture (신규)
+
+> **[P0-1 fix]** buffer commands + synth events + section control events 통합
+
+```typescript
+// NRT 통합 타입
+interface NrtCommand { time: number; msg: (string | number)[]; }
+interface NrtControlEvent { time: number; nodeId: number; params: Record<string, number>; type: 'n_set'; }
+
+// 확장 NrtScore
+interface NrtScore {
+  metadata: { duration: number; eventCount: number; mapped: number; skipped: number; skipRate: number; basePath?: string; };
+  bufferCommands?: NrtCommand[];      // time=0 (optional — Phase 1 호환)
+  events: NrtEvent[];                  // synth events (기존, required)
+  controlEvents?: NrtControlEvent[];   // section overrides (optional)
+  // convertToNrt() 반환은 events만. buildNrtScore()가 확장 필드 추가.
+}
+
+// 3소스 병합 오케스트레이션
+export const buildNrtScore = (
+  oscEvents: OscEvent[],
+  bufferCommands: NrtCommand[],
+  sections: SectionOverride[],
+): NrtScore => {
+  // 1. convertToNrt(oscEvents) → base NrtScore + nodeIdMap
+  // 2. bufferCommands 삽입 (time=0, synth events 앞)
+  // 3. sections → 각 경계에서 활성 노드에 n_set 생성
+  // 4. 정렬: bufferCommands → events+controlEvents (시간순)
+};
+```
+
 ### 4.4 Python 분석 확장 (피치 추적 — 3단 폴백)
 
 > 리서치 출처: torchcrepe (Viterbi decoder, 5ms hop), PESTO (120KB), librosa pyin
@@ -845,7 +886,7 @@ def extract_pitch_contour(audio_path, sr=22050):
     try:
         audio, sr_loaded = librosa.load(audio_path, sr=sr, mono=True)
         f0, voiced_flag, voiced_probs = librosa.pyin(
-            audio, fmin=30, fmax=600, sr=sr,
+            audio, fmin=30, fmax=1047, sr=sr,  # C6=1047Hz (AC-12.4)
             frame_length=2048, hop_length=512,
         )
         tracker_used = 'pyin'
@@ -855,9 +896,9 @@ def extract_pitch_contour(audio_path, sr=22050):
 
 
 def pitch_to_note_events(pitch, confidence, sr=22050, hop_length=512,
-                         conf_threshold=0.5, semitone_threshold=1.5):
-    """Convert pitch contour to note events with slide detection.
-    Uses cents-based comparison (log2) instead of Hz absolute — consistent across octaves."""
+                         conf_threshold=0.5, note_threshold=1.5, min_slide_dur=0.02):
+    """Convert pitch contour to note events with frame-continuity slide detection.
+    slide=True when pitch transitions gradually (>=min_slide_dur). step=instantaneous jump."""
     if pitch is None:
         return []
 
@@ -867,9 +908,12 @@ def pitch_to_note_events(pitch, confidence, sr=22050, hop_length=512,
             return float('inf')
         return abs(12 * np.log2(f1 / f2))
 
+    min_slide_frames = max(2, int(min_slide_dur * sr / hop_length))
     events = []
     current_note = None
     note_start = 0
+    transition_frames = 0  # frames with active pitch drift
+    prev_freq = 0
 
     for i, (freq, conf) in enumerate(zip(pitch, confidence)):
         time = i * hop_length / sr
@@ -878,28 +922,37 @@ def pitch_to_note_events(pitch, confidence, sr=22050, hop_length=512,
         if is_voiced:
             if current_note is None:
                 current_note = freq
+                prev_freq = freq
                 note_start = time
-            elif semitone_diff(freq, current_note) > semitone_threshold:
-                # Note change — slide if < 4 semitones (303 glide range)
-                is_slide = semitone_diff(freq, current_note) < semitone_threshold * 3
-                events.append({
-                    "time": round(note_start, 3),
-                    "freq": round(current_note, 1),
-                    "duration": round(time - note_start, 3),
-                    "velocity": round(float(np.mean(confidence[max(0,i-5):i])), 2),
-                    "slide": is_slide,
-                })
-                current_note = freq
-                note_start = time
+                transition_frames = 0
+            else:
+                total_drift = semitone_diff(freq, current_note)
+                frame_delta = semitone_diff(freq, prev_freq)
+                if total_drift > note_threshold:
+                    is_slide = transition_frames >= min_slide_frames
+                    events.append({
+                        "time": round(note_start, 3),
+                        "freq": round(current_note, 1),
+                        "duration": round(time - note_start, 3),
+                        "velocity": round(float(np.mean(confidence[max(0,i-5):i])), 2),
+                        "slide": is_slide,
+                    })
+                    current_note = freq
+                    note_start = time
+                    transition_frames = 0
+                elif frame_delta > 0.1:
+                    transition_frames += 1
+                prev_freq = freq
         elif current_note is not None:
             events.append({
                 "time": round(note_start, 3),
                 "freq": round(current_note, 1),
                 "duration": round(time - note_start, 3),
                 "velocity": round(float(np.mean(confidence[max(0,i-5):i])), 2),
-                "slide": False,
+                "slide": transition_frames >= min_slide_frames,
             })
             current_note = None
+            transition_frames = 0
 
     return events
 ```
@@ -910,8 +963,17 @@ def pitch_to_note_events(pitch, confidence, sr=22050, hop_length=512,
 # audio/analyzer/calibrate.py — 복합 유사도 스코어
 def composite_similarity(ref_path, synth_path, sr=22050):
     """Multi-dimensional similarity score. Returns 0-100."""
+    import pyloudnorm as pyln
     y_ref, _ = librosa.load(ref_path, sr=sr)
     y_synth, _ = librosa.load(synth_path, sr=sr)
+
+    # LUFS normalization (EBU R128 -14)
+    meter = pyln.Meter(sr)
+    for y, name in [(y_ref, "ref"), (y_synth, "synth")]:
+        loud = meter.integrated_loudness(y)
+        if loud > -70:
+            if name == "ref": y_ref = pyln.normalize.loudness(y_ref, loud, -14.0)
+            else: y_synth = pyln.normalize.loudness(y_synth, loud, -14.0)
 
     scores = {}
 
@@ -941,8 +1003,13 @@ def composite_similarity(ref_path, synth_path, sr=22050):
     # 4. Onset F1 — 15%
     ref_onsets = librosa.onset.onset_detect(y=y_ref, sr=sr, units='time')
     synth_onsets = librosa.onset.onset_detect(y=y_synth, sr=sr, units='time')
-    matched = sum(1 for r in ref_onsets
-                  if any(abs(r - s) < 0.05 for s in synth_onsets))
+    # Bipartite matching (중복 매칭 방지)
+    used = set()
+    matched = 0
+    for r in ref_onsets:
+        for j, s in enumerate(synth_onsets):
+            if j not in used and abs(r - s) < 0.05:
+                matched += 1; used.add(j); break
     prec = matched / max(len(synth_onsets), 1)
     rec = matched / max(len(ref_onsets), 1)
     f1 = 2 * prec * rec / max(prec + rec, 1e-10)
@@ -1038,10 +1105,17 @@ out/
 | E15 | Buffer index 충돌 (wavetable vs sample) | BufferAllocator range partition으로 방지 (§4.3) | P1 |
 | E16 | bufBase > 1016 (VOsc 8개 초과 가능 범위) | `bufBase + 7 >= MAX_BUFFERS` 가드. 에러 throw | P2 |
 | E17 | 샘플 추출 수백 개 (긴 드럼 스템) | MAX_HITS_PER_TYPE=32 제한. 초과 시 에너지 상위 32개만 보존 | P2 |
+| E18 | bass stem 킥 오분류 (저주파 percussive) | stem_type 파라미터가 centroid 분류보다 우선 | P2 |
+| E19 | 샘플 세그먼트 경계 클릭 아티팩트 | 1ms fade-in/fade-out 적용 | P2 |
+| E20 | torchcrepe Apple Silicon MPS 호환 | device="cpu" 강제 (이미 스펙에 명시) | P3 |
+| E21 | wavetable_pad attack+release > dur | sustain=max(0, dur-attack-release) 가드 | P3 |
+| E22 | NRT Score b_allocRead 절대 경로 | basePath 기준 상대 경로 사용 (§4.3.1) | P2 |
 
 ## 6. Security & Permissions
 
 - SynthDef `.scd` 파일: 로컬 전용, execFile array-form 호출 (기존 패턴)
+- **Python 서브프로세스**: 모든 Python 호출은 array-form execFile/spawn (shell interpolation 금지). 경로 인자는 validateFilePath 통과 필수. cwd=PROJECT_ROOT
+- **Python 측 경로 검증**: calibrate.py/sample_extract.py __main__에서 os.path.realpath+commonpath 검증
 - calibrate.py: 로컬 전용, 외부 네트워크 접근 없음
 - torchcrepe: PyTorch 의존. pip install 시 사용자 확인 권장
 - wavetable Buffer: NRT Score 내 메시지로만 생성 (실시간 서버 불필요)
@@ -1057,7 +1131,8 @@ out/
 | pitch contour 추출 (5분 stem, pyin 폴백) | < 10초 | time 측정 |
 | 캘리브레이션 (5분 트랙 pair) | < 20초 | time 측정 |
 | 전체 분석 + pitch (demucs 제외) | < 90초 | time 측정 |
-| 메모리 (torchcrepe tiny model) | < 500MB | Activity Monitor |
+| 메모리 (torchcrepe full model, CPU) | < 1.5GB | Activity Monitor |
+| 메모리 (sample_extract.py, 10분 stem) | < 500MB | Activity Monitor |
 
 ## 8. Testing Strategy
 
@@ -1071,12 +1146,13 @@ out/
 - **pitch → note events**: pitch contour → note event 변환 + slide 감지
 
 ### 8.2 Integration Tests
-- **SynthDef NRT 렌더**: 각 6종 SynthDef로 NRT 렌더 → WAV 출력 존재 + > 0 bytes
+- **SynthDef NRT 렌더**: 각 **7종** SynthDef로 NRT 렌더 → WAV 출력 존재 + > 0 bytes
 - **acid_bass + MoogFF**: 실제 sclang 실행 + MoogFF SynthDef 컴파일 확인
 - **wavetable NRT**: Buffer 할당 + VOsc 렌더 → WAV 출력
 - **granular NRT**: Buffer 로드 + GrainBuf 렌더 → WAV 출력
-- **캘리브레이션**: 동일 파일 pair → score ≈ 100. 무관 파일 → score < 50
-- **기존 1332+ 테스트 regression 0**
+- **sample_player NRT**: manifest(3kick+2snare) → b_allocRead → WAV 렌더 → onset≥3
+- **캘리브레이션**: 동일 파일 pair → score ≈ 100. 무관 파일 → score < 50. LUFS 정규화 확인
+- **기존 2781 테스트 regression 0**
 
 ### 8.3 Edge Case Tests
 - SC3-plugins 미설치 시 MoogFF 폴백 동작
@@ -1104,7 +1180,10 @@ out/
 | T14 | E2E: 레퍼런스 분석 → 샘플 추출 → 프리셋 생성 → NRT 렌더 → 캘리브레이션 | L | ALL |
 
 ### 9.1 Rollback Plan
+0. **T1 검증 게이트**: T1 머지 후 전체 기존 테스트 실행 → PASS 확인 후 T2+ 진행
 1. 신규 SynthDef `.scd` 파일 삭제 (7개)
+1a. genre-preset.ts: presetSchema → 9 required keys only 복원
+1b. synth-stem-map.ts: SYNTH_STEM_MAP → 9 entries only 복원
 2. genre-preset.ts: SYNTHDEF_PARAMS에서 7종 제거, presetSchema optional 필드 제거
 3. track-analyzer.ts: temporal dynamics 코드 revert
 4. analyze_track.py: pitch_contour 코드 제거
@@ -1140,8 +1219,8 @@ out/
 
 | Metric | Baseline (Phase 1) | Target (Phase 2) | Measurement |
 |--------|-------------------|-------------------|-------------|
-| `synthesis_only_score` | 30-50 (추정) | **75-85** | composite_similarity(mode='synthesis') |
-| `hybrid_score` | N/A | **98** | composite_similarity(mode='hybrid') |
+| `synthesis_only_score` | 30-50 (추정) | **65-75** | composite_similarity(mode='synthesis') |
+| `hybrid_score` | N/A | **80** | composite_similarity(mode='hybrid') |
 | SynthDef 종류 | 9종 | **16종** (9 기존 + 7 신규) | `ls audio/sc/synthdefs/*.scd` |
 | 사운드 소스 | 합성만 | **합성 + 샘플 하이브리드** | stemGroups 하이브리드 |
 | acid bass 재현 | 불가 (SynthDef 없음) | **가능** (MoogFF 303 + accent + slide) | NRT 렌더 + 청취 |
@@ -1151,19 +1230,37 @@ out/
 | 매핑 방식 | 정적 (전곡 평균) | **동적** (섹션별 + envelope + accent + NRT 적용) | sections[] + n_set |
 | 샘플 활용 | 없음 | **demucs stem → 개별 히트 추출 + PlayBuf** | manifest.json |
 | 벤치마크 | 없음 | **5곡 고정 세트 + LUFS 정규화 + MOS** | calibration report |
-| 테스트 | 64 (Phase 1) | **64 + 100+ (신규)** = 164+ | vitest 결과 |
+| 테스트 | 2781 (현재) | **2781 + 100+ (신규)** = 2881+ | vitest 결과 |
 
 ## 12. Open Questions
 
 - [ ] OQ-1: SC3-plugins 설치 가이드 — macOS (Homebrew? 수동 빌드?) 최적 경로 결정 필요
 - [ ] OQ-2: 캘리브레이션 가중치 최적화 — 실제 A/B 테스트로 조정 필요 (현재 가중치는 문헌 기반 초기값)
-- [ ] OQ-3: granular_pad에 demucs stem 직접 로드 vs 별도 sample buffer — 메모리/성능 트레이드오프
+- [x] OQ-3: **해결** — granular range(300-319) 별도 사용. stem 전체 로드 금지(max 10초 트림). SC NRT memSize 명시 필요
 - [ ] OQ-4: torchcrepe 'tiny' vs 'full' 모델 — 정확도 vs 속도 트레이드오프 (실측 필요)
-- [ ] OQ-5: temporal dynamics 매핑의 sections granularity — 4섹션(intro/build/drop/outro) vs 더 세분화
+- [x] OQ-5: **해결** — Phase 2 baseline=4섹션(intro/build/drop/outro). 세분화는 Phase 3 범위
 
 ---
 
 ## Changelog
+### v0.5.1 (2026-03-28) — Round 2 재리뷰 P1×3 수정 (N1 코드/AC 정렬, N2 NrtScore optional, N3 bufBase)
+
+### v0.5 (2026-03-28) — 3자 팀 리뷰 (strategist+guardian+boomer) 전면 재설계 (P0×2 + P1×11 + P2×14 해결)
+- **[P0-1 fix]** NRT Integration Architecture 신규 §4.3.4: NrtCommand+NrtControlEvent+buildNrtScore 타입/함수 명세
+- **[P0-2 fix]** hybrid_score 목표 98→**80**, synthesis_only 75-85→**65-75**. per-stem 목표 추가. 레퍼런스=원곡(순환측정 방지)
+- **[P1-1 fix]** acid_bass accentMul→filter envelope만. amplitude dur 불변. amp 30% boost
+- **[P1-2 fix]** slide 감지→프레임 연속성 기반 재설계 (AC-7.4/12.6/§4.4)
+- **[P1-3 fix]** LUFS 정규화 pyloudnorm 추가 (calibrate.py)
+- **[P1-4 fix]** GrainBuf mono→Pan2 (bus 아키텍처 일관성)
+- **[P1-5 fix]** b_allocRead 상대 경로 + basePath
+- **[P1-6 fix]** OQ-3(granular 별도 range)/OQ-5(4섹션 baseline) 해결
+- **[P1-7 fix]** Onset F1 bipartite matching (중복 매칭 방지)
+- **[P1-8 fix]** acid_bass 대체 라우팅 명세 (AC-10.5)
+- **[P1-9 fix]** Python subprocess array-form + 경로 검증 (§6)
+- **[P1-10 fix]** sample_player NRT 통합 테스트 추가 (§8.2)
+- **[P1-11 fix]** pyin fmax 523→1047Hz (AC-12.4)
+- **[P2 fixes]** 히트 분류 다중 특성, stemGroups 파싱 체인, Buffer 0-7 SC reserved, DetectSilence threshold, wavetable range 확장(8-39), torchcrepe 메모리 1.5GB, T1 롤백 게이트, AC-5.1/8.1 텍스트 정렬, 벤치마크/MOS 명세, 테스트 베이스라인 2781, Edge cases E18-E22 추가, sample_player buf sentinel=-1
+
 ### v0.4 (2026-03-27) — Boomer 수렴 루프 Round 2 (5건 스펙 일관성 수정)
 - **[fix]** AC-9.3 dual-score 스키마 통일: `{synthesis_only_score, hybrid_score, mode, breakdown, lufs_normalized}`
 - **[fix]** slide 감지 단위 통일: AC-7.4 + AC-12.6 + §4.4 모두 `1.5 semitones` (cents 기반 `12*log2(f1/f2)`)
