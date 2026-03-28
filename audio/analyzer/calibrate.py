@@ -124,7 +124,10 @@ if __name__ == "__main__":
     result = composite_similarity(ref, synth)
 
     if len(sys.argv) > 3:
-        out_path = sys.argv[3]
+        out_path = os.path.realpath(sys.argv[3])
+        if not out_path.startswith(project_root):
+            print(f"Error: output path outside project root", file=sys.stderr)
+            sys.exit(1)
         os.makedirs(os.path.dirname(out_path) or '.', exist_ok=True)
         with open(out_path, 'w') as f:
             json.dump(result, f, indent=2)

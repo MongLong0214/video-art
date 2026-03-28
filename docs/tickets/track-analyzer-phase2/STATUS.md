@@ -2,7 +2,7 @@
 
 **PRD**: docs/prd/PRD-track-analyzer-phase2.md (v0.5.2, Approved)
 **Size**: XL
-**Current Phase**: 5 (TDD Development)
+**Current Phase**: 7 (Complete)
 
 ## Tickets
 
@@ -19,9 +19,9 @@
 | T9 | pitch contour 3-tier fallback | M | Done | PASS | — | |
 | T10 | temporal dynamics + buildNrtScore | L | Done | PASS | T1,T2,T9 | |
 | T11 | calibration framework | M | Done | PASS | — | |
-| T12 | genre preset update | S | Done | PASS | T1-T8 | psytrance updated |
+| T12 | genre preset update | S | Done | PASS | T1-T8 | all 5 genres |
 | T13 | sample-utils.ts | M | Done | PASS | T1,T8 | |
-| T14 | E2E integration | L | Todo | - | ALL | Final |
+| T14 | E2E integration + polish | L | Done | PASS | ALL | |
 
 ## Review History
 
@@ -29,5 +29,5 @@
 |-------|-------|---------|----|----|-----|-------|
 | 2 (PRD) | 3 | ALL PASS | 0 | 0 | 0 | v0.5.2 |
 | 4 (Tickets) | 1 | ALL PASS | 0 | 0 | 0 | After fixes |
-| 5 (Dev) | - | In Progress | - | - | - | T1-T13 Done |
-| 6 (Final) | - | Pending | - | - | - | After T14 |
+| 5 (Dev) | 1 | PASS | 0 | 0 | 0 | T1-T14 Done |
+| 6 (Final) | 1 | ALL PASS | 0 | 0 | 4 | P1x4 fixed |

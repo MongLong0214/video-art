@@ -35,7 +35,8 @@
     "research:run": "tsx scripts/research/run-once.ts",
     "research:eval": "tsx scripts/research/evaluate.ts",
     "research:report": "tsx scripts/research/report.ts",
-    "research:promote": "tsx scripts/research/promote.ts"
+    "research:promote": "tsx scripts/research/promote.ts",
+    "calibrate": "tsx scripts/calibrate.ts"
   },
   "dependencies": {
     "dotenv": "^17.3.1",

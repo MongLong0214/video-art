@@ -485,7 +485,7 @@ def pitch_to_note_events(pitch, confidence, sr=22050, hop_length=512,
                         "time": round(note_start, 3),
                         "freq": round(float(current_note), 1),
                         "duration": round(time - note_start, 3),
-                        "velocity": round(float(np.nanmean(confidence[max(0,i-5):i])), 2),
+                        "velocity": round(float(np.nanmean(confidence[max(0,i-5):max(i,1)])), 2),
                         "slide": is_slide,
                     })
                     current_note = freq
@@ -499,7 +499,7 @@ def pitch_to_note_events(pitch, confidence, sr=22050, hop_length=512,
                 "time": round(note_start, 3),
                 "freq": round(float(current_note), 1),
                 "duration": round(time - note_start, 3),
-                "velocity": round(float(np.nanmean(confidence[max(0,i-5):i])), 2),
+                "velocity": round(float(np.nanmean(confidence[max(0,i-5):max(i,1)])), 2),
                 "slide": transition_frames >= min_slide_frames,
             })
             current_note = None
@@ -660,8 +660,17 @@ if __name__ == "__main__":
         print(f"Usage: python3 {sys.argv[0]} <audio_file> <output_dir>", file=sys.stderr)
         sys.exit(1)
 
-    if not os.path.exists(sys.argv[1]):
-        print(f"Error: File not found: {sys.argv[1]}", file=sys.stderr)
+    # Path validation
+    project_root = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', '..'))
+    file_path = os.path.realpath(sys.argv[1])
+    out_dir = os.path.realpath(sys.argv[2])
+    for p, label in [(file_path, "input"), (out_dir, "output")]:
+        if not p.startswith(project_root):
+            print(f"Error: {label} path outside project root", file=sys.stderr)
+            sys.exit(1)
+
+    if not os.path.exists(file_path):
+        print(f"Error: File not found: {file_path}", file=sys.stderr)
         sys.exit(1)
 
-    analyze(sys.argv[1], sys.argv[2])
+    analyze(file_path, out_dir)
