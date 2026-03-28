@@ -1,20 +1,13 @@
 // Pipeline Runner — Full pipeline orchestrator for autoresearch
-// layers decomposition → Vite + Puppeteer capture → ffmpeg encode → video.mp4
-// Deterministic output path: .cache/research/current/video.mp4
+// layers decomposition → export-layered (subprocess) → video.mp4
+// Output: .cache/research/current/video.mp4
 
-import { execFileSync, exec, execFile, type ChildProcess } from "child_process";
+import { execFileSync } from "child_process";
 import fs from "node:fs";
 import path from "node:path";
-import puppeteer, { type Browser } from "puppeteer";
-import { sceneSchema } from "../../src/lib/scene-schema.js";
-import { waitForServer } from "../lib/browser-utils.js";
 
 const RESEARCH_DIR = ".cache/research/current";
-const RESEARCH_FRAMES_DIR = `${RESEARCH_DIR}/frames`;
 const RESEARCH_VIDEO_PATH = `${RESEARCH_DIR}/video.mp4`;
-const RESEARCH_MANIFEST_GLOB = "out/layered";
-const VITE_PORT = 5298;
-const FPS = 60;
 
 export interface PipelineResult {
   videoPath: string;
@@ -46,103 +39,53 @@ function runLayerDecomposition(
   return archiveMatch?.[1]?.trim() ?? "";
 }
 
-// ── Step 2: Vite + Puppeteer Capture + ffmpeg Encode ────────
+// ── Step 2: Export Video (subprocess) ───────────────────────
 
-function startVite(cwd: string): ChildProcess {
-  return exec(`npx vite --port ${VITE_PORT}`, { cwd });
-}
-
-async function captureAndEncode(cwd: string): Promise<string> {
-  // Read scene config
-  const scenePath = path.join(cwd, "public/scene.json");
-  if (!fs.existsSync(scenePath)) {
-    throw new Error("public/scene.json not found after pipeline-layers");
-  }
-  const sceneJson = JSON.parse(fs.readFileSync(scenePath, "utf-8"));
-  const config = sceneSchema.parse(sceneJson);
-  const duration = config.duration;
-  const totalFrames = FPS * duration;
-  const [width, height] = config.resolution;
-
-  // Prepare output dirs
-  const framesDir = path.join(cwd, RESEARCH_FRAMES_DIR);
-  fs.mkdirSync(framesDir, { recursive: true });
-
-  // Start Vite
-  const viteProcess = startVite(cwd);
-  const killVite = () => {
-    try { viteProcess.kill(); } catch { /* already dead */ }
-  };
-  process.on("exit", killVite);
-
-  let browser: Browser | null = null;
-
-  try {
-    await waitForServer(`http://localhost:${VITE_PORT}`);
-
-    browser = await puppeteer.launch({
-      headless: true,
-      args: ["--no-sandbox", "--use-gl=angle", "--disable-gpu-compositing"],
-    });
-
-    const page = await browser.newPage();
-    await page.setViewport({ width, height });
-    await page.goto(`http://localhost:${VITE_PORT}/?mode=layered`, {
-      waitUntil: "networkidle0",
-    });
-
-    await page.waitForFunction("window.__captureReady === true", {
-      timeout: 15000,
-    });
-
-    await page.evaluate(`window.__startCapture(${FPS})`);
-
-    for (let i = 0; i < totalFrames; i++) {
-      const dataUrl = (await page.evaluate("window.__captureFrame()")) as string;
-      const base64 = dataUrl.replace(/^data:image\/png;base64,/, "");
-      fs.writeFileSync(
-        path.join(framesDir, `frame_${String(i).padStart(5, "0")}.png`),
-        Buffer.from(base64, "base64"),
-      );
-
-      if ((i + 1) % 60 === 0 || i === totalFrames - 1) {
-        const pct = (((i + 1) / totalFrames) * 100).toFixed(0);
-        process.stdout.write(`\r  capture: ${i + 1}/${totalFrames} (${pct}%)`);
-      }
-    }
-    console.log(""); // newline after progress
-  } finally {
-    await browser?.close().catch(() => {});
-    killVite();
-    process.removeListener("exit", killVite);
-  }
-
-  // Encode with ffmpeg
-  const outputPath = path.join(cwd, RESEARCH_VIDEO_PATH);
-  await new Promise<void>((resolve, reject) => {
-    execFile("ffmpeg", [
-      "-y",
-      "-framerate", String(FPS),
-      "-i", path.join(framesDir, "frame_%05d.png"),
-      "-c:v", "libx264",
-      "-pix_fmt", "yuv420p",
-      "-crf", "18",
-      "-preset", "fast",
-      "-movflags", "+faststart",
-      outputPath,
-    ], (err) => {
-      if (err) reject(new Error(`ffmpeg encode failed: ${err.message}`));
-      else resolve();
-    });
+function runExportLayered(cwd: string): string {
+  // Use export-layered.ts as subprocess — it manages its own Vite + Puppeteer lifecycle
+  // Title "_research" gives predictable archive path
+  // Use stdio: inherit to avoid stdout buffer deadlock on large ffmpeg output
+  execFileSync("npx", [
+    "tsx", "scripts/export-layered.ts", "--title", "_research",
+  ], {
+    cwd,
+    timeout: 600_000, // 10 min for large exports
+    stdio: "inherit",
   });
 
-  // Cleanup frames
-  fs.rmSync(framesDir, { recursive: true, force: true });
+  // Find the output video: out/layered/*_-research/_research.mp4
+  const layeredDir = path.join(cwd, "out/layered");
+  if (!fs.existsSync(layeredDir)) {
+    throw new Error("out/layered/ not found after export");
+  }
 
-  return outputPath;
+  const dirs = fs.readdirSync(layeredDir)
+    .filter((d) => d.includes("_research"))
+    .sort()
+    .reverse();
+
+  for (const dir of dirs) {
+    const mp4Files = fs.readdirSync(path.join(layeredDir, dir))
+      .filter((f) => f.endsWith(".mp4"));
+    if (mp4Files.length > 0) {
+      return path.join(layeredDir, dir, mp4Files[0]);
+    }
+  }
+
+  throw new Error("export-layered did not produce a video file");
 }
 
-// ── Step 3: Find Manifest ───────────────────────────────────
+// ── Step 3: Copy Video to Research Dir ──────────────────────
+
+function copyToResearchDir(videoPath: string, cwd: string): string {
+  const destDir = path.join(cwd, RESEARCH_DIR);
+  fs.mkdirSync(destDir, { recursive: true });
+  const dest = path.join(cwd, RESEARCH_VIDEO_PATH);
+  fs.copyFileSync(videoPath, dest);
+  return dest;
+}
+
+// ── Step 4: Find Manifest ───────────────────────────────────
 
 function findManifest(archiveDir: string): string {
   if (!archiveDir) return "";
@@ -159,22 +102,22 @@ export async function runFullPipeline(
 ): Promise<PipelineResult> {
   const startMs = Date.now();
 
-  // Ensure research output dir exists
-  fs.mkdirSync(path.join(cwd, RESEARCH_DIR), { recursive: true });
-
-  // Step 1: Layer decomposition (Replicate API → scene.json + layers)
+  // Step 1: Layer decomposition (Replicate API → scene.json + layers in public/)
   console.log("  [pipeline] Layer decomposition...");
   const archiveDir = runLayerDecomposition(inputPath, cwd, config);
 
-  // Step 2: Video export (Vite + Puppeteer + ffmpeg)
-  console.log("  [pipeline] Video capture + encode...");
-  const videoPath = await captureAndEncode(cwd);
+  // Step 2: Video export (Vite + Puppeteer + ffmpeg via export-layered subprocess)
+  console.log("  [pipeline] Video export (Vite + Puppeteer + ffmpeg)...");
+  const exportedVideoPath = runExportLayered(cwd);
 
-  // Step 3: Locate manifest
+  // Step 3: Copy video to stable research path
+  const videoPath = copyToResearchDir(exportedVideoPath, cwd);
+
+  // Step 4: Locate manifest
   const manifestPath = findManifest(archiveDir);
 
   const elapsedMs = Date.now() - startMs;
-  console.log(`  [pipeline] Complete: ${videoPath} (${(elapsedMs / 1000).toFixed(1)}s)`);
+  console.log(`  [pipeline] Complete: ${path.relative(cwd, videoPath)} (${(elapsedMs / 1000).toFixed(1)}s)`);
 
   return { videoPath, manifestPath, elapsedMs };
 }
