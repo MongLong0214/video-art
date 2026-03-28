@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from "vitest";
-import { generateConfig, acquireLock, releaseLock, checkDiskSpace } from "./render-audio-utils.js";
+import { generateConfig, acquireLock, releaseLock } from "./render-audio-utils.js";
 import { existsSync, writeFileSync, unlinkSync } from "node:fs";
 import { join } from "node:path";
 
@@ -57,18 +57,6 @@ describe("render-audio-utils", () => {
     writeFileSync(tmpLock, "12345");
     releaseLock(tmpLock);
     expect(existsSync(tmpLock)).toBe(false);
-  });
-
-  it("checkDiskSpace — does not throw when enough space", () => {
-    expect(() => checkDiskSpace("/tmp", 1024)).not.toThrow();
-  });
-
-  it("checkDiskSpace — does not throw for missing dir", () => {
-    expect(() => checkDiskSpace("/tmp/nonexistent-dir-xyz", 1024)).not.toThrow();
-  });
-
-  it("checkDiskSpace — throws when requesting absurd space", () => {
-    expect(() => checkDiskSpace("/tmp", Number.MAX_SAFE_INTEGER)).toThrow("Insufficient");
   });
 
   it("generateConfig — manual bpm still satisfies duration invariant", () => {

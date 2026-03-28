@@ -5,25 +5,14 @@ import fs from "node:fs";
 import path from "node:path";
 
 import { extractCandidates } from "./candidate-extraction.js";
-import { withRetry, validateReplicateUrl, enforceVersionPin, maskToken } from "./replicate-utils.js";
+import { withRetry, validateReplicateUrl, enforceVersionPin, maskToken, getToken } from "./replicate-utils.js";
 import type { LayerCandidate } from "../../src/lib/scene-schema.js";
 import type { ResearchConfig } from "../research/research-config.js";
-
-function getToken(): string {
-  const token = process.env.REPLICATE_API_TOKEN;
-  if (!token) {
-    throw new Error(
-      "REPLICATE_API_TOKEN is not set. Add it to .env file.\n" +
-        "Get your token at https://replicate.com/account/api-tokens",
-    );
-  }
-  return token;
-}
 
 interface DecomposeOptions {
   numLayers?: number;
   depthZones?: number;
-  method?: "hybrid" | "depth-only" | "qwen-only";
+  method?: "hybrid";
 }
 
 interface FileSourceMeta {
@@ -253,94 +242,67 @@ export async function decomposeHybrid(
 
   const allLayers: LayerEntry[] = [];
 
-  if (method === "depth-only") {
-    // Pure depth approach
-    console.log("  Depth-only decomposition...");
-    const depthBuf = await getDepthMap(replicate, imagePath);
-    const totalZones = numLayers * depthZones;
-    const zones = await splitByDepthZones(originalImage, depthBuf, totalZones);
-    allLayers.push(...zones.filter(z => z.coverage > 0.001).map(z => ({
-      ...z, meta: { source: "depth-split" as const, depthGroupId: "depth-full" },
-    })));
-  } else if (method === "qwen-only") {
-    // Pure qwen approach
-    console.log("  Qwen-only decomposition...");
-    const qwenBuffers = await getQwenLayers(replicate, imagePath, numLayers);
-    for (const buf of qwenBuffers) {
-      const { data, info } = await sharp(buf).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
-      let opaque = 0;
-      for (let i = 3; i < data.length; i += info.channels) { if (data[i] > 10) opaque++; }
-      const coverage = opaque / (info.width * info.height);
-      if (coverage > 0.001) {
-        allLayers.push({
-          pixels: data, coverage, width: info.width, height: info.height,
-          meta: { source: "qwen-semantic" },
-        });
-      }
+  // Hybrid: qwen semantic + depth refinement (always)
+  console.log("  [1/2] Semantic decomposition (qwen)...");
+  const qwenBuffers = await getQwenLayers(replicate, imagePath, numLayers);
+
+  console.log("  [2/2] Depth estimation (ZoeDepth)...");
+  const depthBuf = await getDepthMap(replicate, imagePath);
+
+  // Process each qwen layer
+  for (let q = 0; q < qwenBuffers.length; q++) {
+    const { data, info } = await sharp(qwenBuffers[q])
+      .ensureAlpha()
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+    let opaque = 0;
+    for (let i = 3; i < data.length; i += info.channels) { if (data[i] > 10) opaque++; }
+    const coverage = opaque / (info.width * info.height);
+
+    if (coverage < 0.005) {
+      console.log(`  qwen[${q}]: ${(coverage * 100).toFixed(1)}% — skipped (empty)`);
+      continue;
     }
-  } else {
-    // Hybrid: qwen semantic + depth refinement
-    console.log("  [1/2] Semantic decomposition (qwen)...");
-    const qwenBuffers = await getQwenLayers(replicate, imagePath, numLayers);
 
-    console.log("  [2/2] Depth estimation (ZoeDepth)...");
-    const depthBuf = await getDepthMap(replicate, imagePath);
+    const depthGroupId = `qwen-${q}`;
 
-    // Process each qwen layer
-    for (let q = 0; q < qwenBuffers.length; q++) {
-      const { data, info } = await sharp(qwenBuffers[q])
-        .ensureAlpha()
-        .raw()
-        .toBuffer({ resolveWithObject: true });
-      let opaque = 0;
-      for (let i = 3; i < data.length; i += info.channels) { if (data[i] > 10) opaque++; }
-      const coverage = opaque / (info.width * info.height);
-
-      if (coverage < 0.005) {
-        console.log(`  qwen[${q}]: ${(coverage * 100).toFixed(1)}% — skipped (empty)`);
-        continue;
-      }
-
-      const depthGroupId = `qwen-${q}`;
-
-      if (coverage > 0.10) {
-        // Large layer: split further by depth
-        const subZones = coverage > 0.5 ? depthZones : Math.max(2, Math.floor(depthZones / 2));
-        console.log(`  qwen[${q}]: ${(coverage * 100).toFixed(1)}% → split into ${subZones} depth sub-layers`);
-        const subLayers = await splitByDepthZones(
-          originalImage,
-          depthBuf,
-          subZones,
-          qwenBuffers[q],
-        );
-        allLayers.push(...subLayers.filter(s => s.coverage > 0.001).map(s => ({
-          ...s, meta: { source: "depth-split" as const, depthGroupId },
-        })));
-      } else {
-        // Small layer: upscale to original resolution using qwen alpha as mask
-        console.log(`  qwen[${q}]: ${(coverage * 100).toFixed(1)}% — kept (upscaled to original res)`);
-        const origMeta = await sharp(originalImage).metadata();
-        const ow = origMeta.width!;
-        const oh = origMeta.height!;
-        const origFull = await sharp(originalImage).resize(ow, oh).ensureAlpha().raw().toBuffer();
-        const maskUp = await sharp(qwenBuffers[q]).resize(ow, oh).ensureAlpha().raw().toBuffer();
-        const layerBuf = Buffer.alloc(ow * oh * 4);
-        const oTotal = ow * oh;
-        let opaqueCount = 0;
-        for (let p = 0; p < oTotal; p++) {
-          if (maskUp[p * 4 + 3] > 10) {
-            layerBuf[p * 4] = origFull[p * 4];
-            layerBuf[p * 4 + 1] = origFull[p * 4 + 1];
-            layerBuf[p * 4 + 2] = origFull[p * 4 + 2];
-            layerBuf[p * 4 + 3] = maskUp[p * 4 + 3];
-            opaqueCount++;
-          }
+    if (coverage > 0.10) {
+      // Large layer: split further by depth
+      const subZones = coverage > 0.5 ? depthZones : Math.max(2, Math.floor(depthZones / 2));
+      console.log(`  qwen[${q}]: ${(coverage * 100).toFixed(1)}% → split into ${subZones} depth sub-layers`);
+      const subLayers = await splitByDepthZones(
+        originalImage,
+        depthBuf,
+        subZones,
+        qwenBuffers[q],
+      );
+      allLayers.push(...subLayers.filter(s => s.coverage > 0.001).map(s => ({
+        ...s, meta: { source: "depth-split" as const, depthGroupId },
+      })));
+    } else {
+      // Small layer: upscale to original resolution using qwen alpha as mask
+      console.log(`  qwen[${q}]: ${(coverage * 100).toFixed(1)}% — kept (upscaled to original res)`);
+      const origMeta = await sharp(originalImage).metadata();
+      const ow = origMeta.width!;
+      const oh = origMeta.height!;
+      const origFull = await sharp(originalImage).resize(ow, oh).ensureAlpha().raw().toBuffer();
+      const maskUp = await sharp(qwenBuffers[q]).resize(ow, oh).ensureAlpha().raw().toBuffer();
+      const layerBuf = Buffer.alloc(ow * oh * 4);
+      const oTotal = ow * oh;
+      let opaqueCount = 0;
+      for (let p = 0; p < oTotal; p++) {
+        if (maskUp[p * 4 + 3] > 10) {
+          layerBuf[p * 4] = origFull[p * 4];
+          layerBuf[p * 4 + 1] = origFull[p * 4 + 1];
+          layerBuf[p * 4 + 2] = origFull[p * 4 + 2];
+          layerBuf[p * 4 + 3] = maskUp[p * 4 + 3];
+          opaqueCount++;
         }
-        allLayers.push({
-          pixels: layerBuf, coverage: opaqueCount / oTotal, width: ow, height: oh,
-          meta: { source: "qwen-semantic" },
-        });
       }
+      allLayers.push({
+        pixels: layerBuf, coverage: opaqueCount / oTotal, width: ow, height: oh,
+        meta: { source: "qwen-semantic" },
+      });
     }
   }
 

@@ -1,9 +1,6 @@
-import { execFile as execFileCb, execFileSync } from "node:child_process";
-import { promisify } from "node:util";
+import { execFileSync } from "node:child_process";
 import { existsSync, writeFileSync, unlinkSync } from "node:fs";
 import { calculateBpm } from "../../src/lib/bpm-calculator.js";
-
-const execFile = promisify(execFileCb);
 
 const SCLANG = "/Applications/SuperCollider.app/Contents/MacOS/sclang";
 const SCSYNTH = "/Applications/SuperCollider.app/Contents/Resources/scsynth";
@@ -80,26 +77,6 @@ export const generateConfig = (
   };
 };
 
-export const checkDiskSpace = (outputDir: string, estimatedBytes: number = 0): void => {
-  if (!existsSync(outputDir)) return;
-  try {
-    const dfOut = execFileSync("df", ["-k", outputDir], { encoding: "utf-8" });
-    const lines = dfOut.trim().split("\n");
-    if (lines.length < 2) return;
-    const cols = lines[1].split(/\s+/);
-    const availKB = parseInt(cols[3], 10);
-    if (isNaN(availKB)) return;
-    const requiredKB = Math.ceil((estimatedBytes * 2) / 1024);
-    if (availKB < requiredKB) {
-      throw new Error(
-        `Insufficient disk space. Available: ${Math.round(availKB / 1024)}MB, Required: ${Math.round(requiredKB / 1024)}MB (2x safety margin)`,
-      );
-    }
-  } catch (e) {
-    if (e instanceof Error && e.message.includes("Insufficient")) throw e;
-  }
-};
-
 export const acquireLock = (lockPath: string): void => {
   if (existsSync(lockPath)) {
     throw new Error(`Render already in progress. Lock: ${lockPath}`);
@@ -132,21 +109,3 @@ export const generateScConfig = (config: AudioConfig, configPath: string): void 
   writeFileSync(configPath, scCode);
 };
 
-export const runSclang = async (
-  scriptPath: string,
-  args: string[] = [],
-): Promise<{ stdout: string; stderr: string }> => {
-  const result = await execFile(SCLANG, ["-i", "none", scriptPath, ...args], {
-    timeout: 120_000,
-  });
-
-  if (result.stdout.includes("ERROR") || result.stderr.includes("ERROR")) {
-    throw new Error(`sclang error: ${result.stdout}\n${result.stderr}`);
-  }
-
-  return result;
-};
-
-export const runFfmpeg = async (args: string[]): Promise<void> => {
-  await execFile("ffmpeg", args, { timeout: 120_000 });
-};

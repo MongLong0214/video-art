@@ -244,29 +244,6 @@ describe("Production mode version pin", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Test 9: alphaDilate removal from postprocess
-// ---------------------------------------------------------------------------
-
-describe("postprocess alphaDilate removal", () => {
-  it("should not include alphaDilate in postprocess", async () => {
-    const mod = await import("./postprocess.js");
-    // alphaDilate should not be exported or exist as a property
-    expect((mod as Record<string, unknown>).alphaDilate).toBeUndefined();
-
-    // Read the source to verify alphaDilate function is completely removed
-    const fs = await import("node:fs");
-    const nodePath = await import("node:path");
-    const sourceFile = nodePath.resolve(
-      import.meta.dirname ?? nodePath.dirname(new URL(import.meta.url).pathname),
-      "postprocess.ts",
-    );
-    const source = fs.readFileSync(sourceFile, "utf-8");
-    expect(source).not.toContain("function alphaDilate");
-    expect(source).not.toContain("alphaDilate(");
-  });
-});
-
-// ---------------------------------------------------------------------------
 // Test 13: API token not in logs
 // ---------------------------------------------------------------------------
 

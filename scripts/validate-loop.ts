@@ -4,23 +4,10 @@ import { exec } from "node:child_process";
 import { sceneSchema, getValidPeriods } from "../src/lib/scene-schema.js";
 import fs from "node:fs";
 import path from "node:path";
+import { waitForServer } from "./lib/browser-utils.js";
 
 const FPS = 60;
 const RMSE_THRESHOLD = 2.0;
-
-async function waitForServer(url: string, maxWait = 15000): Promise<void> {
-  const start = Date.now();
-  while (Date.now() - start < maxWait) {
-    try {
-      const res = await fetch(url);
-      if (res.ok) return;
-    } catch {
-      // not ready yet
-    }
-    await new Promise((r) => setTimeout(r, 500));
-  }
-  throw new Error(`Server did not start within ${maxWait}ms`);
-}
 
 function loadSceneConfig() {
   const scenePath = path.join(process.cwd(), "public", "scene.json");

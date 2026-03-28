@@ -4,6 +4,24 @@
  */
 
 // ---------------------------------------------------------------------------
+// Token retrieval
+// ---------------------------------------------------------------------------
+
+/**
+ * Read REPLICATE_API_TOKEN from environment, throwing if unset.
+ */
+export function getToken(): string {
+  const token = process.env.REPLICATE_API_TOKEN;
+  if (!token) {
+    throw new Error(
+      "REPLICATE_API_TOKEN is not set. Add it to .env file.\n" +
+        "Get your token at https://replicate.com/account/api-tokens",
+    );
+  }
+  return token;
+}
+
+// ---------------------------------------------------------------------------
 // URL domain validation
 // ---------------------------------------------------------------------------
 

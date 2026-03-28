@@ -11,22 +11,9 @@ import {
 } from "./lib/archive.js";
 
 import { sceneSchema } from "../src/lib/scene-schema.js";
+import { waitForServer } from "./lib/browser-utils.js";
 
 const FPS = 60;
-
-async function waitForServer(url: string, maxWait = 20000): Promise<void> {
-  const start = Date.now();
-  while (Date.now() - start < maxWait) {
-    try {
-      const res = await fetch(url);
-      if (res.ok) return;
-    } catch {
-      // not ready
-    }
-    await new Promise((r) => setTimeout(r, 500));
-  }
-  throw new Error(`Server did not start within ${maxWait}ms`);
-}
 
 function startViteServer(port: number): ChildProcess {
   return exec(`npx vite --port ${port}`, { cwd: process.cwd() });

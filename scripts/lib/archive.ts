@@ -121,46 +121,6 @@ export function createRunContext(
   return ctx;
 }
 
-/**
- * Create a lightweight temp work directory (no archive).
- * For intermediate-only steps like pipeline-layers that produce no final output.
- * Auto-deleted on process exit.
- */
-export function createWorkDir(projectRoot: string): {
-  workDir: string;
-  paths: { layers: string; frames: string };
-  cleanup: () => void;
-} {
-  const runId = generateRunId();
-  const workDir = path.join(projectRoot, OUT_DIR, WORK_DIR, runId);
-  fs.mkdirSync(workDir, { recursive: true });
-
-  const cleanup = () => {
-    try {
-      if (fs.existsSync(workDir)) {
-        fs.rmSync(workDir, { recursive: true, force: true });
-      }
-      const topWork = path.join(projectRoot, OUT_DIR, WORK_DIR);
-      if (fs.existsSync(topWork) && fs.readdirSync(topWork).length === 0) {
-        fs.rmdirSync(topWork);
-      }
-    } catch { /* best-effort */ }
-  };
-
-  process.once("exit", cleanup);
-  process.once("SIGINT", () => { cleanup(); process.exit(130); });
-  process.once("SIGTERM", () => { cleanup(); process.exit(143); });
-
-  return {
-    workDir,
-    paths: {
-      layers: path.join(workDir, "layers"),
-      frames: path.join(workDir, "frames"),
-    },
-    cleanup,
-  };
-}
-
 // ---------------------------------------------------------------------------
 // Archive helpers
 // ---------------------------------------------------------------------------

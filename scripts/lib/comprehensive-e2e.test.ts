@@ -19,13 +19,6 @@ import {
 } from "./genre-preset";
 
 import {
-  validateFxParams,
-  FX_MODULE_ORDER,
-  getFxBypassOrder,
-  FX_MODULE_CONFIGS,
-} from "./fx-utils";
-
-import {
   parseOscEvent,
   generateLogPath,
   shouldRotateFile,
@@ -71,19 +64,7 @@ import {
   SIDECHAIN_BUS,
 } from "./stem-render";
 
-import {
-  generateSessionInfo,
-  generateImportGuide,
-  buildMasteringCommand,
-  verifyLoudness,
-  createOutputStructure,
-  runPipelineSteps,
-  hasExecOrSpawn,
-} from "./prod-pipeline";
-
-import { generateBootTidal, validateGhcVersion } from "./tidal-utils";
 import { validateFilePath } from "./validate-file-path";
-import { validateSamplePath, generateBootConfig } from "./superdirt-utils";
 import { LiveHealthMonitor } from "./live-health-monitor";
 import {
   sanitizeTitle,
@@ -99,7 +80,6 @@ const GENRES_DIR = path.join(PROJECT_ROOT, "audio", "presets", "genres");
 const USER_DIR = path.join(PROJECT_ROOT, "audio", "presets", "user");
 const SC_DIR = path.join(PROJECT_ROOT, "audio", "sc", "superdirt");
 const SCORES_DIR = path.join(PROJECT_ROOT, "audio", "sc", "scores");
-const TIDAL_DIR = path.join(PROJECT_ROOT, "audio", "tidal");
 const GENRES = ["hard_techno", "melodic_techno", "industrial", "psytrance", "progressive_trance"] as const;
 const SYNTH_NAMES = ["kick", "bass", "hat", "clap", "supersaw", "pad", "lead", "arp_pluck", "riser"] as const;
 const COMMON_PARAMS = ["freq", "amp", "dur", "pan"];
@@ -422,232 +402,14 @@ describe("1. SynthDef Parameters", () => {
   });
 });
 
-// ============================================================================
-// 2. FX Parameters
-// ============================================================================
-describe("2. FX Parameters", () => {
-  // --- 2.1 FX_PARAMS set completeness ---
-  describe("FX_PARAMS Set", () => {
-    const expected = [
-      "compress", "threshold", "ratio", "compAttack", "compRelease",
-      "saturate", "drive",
-      "loGain", "midGain", "hiGain", "loFreq", "hiFreq",
-      "sideGain", "sideRelease",
-      "room", "size", "dry", "delaytime", "delayfeedback",
-    ];
-
-    for (const param of expected) {
-      it(`FX_PARAMS includes ${param}`, () => {
-        expect(FX_PARAMS.has(param)).toBe(true);
-      });
-    }
-
-    it("FX_PARAMS has exactly 19 entries", () => {
-      expect(FX_PARAMS.size).toBe(19);
-    });
-
-    it("FX_PARAMS does not include instrument params (freq, amp, dur, pan)", () => {
-      expect(FX_PARAMS.has("freq")).toBe(false);
-      expect(FX_PARAMS.has("amp")).toBe(false);
-      expect(FX_PARAMS.has("dur")).toBe(false);
-      expect(FX_PARAMS.has("pan")).toBe(false);
-    });
-
-    it("FX_PARAMS does not include SynthDef-specific params", () => {
-      expect(FX_PARAMS.has("openness")).toBe(false);
-      expect(FX_PARAMS.has("cutoff")).toBe(false);
-      expect(FX_PARAMS.has("detune")).toBe(false);
-      expect(FX_PARAMS.has("brightness")).toBe(false);
-    });
-  });
-
-  // --- 2.2 FX_MODULE_ORDER ---
-  describe("FX_MODULE_ORDER", () => {
-    it("has exactly 6 entries", () => { expect(FX_MODULE_ORDER).toHaveLength(6); });
-    it("starts with customSidechain", () => { expect(FX_MODULE_ORDER[0]).toBe("customSidechain"); });
-    it("customCompressor is second", () => { expect(FX_MODULE_ORDER[1]).toBe("customCompressor"); });
-    it("customSaturator is third", () => { expect(FX_MODULE_ORDER[2]).toBe("customSaturator"); });
-    it("customEQ is fourth", () => { expect(FX_MODULE_ORDER[3]).toBe("customEQ"); });
-    it("superdirt_reverb is fifth", () => { expect(FX_MODULE_ORDER[4]).toBe("superdirt_reverb"); });
-    it("superdirt_delay is last", () => { expect(FX_MODULE_ORDER[5]).toBe("superdirt_delay"); });
-    it("sidechain before compressor", () => {
-      expect(FX_MODULE_ORDER.indexOf("customSidechain")).toBeLessThan(FX_MODULE_ORDER.indexOf("customCompressor"));
-    });
-    it("compressor before saturator", () => {
-      expect(FX_MODULE_ORDER.indexOf("customCompressor")).toBeLessThan(FX_MODULE_ORDER.indexOf("customSaturator"));
-    });
-    it("saturator before EQ", () => {
-      expect(FX_MODULE_ORDER.indexOf("customSaturator")).toBeLessThan(FX_MODULE_ORDER.indexOf("customEQ"));
-    });
-  });
-
-  // --- 2.3 FX_MODULE_CONFIGS ---
-  describe("FX_MODULE_CONFIGS details", () => {
-    it("customCompressor has 5 params", () => {
-      const comp = FX_MODULE_CONFIGS.find(c => c.name === "customCompressor");
-      expect(comp!.params).toHaveLength(5);
-      expect(comp!.params).toContain("compress");
-      expect(comp!.params).toContain("threshold");
-      expect(comp!.params).toContain("ratio");
-      expect(comp!.params).toContain("compAttack");
-      expect(comp!.params).toContain("compRelease");
-    });
-
-    it("customSaturator has 2 params", () => {
-      const sat = FX_MODULE_CONFIGS.find(c => c.name === "customSaturator");
-      expect(sat!.params).toHaveLength(2);
-      expect(sat!.params).toContain("saturate");
-      expect(sat!.params).toContain("drive");
-    });
-
-    it("customEQ has 5 params", () => {
-      const eq = FX_MODULE_CONFIGS.find(c => c.name === "customEQ");
-      expect(eq!.params).toHaveLength(5);
-      expect(eq!.params).toContain("loGain");
-      expect(eq!.params).toContain("midGain");
-      expect(eq!.params).toContain("hiGain");
-      expect(eq!.params).toContain("loFreq");
-      expect(eq!.params).toContain("hiFreq");
-    });
-
-    it("customSidechain has 2 params", () => {
-      const sc = FX_MODULE_CONFIGS.find(c => c.name === "customSidechain");
-      expect(sc!.params).toHaveLength(2);
-      expect(sc!.params).toContain("sideGain");
-      expect(sc!.params).toContain("sideRelease");
-    });
-
-    it("sidechain has highest cpuWeight", () => {
-      const sc = FX_MODULE_CONFIGS.find(c => c.name === "customSidechain")!;
-      const maxWeight = Math.max(...FX_MODULE_CONFIGS.map(c => c.cpuWeight));
-      expect(sc.cpuWeight).toBe(maxWeight);
-    });
-
-    it("each config has positive cpuWeight", () => {
-      for (const config of FX_MODULE_CONFIGS) {
-        expect(config.cpuWeight).toBeGreaterThan(0);
-      }
-    });
-  });
-
-  // --- 2.4 Preset fxDefaults completeness ---
-  describe("preset fxDefaults completeness", () => {
-    const presets = loadAllPresets();
-
-    for (const genre of GENRES) {
-      for (const key of FX_DEFAULTS_KEYS) {
-        it(`${genre} fxDefaults has ${key}`, () => {
-          expect(presets[genre].fxDefaults).toHaveProperty(key);
-          expect(typeof (presets[genre].fxDefaults as Record<string, number>)[key]).toBe("number");
-        });
-      }
-
-      it(`${genre} fxDefaults has exactly 14 keys`, () => {
-        expect(Object.keys(presets[genre].fxDefaults)).toHaveLength(14);
-      });
-    }
-  });
-
-  // --- 2.5 FX param range validation ---
-  describe("validateFxParams ranges", () => {
-    it("compressor min boundary (compress=0)", () => {
-      expect(validateFxParams("compressor", { compress: 0 })).toBe(true);
-    });
-    it("compressor max boundary (compress=1)", () => {
-      expect(validateFxParams("compressor", { compress: 1 })).toBe(true);
-    });
-    it("compressor rejects compress=-0.001", () => {
-      expect(validateFxParams("compressor", { compress: -0.001 })).toBe(false);
-    });
-    it("compressor rejects compress=1.001", () => {
-      expect(validateFxParams("compressor", { compress: 1.001 })).toBe(false);
-    });
-    it("compressor threshold min -60", () => {
-      expect(validateFxParams("compressor", { threshold: -60 })).toBe(true);
-    });
-    it("compressor threshold max 0", () => {
-      expect(validateFxParams("compressor", { threshold: 0 })).toBe(true);
-    });
-    it("compressor rejects threshold=-61", () => {
-      expect(validateFxParams("compressor", { threshold: -61 })).toBe(false);
-    });
-    it("compressor rejects threshold=1", () => {
-      expect(validateFxParams("compressor", { threshold: 1 })).toBe(false);
-    });
-
-    it("saturator min boundary (saturate=0, drive=0)", () => {
-      expect(validateFxParams("saturator", { saturate: 0, drive: 0 })).toBe(true);
-    });
-    it("saturator max boundary (saturate=1, drive=1)", () => {
-      expect(validateFxParams("saturator", { saturate: 1, drive: 1 })).toBe(true);
-    });
-    it("saturator rejects negative drive", () => {
-      expect(validateFxParams("saturator", { drive: -0.01 })).toBe(false);
-    });
-    it("saturator rejects drive > 1", () => {
-      expect(validateFxParams("saturator", { drive: 1.01 })).toBe(false);
-    });
-
-    it("eq min boundary (loGain=-24)", () => {
-      expect(validateFxParams("eq", { loGain: -24 })).toBe(true);
-    });
-    it("eq max boundary (hiGain=24)", () => {
-      expect(validateFxParams("eq", { hiGain: 24 })).toBe(true);
-    });
-    it("eq rejects loGain=-25", () => {
-      expect(validateFxParams("eq", { loGain: -25 })).toBe(false);
-    });
-    it("eq rejects midGain=25", () => {
-      expect(validateFxParams("eq", { midGain: 25 })).toBe(false);
-    });
-
-    it("rejects unknown param key on compressor", () => {
-      expect(validateFxParams("compressor", { unknownParam: 0.5 })).toBe(false);
-    });
-    it("rejects unknown fx type 'reverb'", () => {
-      expect(validateFxParams("reverb", { room: 0.5 })).toBe(false);
-    });
-    it("rejects unknown fx type 'delay'", () => {
-      expect(validateFxParams("delay", { time: 0.5 })).toBe(false);
-    });
-    it("empty params valid for compressor", () => {
-      expect(validateFxParams("compressor", {})).toBe(true);
-    });
-    it("empty params valid for eq", () => {
-      expect(validateFxParams("eq", {})).toBe(true);
-    });
-  });
-
-  // --- 2.6 FX bypass order ---
-  describe("getFxBypassOrder", () => {
-    it("returns sidechain first (highest cpu)", () => {
-      const order = getFxBypassOrder();
-      expect(order[0]).toBe("customSidechain");
-    });
-    it("returns compressor second (cpu=2)", () => {
-      const order = getFxBypassOrder();
-      expect(order[1]).toBe("customCompressor");
-    });
-    it("all 4 modules present in bypass order", () => {
-      const order = getFxBypassOrder();
-      expect(order).toHaveLength(4);
-    });
-    it("bypass order is sorted by cpuWeight descending", () => {
-      const order = getFxBypassOrder();
-      const configs = FX_MODULE_CONFIGS.slice();
-      configs.sort((a, b) => b.cpuWeight - a.cpuWeight);
-      expect(order).toEqual(configs.map(c => c.name));
-    });
-  });
-});
 
 // ============================================================================
-// 3. Presets (5 genres x detailed)
+// 2. Presets (5 genres x detailed)
 // ============================================================================
-describe("3. Presets", () => {
+describe("2. Presets", () => {
   const presets = loadAllPresets();
 
-  // --- 3.1 BPM ranges ---
+  // --- 2.1 BPM ranges ---
   describe("BPM ranges", () => {
     const expectedBpm: Record<string, { min: number; max: number; default: number }> = {
       hard_techno: { min: 140, max: 155, default: 145 },
@@ -686,7 +448,7 @@ describe("3. Presets", () => {
     }
   });
 
-  // --- 3.2 synthParams all 9 SynthDefs present ---
+  // --- 2.2 synthParams all 9 SynthDefs present ---
   describe("synthParams completeness", () => {
     for (const genre of GENRES) {
       for (const synth of SYNTH_NAMES) {
@@ -700,7 +462,7 @@ describe("3. Presets", () => {
     }
   });
 
-  // --- 3.3 stemGroups ---
+  // --- 2.3 stemGroups ---
   describe("stemGroups", () => {
     for (const genre of GENRES) {
       it(`${genre} has drums stemGroup`, () => {
@@ -729,7 +491,7 @@ describe("3. Presets", () => {
     }
   });
 
-  // --- 3.4 Genre characteristics ---
+  // --- 2.4 Genre characteristics ---
   describe("genre characteristics", () => {
     it("hard_techno has highest kick drive across all genres", () => {
       const ht = presets.hard_techno.synthParams.kick.drive;
@@ -762,7 +524,7 @@ describe("3. Presets", () => {
     });
   });
 
-  // --- 3.5 Preset name validation ---
+  // --- 2.5 Preset name validation ---
   describe("preset name validation extended", () => {
     it("accepts alphanumeric", () => { expect(validatePresetName("abc123")).toBe(true); });
     it("accepts underscores", () => { expect(validatePresetName("my_preset")).toBe(true); });
@@ -781,7 +543,7 @@ describe("3. Presets", () => {
     it("rejects null bytes", () => { expect(validatePresetName("pre\0set")).toBe(false); });
   });
 
-  // --- 3.6 Preset schema boundary ---
+  // --- 2.6 Preset schema boundary ---
   describe("preset schema boundary", () => {
     it("rejects bpm.min < 60", () => {
       const bad = {
@@ -844,7 +606,7 @@ describe("3. Presets", () => {
     });
   });
 
-  // --- 3.7 detectPresetFromOsclog ---
+  // --- 2.7 detectPresetFromOsclog ---
   describe("detectPresetFromOsclog extended", () => {
     it("detects numeric n value", () => {
       expect(detectPresetFromOsclog([{ s: "setpreset", n: 42 }])).toBe("42");
@@ -870,7 +632,7 @@ describe("3. Presets", () => {
     });
   });
 
-  // --- 3.8 mergeFxDefaults ---
+  // --- 2.8 mergeFxDefaults ---
   describe("mergeFxDefaults extended", () => {
     it("null values in event do not override preset", () => {
       const result = mergeFxDefaults({ compress: null as unknown as number }, { compress: 0.5 });
@@ -897,10 +659,10 @@ describe("3. Presets", () => {
 });
 
 // ============================================================================
-// 4. OSC Logger
+// 3. OSC Logger
 // ============================================================================
-describe("4. OSC Logger", () => {
-  // --- 4.1 parseOscEvent diverse inputs ---
+describe("3. OSC Logger", () => {
+  // --- 3.1 parseOscEvent diverse inputs ---
   describe("parseOscEvent diverse inputs", () => {
     it("parses event with all fields", () => {
       const e = parseOscEvent('{"ts":1.5,"s":"kick","n":0,"orbit":1,"gain":0.8}');
@@ -959,7 +721,7 @@ describe("4. OSC Logger", () => {
     });
   });
 
-  // --- 4.2 generateLogPath diverse dates ---
+  // --- 3.2 generateLogPath diverse dates ---
   describe("generateLogPath diverse dates/parts", () => {
     it("midnight date", () => {
       const r = generateLogPath("/logs", new Date("2026-01-01T00:00:00Z"), 0);
@@ -987,7 +749,7 @@ describe("4. OSC Logger", () => {
     });
   });
 
-  // --- 4.3 File rotation boundary ---
+  // --- 3.3 File rotation boundary ---
   describe("shouldRotateFile boundary", () => {
     it("returns false at exactly 9:59", () => {
       const start = 0;
@@ -1010,7 +772,7 @@ describe("4. OSC Logger", () => {
     });
   });
 
-  // --- 4.4 JSONL format ---
+  // --- 3.4 JSONL format ---
   describe("JSONL format verification", () => {
     it("writeOscEvent produces valid JSON per line", () => {
       const lines: string[] = [];
@@ -1036,7 +798,7 @@ describe("4. OSC Logger", () => {
     });
   });
 
-  // --- 4.5 Session metadata ---
+  // --- 3.5 Session metadata ---
   describe("generateSessionMetadata extended", () => {
     it("single event has 0 duration", () => {
       const meta = generateSessionMetadata([{ ts: 5.0, s: "kick" }]);
@@ -1068,10 +830,10 @@ describe("4. OSC Logger", () => {
 });
 
 // ============================================================================
-// 5. OSC -> NRT Conversion
+// 4. OSC -> NRT Conversion
 // ============================================================================
-describe("5. OSC to NRT Conversion", () => {
-  // --- 5.1 SynthDef mapping all 9 ---
+describe("4. OSC to NRT Conversion", () => {
+  // --- 4.1 SynthDef mapping all 9 ---
   describe("SynthDef mapping (9 custom)", () => {
     for (const name of SYNTH_NAMES) {
       it(`mapSynthDef("${name}") returns valid mapping`, () => {
@@ -1131,7 +893,7 @@ describe("5. OSC to NRT Conversion", () => {
     });
   });
 
-  // --- 5.2 Dirt-Samples mapping (15) ---
+  // --- 4.2 Dirt-Samples mapping (15) ---
   describe("Dirt-Samples mapping (15)", () => {
     const dirtSamples = ["bd", "sd", "hh", "cp", "cb", "mt", "ht", "lt", "oh", "ch", "cr", "rd", "sn", "rim", "tom"];
 
@@ -1169,7 +931,7 @@ describe("5. OSC to NRT Conversion", () => {
     });
   });
 
-  // --- 5.3 Parameter normalization ---
+  // --- 4.3 Parameter normalization ---
   describe("normalizeParams", () => {
     it("gain -> amp alias", () => {
       const { normalized } = normalizeParams({ gain: 0.8 });
@@ -1220,7 +982,7 @@ describe("5. OSC to NRT Conversion", () => {
     });
   });
 
-  // --- 5.4 Timing precision ---
+  // --- 4.4 Timing precision ---
   describe("timing conversion precision", () => {
     it("timestamps are session-relative", () => {
       const events: OscEvent[] = [
@@ -1258,7 +1020,7 @@ describe("5. OSC to NRT Conversion", () => {
     });
   });
 
-  // --- 5.5 FX parameter preservation ---
+  // --- 4.5 FX parameter preservation ---
   describe("FX parameter preservation in NRT", () => {
     it("compress param preserved", () => {
       const nrt = convertToNrt([{ ts: 0, s: "kick", compress: 0.7 } as OscEvent]);
@@ -1280,7 +1042,7 @@ describe("5. OSC to NRT Conversion", () => {
     });
   });
 
-  // --- 5.6 Skip rate ---
+  // --- 4.6 Skip rate ---
   describe("skip rate threshold", () => {
     it("0% skip is ok", () => {
       const r = generateSummary(100, 100, 0);
@@ -1311,7 +1073,7 @@ describe("5. OSC to NRT Conversion", () => {
     });
   });
 
-  // --- 5.7 NRT node IDs ---
+  // --- 4.7 NRT node IDs ---
   describe("NRT node IDs", () => {
     it("first node ID starts at 1000", () => {
       const nrt = convertToNrt([{ ts: 0, s: "kick" }]);
@@ -1337,7 +1099,7 @@ describe("5. OSC to NRT Conversion", () => {
     });
   });
 
-  // --- 5.8 Multipart merge ---
+  // --- 4.8 Multipart merge ---
   describe("multipart merge", () => {
     it("mergeMultiPart empty dir throws", () => {
       const dir = path.join(tmpDir, "empty-merge");
@@ -1376,7 +1138,7 @@ describe("5. OSC to NRT Conversion", () => {
     });
   });
 
-  // --- 5.9 writeNrtScore ---
+  // --- 4.9 writeNrtScore ---
   describe("writeNrtScore", () => {
     it("creates output directory", () => {
       const outPath = path.join(tmpDir, "nrt-out", "sub", "score.json");
@@ -1407,10 +1169,10 @@ describe("5. OSC to NRT Conversion", () => {
 });
 
 // ============================================================================
-// 6. Stem Render
+// 5. Stem Render
 // ============================================================================
-describe("6. Stem Render", () => {
-  // --- 6.1 Bus routing (9 SynthDefs) ---
+describe("5. Stem Render", () => {
+  // --- 5.1 Bus routing (9 SynthDefs) ---
   describe("bus routing", () => {
     for (const name of SYNTH_NAMES) {
       it(`getStemBus("${name}") returns non-null`, () => {
@@ -1438,7 +1200,7 @@ describe("6. Stem Render", () => {
     it("empty string returns null", () => { expect(getStemBus("")).toBeNull(); });
   });
 
-  // --- 6.2 DEFAULT_STEMS ---
+  // --- 5.2 DEFAULT_STEMS ---
   describe("DEFAULT_STEMS", () => {
     it("has 4 stems", () => { expect(DEFAULT_STEMS).toHaveLength(4); });
     it("drums is bus 0", () => { expect(DEFAULT_STEMS.find(s => s.name === "drums")!.bus).toBe(0); });
@@ -1450,7 +1212,7 @@ describe("6. Stem Render", () => {
     });
   });
 
-  // --- 6.3 SIDECHAIN_BUS ---
+  // --- 5.3 SIDECHAIN_BUS ---
   describe("SIDECHAIN_BUS", () => {
     it("is 100", () => { expect(SIDECHAIN_BUS).toBe(100); });
     it("does not collide with stem buses", () => {
@@ -1460,7 +1222,7 @@ describe("6. Stem Render", () => {
     });
   });
 
-  // --- 6.4 Custom stem parsing ---
+  // --- 5.4 Custom stem parsing ---
   describe("parseCustomStems", () => {
     it("parses single stem", () => {
       const r = parseCustomStems("drums:kick,hat,clap");
@@ -1491,7 +1253,7 @@ describe("6. Stem Render", () => {
     });
   });
 
-  // --- 6.5 NRT score entries ---
+  // --- 5.5 NRT score entries ---
   describe("generateNrtScoreEntries", () => {
     it("empty score produces only end marker", () => {
       const score = makeNrtScore([], 5.0);
@@ -1574,7 +1336,7 @@ describe("6. Stem Render", () => {
     });
   });
 
-  // --- 6.6 Split commands ---
+  // --- 5.6 Split commands ---
   describe("buildSplitCommands", () => {
     it("default 4 stems produce 4 commands", () => {
       const cmds = buildSplitCommands("/in.wav", "/out");
@@ -1603,7 +1365,7 @@ describe("6. Stem Render", () => {
     });
   });
 
-  // --- 6.7 Output path ---
+  // --- 5.7 Output path ---
   describe("stemOutputPath", () => {
     it("includes date", () => {
       const p = stemOutputPath("/root", "test", new Date("2026-01-15"));
@@ -1628,7 +1390,7 @@ describe("6. Stem Render", () => {
     });
   });
 
-  // --- 6.8 Render lock ---
+  // --- 5.8 Render lock ---
   describe("render lock", () => {
     it("writeRenderLock then checkRenderLock throws", () => {
       const dir = path.join(tmpDir, "lock-test-1");
@@ -1651,7 +1413,7 @@ describe("6. Stem Render", () => {
     });
   });
 
-  // --- 6.9 Disk space check ---
+  // --- 5.9 Disk space check ---
   describe("disk space check", () => {
     it("true when available >= 2x estimated", () => {
       expect(stemCheckDiskSpace(200, 100)).toBe(true);
@@ -1667,7 +1429,7 @@ describe("6. Stem Render", () => {
     });
   });
 
-  // --- 6.10 writeScoreConfig ---
+  // --- 5.10 writeScoreConfig ---
   describe("writeScoreConfig", () => {
     it("creates config with 8 output channels", () => {
       const outPath = path.join(tmpDir, "sc-cfg", "config.json");
@@ -1691,205 +1453,10 @@ describe("6. Stem Render", () => {
 });
 
 // ============================================================================
-// 7. Mastering / Pipeline
+// 6. Security
 // ============================================================================
-describe("7. Mastering / Pipeline", () => {
-  // --- 7.1 Loudnorm params ---
-  describe("loudnorm parameters", () => {
-    it("target LUFS is -14", () => {
-      const args = buildMasteringCommand(["/a.wav"], "/m.wav");
-      expect(args.join(" ")).toContain("I=-14");
-    });
-    it("true peak limit is -2", () => {
-      const args = buildMasteringCommand(["/a.wav"], "/m.wav");
-      expect(args.join(" ")).toContain("TP=-2");
-    });
-    it("LRA is 7", () => {
-      const args = buildMasteringCommand(["/a.wav"], "/m.wav");
-      expect(args.join(" ")).toContain("LRA=7");
-    });
-    it("output sample rate 48000", () => {
-      const args = buildMasteringCommand(["/a.wav"], "/m.wav");
-      expect(args).toContain("48000");
-    });
-    it("output format s16", () => {
-      const args = buildMasteringCommand(["/a.wav"], "/m.wav");
-      expect(args).toContain("s16");
-    });
-    it("includes -y for overwrite", () => {
-      const args = buildMasteringCommand(["/a.wav"], "/m.wav");
-      expect(args).toContain("-y");
-    });
-  });
-
-  // --- 7.2 LUFS verification ---
-  describe("verifyLoudness", () => {
-    it("pass at -14 LUFS, -3 TP", () => {
-      expect(verifyLoudness(-14, -3).pass).toBe(true);
-    });
-    it("pass at -13.5 LUFS (within 0.5 tolerance)", () => {
-      expect(verifyLoudness(-13.5, -3).pass).toBe(true);
-    });
-    it("pass at -14.5 LUFS (within 0.5 tolerance)", () => {
-      expect(verifyLoudness(-14.5, -3).pass).toBe(true);
-    });
-    it("fail at -13.4 LUFS (outside tolerance)", () => {
-      expect(verifyLoudness(-13.4, -3).pass).toBe(false);
-    });
-    it("fail at -14.6 LUFS (outside tolerance)", () => {
-      expect(verifyLoudness(-14.6, -3).pass).toBe(false);
-    });
-    it("fail at TP = -1.9 (too high)", () => {
-      expect(verifyLoudness(-14, -1.9).pass).toBe(false);
-    });
-    it("pass at TP = -2 (exact limit)", () => {
-      expect(verifyLoudness(-14, -2).pass).toBe(true);
-    });
-    it("pass at TP = -10 (well below)", () => {
-      expect(verifyLoudness(-14, -10).pass).toBe(true);
-    });
-    it("message contains LUFS value", () => {
-      const r = verifyLoudness(-14, -3);
-      expect(r.message).toContain("-14");
-    });
-    it("message contains TP value", () => {
-      const r = verifyLoudness(-14, -3);
-      expect(r.message).toContain("-3");
-    });
-    it("fail message contains FAIL", () => {
-      const r = verifyLoudness(-10, -3);
-      expect(r.message).toContain("FAIL");
-    });
-    it("pass message contains OK", () => {
-      const r = verifyLoudness(-14, -3);
-      expect(r.message).toContain("OK");
-    });
-  });
-
-  // --- 7.3 Pipeline step order ---
-  describe("pipeline step order", () => {
-    it("runs steps in order", async () => {
-      const order: string[] = [];
-      await runPipelineSteps([
-        { name: "convert", fn: async () => { order.push("c"); } },
-        { name: "stems", fn: async () => { order.push("s"); } },
-        { name: "master", fn: async () => { order.push("m"); } },
-      ]);
-      expect(order).toEqual(["c", "s", "m"]);
-    });
-
-    it("stops at first failure", async () => {
-      const order: string[] = [];
-      await expect(runPipelineSteps([
-        { name: "convert", fn: async () => { order.push("c"); } },
-        { name: "stems", fn: async () => { throw new Error("fail"); } },
-        { name: "master", fn: async () => { order.push("m"); } },
-      ])).rejects.toThrow("stems");
-      expect(order).toEqual(["c"]);
-    });
-
-    it("error message includes step name", async () => {
-      await expect(runPipelineSteps([
-        { name: "master", fn: async () => { throw new Error("oops"); } },
-      ])).rejects.toThrow('Pipeline failed at step "master"');
-    });
-
-    it("error message includes original error", async () => {
-      await expect(runPipelineSteps([
-        { name: "convert", fn: async () => { throw new Error("bad format"); } },
-      ])).rejects.toThrow("bad format");
-    });
-  });
-
-  // --- 7.4 Session info ---
-  describe("generateSessionInfo", () => {
-    it("includes createdAt ISO string", () => {
-      const info = generateSessionInfo({ duration: 10, stems: [], total: 0, mapped: 0, skipped: 0 });
-      expect(info.createdAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
-    });
-    it("preserves stems array", () => {
-      const info = generateSessionInfo({ duration: 10, stems: ["a.wav", "b.wav"], total: 0, mapped: 0, skipped: 0 });
-      expect(info.stems).toEqual(["a.wav", "b.wav"]);
-    });
-    it("eventSummary has correct structure", () => {
-      const info = generateSessionInfo({ duration: 10, stems: [], total: 100, mapped: 90, skipped: 10 });
-      expect(info.eventSummary.total).toBe(100);
-      expect(info.eventSummary.mapped).toBe(90);
-      expect(info.eventSummary.skipped).toBe(10);
-    });
-  });
-
-  // --- 7.5 Import guide ---
-  describe("generateImportGuide", () => {
-    it("contains BPM", () => {
-      const info = generateSessionInfo({ bpm: 140, duration: 60, stems: [], total: 0, mapped: 0, skipped: 0 });
-      expect(generateImportGuide(info)).toContain("140");
-    });
-    it("contains key when set", () => {
-      const info = generateSessionInfo({ key: "Fm", duration: 60, stems: [], total: 0, mapped: 0, skipped: 0 });
-      expect(generateImportGuide(info)).toContain("Fm");
-    });
-    it("contains 48kHz spec", () => {
-      const info = generateSessionInfo({ duration: 60, stems: [], total: 0, mapped: 0, skipped: 0 });
-      expect(generateImportGuide(info)).toContain("48kHz");
-    });
-    it("contains -14 LUFS reference", () => {
-      const info = generateSessionInfo({ duration: 60, stems: [], total: 0, mapped: 0, skipped: 0 });
-      expect(generateImportGuide(info)).toContain("-14 LUFS");
-    });
-    it("lists all stems", () => {
-      const info = generateSessionInfo({ duration: 60, stems: ["drums.wav", "bass.wav"], total: 0, mapped: 0, skipped: 0 });
-      const guide = generateImportGuide(info);
-      expect(guide).toContain("drums.wav");
-      expect(guide).toContain("bass.wav");
-    });
-  });
-
-  // --- 7.6 createOutputStructure ---
-  describe("createOutputStructure", () => {
-    it("creates stems/ and raw/ dirs", () => {
-      const dir = path.join(tmpDir, "out-struct");
-      createOutputStructure(dir);
-      expect(fs.existsSync(path.join(dir, "stems"))).toBe(true);
-      expect(fs.existsSync(path.join(dir, "raw"))).toBe(true);
-    });
-    it("idempotent (no error on second call)", () => {
-      const dir = path.join(tmpDir, "out-struct2");
-      createOutputStructure(dir);
-      expect(() => createOutputStructure(dir)).not.toThrow();
-    });
-  });
-
-  // --- 7.7 hasExecOrSpawn ---
-  describe("hasExecOrSpawn security check", () => {
-    it("detects exec(", () => {
-      const f = path.join(tmpDir, "has-exec.ts");
-      fs.writeFileSync(f, 'const r = exec("ls")');
-      expect(hasExecOrSpawn(f)).toBe(true);
-    });
-    it("detects spawn with shell:true", () => {
-      const f = path.join(tmpDir, "has-spawn.ts");
-      fs.writeFileSync(f, 'spawn("ls", [], { shell: true })');
-      expect(hasExecOrSpawn(f)).toBe(true);
-    });
-    it("allows execFile", () => {
-      const f = path.join(tmpDir, "has-execFile.ts");
-      fs.writeFileSync(f, 'execFile("sclang", ["-i"])');
-      expect(hasExecOrSpawn(f)).toBe(false);
-    });
-    it("allows spawn without shell", () => {
-      const f = path.join(tmpDir, "safe-spawn.ts");
-      fs.writeFileSync(f, 'spawn("sclang", ["-i"])');
-      expect(hasExecOrSpawn(f)).toBe(false);
-    });
-  });
-});
-
-// ============================================================================
-// 8. Security
-// ============================================================================
-describe("8. Security", () => {
-  // --- 8.1 Path traversal attacks ---
+describe("6. Security", () => {
+  // --- 6.1 Path traversal attacks ---
   describe("path traversal vectors", () => {
     const traversalPaths = [
       "/etc/passwd",
@@ -1917,7 +1484,7 @@ describe("8. Security", () => {
     });
   });
 
-  // --- 8.2 Preset name sanitization ---
+  // --- 6.2 Preset name sanitization ---
   describe("preset name sanitization", () => {
     const attacks = [
       "../../../etc/passwd",
@@ -1938,193 +1505,13 @@ describe("8. Security", () => {
     }
   });
 
-  // --- 8.3 Sample path validation ---
-  describe("sample path validation", () => {
-    it("validateSamplePath concept: project root contained", () => {
-      const config = generateBootConfig(PROJECT_ROOT);
-      expect(config.samplesDir).toContain(PROJECT_ROOT);
-    });
-  });
-
-  // --- 8.4 OSC binding ---
-  describe("OSC 127.0.0.1 binding", () => {
-    it("generateBootTidal defaults to 127.0.0.1", () => {
-      const content = generateBootTidal();
-      expect(content).toContain("127.0.0.1");
-      expect(content).not.toContain("0.0.0.0");
-    });
-
-    it("rejects 0.0.0.0", () => {
-      expect(() => generateBootTidal({ oscTarget: "0.0.0.0" })).toThrow();
-    });
-    it("rejects 127.0.0.2", () => {
-      expect(() => generateBootTidal({ oscTarget: "127.0.0.2" })).toThrow();
-    });
-    it("rejects 192.168.1.1", () => {
-      expect(() => generateBootTidal({ oscTarget: "192.168.1.1" })).toThrow();
-    });
-    it("rejects 10.0.0.1", () => {
-      expect(() => generateBootTidal({ oscTarget: "10.0.0.1" })).toThrow();
-    });
-    it("rejects localhost string", () => {
-      expect(() => generateBootTidal({ oscTarget: "localhost" })).toThrow();
-    });
-    it("rejects empty string", () => {
-      expect(() => generateBootTidal({ oscTarget: "" })).toThrow();
-    });
-  });
-
-  // --- 8.5 execFile-only enforcement ---
-  describe("execFile-only enforcement", () => {
-    const scriptsToCheck = [
-      "scripts/render-stems.ts",
-      "scripts/prod-convert.ts",
-    ];
-
-    for (const script of scriptsToCheck) {
-      const fullPath = path.join(PROJECT_ROOT, script);
-      if (fs.existsSync(fullPath)) {
-        it(`${script} uses execFile only`, () => {
-          expect(hasExecOrSpawn(fullPath)).toBe(false);
-        });
-      }
-    }
-  });
 });
 
 // ============================================================================
-// 9. BootTidal.hs
+// 7. SC File Static Verification
 // ============================================================================
-describe("9. BootTidal.hs", () => {
-  const hsPath = path.join(TIDAL_DIR, "BootTidal.hs");
-  const hsContent = fs.readFileSync(hsPath, "utf-8");
-
-  // --- 9.1 All 14 FX pF params ---
-  describe("14 FX pF params", () => {
-    const fxParams = [
-      "compress", "threshold", "ratio", "compAttack", "compRelease",
-      "saturate", "drive", "loGain", "midGain", "hiGain",
-      "loFreq", "hiFreq", "sideGain", "sideRelease",
-    ];
-    for (const param of fxParams) {
-      it(`has pF "${param}"`, () => {
-        expect(hsContent).toMatch(new RegExp(`pF\\s+"${param}"`));
-      });
-    }
-  });
-
-  // --- 9.2 SynthDef pF params (6) ---
-  describe("6 SynthDef pF params", () => {
-    const sdParams = ["cutoff", "resonance", "detune", "width", "click", "decay"];
-    for (const param of sdParams) {
-      it(`has pF "${param}"`, () => {
-        expect(hsContent).toMatch(new RegExp(`pF\\s+"${param}"`));
-      });
-    }
-  });
-
-  // --- 9.3 Preset-specific pF (9 new) ---
-  describe("9 new preset pF params", () => {
-    const newParams = [
-      "openness", "tone", "filterEnv", "vibrato", "portamento",
-      "brightness", "sweepRange", "noiseAmount", "envAmount",
-    ];
-    for (const param of newParams) {
-      it(`has pF "${param}"`, () => {
-        expect(hsContent).toMatch(new RegExp(`pF\\s+"${param}"`));
-      });
-    }
-  });
-
-  // --- 9.4 Aliases ---
-  describe("aliases", () => {
-    it("clapSpread = pF spread", () => {
-      expect(hsContent).toMatch(/clapSpread\s*=\s*pF\s+"spread"/);
-    });
-    it("sawMix = pF mix", () => {
-      expect(hsContent).toMatch(/sawMix\s*=\s*pF\s+"mix"/);
-    });
-    it("presetName = pS presetName", () => {
-      expect(hsContent).toMatch(/presetName\s*=\s*pS\s+"presetName"/);
-    });
-  });
-
-  // --- 9.5 setPreset / getPreset ---
-  describe("preset helpers", () => {
-    it("has setPreset function", () => { expect(hsContent).toContain("setPreset"); });
-    it("has getPreset function", () => { expect(hsContent).toContain("getPreset"); });
-    it("setPreset uses setpreset sound", () => { expect(hsContent).toContain("setpreset"); });
-    it("getPreset uses getpreset sound", () => { expect(hsContent).toContain("getpreset"); });
-  });
-
-  // --- 9.6 127.0.0.1 binding ---
-  describe("security bindings", () => {
-    it("oAddress is 127.0.0.1", () => { expect(hsContent).toContain('"127.0.0.1"'); });
-    it("does not contain 0.0.0.0", () => { expect(hsContent).not.toContain("0.0.0.0"); });
-    it("port is 57120", () => { expect(hsContent).toContain("57120"); });
-  });
-
-  // --- 9.7 Structure ---
-  describe("structure", () => {
-    it("imports Sound.Tidal.Context", () => { expect(hsContent).toContain("import Sound.Tidal.Context"); });
-    it("has startStream", () => { expect(hsContent).toContain("startStream"); });
-    it("has d1-d8 definitions", () => {
-      for (let i = 1; i <= 8; i++) {
-        expect(hsContent).toContain(`d${i}`);
-      }
-    });
-    it("has hush", () => { expect(hsContent).toContain("hush"); });
-    it("has solo", () => { expect(hsContent).toContain("solo"); });
-    it("has unsolo", () => { expect(hsContent).toContain("unsolo"); });
-    it("has 8 orbits", () => { expect(hsContent).toContain("[0..7]"); });
-    it("no attack pF (Tidal builtin)", () => {
-      expect(hsContent).not.toMatch(/pF\s+"attack"/);
-    });
-    it("no release pF (Tidal builtin)", () => {
-      expect(hsContent).not.toMatch(/pF\s+"release"/);
-    });
-  });
-
-  // --- 9.8 Generated BootTidal validation ---
-  describe("generateBootTidal output", () => {
-    it("includes all FX params from generateBootTidal", () => {
-      const generated = generateBootTidal();
-      for (const p of ["compress", "saturate", "loGain", "sideGain"]) {
-        expect(generated).toContain(p);
-      }
-    });
-    it("custom port accepted", () => {
-      const generated = generateBootTidal({ oscPort: 57121 });
-      expect(generated).toContain("57121");
-    });
-    it("generated content has tidal prompt", () => {
-      const generated = generateBootTidal();
-      expect(generated).toContain("tidal>");
-    });
-  });
-
-  // --- 9.9 validateGhcVersion ---
-  describe("validateGhcVersion extended", () => {
-    it("accepts 9.4.0", () => { expect(validateGhcVersion("9.4.0")).toBe(true); });
-    it("accepts 9.6.4", () => { expect(validateGhcVersion("9.6.4")).toBe(true); });
-    it("accepts 9.8.1", () => { expect(validateGhcVersion("9.8.1")).toBe(true); });
-    it("accepts 10.0.0", () => { expect(validateGhcVersion("10.0.0")).toBe(true); });
-    it("accepts 11.0.0", () => { expect(validateGhcVersion("11.0.0")).toBe(true); });
-    it("rejects 9.3.9", () => { expect(validateGhcVersion("9.3.9")).toBe(false); });
-    it("rejects 9.2.0", () => { expect(validateGhcVersion("9.2.0")).toBe(false); });
-    it("rejects 8.10.7", () => { expect(validateGhcVersion("8.10.7")).toBe(false); });
-    it("rejects 8.0.0", () => { expect(validateGhcVersion("8.0.0")).toBe(false); });
-    it("rejects empty string", () => { expect(validateGhcVersion("")).toBe(false); });
-    it("rejects single number", () => { expect(validateGhcVersion("9")).toBe(false); });
-    it("rejects non-numeric", () => { expect(validateGhcVersion("abc")).toBe(false); });
-  });
-});
-
-// ============================================================================
-// 10. SC File Static Verification
-// ============================================================================
-describe("10. SC File Static Verification", () => {
-  // --- 10.1 genre-presets.scd ---
+describe("7. SC File Static Verification", () => {
+  // --- 7.1 genre-presets.scd ---
   describe("genre-presets.scd", () => {
     const scdPath = path.join(SC_DIR, "genre-presets.scd");
     const content = fs.readFileSync(scdPath, "utf-8");
@@ -2143,7 +1530,7 @@ describe("10. SC File Static Verification", () => {
     });
   });
 
-  // --- 10.2 render-stems-nrt.scd ---
+  // --- 7.2 render-stems-nrt.scd ---
   describe("render-stems-nrt.scd", () => {
     const scdPath = path.join(SCORES_DIR, "render-stems-nrt.scd");
     const content = fs.readFileSync(scdPath, "utf-8");
@@ -2164,7 +1551,7 @@ describe("10. SC File Static Verification", () => {
     it("has CombL ugen", () => { expect(content).toContain("CombL"); });
   });
 
-  // --- 10.3 boot.scd ---
+  // --- 7.3 boot.scd ---
   describe("boot.scd", () => {
     const bootPath = path.join(SC_DIR, "boot.scd");
     const content = fs.readFileSync(bootPath, "utf-8");
@@ -2197,7 +1584,7 @@ describe("10. SC File Static Verification", () => {
     });
   });
 
-  // --- 10.4 custom-fx.scd ---
+  // --- 7.4 custom-fx.scd ---
   describe("custom-fx.scd", () => {
     const fxPath = path.join(SC_DIR, "custom-fx.scd");
     const content = fs.readFileSync(fxPath, "utf-8");
@@ -2235,7 +1622,7 @@ describe("10. SC File Static Verification", () => {
     it("loaded message at end", () => { expect(content).toContain("Custom FX modules loaded"); });
   });
 
-  // --- 10.5 osc-logger.scd ---
+  // --- 7.5 osc-logger.scd ---
   describe("osc-logger.scd", () => {
     const loggerPath = path.join(SC_DIR, "osc-logger.scd");
     if (fs.existsSync(loggerPath)) {
@@ -2245,7 +1632,7 @@ describe("10. SC File Static Verification", () => {
     }
   });
 
-  // --- 10.6 render-nrt.scd ---
+  // --- 7.6 render-nrt.scd ---
   describe("render-nrt.scd", () => {
     const nrtPath = path.join(SCORES_DIR, "render-nrt.scd");
     if (fs.existsSync(nrtPath)) {
@@ -2257,10 +1644,10 @@ describe("10. SC File Static Verification", () => {
 });
 
 // ============================================================================
-// 11. Live System (Health Monitor, Recording, Orchestrator)
+// 8. Live System (Health Monitor, Recording, Orchestrator)
 // ============================================================================
-describe("11. Live System", () => {
-  // --- 11.1 Health Monitor ---
+describe("8. Live System", () => {
+  // --- 8.1 Health Monitor ---
   describe("LiveHealthMonitor extended", () => {
     it("memory threshold is 1.5GB", () => {
       const monitor = new LiveHealthMonitor({ onCrash: vi.fn(), onHighMemory: vi.fn(), onHighCpu: vi.fn() });
@@ -2302,7 +1689,7 @@ describe("11. Live System", () => {
     });
   });
 
-  // --- 11.2 Live Recording ---
+  // --- 8.2 Live Recording ---
   describe("LiveRecording extended", () => {
     it("initial state is idle", () => {
       const r = new LiveRecording({ projectRoot: "/fake", onRecordingChange: vi.fn() });
@@ -2345,7 +1732,7 @@ describe("11. Live System", () => {
     });
   });
 
-  // --- 11.3 sanitizeTitle ---
+  // --- 8.3 sanitizeTitle ---
   describe("sanitizeTitle", () => {
     it("alphanumeric passes through", () => { expect(sanitizeTitle("hello123")).toBe("hello123"); });
     it("hyphens preserved", () => { expect(sanitizeTitle("my-title")).toBe("my-title"); });
@@ -2356,7 +1743,7 @@ describe("11. Live System", () => {
     it("whitespace-only becomes untitled", () => { expect(sanitizeTitle("   ")).toBe("untitled"); });
   });
 
-  // --- 11.4 generateRecordPath ---
+  // --- 8.4 generateRecordPath ---
   describe("generateRecordPath", () => {
     it("includes date", () => {
       const p = generateRecordPath("/proj", "test", new Date("2026-06-15"));
@@ -2376,7 +1763,7 @@ describe("11. Live System", () => {
     });
   });
 
-  // --- 11.5 checkDiskSpace (recording) ---
+  // --- 8.5 checkDiskSpace (recording) ---
   describe("checkDiskSpace (recording)", () => {
     it("sufficient space returns true", () => {
       expect(recCheckDiskSpace(10_000_000_000, 1_000_000_000)).toBe(true);
@@ -2394,9 +1781,9 @@ describe("11. Live System", () => {
 });
 
 // ============================================================================
-// 12. SYNTH_STEM_MAP Structure
+// 9. SYNTH_STEM_MAP Structure
 // ============================================================================
-describe("12. SYNTH_STEM_MAP Structure", () => {
+describe("9. SYNTH_STEM_MAP Structure", () => {
   it("has 9 entries", () => {
     expect(Object.keys(SYNTH_STEM_MAP)).toHaveLength(9);
   });
@@ -2447,35 +1834,10 @@ describe("12. SYNTH_STEM_MAP Structure", () => {
 });
 
 // ============================================================================
-// 13. SuperDirt Utils
+// 10. Additional Edge Cases & Integration
 // ============================================================================
-describe("13. SuperDirt Utils", () => {
-  describe("generateBootConfig", () => {
-    it("numOrbits is 8", () => {
-      expect(generateBootConfig(PROJECT_ROOT).numOrbits).toBe(8);
-    });
-    it("synthDefNames has 9 entries", () => {
-      expect(generateBootConfig(PROJECT_ROOT).synthDefNames).toHaveLength(9);
-    });
-    for (const name of SYNTH_NAMES) {
-      it(`synthDefNames includes ${name}`, () => {
-        expect(generateBootConfig(PROJECT_ROOT).synthDefNames).toContain(name);
-      });
-    }
-    it("synthDefsDir points to audio/sc/synthdefs", () => {
-      expect(generateBootConfig(PROJECT_ROOT).synthDefsDir).toContain("audio/sc/synthdefs");
-    });
-    it("samplesDir points to audio/samples", () => {
-      expect(generateBootConfig(PROJECT_ROOT).samplesDir).toContain("audio/samples");
-    });
-  });
-});
-
-// ============================================================================
-// 14. Additional Edge Cases & Integration
-// ============================================================================
-describe("14. Additional Edge Cases", () => {
-  // --- 14.1 Preset save/load roundtrip ---
+describe("10. Additional Edge Cases", () => {
+  // --- 10.1 Preset save/load roundtrip ---
   describe("preset save/load roundtrip", () => {
     it("saved preset loads back identically", () => {
       const src = loadPreset("hard_techno", GENRES_DIR);
@@ -2488,7 +1850,7 @@ describe("14. Additional Edge Cases", () => {
     });
   });
 
-  // --- 14.2 OSC->NRT->Score full pipeline ---
+  // --- 10.2 OSC->NRT->Score full pipeline ---
   describe("OSC->NRT->Score pipeline", () => {
     it("full pipeline produces valid score entries", () => {
       const oscEvents: OscEvent[] = [
@@ -2508,7 +1870,7 @@ describe("14. Additional Edge Cases", () => {
     });
   });
 
-  // --- 14.3 mergeWithDefaults various ---
+  // --- 10.3 mergeWithDefaults various ---
   describe("mergeWithDefaults edge cases", () => {
     it("unknown synth key in preset is ignored", () => {
       const defaults = { kick: { drive: 0.5 } } as any;
@@ -2527,31 +1889,7 @@ describe("14. Additional Edge Cases", () => {
     });
   });
 
-  // --- 14.4 buildMasteringCommand ---
-  describe("buildMasteringCommand edge cases", () => {
-    it("single stem input", () => {
-      const args = buildMasteringCommand(["/a.wav"], "/master.wav");
-      expect(args).toContain("-i");
-      expect(args).toContain("/a.wav");
-    });
-    it("three stem inputs", () => {
-      const args = buildMasteringCommand(["/a.wav", "/b.wav", "/c.wav"], "/master.wav");
-      const inputCount = args.filter(a => a === "-i").length;
-      expect(inputCount).toBe(3);
-    });
-    it("filter_complex includes amix", () => {
-      const args = buildMasteringCommand(["/a.wav", "/b.wav"], "/master.wav");
-      const fcIdx = args.indexOf("-filter_complex");
-      expect(args[fcIdx + 1]).toContain("amix");
-    });
-    it("amix inputs matches stem count", () => {
-      const args = buildMasteringCommand(["/a.wav", "/b.wav", "/c.wav"], "/master.wav");
-      const fcIdx = args.indexOf("-filter_complex");
-      expect(args[fcIdx + 1]).toContain("inputs=3");
-    });
-  });
-
-  // --- 14.5 Various validateFilePath ---
+  // --- 10.4 validateFilePath ---
   describe("validateFilePath edge cases", () => {
     it("allows all default extensions", () => {
       for (const ext of [".osclog", ".osc", ".wav", ".json"]) {
@@ -2567,7 +1905,7 @@ describe("14. Additional Edge Cases", () => {
     });
   });
 
-  // --- 14.6 convertToNrt with mixed events ---
+  // --- 10.5 convertToNrt with mixed events ---
   describe("convertToNrt mixed SynthDef + DirtSample", () => {
     it("maps both SynthDefs and dirt samples", () => {
       const events: OscEvent[] = [
@@ -2592,7 +1930,7 @@ describe("14. Additional Edge Cases", () => {
     });
   });
 
-  // --- 14.7 SYNTH_STEM_MAP consistency with getStemBus ---
+  // --- 10.6 SYNTH_STEM_MAP consistency with getStemBus ---
   describe("SYNTH_STEM_MAP <-> getStemBus consistency", () => {
     for (const name of SYNTH_NAMES) {
       it(`${name}: SYNTH_STEM_MAP.bus == getStemBus.bus`, () => {
@@ -2601,7 +1939,7 @@ describe("14. Additional Edge Cases", () => {
     }
   });
 
-  // --- 14.8 Preset file format ---
+  // --- 10.7 Preset file format ---
   describe("preset JSON file format", () => {
     for (const genre of GENRES) {
       it(`${genre}.json is valid JSON`, () => {
@@ -2618,9 +1956,9 @@ describe("14. Additional Edge Cases", () => {
 });
 
 // ============================================================================
-// 15. SC Integration (sclang required)
+// 11. SC Integration (sclang required)
 // ============================================================================
-describe.skipIf(!hasSclang)("15. SC Integration (requires sclang)", () => {
+describe.skipIf(!hasSclang)("11. SC Integration (requires sclang)", () => {
   it("sclang is accessible", () => {
     const result = execSync("sclang -v 2>&1 || true", { encoding: "utf-8" });
     expect(result.length).toBeGreaterThan(0);

@@ -1,9 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
-import sharp from "sharp";
 import { fileURLToPath } from "node:url";
-import { postprocessLayers } from "./postprocess.js";
 import { generateSceneJson } from "./scene-generator.js";
 import type { RetainedLayer } from "./scene-generator.js";
 import { getValidPeriods, sceneSchema } from "../../src/lib/scene-schema.js";
@@ -11,8 +9,6 @@ import type { SceneConfig, LayerRole } from "../../src/lib/scene-schema.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const TMP = path.join(__dirname, "__test_scene_tmp__");
-
-let ppResult: Awaited<ReturnType<typeof postprocessLayers>>;
 
 // Role-based scene (primary test target)
 const ALL_ROLES: LayerRole[] = [
@@ -36,49 +32,11 @@ let roleScene: SceneConfig;
 beforeAll(async () => {
   fs.mkdirSync(TMP, { recursive: true });
 
-  const configs = [
-    { name: "layer-0.png", coverage: 0.9 },
-    { name: "layer-1.png", coverage: 0.5 },
-    { name: "layer-2.png", coverage: 0.2 },
-    { name: "layer-3.png", coverage: 0.1 },
-  ];
-
-  for (const { name, coverage } of configs) {
-    const size = 200;
-    const channels = 4;
-    const buf = Buffer.alloc(size * size * channels);
-
-    const opaqueCount = Math.floor(size * size * coverage);
-    for (let i = 0; i < size * size; i++) {
-      const offset = i * channels;
-      buf[offset] = 128;
-      buf[offset + 1] = 64;
-      buf[offset + 2] = 200;
-      buf[offset + 3] = i < opaqueCount ? 255 : 0;
-    }
-
-    await sharp(buf, { raw: { width: size, height: size, channels } })
-      .png()
-      .toFile(path.join(TMP, name));
-  }
-
-  ppResult = await postprocessLayers(TMP);
-
   roleScene = await generateSceneJson("test.png", mockLayers, [1080, 1080], 20);
 });
 
 afterAll(() => {
   fs.rmSync(TMP, { recursive: true, force: true });
-});
-
-describe("postprocessLayers", () => {
-  it("should order layers by alpha coverage descending", () => {
-    expect(ppResult.files.length).toBe(4);
-
-    for (let i = 0; i < ppResult.coverages.length - 1; i++) {
-      expect(ppResult.coverages[i]).toBeGreaterThanOrEqual(ppResult.coverages[i + 1]);
-    }
-  });
 });
 
 describe("generateSceneJson (role-based)", () => {
