@@ -73,8 +73,47 @@ npm run pipeline input.png -- --title sunset
 ## Prerequisites
 
 - **Node.js** 18+
-- **ffmpeg / ffprobe** (`brew install ffmpeg`) — VMAF 평가 시 `--enable-libvmaf` 빌드 필요
+- **ffmpeg / ffprobe** (`brew install ffmpeg`) — VMAF 평가 시 libvmaf 필요 (아래 참조)
 - **REPLICATE_API_TOKEN** (`.env`) — layered 모드 전용
+
+### libvmaf 설치 (VMAF 메트릭 M7)
+
+Autoresearch의 VMAF 메트릭(M7)을 사용하려면 ffmpeg에 libvmaf가 포함되어야 한다. 미설치 시 M7=0.5 fallback으로 동작하므로 선택 사항이다.
+
+**macOS (Homebrew):**
+
+```bash
+# Homebrew ffmpeg은 기본적으로 libvmaf를 포함
+brew install ffmpeg
+
+# 설치 확인
+ffmpeg -filters 2>&1 | grep libvmaf
+# 출력: "T.. libvmaf" 가 보이면 정상
+```
+
+**소스 빌드 (libvmaf가 포함되지 않은 경우):**
+
+```bash
+# 전제: Xcode Command Line Tools + cmake
+xcode-select --install
+brew install cmake meson ninja
+
+# libvmaf 빌드
+git clone https://github.com/Netflix/vmaf.git
+cd vmaf/libvmaf
+meson build --buildtype=release
+ninja -C build
+sudo ninja -C build install
+
+# ffmpeg을 libvmaf와 함께 재빌드
+brew reinstall ffmpeg --build-from-source
+```
+
+**확인:**
+```bash
+npx tsx scripts/research/metrics/vmaf.ts  # 또는
+node -e "const {checkVmafAvailable} = require('./scripts/research/metrics/vmaf.js'); console.log(checkVmafAvailable())"
+```
 
 ### Audio 모드 추가 의존성
 
