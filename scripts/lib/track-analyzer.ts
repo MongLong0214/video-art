@@ -155,6 +155,66 @@ export const generateSceneAudio = (
   };
 };
 
+// === Phase 2 SynthDef mapping functions ===
+export const mapAcidBass = (bass: { centroid: number; variance: number; flux: number; type: string }) => ({
+  cutoff: bass.flux > 0.5 ? 2200 : 1200,
+  resonance: bass.flux > 0.3 ? 2.5 : 1.5,
+  envDepth: bass.flux > 0.5 ? 5000 : 3000,
+  envDecay: bass.flux > 0.3 ? 0.15 : 0.25,
+  accent: 0,
+  slide: 0,
+  slideTime: 0.1,
+  wave: 0,
+  dist: bass.flux > 0.5 ? 0.4 : 0.2,
+});
+
+export const mapFmLead = (centroid: number) => ({
+  mRatio: centroid > 3000 ? 3 : 2,
+  cRatio: 1,
+  index: centroid > 3000 ? 5 : 3,
+  iScale: 5,
+  vibrato: 0.3,
+  drive: centroid > 3000 ? 0.3 : 0.15,
+});
+
+export const mapLayeredKick = (freq: { low: number }, dyn: { crest: number }) => ({
+  subDecay: freq.low > 0.6 ? 0.5 : 0.3,
+  bodyDecay: 0.1,
+  clickAmp: dyn.crest > 4 ? 0.7 : 0.4,
+  bodyFreq: 200,
+  drive: dyn.crest < 3 ? 0.4 : 0.1,
+  punch: dyn.crest > 4 ? 0.7 : 0.3,
+});
+
+export const mapSquelch = () => ({
+  sweepStart: 300,
+  sweepEnd: 5000,
+  sweepCurve: -4,
+  resonance: 0.85,
+  source: 1,
+  lfoRate: 0,
+  lfoDepth: 0,
+});
+
+export const mapWavetable = () => ({
+  morph: 0.5,
+  attack: 1.0,
+  release: 1.5,
+  filterCutoff: 4000,
+  filterRes: 0.4,
+  detune: 0.005,
+  bufBase: 8,
+});
+
+export const mapGranular = () => ({
+  buf: 0,
+  density: 8,
+  grainDur: 0.1,
+  rate: 1.0,
+  posRand: 0.5,
+  panWidth: 0.5,
+});
+
 // === Full preset generation ===
 export const generatePreset = (analysis: AnalysisResult, name: string): Preset => {
   const sanitizedName = name.replace(/[^a-zA-Z0-9_-]/g, "_").replace(/^_+|_+$/g, "") || "unnamed";
@@ -182,6 +242,13 @@ export const generatePreset = (analysis: AnalysisResult, name: string): Preset =
       lead: { vibrato: 0.2, portamento: 0.1, drive: mapSaturate(contrast) },
       arp_pluck: { decay: 0.2, brightness: centroid > 3000 ? 0.7 : 0.4 },
       riser: { sweepRange: 0.6, noiseAmount: 0.3 },
+      // Phase 2 optional SynthDefs — conditional on analysis
+      ...(bass.type === "acid" ? { acid_bass: mapAcidBass(bass) } : {}),
+      ...(centroid > 2500 ? { fm_lead: mapFmLead(centroid) } : {}),
+      ...(genre === "trance" || genre === "ambient" ? { wavetable_pad: mapWavetable() } : {}),
+      ...(genre === "trance" || genre === "ambient" ? { granular_pad: mapGranular() } : {}),
+      ...{ layered_kick: mapLayeredKick(freq, dyn) },
+      ...(bass.flux > 0.3 ? { squelch: mapSquelch() } : {}),
     },
     fxDefaults: {
       compress: mapCompress(dyn.crest),
@@ -200,10 +267,10 @@ export const generatePreset = (analysis: AnalysisResult, name: string): Preset =
       sideRelease: genre === "trance" ? 0.15 : 0.1,
     },
     stemGroups: {
-      drums: ["kick", "hat", "clap"],
-      bass: ["bass"],
-      lead: ["lead", "arp_pluck"],
-      pad: ["pad", "supersaw"],
+      drums: ["kick", "layered_kick", "hat", "clap"],
+      bass: bass.type === "acid" ? ["acid_bass"] : ["bass"],
+      synth: ["lead", "fm_lead", "supersaw", "arp_pluck", "squelch"],
+      pad: ["pad", "wavetable_pad", "granular_pad"],
       fx: ["riser"],
     },
   };
