@@ -82,6 +82,8 @@ const SC_DIR = path.join(PROJECT_ROOT, "audio", "sc", "superdirt");
 const SCORES_DIR = path.join(PROJECT_ROOT, "audio", "sc", "scores");
 const GENRES = ["hard_techno", "melodic_techno", "industrial", "psytrance", "progressive_trance"] as const;
 const SYNTH_NAMES = ["kick", "bass", "hat", "clap", "supersaw", "pad", "lead", "arp_pluck", "riser"] as const;
+const PHASE2_SYNTH_NAMES = ["acid_bass", "fm_lead", "wavetable_pad", "granular_pad", "layered_kick", "squelch", "sample_player"] as const;
+const ALL_SYNTH_NAMES = [...SYNTH_NAMES, ...PHASE2_SYNTH_NAMES] as const;
 const COMMON_PARAMS = ["freq", "amp", "dur", "pan"];
 const FX_DEFAULTS_KEYS = [
   "compress", "threshold", "ratio", "compAttack", "compRelease",
@@ -126,8 +128,8 @@ describe("1. SynthDef Parameters", () => {
 
   // --- 1.1 SYNTHDEF_PARAM_KEYS structure ---
   describe("SYNTHDEF_PARAM_KEYS structure", () => {
-    it("contains exactly 9 SynthDefs", () => {
-      expect(Object.keys(SYNTHDEF_PARAM_KEYS)).toHaveLength(9);
+    it("contains exactly 16 SynthDefs", () => {
+      expect(Object.keys(SYNTHDEF_PARAM_KEYS)).toHaveLength(16);
     });
 
     for (const name of SYNTH_NAMES) {
@@ -139,7 +141,7 @@ describe("1. SynthDef Parameters", () => {
 
     it("does not contain unknown SynthDefs", () => {
       for (const key of Object.keys(SYNTHDEF_PARAM_KEYS)) {
-        expect(SYNTH_NAMES).toContain(key);
+        expect(ALL_SYNTH_NAMES).toContain(key);
       }
     });
   });
@@ -888,8 +890,8 @@ describe("4. OSC to NRT Conversion", () => {
       expect(r!.stem).toBe("fx");
       expect(r!.bus).toBe(6);
     });
-    it("SUPPORTED_SYNTHDEFS has 9 entries", () => {
-      expect(SUPPORTED_SYNTHDEFS.size).toBe(9);
+    it("SUPPORTED_SYNTHDEFS has 16 entries", () => {
+      expect(SUPPORTED_SYNTHDEFS.size).toBe(16);
     });
   });
 
@@ -1784,8 +1786,8 @@ describe("8. Live System", () => {
 // 9. SYNTH_STEM_MAP Structure
 // ============================================================================
 describe("9. SYNTH_STEM_MAP Structure", () => {
-  it("has 9 entries", () => {
-    expect(Object.keys(SYNTH_STEM_MAP)).toHaveLength(9);
+  it("has 16 entries", () => {
+    expect(Object.keys(SYNTH_STEM_MAP)).toHaveLength(16);
   });
 
   for (const name of SYNTH_NAMES) {

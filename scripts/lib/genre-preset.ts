@@ -4,6 +4,7 @@ import { z } from "zod";
 
 // Per-SynthDef allowed parameter keys (from actual .scd files)
 const SYNTHDEF_PARAMS: Record<string, string[]> = {
+  // Phase 1 — 9 base SynthDefs
   kick: ["drive", "click", "decay"],
   bass: ["cutoff", "resonance", "envAmount"],
   hat: ["openness", "tone"],
@@ -13,6 +14,14 @@ const SYNTHDEF_PARAMS: Record<string, string[]> = {
   lead: ["vibrato", "portamento", "drive"],
   arp_pluck: ["decay", "brightness"],
   riser: ["sweepRange", "noiseAmount"],
+  // Phase 2 — 7 new SynthDefs
+  acid_bass: ["cutoff", "resonance", "envDepth", "envDecay", "accent", "slide", "slideTime", "wave", "dist"],
+  fm_lead: ["mRatio", "cRatio", "index", "iScale", "vibrato", "drive"],
+  wavetable_pad: ["morph", "attack", "release", "filterCutoff", "filterRes", "detune", "bufBase"],
+  granular_pad: ["buf", "density", "grainDur", "rate", "posRand", "panWidth"],
+  layered_kick: ["subDecay", "bodyDecay", "clickAmp", "bodyFreq", "drive", "punch"],
+  squelch: ["sweepStart", "sweepEnd", "sweepCurve", "resonance", "source", "lfoRate", "lfoDepth"],
+  sample_player: ["buf", "rate", "startPos", "attack", "release", "hpFreq", "lpFreq"],
 };
 
 // Common params every SynthDef accepts
@@ -55,6 +64,7 @@ export const presetSchema = z.object({
   name: z.string().regex(/^[a-zA-Z0-9_-]+$/),
   bpm: bpmSchema,
   synthParams: z.object({
+    // Phase 1 — required
     kick: synthParamSchema("kick"),
     bass: synthParamSchema("bass"),
     hat: synthParamSchema("hat"),
@@ -64,6 +74,14 @@ export const presetSchema = z.object({
     lead: synthParamSchema("lead"),
     arp_pluck: synthParamSchema("arp_pluck"),
     riser: synthParamSchema("riser"),
+    // Phase 2 — optional (backward compatible)
+    acid_bass: synthParamSchema("acid_bass").optional(),
+    fm_lead: synthParamSchema("fm_lead").optional(),
+    wavetable_pad: synthParamSchema("wavetable_pad").optional(),
+    granular_pad: synthParamSchema("granular_pad").optional(),
+    layered_kick: synthParamSchema("layered_kick").optional(),
+    squelch: synthParamSchema("squelch").optional(),
+    sample_player: synthParamSchema("sample_player").optional(),
   }),
   fxDefaults: fxDefaultsSchema,
   stemGroups: stemGroupsSchema,
@@ -112,6 +130,9 @@ export const mergeWithDefaults = (
         ...(result as Record<string, Record<string, number>>)[synth],
         ...params,
       };
+    } else if (synth in SYNTHDEF_PARAMS) {
+      // Phase 2 optional SynthDefs — preserve if valid
+      (result as Record<string, Record<string, number>>)[synth] = params as Record<string, number>;
     }
   }
   return result;

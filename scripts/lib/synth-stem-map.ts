@@ -8,6 +8,7 @@ export interface StemMapping {
 }
 
 export const SYNTH_STEM_MAP: Record<string, StemMapping> = {
+  // Phase 1 — 9 base
   kick: { synthDef: "kick", stem: "drums", bus: 0 },
   hat: { synthDef: "hat", stem: "drums", bus: 0 },
   clap: { synthDef: "clap", stem: "drums", bus: 0 },
@@ -17,6 +18,24 @@ export const SYNTH_STEM_MAP: Record<string, StemMapping> = {
   lead: { synthDef: "lead", stem: "synth", bus: 4 },
   arp_pluck: { synthDef: "arp_pluck", stem: "synth", bus: 4 },
   riser: { synthDef: "riser", stem: "fx", bus: 6 },
+  // Phase 2 — 7 new
+  acid_bass: { synthDef: "acid_bass", stem: "bass", bus: 2 },
+  fm_lead: { synthDef: "fm_lead", stem: "synth", bus: 4 },
+  wavetable_pad: { synthDef: "wavetable_pad", stem: "synth", bus: 4 },
+  granular_pad: { synthDef: "granular_pad", stem: "synth", bus: 4 },
+  layered_kick: { synthDef: "layered_kick", stem: "drums", bus: 0 },
+  squelch: { synthDef: "squelch", stem: "synth", bus: 4 },
+  sample_player: { synthDef: "sample_player", stem: "drums", bus: 0 },
+};
+
+// sample_player dynamic bus routing — hit type determines stem bus
+export const mapSamplePlayerBus = (hitType: string): number => {
+  switch (hitType) {
+    case "kick": case "snare": case "hat": return 0;
+    case "bass": return 2;
+    case "fx": return 6;
+    default: return 4;
+  }
 };
 
 export const SUPPORTED_SYNTHDEFS = new Set(Object.keys(SYNTH_STEM_MAP));
@@ -88,7 +107,15 @@ export const normalizeParams = (
         "begin", "end", "hcutoff",
         "openness", "tone", "filterEnv", "vibrato", "portamento",
         "brightness", "sweepRange", "noiseAmount", "envAmount", "mix", "spread",
-        "attack", "release"].includes(resolvedKey)
+        "attack", "release",
+        // Phase 2 new params
+        "envDepth", "envDecay", "accent", "slide", "slideTime", "wave", "dist",
+        "mRatio", "cRatio", "index", "iScale",
+        "morph", "filterCutoff", "filterRes", "bufBase",
+        "buf", "density", "grainDur", "rate", "posRand", "panWidth",
+        "subDecay", "bodyDecay", "clickAmp", "bodyFreq", "punch",
+        "sweepStart", "sweepEnd", "sweepCurve", "source", "lfoRate", "lfoDepth",
+        "startPos", "hpFreq", "lpFreq"].includes(resolvedKey)
     ) {
       warnings.push(`${key}: unknown alias → ${resolvedKey}`);
     }

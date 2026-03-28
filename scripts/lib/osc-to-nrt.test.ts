@@ -69,7 +69,7 @@ describe("synth-stem-map", () => {
     for (const name of names) {
       expect(mapSynthDef(name)).not.toBeNull();
     }
-    expect(SUPPORTED_SYNTHDEFS.size).toBe(9);
+    expect(SUPPORTED_SYNTHDEFS.size).toBe(16);
   });
 
   // TC-8: normalizeParams gain to amp
