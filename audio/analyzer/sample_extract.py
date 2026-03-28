@@ -97,11 +97,12 @@ if __name__ == "__main__":
     out_dir = os.path.realpath(sys.argv[2])
     stem_type = sys.argv[3]
 
-    # Path validation
+    # Path validation — both paths must be within project root
     project_root = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', '..'))
-    if not stem_path.startswith(project_root):
-        print(f"Error: path outside project root", file=sys.stderr)
-        sys.exit(1)
+    for p, label in [(stem_path, "stem"), (out_dir, "output")]:
+        if not p.startswith(project_root):
+            print(f"Error: {label} path outside project root", file=sys.stderr)
+            sys.exit(1)
 
     result = extract_hits(stem_path, out_dir, stem_type)
     print(f"Extracted: {sum(len(v) for v in result.values())} hits")

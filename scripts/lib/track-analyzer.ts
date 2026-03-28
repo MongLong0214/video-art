@@ -61,6 +61,7 @@ export const mapCompress = (crest: number): number => {
 
 // === Spectral contrast → saturate ===
 export const mapSaturate = (contrastMean: number[]): number => {
+  if (contrastMean.length === 0) return 0.4;
   const avg = contrastMean.reduce((a, b) => a + b, 0) / contrastMean.length;
   if (avg > 20) return 0.2;  // high contrast = clean
   if (avg > 12) return 0.4;
@@ -84,7 +85,7 @@ export const mapDanceabilityToEnergy = (score: number): number => {
 
 // === Genre from BPM ===
 export const mapGenre = (bpm: number): "techno" | "trance" | "house" | "dnb" | "ambient" => {
-  if (bpm >= 135 && bpm <= 155) return "trance";
+  if (bpm >= 135 && bpm < 160) return "trance";
   if (bpm >= 120 && bpm < 135) return "techno";
   if (bpm >= 115 && bpm < 120) return "house";
   if (bpm >= 160) return "dnb";
@@ -269,8 +270,8 @@ export const generatePreset = (analysis: AnalysisResult, name: string): Preset =
     stemGroups: {
       drums: ["kick", "layered_kick", "hat", "clap"],
       bass: bass.type === "acid" ? ["acid_bass"] : ["bass"],
-      synth: ["lead", "fm_lead", "supersaw", "arp_pluck", "squelch"],
-      pad: ["pad", "wavetable_pad", "granular_pad"],
+      synth: ["lead", ...(centroid > 2500 ? ["fm_lead"] : []), "supersaw", "arp_pluck", ...(bass.flux > 0.3 ? ["squelch"] : [])],
+      pad: ["pad", ...(genre === "trance" || genre === "ambient" ? ["wavetable_pad", "granular_pad"] : [])],
       fx: ["riser"],
     },
   };
