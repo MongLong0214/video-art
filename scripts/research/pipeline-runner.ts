@@ -9,6 +9,72 @@ import path from "node:path";
 const RESEARCH_DIR = ".cache/research/current";
 const RESEARCH_VIDEO_PATH = `${RESEARCH_DIR}/video.mp4`;
 
+// ── Scene.json Patch/Restore (performance optimization) ────
+
+let sceneJsonBackup: string | null = null;
+
+export function patchSceneJson(cwd: string): void {
+  const scenePath = path.join(cwd, "public", "scene.json");
+  if (!fs.existsSync(scenePath)) return;
+
+  const original = fs.readFileSync(scenePath, "utf-8");
+  sceneJsonBackup = original;
+
+  const scene = JSON.parse(original);
+  let patched = false;
+
+  if (Array.isArray(scene.resolution)) {
+    const [w, h] = scene.resolution;
+    if (w > 1080 || h > 1080) {
+      scene.resolution = [1080, 1080];
+      patched = true;
+    }
+  }
+
+  if (typeof scene.duration === "number" && scene.duration > 10) {
+    scene.duration = 10;
+    patched = true;
+  }
+
+  if (patched) {
+    fs.writeFileSync(scenePath, JSON.stringify(scene, null, 2));
+    console.log("  [pipeline] scene.json patched for research (resolution/duration capped)");
+  }
+}
+
+export function restoreSceneJson(cwd: string): void {
+  if (sceneJsonBackup === null) return;
+  const scenePath = path.join(cwd, "public", "scene.json");
+  fs.writeFileSync(scenePath, sceneJsonBackup);
+  sceneJsonBackup = null;
+  console.log("  [pipeline] scene.json restored to original");
+}
+
+// ── Archive Cleanup ────────────────────────────────────────
+
+function cleanPreviousArchive(cwd: string): void {
+  // Remove out/layered/*_research* directories
+  const layeredDir = path.join(cwd, "out/layered");
+  if (fs.existsSync(layeredDir)) {
+    const dirs = fs.readdirSync(layeredDir).filter((d) => d.includes("_research"));
+    for (const dir of dirs) {
+      fs.rmSync(path.join(layeredDir, dir), { recursive: true, force: true });
+    }
+    if (dirs.length > 0) {
+      console.log(`  [pipeline] Cleaned ${dirs.length} previous _research archive(s)`);
+    }
+  }
+
+  // Clear .cache/research/current/ contents
+  const cacheDir = path.join(cwd, RESEARCH_DIR);
+  if (fs.existsSync(cacheDir)) {
+    const entries = fs.readdirSync(cacheDir);
+    for (const entry of entries) {
+      fs.rmSync(path.join(cacheDir, entry), { recursive: true, force: true });
+    }
+  }
+}
+
 export interface PipelineResult {
   videoPath: string;
   manifestPath: string;
@@ -50,6 +116,7 @@ export function runExportLayered(cwd: string): string {
     cwd,
     timeout: 600_000, // 10 min for large exports
     stdio: "inherit",
+    env: { ...process.env, RESEARCH_FPS: "30", RESEARCH_PRESET: "fast" },
   });
 
   // Find the output video: out/layered/*_-research/_research.mp4
@@ -101,13 +168,26 @@ export async function runFullPipeline(
 ): Promise<PipelineResult> {
   const startMs = Date.now();
 
+  // Cleanup previous archive before starting
+  cleanPreviousArchive(cwd);
+
   // Step 1: Layer decomposition (Replicate API → scene.json + layers in public/)
   console.log("  [pipeline] Layer decomposition...");
   const archiveDir = runLayerDecomposition(inputPath, cwd, config);
 
-  // Step 2: Video export (Vite + Puppeteer + ffmpeg via export-layered subprocess)
-  console.log("  [pipeline] Video export (Vite + Puppeteer + ffmpeg)...");
-  const exportedVideoPath = runExportLayered(cwd);
+  // Step 2: Patch scene.json for research performance + Video export
+  patchSceneJson(cwd);
+  const exitHandler = () => restoreSceneJson(cwd);
+  process.on("exit", exitHandler);
+
+  let exportedVideoPath: string;
+  try {
+    console.log("  [pipeline] Video export (Vite + Puppeteer + ffmpeg)...");
+    exportedVideoPath = runExportLayered(cwd);
+  } finally {
+    restoreSceneJson(cwd);
+    process.removeListener("exit", exitHandler);
+  }
 
   // Step 3: Copy video to stable research path
   const videoPath = copyToResearchDir(exportedVideoPath, cwd);

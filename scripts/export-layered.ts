@@ -13,7 +13,8 @@ import {
 import { sceneSchema } from "../src/lib/scene-schema.js";
 import { waitForServer } from "./lib/browser-utils.js";
 
-const FPS = 60;
+const FPS = Number(process.env.RESEARCH_FPS) || 30;
+const PRESET = process.env.RESEARCH_PRESET || "slow";
 
 function startViteServer(port: number): ChildProcess {
   return exec(`npx vite --port ${port}`, { cwd: process.cwd() });
@@ -89,7 +90,7 @@ function encodeVideo(inputFramesDir: string, outputPath: string): Promise<void> 
     "-c:v", "libx264",
     "-pix_fmt", "yuv420p",
     "-b:v", "15M",
-    "-preset", "slow",
+    "-preset", PRESET,
     "-movflags", "+faststart",
     outputPath,
   ];
