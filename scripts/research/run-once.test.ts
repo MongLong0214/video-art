@@ -1,10 +1,11 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
   makeKeepDecision,
   formatTsvRow,
   parseTsvHeader,
   formatConsoleOutput,
   countExperiments,
+  parseRunOnceArgs,
 } from "./run-once.js";
 
 describe("makeKeepDecision", () => {
@@ -85,5 +86,19 @@ describe("countExperiments", () => {
 
   it("returns 0 for empty string", () => {
     expect(countExperiments("")).toBe(0);
+  });
+});
+
+describe("parseRunOnceArgs", () => {
+  it("parses --tag and --budget", () => {
+    const args = parseRunOnceArgs(["--tag", "test", "--budget", "5"]);
+    expect(args.tag).toBe("test");
+    expect(args.budget).toBe(5);
+  });
+
+  it("returns undefined for missing args", () => {
+    const args = parseRunOnceArgs([]);
+    expect(args.tag).toBeUndefined();
+    expect(args.budget).toBeUndefined();
   });
 });

@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { CrashCounter, BudgetTracker } from "./git-automation.js";
+import { describe, it, expect, vi } from "vitest";
+import { CrashCounter, BudgetTracker, registerSigintHandler } from "./git-automation.js";
 
 describe("CrashCounter", () => {
   it("starts at 0", () => {
@@ -40,6 +40,51 @@ describe("CrashCounter", () => {
     c.recordSuccess();
     expect(c.shouldStop()).toBe(false);
     expect(c.count).toBe(0);
+  });
+
+  it("records error messages and provides summary", () => {
+    const c = new CrashCounter();
+    c.recordCrash("Error A");
+    c.recordCrash("Error B");
+    c.recordCrash("Error C");
+    expect(c.errors).toHaveLength(3);
+    const summary = c.getErrorSummary();
+    expect(summary).toContain("Error A");
+    expect(summary).toContain("Error B");
+    expect(summary).toContain("Error C");
+  });
+
+  it("limits stored errors to 5", () => {
+    const c = new CrashCounter();
+    for (let i = 0; i < 7; i++) c.recordCrash(`Error ${i}`);
+    expect(c.errors).toHaveLength(5);
+    expect(c.errors[0]).toBe("Error 2");
+  });
+});
+
+describe("registerSigintHandler", () => {
+  it("calls restoreFn (gitRestoreConfig) on SIGINT", () => {
+    const restoreFn = vi.fn();
+    const logFn = vi.fn();
+
+    const listeners: Array<() => void> = [];
+    const onSpy = vi.spyOn(process, "on").mockImplementation(((event: string, handler: () => void) => {
+      if (event === "SIGINT") listeners.push(handler);
+      return process;
+    }) as typeof process.on);
+
+    const exitSpy = vi.spyOn(process, "exit").mockImplementation((() => {}) as typeof process.exit);
+
+    registerSigintHandler(restoreFn, logFn);
+
+    expect(listeners).toHaveLength(1);
+    listeners[0]();
+
+    expect(restoreFn).toHaveBeenCalledTimes(1);
+    expect(logFn).toHaveBeenCalledWith(expect.stringContaining("SIGINT"));
+
+    onSpy.mockRestore();
+    exitSpy.mockRestore();
   });
 });
 

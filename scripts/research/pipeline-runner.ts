@@ -104,6 +104,18 @@ export function runLayerDecomposition(
   return archiveMatch?.[1]?.trim() ?? "";
 }
 
+// ── Chrome/Puppeteer Check ────────────────────────────────
+
+export function checkChromeAvailable(): boolean {
+  try {
+    // puppeteer uses Chrome/Chromium — check if it can be found
+    execFileSync("npx", ["puppeteer", "browsers", "list"], { stdio: "pipe", timeout: 15_000 });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 // ── Step 2: Export Video (subprocess) ───────────────────────
 
 export function runExportLayered(cwd: string): string {
@@ -175,7 +187,15 @@ export async function runFullPipeline(
   console.log("  [pipeline] Layer decomposition...");
   const archiveDir = runLayerDecomposition(inputPath, cwd, config);
 
-  // Step 2: Patch scene.json for research performance + Video export
+  // Step 2: Pre-check Chrome + Patch scene.json + Video export
+  if (!checkChromeAvailable()) {
+    throw new Error(
+      "Chrome/Chromium not found for Puppeteer. Install with:\n" +
+      "  npx puppeteer browsers install chrome\n" +
+      "Or install system Chrome: https://www.google.com/chrome/",
+    );
+  }
+
   patchSceneJson(cwd);
   const exitHandler = () => restoreSceneJson(cwd);
   process.on("exit", exitHandler);

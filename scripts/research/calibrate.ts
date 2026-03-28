@@ -116,6 +116,53 @@ export function parseRunsArg(argv: string[]): number {
   return 10;
 }
 
+// ── Calibration Loop (testable) ──────────────────────────
+
+export interface RunDeps {
+  runPipeline: (cwd: string, inputPath: string) => Promise<{ videoPath: string; manifestPath: string }>;
+  evaluate: (opts: {
+    videoPath: string;
+    referenceCacheDir: string;
+    manifestPath?: string;
+    sourceVideoPath: string;
+  }) => Promise<EvalResult>;
+}
+
+export async function runCalibrationLoop(
+  runs: number,
+  cwd: string,
+  inputPath: string,
+  refMeta: { sourcePath: string },
+  deps: RunDeps,
+): Promise<EvalResult[]> {
+  const results: EvalResult[] = [];
+
+  for (let i = 1; i <= runs; i++) {
+    console.log(`[calibrate ${i}/${runs}] Running full pipeline...`);
+    const runStart = Date.now();
+
+    try {
+      const pipeline = await deps.runPipeline(cwd, inputPath);
+
+      const result = await deps.evaluate({
+        videoPath: pipeline.videoPath,
+        referenceCacheDir: REFERENCE_CACHE_DIR,
+        manifestPath: pipeline.manifestPath || undefined,
+        sourceVideoPath: refMeta.sourcePath,
+      });
+
+      results.push(result);
+      const elapsed = ((Date.now() - runStart) / 1000).toFixed(1);
+      console.log(`[calibrate ${i}/${runs}] composite=${compositeScore(result.metrics).toFixed(4)} (${elapsed}s)\n`);
+    } catch (err) {
+      const elapsed = ((Date.now() - runStart) / 1000).toFixed(1);
+      console.error(`[calibrate ${i}/${runs}] FAILED (${elapsed}s): ${err instanceof Error ? err.message : err}\n`);
+    }
+  }
+
+  return results;
+}
+
 // CLI entry point
 if (process.argv[1]?.endsWith("calibrate.ts")) {
   const runs = parseRunsArg(process.argv);
@@ -137,32 +184,11 @@ if (process.argv[1]?.endsWith("calibrate.ts")) {
   // Dynamic import to avoid pulling heavy deps at module load
   import("./evaluate.js").then(async ({ evaluateVideo }) => {
     const refMeta = JSON.parse(readFileSync(`${REFERENCE_CACHE_DIR}/metadata.json`, "utf-8"));
-    const results: EvalResult[] = [];
 
-    for (let i = 1; i <= runs; i++) {
-      console.log(`[calibrate ${i}/${runs}] Running full pipeline...`);
-      const runStart = Date.now();
-
-      try {
-        // Run full pipeline: decompose → capture → encode
-        const pipeline = await runFullPipeline(cwd, inputPath);
-
-        // Evaluate generated video against reference
-        const result = await evaluateVideo({
-          videoPath: pipeline.videoPath,
-          referenceCacheDir: REFERENCE_CACHE_DIR,
-          manifestPath: pipeline.manifestPath || undefined,
-          sourceVideoPath: refMeta.sourcePath,
-        });
-
-        results.push(result);
-        const elapsed = ((Date.now() - runStart) / 1000).toFixed(1);
-        console.log(`[calibrate ${i}/${runs}] composite=${compositeScore(result.metrics).toFixed(4)} (${elapsed}s)\n`);
-      } catch (err) {
-        const elapsed = ((Date.now() - runStart) / 1000).toFixed(1);
-        console.error(`[calibrate ${i}/${runs}] FAILED (${elapsed}s): ${err instanceof Error ? err.message : err}\n`);
-      }
-    }
+    const results = await runCalibrationLoop(runs, cwd, inputPath, refMeta, {
+      runPipeline: (c, i) => runFullPipeline(c, i),
+      evaluate: evaluateVideo,
+    });
 
     if (results.length === 0) {
       console.error("No successful runs. Cannot calibrate.");

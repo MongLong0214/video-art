@@ -7,9 +7,11 @@ import {
   saveCalibration,
   readModelVersion,
   parseRunsArg,
+  runCalibrationLoop,
   type CalibrationResult,
   type Stats,
   type PerMetricStats,
+  type RunDeps,
 } from "./calibrate.js";
 import type { EvalResult, MetricValues } from "./evaluate.js";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "fs";
@@ -190,5 +192,67 @@ describe("parseRunsArg", () => {
 
   it("parses --runs 1", () => {
     expect(parseRunsArg(["node", "calibrate.ts", "--runs", "1"])).toBe(1);
+  });
+});
+
+// ── runCalibrationLoop (T7 edge cases) ───────────────────
+
+describe("runCalibrationLoop", () => {
+  const refMeta = { sourcePath: "/source.mp4" };
+  const goodResult: EvalResult = mockEvalResult(0.75);
+
+  it("skips failed runs and continues", async () => {
+    const deps: RunDeps = {
+      runPipeline: vi.fn()
+        .mockRejectedValueOnce(new Error("pipeline crash"))
+        .mockResolvedValueOnce({ videoPath: "/v.mp4", manifestPath: "" })
+        .mockRejectedValueOnce(new Error("pipeline crash 2")),
+      evaluate: vi.fn().mockResolvedValue(goodResult),
+    };
+
+    const results = await runCalibrationLoop(3, "/project", "input.png", refMeta, deps);
+
+    expect(results).toHaveLength(1);
+    expect(results[0].qualityScore).toBe(0.75);
+    expect(deps.runPipeline).toHaveBeenCalledTimes(3);
+  });
+
+  it("returns empty array when all runs fail", async () => {
+    const deps: RunDeps = {
+      runPipeline: vi.fn().mockRejectedValue(new Error("always fails")),
+      evaluate: vi.fn(),
+    };
+
+    const results = await runCalibrationLoop(3, "/project", "input.png", refMeta, deps);
+
+    expect(results).toHaveLength(0);
+    expect(deps.evaluate).not.toHaveBeenCalled();
+  });
+
+  it("collects all results when all runs succeed", async () => {
+    const deps: RunDeps = {
+      runPipeline: vi.fn().mockResolvedValue({ videoPath: "/v.mp4", manifestPath: "" }),
+      evaluate: vi.fn().mockResolvedValue(goodResult),
+    };
+
+    const results = await runCalibrationLoop(5, "/project", "input.png", refMeta, deps);
+
+    expect(results).toHaveLength(5);
+    expect(deps.runPipeline).toHaveBeenCalledTimes(5);
+    expect(deps.evaluate).toHaveBeenCalledTimes(5);
+  });
+
+  it("skips failed evaluate and continues", async () => {
+    const deps: RunDeps = {
+      runPipeline: vi.fn().mockResolvedValue({ videoPath: "/v.mp4", manifestPath: "" }),
+      evaluate: vi.fn()
+        .mockResolvedValueOnce(goodResult)
+        .mockRejectedValueOnce(new Error("evaluate crash"))
+        .mockResolvedValueOnce(goodResult),
+    };
+
+    const results = await runCalibrationLoop(3, "/project", "input.png", refMeta, deps);
+
+    expect(results).toHaveLength(2);
   });
 });

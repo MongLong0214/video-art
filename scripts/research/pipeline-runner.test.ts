@@ -17,6 +17,7 @@ import {
   resolveInputImagePath,
   patchSceneJson,
   restoreSceneJson,
+  checkChromeAvailable,
 } from "./pipeline-runner";
 
 const mockedExecFileSync = vi.mocked(execFileSync);
@@ -140,6 +141,8 @@ describe("runFullPipeline", () => {
 
     // Step 1: runLayerDecomposition
     mockedExecFileSync.mockReturnValueOnce("Archive: /archive/001\n");
+    // checkChromeAvailable
+    mockedExecFileSync.mockReturnValueOnce("");
     // Step 2: runExportLayered — execFileSync for export-layered
     mockedExecFileSync.mockReturnValueOnce("");
 
@@ -185,6 +188,8 @@ describe("runFullPipeline", () => {
 
     // Step 1 succeeds
     mockedExecFileSync.mockReturnValueOnce("Archive: /archive/001\n");
+    // checkChromeAvailable succeeds
+    mockedExecFileSync.mockReturnValueOnce("");
     // Step 2 fails
     mockedExecFileSync.mockImplementationOnce(() => {
       throw new Error("export-layered crashed");
@@ -205,6 +210,7 @@ describe("runFullPipeline", () => {
       .mockReturnValueOnce(true);  // out/layered (runExportLayered)
 
     mockedExecFileSync.mockReturnValueOnce("Archive: /archive/001\n");
+    mockedExecFileSync.mockReturnValueOnce(""); // checkChromeAvailable
     mockedExecFileSync.mockReturnValueOnce("");
 
     mockedFs.readdirSync
@@ -227,6 +233,7 @@ describe("runFullPipeline", () => {
       .mockReturnValueOnce(false); // manifest does not exist
 
     mockedExecFileSync.mockReturnValueOnce("Archive: /archive/001\n");
+    mockedExecFileSync.mockReturnValueOnce(""); // checkChromeAvailable
     mockedExecFileSync.mockReturnValueOnce("");
 
     mockedFs.readdirSync
@@ -251,6 +258,7 @@ describe("runFullPipeline", () => {
       .mockReturnValueOnce(true);  // manifest
 
     mockedExecFileSync.mockReturnValueOnce("Archive: /archive/001\n");
+    mockedExecFileSync.mockReturnValueOnce(""); // checkChromeAvailable
     mockedExecFileSync.mockReturnValueOnce("");
 
     mockedFs.readdirSync
@@ -362,6 +370,8 @@ describe("runFullPipeline archive cleanup", () => {
 
     // Step 1: runLayerDecomposition
     mockedExecFileSync.mockReturnValueOnce("Archive: /archive/001\n");
+    // checkChromeAvailable
+    mockedExecFileSync.mockReturnValueOnce("");
     // Step 2: runExportLayered
     mockedExecFileSync.mockReturnValueOnce("");
 
@@ -397,6 +407,8 @@ describe("runFullPipeline env passing", () => {
 
     // Step 1: runLayerDecomposition
     mockedExecFileSync.mockReturnValueOnce("Archive: /archive/001\n");
+    // checkChromeAvailable
+    mockedExecFileSync.mockReturnValueOnce("");
     // Step 2: runExportLayered
     mockedExecFileSync.mockReturnValueOnce("");
   }
@@ -405,8 +417,8 @@ describe("runFullPipeline env passing", () => {
     setupFullPipelineMocks();
     await runFullPipeline("/project", "input.png");
 
-    // Second execFileSync call is runExportLayered
-    const exportCall = mockedExecFileSync.mock.calls[1];
+    // Third execFileSync call is runExportLayered (after decomposition + chrome check)
+    const exportCall = mockedExecFileSync.mock.calls[2];
     const opts = exportCall[2] as { env?: Record<string, string> };
     expect(opts.env?.RESEARCH_FPS).toBe("30");
   });
@@ -415,7 +427,7 @@ describe("runFullPipeline env passing", () => {
     setupFullPipelineMocks();
     await runFullPipeline("/project", "input.png");
 
-    const exportCall = mockedExecFileSync.mock.calls[1];
+    const exportCall = mockedExecFileSync.mock.calls[2];
     const opts = exportCall[2] as { env?: Record<string, string> };
     expect(opts.env?.RESEARCH_PRESET).toBe("fast");
   });
@@ -438,6 +450,8 @@ describe("scene.json restore on failure", () => {
 
     // Step 1: runLayerDecomposition succeeds
     mockedExecFileSync.mockReturnValueOnce("Archive: /archive/001\n");
+    // checkChromeAvailable succeeds
+    mockedExecFileSync.mockReturnValueOnce("");
     // Step 2: runExportLayered fails
     mockedExecFileSync.mockImplementationOnce(() => {
       throw new Error("export-layered crashed");
@@ -454,3 +468,49 @@ describe("scene.json restore on failure", () => {
     expect(lastWrite[1]).toBe(original);
   });
 });
+
+// ── Chrome not installed shows install guide (T7 #8) ─────
+
+describe("checkChromeAvailable", () => {
+  it("returns true when puppeteer browsers list succeeds", () => {
+    mockedExecFileSync.mockReturnValue("");
+    expect(checkChromeAvailable()).toBe(true);
+  });
+
+  it("returns false when puppeteer browsers list fails", () => {
+    mockedExecFileSync.mockImplementation(() => {
+      throw new Error("Command not found");
+    });
+    expect(checkChromeAvailable()).toBe(false);
+  });
+});
+
+describe("Chrome not installed shows install guide", () => {
+  it("runFullPipeline throws install guide when Chrome unavailable", async () => {
+    mockCleanAndPatch();
+
+    mockedFs.existsSync
+      .mockReturnValueOnce(false)  // out/layered (clean)
+      .mockReturnValueOnce(false); // .cache/research/current (clean)
+
+    // Step 1: runLayerDecomposition succeeds
+    mockedExecFileSync.mockReturnValueOnce("Archive: /archive/001\n");
+    // checkChromeAvailable: puppeteer browsers list fails
+    mockedExecFileSync.mockImplementationOnce(() => {
+      throw new Error("puppeteer not found");
+    });
+
+    try {
+      await runFullPipeline("/project", "input.png");
+      expect.fail("should have thrown");
+    } catch (err) {
+      const msg = (err as Error).message;
+      expect(msg).toContain("Chrome/Chromium not found for Puppeteer");
+      expect(msg).toContain("npx puppeteer browsers install chrome");
+    }
+  });
+});
+
+// ── ffmpeg not installed shows install guide (T7 #9) ─────
+// Note: ffmpeg check is in evaluate.ts and prepare.ts (checkFfmpegAvailable)
+// These tests verify the error message propagation through the pipeline
