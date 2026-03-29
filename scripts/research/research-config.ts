@@ -60,10 +60,20 @@ export type ResearchConfig = z.infer<typeof ResearchConfigSchema>;
 
 export function getDefaultConfig(): ResearchConfig {
   return ResearchConfigSchema.parse({
-    samMaskLimit: 3,
+    samMaskLimit: 6,
+    samPointsPerSide: 80,
+    samPredIouThresh: 0.6,
+    samStabilityScoreThresh: 0.9,
+    luminanceFallbackMinSamLayers: 4,
+    luminanceFallbackZoneCount: 3,
+    luminanceFallbackResidualOnly: true,
+    luminanceFallbackResidualCoverageMin: 0.03,
     minRetainedLayers: 1,
     alphaThreshold: 96,
     uniqueCoverageThreshold: 0.02,
+    colorCycleSpeedMul: 0.75,
+    glowIntensityMul: 0.0,
+    saturationBoostMul: 0.7,
   });
 }
 
