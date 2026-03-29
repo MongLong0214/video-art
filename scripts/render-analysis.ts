@@ -12,6 +12,8 @@ import * as path from "node:path";
 import { execFileSync } from "node:child_process";
 import type { SectionOverride } from "./lib/nrt-builder.js";
 import { hasRLPFD } from "./lib/sc-plugins-detect.js";
+import { readManifest, generateSampleBufferCommands, scheduleSampleEvents } from "./lib/hybrid-render.js";
+import { BufferAllocator } from "./lib/buffer-allocator.js";
 
 const SCLANG = "/Applications/SuperCollider.app/Contents/MacOS/sclang";
 
@@ -41,9 +43,6 @@ interface Analysis {
   stems?: Record<string, unknown>;
 }
 
-interface SampleHit { file: string; duration: number; onset_time: number; }
-interface Manifest { [type: string]: SampleHit[]; }
-
 // === Key → Scale mapping ===
 const SCALES: Record<string, number[]> = {
   "C": [32.7, 36.7, 41.2, 43.7, 49.0, 55.0, 61.7],
@@ -70,8 +69,10 @@ const getScaleNotes = (key: string | null): number[] => {
 // === Args ===
 const analysisDir = process.argv[2];
 const hybridMode = process.argv.includes("--hybrid");
+const dryRun = process.argv.includes("--dry-run");
 const offsetArg = process.argv.indexOf("--offset");
-const renderOffset = offsetArg >= 0 ? Number(process.argv[offsetArg + 1]) : 0;
+const rawOffset = offsetArg >= 0 ? Number(process.argv[offsetArg + 1]) : 0;
+const renderOffset = Number.isFinite(rawOffset) ? rawOffset : 0;
 
 if (!analysisDir) {
   console.error("Usage: npx tsx scripts/render-analysis.ts <analysis-dir> [--hybrid] [--offset N]");
@@ -371,6 +372,24 @@ for (const section of sectionOverrides) {
   }
 }
 
+// === T16: Hybrid sample render — manifest → BufferAllocator → sample_player ===
+let bufferCommands: string[] = [];
+if (hybridMode) {
+  const manifestPath = path.join(analysisDir, "manifest.json");
+  const manifest = readManifest(manifestPath);
+  if (manifest) {
+    try {
+      const allocator = new BufferAllocator();
+      const { bufCmds, bufMap } = generateSampleBufferCommands(manifest, allocator, analysisDir);
+      bufferCommands = bufCmds;
+      scheduleSampleEvents(manifest, bufMap, addEvent, duration);
+      console.log(`Hybrid: ${bufCmds.length} buffers, ${bufMap.size} samples loaded`);
+    } catch (e) {
+      console.warn(`[hybrid] buffer alloc failed, continuing synthesis-only: ${e instanceof Error ? e.message : e}`);
+    }
+  }
+}
+
 // === Sort + end marker ===
 events.sort((a, b) => {
   const ta = parseFloat(a.match(/^\[([\d.]+)/)?.[1] ?? "0");
@@ -400,7 +419,7 @@ ${["kick", "bass", "hat", "clap", "supersaw", "pad", "lead", "arp_pluck", "riser
 "${path.join(synthDefsDir, "sample_player.scd")}".load;
 
 var score = Score([
-${events.join(",\n")}
+${[...bufferCommands, ...events].join(",\n")}
 ]);
 score.recordNRT(
     outputFilePath: "${outputWav}",
@@ -416,6 +435,12 @@ fs.writeFileSync(scPath, scScript);
 
 const totalEvents = events.length - 1;
 console.log(`Events: ${totalEvents}, Duration: ${duration}s, Sections: ${segments.map(s => s.label).join("→")}`);
+
+if (dryRun) {
+  console.log(`Dry run: ${scPath} written (${totalEvents} events). Skipping sclang.`);
+  process.exit(0);
+}
+
 console.log("Rendering...");
 
 const result = execFileSync(SCLANG, ["-i", "none", scPath], { encoding: "utf-8", timeout: 120000 });
@@ -423,6 +448,31 @@ const result = execFileSync(SCLANG, ["-i", "none", scPath], { encoding: "utf-8",
 if (result.includes("RENDER_DONE")) {
   const stat = fs.statSync(outputWav);
   console.log(`Output: ${outputWav} (${(stat.size / 1024 / 1024).toFixed(1)}MB)`);
+
+  // === T17: Python mastering chain (AC-2.5) ===
+  const noMaster = process.argv.includes("--no-master");
+  if (!noMaster) {
+    const masterPy = path.join(process.cwd(), "audio/analyzer/master.py");
+    const analysisJson = path.join(analysisDir, "analysis.json");
+    if (fs.existsSync(masterPy)) {
+      try {
+        console.log("Mastering...");
+        const masterArgs = [masterPy, outputWav, analysisJson];
+        // Wire reference path for non-regression gate if reference WAV exists
+        const refWav = path.join(analysisDir, "reference.wav");
+        if (fs.existsSync(refWav)) {
+          masterArgs.push("--reference", refWav);
+        }
+        const masterResult = execFileSync("python3", masterArgs, {
+          encoding: "utf-8",
+          timeout: 60000,
+        });
+        console.log(masterResult.trim());
+      } catch (e) {
+        console.warn(`[master] mastering failed, keeping unmastered render: ${e instanceof Error ? e.message : e}`);
+      }
+    }
+  }
 } else {
   console.error("Render failed");
   process.exit(1);
