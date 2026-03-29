@@ -33,8 +33,23 @@ export function patchSceneJson(cwd: string): void {
   }
 
   if (typeof scene.duration === "number" && scene.duration > 10) {
-    scene.duration = 10;
+    const newDuration = 10;
+    scene.duration = newDuration;
     patched = true;
+
+    // Animation periods must be divisors of the new duration for seamless looping.
+    // Set all periods to the new duration (safest — exactly 1 cycle per loop).
+    if (Array.isArray(scene.layers)) {
+      for (const layer of scene.layers) {
+        const anim = layer?.animation;
+        if (!anim) continue;
+        for (const key of ["colorCycle", "wave", "glow"] as const) {
+          if (anim[key] && typeof anim[key].period === "number") {
+            anim[key].period = newDuration;
+          }
+        }
+      }
+    }
   }
 
   if (patched) {
