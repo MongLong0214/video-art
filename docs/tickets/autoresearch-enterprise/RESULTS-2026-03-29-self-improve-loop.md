@@ -16,6 +16,8 @@ This report summarizes the productionized self-improvement loop after the enterp
 - A total of `291` scored experiments were completed.
 - `2` experiments were promoted to `KEEP`.
 - The promoted baseline improved from `0.5970` to `0.6078`.
+- The search neighborhood around the final winner is now saturated enough that simply running more iterations is low-value.
+- The next improvement should come from adding new search axes, not from increasing run count inside the current axis set.
 - The automated loop was stopped manually during `exp #292` evaluation; that run did not write a result row and did not affect the baseline.
 
 ## Baseline Progression
@@ -148,6 +150,76 @@ These runs were useful because they were close to the promoted baseline but did 
 
 The practical conclusion is that the search space around the promoted winner was already tight. The loop kept finding adjacent local maxima, but not by enough to justify a new promotion.
 
+## Detailed Experiment History
+
+### Phase A: Early manual structural probes (`exp #1` to `exp #12`)
+
+- Goal:
+  - Check whether obvious post-processing removals or aggressive layer simplification could beat the first corrected baseline.
+- What happened:
+  - `exp #4` and `exp #10` hard-failed the gate and returned `0.0000`.
+  - Pure-SAM and reduced-layer structures (`exp #10` to `exp #12`) improved some decomposition properties but hurt overall score too much.
+  - The first useful signal was negative: structural collapse was not the path.
+- Outcome:
+  - This phase narrowed the direction toward hybrid decomposition instead of destructive simplification.
+
+### Phase B: First major topology win (`exp #13`)
+
+- Goal:
+  - Introduce a residual-aware hybrid decomposition rather than choosing between the old hybrid and a pure-SAM collapse.
+- What happened:
+  - `exp #13` became the first large win at `0.5970`.
+  - This established the stable hybrid structure that later post-processing search refined.
+- Outcome:
+  - Baseline moved from `0.5668` to `0.5970`.
+
+### Phase C: Manual post-processing sweep (`exp #14` to `exp #21`)
+
+- Goal:
+  - Test whether the stable hybrid topology could be improved by reducing rendering intensity.
+- What happened:
+  - `exp #19` reached `0.6025`, which was the first clear sign that lower bloom and lower chromatic aberration were beneficial.
+  - Multiple runs in this phase clustered in the `0.597` to `0.602` band.
+- Outcome:
+  - Topology was no longer the main lever.
+  - Post-processing moderation became the dominant useful axis.
+
+### Phase D: Automated local search before second promotion (`exp #22` to `exp #196`)
+
+- Goal:
+  - Systematically sweep the neighborhood around the improved hybrid topology with post-processing and SAM-threshold variations.
+- What happened:
+  - The loop explored bloom, chromatic aberration, saturation, luminance key, and small SAM threshold tweaks.
+  - Quality concentrated heavily around the high `0.59x` and low `0.60x` band.
+  - The loop repeatedly rediscovered similar local optima, which confirmed that the current family was real and stable.
+- Outcome:
+  - The automated search eventually found `exp #197`.
+
+### Phase E: Second promotion (`exp #197`)
+
+- Goal:
+  - Convert the best local-search neighborhood into a real promoted baseline.
+- What happened:
+  - `exp #197` scored `0.6078` and exceeded promotion threshold.
+  - This became commit `084af7e`.
+- Outcome:
+  - Baseline moved from `0.5970` to `0.6078`.
+
+### Phase F: Post-promotion saturation check (`exp #198` to `exp #291`)
+
+- Goal:
+  - Test whether the same family still had another promotion hidden nearby.
+- What happened:
+  - `94` more scored runs were completed after the final promotion.
+  - Only `3` of those runs exceeded the promoted baseline numerically.
+  - None exceeded it by enough to pass `deltaMin`.
+  - Best post-promotion near misses:
+    - `exp #263 = 0.6083`
+    - `exp #217 = 0.6082`
+    - `exp #282 = 0.6079`
+- Outcome:
+  - This phase is the strongest evidence that the current search family is saturated.
+
 ## Aggregate Run Summary
 
 - Total scored runs: `291`
@@ -156,6 +228,67 @@ The practical conclusion is that the search space around the promoted winner was
 - Average discard score: `0.5965`
 - Highest promoted score: `0.6078`
 - Highest overall discard score: `0.6083`
+
+## Why More Runs Alone Are Low Value
+
+- The loop already sampled the current family deeply enough to show diminishing returns.
+- After the final promotion, `94` additional runs produced:
+  - `0` new promotions
+  - `3` runs above the promoted baseline
+  - `91` runs at or below the promoted baseline
+- Repeated values appeared often:
+  - `0.6050` appeared `6` times
+  - `0.6049` appeared `5` times
+  - `0.6025` appeared `7` times
+- This repetition pattern means the current search space is mostly re-measuring a local optimum rather than opening a new improvement frontier.
+
+## Required Next Search Axes
+
+The next session should not start by increasing trial count. It should first expand the space the loop is allowed to explore.
+
+### 1. New decomposition topology families
+
+- Add families beyond the current `SAM + residual fallback` structure.
+- Candidate axes:
+  - residual zone shape strategy
+  - residual merge/split policy
+  - mask smoothing or contour simplification mode
+  - layer retention policy by role rather than only by score threshold
+
+### 2. Role assignment and depth-order heuristics
+
+- `M9` stabilized, which implies decomposition integrity is no longer moving.
+- New gains may come from changing how layers are assigned and ordered.
+- Candidate axes:
+  - hero/background/detail role priors
+  - centrality thresholds by layer count
+  - alternate background plate assignment rules
+  - depth ordering based on bbox or saliency instead of current heuristics alone
+
+### 3. Temporal and motion behavior families
+
+- Current search mostly tuned static visual energy.
+- Candidate axes:
+  - per-role motion amplitude families
+  - temporal modulation presets
+  - scene-generator rhythm templates
+  - chromatic/bloom modulation over time rather than static multipliers only
+
+### 4. Scoring-aware search families
+
+- Current local search treated the final score as a black box.
+- Candidate axes:
+  - branch search based on which metrics regressed
+  - separate candidate families for texture-heavy vs palette-heavy recovery
+  - adaptive exploration when `M7_vmaf` or `M2_dominant` dominates the loss
+
+### 5. Reference-conditioned search presets
+
+- The current winner is valid for the fixed canonical reference only.
+- Candidate axes:
+  - preset families selected by reference complexity
+  - preset families selected by foreground occupancy
+  - different topology priors for sparse vs dense compositions
 
 ## Operational Notes
 
@@ -167,6 +300,7 @@ The practical conclusion is that the search space around the promoted winner was
 ## Artifacts
 
 - Full run log: `.cache/research/results.tsv`
+- Tracked snapshot for PR review: `docs/tickets/autoresearch-enterprise/RESULTS-2026-03-29-self-improve-loop.tsv`
 - Final promoted baseline: `.cache/research/baseline-config.json`
 - Candidate queue and near-miss state: `.cache/research/auto-loop-state.json`
 
