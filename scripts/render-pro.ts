@@ -117,10 +117,12 @@ if (missingStems.length > 0) {
     if (name === "kick") {
       fs.copyFileSync(sourceWav, stemPath);
     } else {
+      const safeSrc = sourceWav.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+      const safeStem = stemPath.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
       execFileSync("python3", ["-c", `
 import soundfile as sf; import numpy as np
-info = sf.info("${sourceWav}")
-sf.write("${stemPath}", np.zeros((info.frames, 2), dtype="float32"), info.samplerate)
+info = sf.info("${safeSrc}")
+sf.write("${safeStem}", np.zeros((info.frames, 2), dtype="float32"), info.samplerate)
 `], { encoding: "utf-8", timeout: 30_000 });
     }
   }

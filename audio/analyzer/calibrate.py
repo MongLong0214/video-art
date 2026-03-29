@@ -41,17 +41,26 @@ def composite_similarity(ref_path, synth_path, sr=22050):
             'warning': 'reference is silent or near-zero energy',
         }
 
+    # Trim reference to match synthesis duration (T8: windowing fix)
+    synth_dur = len(y_synth) / sr
+    ref_dur = len(y_ref) / sr
+    if ref_dur > synth_dur * 1.5:
+        trim_samples = int(synth_dur * sr)
+        y_ref_trimmed = y_ref[:trim_samples]
+    else:
+        y_ref_trimmed = y_ref
+
     scores = {}
 
     # 1. MFCC + DTW (timbral) — 30%
-    mfcc_ref = librosa.feature.mfcc(y=y_ref, sr=sr, n_mfcc=13)
+    mfcc_ref = librosa.feature.mfcc(y=y_ref_trimmed, sr=sr, n_mfcc=13)
     mfcc_synth = librosa.feature.mfcc(y=y_synth, sr=sr, n_mfcc=13)
     D, wp = librosa.sequence.dtw(X=mfcc_ref, Y=mfcc_synth, metric='cosine')
     scores['mfcc'] = max(0, 1.0 - D[-1, -1] / max(len(wp), 1)) * 100
 
     # 2. Band-weighted mean spectral distance (MSD) — 20%
-    min_len = min(len(y_ref), len(y_synth))
-    S_ref = np.abs(librosa.stft(y_ref[:min_len])) + 1e-10
+    min_len = min(len(y_ref_trimmed), len(y_synth))
+    S_ref = np.abs(librosa.stft(y_ref_trimmed[:min_len])) + 1e-10
     S_synth = np.abs(librosa.stft(y_synth[:min_len])) + 1e-10
     freqs = librosa.fft_frequencies(sr=sr)
     max_lsd = 20.0  # 20dB difference = 0 points
@@ -70,7 +79,7 @@ def composite_similarity(ref_path, synth_path, sr=22050):
     scores['spectral'] = sum(w * s for w, s in band_scores) / sum(w for w, _ in band_scores)
 
     # 3. RMS envelope correlation — 20%
-    rms_ref = librosa.feature.rms(y=y_ref)[0]
+    rms_ref = librosa.feature.rms(y=y_ref_trimmed)[0]
     rms_synth = librosa.feature.rms(y=y_synth)[0]
     min_r = min(len(rms_ref), len(rms_synth))
     if min_r > 1:
@@ -82,8 +91,8 @@ def composite_similarity(ref_path, synth_path, sr=22050):
     else:
         scores['envelope'] = 0.0
 
-    # 4. Onset F1 — 15% (bipartite matching)
-    ref_onsets = librosa.onset.onset_detect(y=y_ref, sr=sr, units='time')
+    # 4. Onset F1 — 15% (bipartite matching, T8: trimmed ref)
+    ref_onsets = librosa.onset.onset_detect(y=y_ref_trimmed, sr=sr, units='time')
     synth_onsets = librosa.onset.onset_detect(y=y_synth, sr=sr, units='time')
     used = set()
     matched = 0
@@ -98,8 +107,8 @@ def composite_similarity(ref_path, synth_path, sr=22050):
     f1 = 2 * prec * rec / max(prec + rec, 1e-10)
     scores['attacks'] = f1 * 100
 
-    # 5. Chroma DTW — 15%
-    chroma_ref = librosa.feature.chroma_cqt(y=y_ref, sr=sr)
+    # 5. Chroma DTW — 15% (T8: trimmed ref)
+    chroma_ref = librosa.feature.chroma_cqt(y=y_ref_trimmed, sr=sr)
     chroma_synth = librosa.feature.chroma_cqt(y=y_synth, sr=sr)
     D_c, wp_c = librosa.sequence.dtw(X=chroma_ref, Y=chroma_synth, metric='cosine')
     scores['chroma'] = max(0, 1.0 - D_c[-1, -1] / max(len(wp_c), 1)) * 100

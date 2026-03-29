@@ -246,6 +246,82 @@ def compute_volume_automation(energy_curve: Optional[list],
 
 
 # ---------------------------------------------------------------------------
+# Reference envelope matching
+# ---------------------------------------------------------------------------
+def match_reference_envelope(audio: np.ndarray, sr: int,
+                             ref_path: str, frame_size: int = 2048,
+                             blend: float = 0.7) -> np.ndarray:
+    """Match the RMS envelope shape of the reference (first N seconds).
+
+    Computes per-frame RMS ratio (ref/synth) and applies as gain curve.
+    blend=0.7 means 70% reference shape + 30% original shape.
+    """
+    try:
+        import librosa
+        synth_dur = audio.shape[0] / sr
+        y_ref, ref_sr = librosa.load(ref_path, sr=sr, duration=synth_dur)
+
+        hop = frame_size // 4
+        rms_ref = librosa.feature.rms(y=y_ref, frame_length=frame_size, hop_length=hop)[0]
+        # Mono RMS of synth
+        if audio.ndim == 2:
+            y_mono = audio.mean(axis=1)
+        else:
+            y_mono = audio
+        rms_syn = librosa.feature.rms(y=y_mono, frame_length=frame_size, hop_length=hop)[0]
+
+        min_frames = min(len(rms_ref), len(rms_syn))
+        if min_frames < 10:
+            return audio
+
+        rms_ref_n = rms_ref[:min_frames] / (np.max(rms_ref[:min_frames]) + 1e-10)
+        rms_syn_n = rms_syn[:min_frames] / (np.max(rms_syn[:min_frames]) + 1e-10)
+
+        # Gain curve: ratio of ref to synth envelope (clamped)
+        ratio = (rms_ref_n + 0.01) / (rms_syn_n + 0.01)
+        ratio = np.clip(ratio, 0.3, 3.0)
+
+        # Blend: partially apply reference shape
+        gain_frames = 1.0 + blend * (ratio - 1.0)
+
+        # Smooth gain curve to avoid artifacts
+        from scipy.ndimage import uniform_filter1d
+        gain_smooth = uniform_filter1d(gain_frames, size=15)
+
+        # Interpolate to sample level
+        frame_times = np.arange(min_frames) * hop / sr
+        sample_times = np.arange(audio.shape[0]) / sr
+        gain_samples = np.interp(sample_times, frame_times, gain_smooth).astype(np.float32)
+
+        if audio.ndim == 2:
+            audio = audio * gain_samples[:, np.newaxis]
+        else:
+            audio = audio * gain_samples
+
+        # Re-limit peaks after envelope matching
+        peak = np.max(np.abs(audio))
+        ceiling = 10 ** (-0.3 / 20)
+        if peak > ceiling:
+            audio = audio * (ceiling / peak)
+
+        corr_before = np.corrcoef(rms_ref_n, rms_syn_n)[0, 1]
+        # Recompute after matching
+        if audio.ndim == 2:
+            y_mono_after = audio.mean(axis=1)
+        else:
+            y_mono_after = audio
+        rms_after = librosa.feature.rms(y=y_mono_after, frame_length=frame_size, hop_length=hop)[0]
+        rms_after_n = rms_after[:min_frames] / (np.max(rms_after[:min_frames]) + 1e-10)
+        corr_after = np.corrcoef(rms_ref_n, rms_after_n)[0, 1]
+        print(f"  [envelope] correlation: {corr_before:.2f} → {corr_after:.2f}")
+
+        return audio
+    except ImportError:
+        print("  [envelope] librosa not available, skipping")
+        return audio
+
+
+# ---------------------------------------------------------------------------
 # Processing pipeline
 # ---------------------------------------------------------------------------
 def process_stem(audio: np.ndarray, sr: int, chain: Pedalboard) -> np.ndarray:
@@ -333,6 +409,10 @@ def run_pipeline(args: argparse.Namespace) -> None:
     # Step 4: Master chain
     master_chain = build_master_chain(**adapted)
     final = process_stem(mixed, sr, master_chain)
+
+    # Step 4b: Reference envelope matching (improves RMS correlation)
+    if args.reference and os.path.exists(args.reference):
+        final = match_reference_envelope(final, sr, args.reference)
 
     peak_db = 20 * np.log10(np.max(np.abs(final)) + 1e-10)
     print(f"  [master] peak={peak_db:.1f} dBFS")

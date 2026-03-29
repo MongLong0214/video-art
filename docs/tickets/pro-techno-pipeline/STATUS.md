@@ -13,3 +13,7 @@
 | T5 | 분석 기반 자동 믹싱 | M | DONE | T2 |
 | T6 | CLI 통합 (render-pro.ts) | M | DONE | T1-T5 |
 | T7 | E2E 테스트 + calibrate 검증 | M | DONE (regression 812/812) | T6 |
+| **v0.2 Score Iteration** | | | | |
+| T8 | onset windowing 버그 수정 | M | DONE (attacks 9.4→60.3) | T7 |
+| T9 | 구조 인식 에너지 커브 + ref envelope matching | M | DONE (envelope 31→67) | T8 |
+| T10 | Score 75+ hard gate | S | DONE (**85.3** ≥ 75) | T8, T9 |

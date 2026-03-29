@@ -134,6 +134,33 @@ const getSectionAt = (time: number): string => {
   return "drop";
 };
 
+// === T9: Section-aware energy scaling ===
+// Compute per-section average energy from energy_curve
+const sectionEnergyScale: Record<string, number> = {};
+for (const seg of segments) {
+  const segStart = Math.max(0, seg.start - renderOffset);
+  const segEnd = Math.min(duration, seg.end - renderOffset);
+  if (segEnd <= segStart) continue;
+  // Sample energy_curve at section boundaries
+  const samples: number[] = [];
+  for (let t = segStart; t < segEnd; t += 0.5) {
+    samples.push(getEnergy(t));
+  }
+  const avg = samples.length > 0 ? samples.reduce((a, b) => a + b, 0) / samples.length : 0.5;
+  sectionEnergyScale[seg.label] = avg;
+}
+// Section type → base amplitude multiplier (gentle dynamics to match ref envelope)
+const SECTION_AMP: Record<string, number> = {
+  drop: 1.0, build: 0.85, break: 0.6, intro: 0.5, outro: 0.5,
+};
+const getSectionAmp = (time: number): number => {
+  const section = getSectionAt(time);
+  const baseAmp = SECTION_AMP[section] ?? 0.7;
+  const energyAmp = sectionEnergyScale[section] ?? 0.5;
+  // Gentle blend: 70% structure + 30% energy curve
+  return baseAmp * (0.7 + 0.3 * energyAmp);
+};
+
 // === Derived parameters ===
 // Danceability → overall energy multiplier
 const energyMul = danceability > 2 ? 1.2 : danceability > 1 ? 1.0 : 0.7;
@@ -168,7 +195,10 @@ const addEvent = (time: number, synthDef: string, params: Record<string, number>
   if (time < 0 || time >= duration) return;
   // Assign stem bus if not explicitly set
   const bus = params.out ?? STEM_BUS[synthDef] ?? 0;
-  const allParams = { ...params, out: bus };
+  // T9: Section-aware amplitude scaling
+  const sectionScale = getSectionAmp(time);
+  const amp = (params.amp ?? 0.5) * sectionScale;
+  const allParams = { ...params, out: bus, amp };
   const paramStr = Object.entries(allParams).map(([k, v]) => `\\${k}, ${v}`).join(", ");
   events.push(`[${time.toFixed(4)}, [\\s_new, \\${synthDef}, ${nodeId++}, 0, 0, ${paramStr}]]`);
 };
@@ -554,9 +584,11 @@ if (fs.existsSync(outputWav)) {
     const stemsOutDir = path.join(analysisDir, "pro", "stems");
     fs.mkdirSync(stemsOutDir, { recursive: true });
     try {
+      const safeOutputWav = outputWav.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+      const safeStemsDir = stemsOutDir.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
       execFileSync("python3", ["-c", `
 import soundfile as sf; import numpy as np
-audio, sr = sf.read("${outputWav}")
+audio, sr = sf.read("${safeOutputWav}")
 stems = ["kick","bass","hat","synth","fx"]
 for i, name in enumerate(stems):
     ch = i * 2
@@ -564,7 +596,7 @@ for i, name in enumerate(stems):
         stem = audio[:, ch:ch+2]
     else:
         stem = np.zeros((audio.shape[0], 2), dtype="float32")
-    sf.write("${stemsOutDir}/stem-" + name + ".wav", stem, sr)
+    sf.write("${safeStemsDir}/stem-" + name + ".wav", stem, sr)
     rms = np.sqrt(np.mean(stem**2))
     print(f"  stem-{name}.wav: rms={20*np.log10(rms+1e-10):.1f}dB")
 `], { encoding: "utf-8", timeout: 30000 });

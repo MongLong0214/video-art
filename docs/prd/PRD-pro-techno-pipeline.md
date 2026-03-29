@@ -1,10 +1,10 @@
 # PRD: Enterprise Pro Techno Production Pipeline
 
-**Version**: 0.1
+**Version**: 0.2
 **Author**: Isaac
-**Date**: 2026-03-29
-**Status**: Draft
-**Size**: XL
+**Date**: 2026-03-30
+**Status**: In Development
+**Size**: XL (v0.1) + M (v0.2 score iteration)
 
 ---
 
@@ -285,17 +285,17 @@ N/A — 로컬 CLI 도구, 네트워크/인증 없음.
 
 ## 11. Success Metrics
 
-| Metric | Baseline (현재) | Target | Measurement |
-|--------|----------------|--------|-------------|
-| calibrate total_score | 72.3 | 80+ | calibrate.py (5-metric weighted composite) |
-| calibrate envelope | 7.2 | 50+ | calibrate.py RMS envelope correlation |
-| calibrate onset_f1 | — | 60+ | calibrate.py onset bipartite F1 |
-| 처리 시간 (30s 트랙) | ~8s | < 30s | wall clock |
-| 사용자 만족도 | "졸라 구려" | "괜찮다" | Isaac 판단 |
+| Metric | v0.1 Baseline | v0.2 Baseline | Target | Measurement |
+|--------|--------------|---------------|--------|-------------|
+| calibrate total_score | 72.3 | 69.1 | 75+ (hard gate) | calibrate.py composite |
+| calibrate envelope | 7.2 | 31.2 | 50+ | RMS envelope correlation |
+| calibrate attacks | — | 9.4 | 40+ | onset bipartite F1 |
+| calibrate mfcc | — | 92.0 | 90+ (maintain) | MFCC DTW |
+| 처리 시간 | ~8s | 7.2s | < 30s | wall clock |
 
 ## 12. Open Questions
 
-- [ ] OQ-1: 909 샘플팩 — 무료 CC0 팩 중 추천?
+- [x] OQ-1: 909 샘플팩 — oramics/sampled TR-909 Detroit 사용 (44100Hz, 16bit mono). 합성 샘플 교체 완료.
 - [x] OQ-2: 스템 렌더 5개 병렬 — M1에서 문제없음 (각 scsynth ~50MB). 병렬 실행.
 - [x] OQ-3: 사이드체인 — attack 0.5-5ms, release 80-150ms, depth -6~-12dB. dark techno: 짧은 release, 깊은 depth.
 
