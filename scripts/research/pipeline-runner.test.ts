@@ -61,6 +61,14 @@ describe("resolveInputImagePath", () => {
       "Multiple .png files found (expected 1): a.png, b.png. Place a single input.png.",
     );
   });
+
+  it("ignores generated prepared png files when resolving input", () => {
+    mockedFs.existsSync.mockReturnValue(false);
+    mockedFs.readdirSync.mockReturnValue(
+      ["prepared-input-a1b2c3d4.png", "photo.png"] as unknown as ReturnType<typeof fs.readdirSync>,
+    );
+    expect(resolveInputImagePath("/project")).toBe("photo.png");
+  });
 });
 
 // ── findManifest ───────────────────────────────────────────
@@ -267,12 +275,23 @@ describe("runFullPipeline", () => {
     mockedFs.mkdirSync.mockReturnValue(undefined);
     mockedFs.copyFileSync.mockReturnValue(undefined);
 
-    await runFullPipeline("/project", "input.png", { numLayers: 6 });
+    await runFullPipeline("/project", "input.png", { samMaskLimit: 6 });
 
     // First call is runLayerDecomposition
     const firstCallArgs = mockedExecFileSync.mock.calls[0][1] as string[];
     expect(firstCallArgs).toContain("--layers");
     expect(firstCallArgs).toContain("6");
+  });
+
+  it("keeps compatibility with legacy numLayers config", () => {
+    mockedExecFileSync.mockReturnValue("Archive: /some/archive/dir\n");
+
+    runLayerDecomposition("input.png", "/project", { numLayers: 7 });
+
+    const callArgs = mockedExecFileSync.mock.calls[0];
+    const cliArgs = callArgs[1] as string[];
+    expect(cliArgs).toContain("--layers");
+    expect(cliArgs).toContain("7");
   });
 });
 

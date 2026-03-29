@@ -257,11 +257,11 @@ N/A — 로컬 CLI 도구, 네트워크/인증 없음.
 
 | T# | Title | Size | Depends |
 |----|-------|------|---------|
-| T1 | 스템 분리 NRT 렌더 (5 stems) | L | — |
-| T2 | pedalboard 믹싱 체인 (per-stem + master) | L | T1 |
-| T3 | 사이드체인 컴프레션 구현 | M | T1 |
+| T1 | 4→5 스템 확장 (kick/hat 분리) + 버스 라우팅 | M | — |
+| T2 | pedalboard 믹싱 체인 (per-stem + master, master.py 교체) | L | T1 |
+| T3 | 사이드체인 컴프레션 구현 (Python envelope follower) | M | T1 |
 | T4 | 909 샘플팩 통합 + --samples 플래그 | M | T1 |
-| T5 | 분석 기반 자동 믹싱 (EQ/comp from analysis) | M | T2 |
+| T5 | 분석 기반 자동 믹싱 (EQ/comp from analysis.json) | M | T2 |
 | T6 | CLI 통합 (render-pro.ts) | M | T1-T5 |
 | T7 | E2E 테스트 + calibrate 스코어 검증 | M | T6 |
 
@@ -287,14 +287,19 @@ N/A — 로컬 CLI 도구, 네트워크/인증 없음.
 
 | Metric | Baseline (현재) | Target | Measurement |
 |--------|----------------|--------|-------------|
-| RMS ratio (vs ref) | 27% | 80%+ | numpy RMS comparison |
-| calibrate total_score | 72.3 | 80+ | calibrate.py |
-| calibrate envelope | 7.2 | 50+ | calibrate.py |
+| calibrate total_score | 72.3 | 80+ | calibrate.py (5-metric weighted composite) |
+| calibrate envelope | 7.2 | 50+ | calibrate.py RMS envelope correlation |
+| calibrate onset_f1 | — | 60+ | calibrate.py onset bipartite F1 |
 | 처리 시간 (30s 트랙) | ~8s | < 30s | wall clock |
 | 사용자 만족도 | "졸라 구려" | "괜찮다" | Isaac 판단 |
 
 ## 12. Open Questions
 
 - [ ] OQ-1: 909 샘플팩 — 무료 CC0 팩 중 추천?
-- [ ] OQ-2: 스템 렌더 5개 병렬 vs 순차 — 메모리/CPU 제한?
-- [ ] OQ-3: 사이드체인 파라미터 — 테크노 장르별 최적값?
+- [x] OQ-2: 스템 렌더 5개 병렬 — M1에서 문제없음 (각 scsynth ~50MB). 병렬 실행.
+- [x] OQ-3: 사이드체인 — attack 0.5-5ms, release 80-150ms, depth -6~-12dB. dark techno: 짧은 release, 깊은 depth.
+
+### 12.1 Resolved Decisions (PRD Review 2026-03-29)
+- **D1**: 스템 수 = 5개 (kick/bass/hat/synth/fx 별도). 기존 4스템(drums=kick+hat+clap)에서 분리.
+- **D2**: master.py → pedalboard로 교체. mix-pro.py에 per-stem + master chain 통합.
+- **D3**: T1 범위 = 기존 4→5스템 확장 (M사이즈). render-stems-nrt.scd 버스 라우팅 변경 + stem-render.ts 5스템 config.

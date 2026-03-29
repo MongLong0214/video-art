@@ -329,11 +329,10 @@ describe("Selective Recursive Qwen", () => {
   });
 
   // Test 1: should trigger recursive on large complex candidate
-  it("should trigger recursive on large complex candidate", () => {
-    // coverage > 0.30 && componentCount > 3 → trigger
+  it("should stay disabled on large complex candidate", () => {
     expect(
       shouldRecurse({ coverage: 0.5, componentCount: 5, edgeDensity: 0.1 }),
-    ).toBe(true);
+    ).toBe(false);
   });
 
   // Test 2: should not trigger on small simple candidate
@@ -392,7 +391,7 @@ describe("Selective Recursive Qwen", () => {
   });
 
   // Test 5: should keep parent on recursive failure
-  it("should keep parent on recursive failure", async () => {
+  it("should no-op recursive failure path while recursion is disabled", async () => {
     // Mock Replicate to throw an error
     vi.doMock("replicate", () => ({
       default: class {
@@ -426,8 +425,8 @@ describe("Selective Recursive Qwen", () => {
     });
 
     expect(result).toEqual([]);
-    // apiCallCount should still be incremented (the call was attempted)
-    expect(apiCallCount.current).toBe(1);
+    // Recursion is currently disabled, so no API attempt is made.
+    expect(apiCallCount.current).toBe(0);
   });
 
   // Test 6: should reintegrate recursive results

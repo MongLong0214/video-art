@@ -1,7 +1,7 @@
 // prepare.ts — One-time reference preparation
 // Extracts 1fps keyframes + 3 temporal pairs from source video
 
-import { existsSync, mkdirSync, writeFileSync, readFileSync } from "fs";
+import { existsSync, mkdirSync, writeFileSync, readFileSync, rmSync } from "fs";
 import {
   calcProportionalTimestamps,
   calcTemporalPairTimestamps,
@@ -9,8 +9,12 @@ import {
   extractSingleFrame,
   checkFfmpegAvailable,
 } from "./frame-extractor.js";
-
-const CACHE_DIR = ".cache/research/reference";
+import {
+  REFERENCE_CACHE_DIR as CACHE_DIR,
+  REFERENCE_METADATA_PATH,
+  REFERENCE_INPUT_PATH,
+  computeFileFingerprint,
+} from "./contract.js";
 
 /**
  * Collect all expected frame file paths for a given video metadata.
@@ -52,26 +56,37 @@ export function prepareReference(sourcePath: string): void {
   mkdirSync(CACHE_DIR, { recursive: true });
 
   const meta = getVideoMetadata(sourcePath);
+  const sourceFingerprint = computeFileFingerprint(sourcePath);
   console.log(`Source: ${meta.width}×${meta.height}, ${meta.fps}fps, ${meta.duration}s`);
 
-  // T1-AC6: Idempotent skip — if metadata.json exists and all frames exist, skip
-  const metadataPath = `${CACHE_DIR}/metadata.json`;
   const expectedPaths = collectExpectedFramePaths(meta.duration, meta.fps);
+  const requiredPaths = [...expectedPaths, REFERENCE_INPUT_PATH];
+  let forceRefresh = false;
 
-  if (existsSync(metadataPath)) {
-    const allFramesExist = expectedPaths.every((p) => existsSync(p));
-    if (allFramesExist) {
-      // Verify metadata matches current source
+  if (existsSync(REFERENCE_METADATA_PATH)) {
+    const allArtifactsExist = requiredPaths.every((p) => existsSync(p));
+    if (allArtifactsExist) {
       try {
-        const existing = JSON.parse(readFileSync(metadataPath, "utf-8"));
-        if (existing.sourcePath === sourcePath) {
+        const existing = JSON.parse(readFileSync(REFERENCE_METADATA_PATH, "utf-8"));
+        if (
+          existing.sourcePath === sourcePath &&
+          existing.sourceFingerprint === sourceFingerprint &&
+          existing.researchInputPath === REFERENCE_INPUT_PATH &&
+          existing.researchInputFingerprint === computeFileFingerprint(REFERENCE_INPUT_PATH)
+        ) {
           console.log("Reference already prepared (idempotent skip).");
           return;
         }
+        forceRefresh = true;
       } catch {
-        // Corrupted metadata — fall through to re-extract
+        forceRefresh = true;
       }
     }
+  }
+
+  if (forceRefresh) {
+    rmSync(CACHE_DIR, { recursive: true, force: true });
+    mkdirSync(CACHE_DIR, { recursive: true });
   }
 
   // 1fps keyframes
@@ -79,7 +94,7 @@ export function prepareReference(sourcePath: string): void {
   console.log(`Extracting ${timestamps.length} keyframes...`);
   for (let i = 0; i < timestamps.length; i++) {
     const outPath = `${CACHE_DIR}/frame_p${String(Math.round((timestamps[i] / meta.duration) * 100)).padStart(3, "0")}.png`;
-    if (!existsSync(outPath)) {
+    if (forceRefresh || !existsSync(outPath)) {
       extractSingleFrame(sourcePath, outPath, timestamps[i]);
     }
   }
@@ -91,18 +106,31 @@ export function prepareReference(sourcePath: string): void {
     const pct = [25, 50, 75][i];
     const pathA = `${CACHE_DIR}/temporal_pair_${pct}_a.png`;
     const pathB = `${CACHE_DIR}/temporal_pair_${pct}_b.png`;
-    if (!existsSync(pathA)) extractSingleFrame(sourcePath, pathA, pairs[i][0]);
-    if (!existsSync(pathB)) extractSingleFrame(sourcePath, pathB, pairs[i][1]);
+    if (forceRefresh || !existsSync(pathA)) extractSingleFrame(sourcePath, pathA, pairs[i][0]);
+    if (forceRefresh || !existsSync(pathB)) extractSingleFrame(sourcePath, pathB, pairs[i][1]);
   }
+
+  if (forceRefresh || !existsSync(REFERENCE_INPUT_PATH)) {
+    extractSingleFrame(sourcePath, REFERENCE_INPUT_PATH, 0);
+  }
+  const researchInputFingerprint = computeFileFingerprint(REFERENCE_INPUT_PATH);
 
   // T1-AC4: frameCount in metadata.json
   const frameCount = timestamps.length + pairs.length * 2;
 
   // metadata.json
   writeFileSync(
-    metadataPath,
+    REFERENCE_METADATA_PATH,
     JSON.stringify(
-      { ...meta, sourcePath, frameCount, extractedAt: new Date().toISOString() },
+      {
+        ...meta,
+        sourcePath,
+        sourceFingerprint,
+        researchInputPath: REFERENCE_INPUT_PATH,
+        researchInputFingerprint,
+        frameCount,
+        extractedAt: new Date().toISOString(),
+      },
       null,
       2,
     ),

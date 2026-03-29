@@ -22,8 +22,7 @@ import { computeTextureRichness } from "./metrics/texture-richness.js";
 import { computeVmaf, checkVmafAvailable } from "./metrics/vmaf.js";
 import { computeTemporalCoherence } from "./metrics/temporal-coherence.js";
 import { computeLayerIndependence, computeRoleCoherence } from "./metrics/layer-quality.js";
-
-const GATE_THRESHOLD = 0.15;
+import { GATE_THRESHOLD } from "./contract.js";
 
 const TIER_WEIGHTS = {
   color: 0.35,    // M1, M2, M3

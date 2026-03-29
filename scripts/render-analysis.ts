@@ -74,8 +74,16 @@ const offsetArg = process.argv.indexOf("--offset");
 const rawOffset = offsetArg >= 0 ? Number(process.argv[offsetArg + 1]) : 0;
 const renderOffset = Number.isFinite(rawOffset) ? rawOffset : 0;
 
+// --mode synth|samples|hybrid (T4: 909 sample integration)
+const modeArg = process.argv.indexOf("--mode");
+const renderMode = modeArg >= 0 ? (process.argv[modeArg + 1] ?? "synth") : "synth";
+
+// 909 samples directory
+const SAMPLES_909_DIR = path.join(process.cwd(), "audio/samples/909");
+const has909Samples = fs.existsSync(path.join(SAMPLES_909_DIR, "kick.wav"));
+
 if (!analysisDir) {
-  console.error("Usage: npx tsx scripts/render-analysis.ts <analysis-dir> [--hybrid] [--offset N]");
+  console.error("Usage: npx tsx scripts/render-analysis.ts <analysis-dir> [--hybrid] [--offset N] [--mode synth|samples|hybrid]");
   process.exit(1);
 }
 
@@ -138,15 +146,30 @@ const contrastAvg = contrast.length > 0 ? contrast.reduce((a, b) => a + b, 0) / 
 const saturation = contrastAvg > 20 ? 0.15 : contrastAvg > 12 ? 0.3 : 0.5;
 
 console.log(`Key: ${key}, BPM: ${bpm}, Centroid: ${centroid}Hz, Crest: ${dyn.crest}`);
+console.log(`Mode: ${renderMode}, 909: ${has909Samples ? "yes" : "no"}`);
 console.log(`Energy mul: ${energyMul}, Brightness: ${brightnessScale.toFixed(2)}, Saturation: ${saturation}`);
 console.log(`Scale: [${scaleNotes.map(n => n.toFixed(1)).join(", ")}]`);
+
+// === 5-stem bus mapping (T1: kick=0, bass=2, hat=4, synth=6, fx=8) ===
+const STEM_BUS: Record<string, number> = {
+  kick: 0, layered_kick: 0, sample_player: 0,
+  bass: 2, acid_bass: 2,
+  hat: 4, clap: 4,
+  supersaw: 6, pad: 6, lead: 6, arp_pluck: 6, fm_lead: 6,
+  wavetable_pad: 6, granular_pad: 6, squelch: 6,
+  riser: 8,
+};
+const OUTPUT_CHANNELS = 10; // 5 stems × 2ch
 
 // === Event builder ===
 const events: string[] = [];
 let nodeId = 1000;
 const addEvent = (time: number, synthDef: string, params: Record<string, number>) => {
   if (time < 0 || time >= duration) return;
-  const paramStr = Object.entries(params).map(([k, v]) => `\\${k}, ${v}`).join(", ");
+  // Assign stem bus if not explicitly set
+  const bus = params.out ?? STEM_BUS[synthDef] ?? 0;
+  const allParams = { ...params, out: bus };
+  const paramStr = Object.entries(allParams).map(([k, v]) => `\\${k}, ${v}`).join(", ");
   events.push(`[${time.toFixed(4)}, [\\s_new, \\${synthDef}, ${nodeId++}, 0, 0, ${paramStr}]]`);
 };
 
@@ -170,9 +193,102 @@ const quantizeToGrid = (positions: number[]): number[] => {
 
 let bufferCommands: string[] = [];
 
+// === T4: 909 sample mode ===
+const use909 = (renderMode === "samples" || renderMode === "hybrid") && has909Samples;
+if (use909) {
+  console.log(`909 samples: mode=${renderMode}, dir=${SAMPLES_909_DIR}`);
+  const samplePlayerDef = path.join(process.cwd(), "audio/sc/compiled/sample_player.scsyndef");
+  bufferCommands.push(`[0, [\\d_load, "${samplePlayerDef}"]]`);
+
+  // Allocate buffers for 909 samples
+  const sample909Files: Record<string, string> = {
+    kick: "kick.wav",
+    clap: "clap.wav",
+    "hat-closed": "hat-closed.wav",
+    "hat-open": "hat-open.wav",
+    snare: "snare.wav",
+    ride: "ride.wav",
+  };
+  const sample909Bufs = new Map<string, number>();
+  let bufIdx = 200; // offset to avoid collision with manifest buffers
+  for (const [name, file] of Object.entries(sample909Files)) {
+    const wavPath = path.join(SAMPLES_909_DIR, file);
+    if (fs.existsSync(wavPath)) {
+      sample909Bufs.set(name, bufIdx);
+      bufferCommands.push(`[0, [\\b_allocRead, ${bufIdx}, "${wavPath}"]]`);
+      bufIdx++;
+    }
+  }
+
+  // 909 kick at analyzed positions
+  const kickBuf = sample909Bufs.get("kick") ?? -1;
+  if (kickBuf >= 0) {
+    const rawKickPos = analysis.kick_pattern?.positions ?? [];
+    let count909Kick = 0;
+    for (const pos of rawKickPos) {
+      const t = pos - renderOffset;
+      if (t < 0.05 || t >= duration) continue;
+      const energy = getEnergy(t) * energyMul;
+      addEvent(t, "sample_player", {
+        buf: kickBuf, amp: Math.min(0.7 * energy, 0.85), dur: 0.3,
+        rate: 1.0, hpFreq: 20, lpFreq: 18000,
+      });
+      count909Kick++;
+    }
+    console.log(`909 kick: ${count909Kick} events`);
+  }
+
+  // 909 hat (closed) at analyzed hat positions
+  const hatBuf = sample909Bufs.get("hat-closed") ?? -1;
+  const hatOpenBuf = sample909Bufs.get("hat-open") ?? -1;
+  if (hatBuf >= 0) {
+    const rawHatPos = analysis.hat_pattern?.positions ?? [];
+    let count909Hat = 0;
+    for (const pos of rawHatPos) {
+      const t = pos - renderOffset;
+      if (t < 0.05 || t >= duration) continue;
+      const energy = getEnergy(t) * energyMul;
+      // Every 4th hat is open
+      const isOpen = count909Hat % 4 === 3 && hatOpenBuf >= 0;
+      addEvent(t, "sample_player", {
+        out: 4, // hat stem bus
+        buf: isOpen ? hatOpenBuf : hatBuf,
+        amp: Math.min(0.3 * energy, 0.4),
+        dur: isOpen ? 0.3 : 0.05,
+        rate: 1.0, hpFreq: 2000, lpFreq: 18000,
+      });
+      count909Hat++;
+    }
+    console.log(`909 hat: ${count909Hat} events`);
+  }
+
+  // 909 clap on beats 2 and 4
+  const clapBuf = sample909Bufs.get("clap") ?? -1;
+  if (clapBuf >= 0) {
+    let count909Clap = 0;
+    for (let beat = 1; beat < Math.floor(duration / beatDur); beat += 2) {
+      const t = beat * beatDur;
+      if (t >= duration) break;
+      const section = getSectionAt(t);
+      if (section === "intro") continue;
+      const energy = getEnergy(t) * energyMul;
+      addEvent(t, "sample_player", {
+        out: 4, // hat stem bus (clap → hat group)
+        buf: clapBuf, amp: Math.min(0.4 * energy, 0.5), dur: 0.2,
+        rate: 1.0, hpFreq: 800, lpFreq: 12000,
+      });
+      count909Clap++;
+    }
+    console.log(`909 clap: ${count909Clap} events`);
+  }
+}
+
+// Skip demucs-extracted sample mode if using 909 samples exclusively
+const skipDemucsManifest = renderMode === "samples";
+
 // Sample-based mode: load manifest and arrange on grid
 const samplesDir = path.join(analysisDir, "samples");
-const manifestPath = fs.existsSync(path.join(samplesDir, "manifest.json"))
+const manifestPath = !skipDemucsManifest && fs.existsSync(path.join(samplesDir, "manifest.json"))
   ? path.join(samplesDir, "manifest.json")
   : null;
 
@@ -243,6 +359,7 @@ if (manifestPath) {
     const buf = sampleBufs.get(hat.file) ?? -1;
     const energy = getEnergy(t) * energyMul;
     addEvent(t, "sample_player", {
+      out: 4, // hat stem bus
       buf, amp: Math.min(0.3 * energy, 0.4), dur: hat.duration,
       rate: 1.0, hpFreq: 2000, lpFreq: 18000,
     });
@@ -251,10 +368,13 @@ if (manifestPath) {
 
   // === BASS — from pitch contour if available, else sub drone on 8ths ===
   const pitchEvents = analysis.pitch_contour?.note_events ?? [];
-  if (pitchEvents.length > 5) {
-    for (const note of pitchEvents) {
+  // Filter to events within render window FIRST, then decide mode
+  const pitchInWindow = pitchEvents.filter(
+    (n: { time: number }) => (n.time - renderOffset) >= 0 && (n.time - renderOffset) < duration,
+  );
+  if (pitchInWindow.length > 5) {
+    for (const note of pitchInWindow) {
       const t = note.time - renderOffset;
-      if (t < 0 || t >= duration) continue;
       const energy = getEnergy(t) * energyMul;
       addEvent(t, "acid_bass", {
         freq: note.freq, amp: Math.min(0.8 * energy, 1.0),
@@ -266,7 +386,7 @@ if (manifestPath) {
         wave: 0, dist: 0.2,
       });
     }
-    console.log(`Bass: ${pitchEvents.filter(n => (n.time - renderOffset) >= 0 && (n.time - renderOffset) < duration).length} pitch events from analysis`);
+    console.log(`Bass: ${pitchInWindow.length} pitch events from analysis`);
   } else {
     // Sub drone on 8ths
     for (let step = 0; step < Math.floor(duration / (beatDur / 2)); step++) {
@@ -288,17 +408,32 @@ if (manifestPath) {
     console.log(`Bass: sub drone ${rootFreq.toFixed(0)}Hz`);
   }
 
-  // === MINIMAL PAD — background texture only, very quiet ===
-  for (let bar = 0; bar < Math.ceil(duration / (beatDur * 8)); bar++) {
-    const t = bar * beatDur * 8;
+  // === PAD — sustained texture ===
+  for (let bar = 0; bar < Math.ceil(duration / (beatDur * 4)); bar++) {
+    const t = bar * beatDur * 4;
     if (t >= duration) continue;
     const section = getSectionAt(t);
     if (section === "intro") continue;
     const energy = getEnergy(t) * energyMul;
     addEvent(t, "pad", {
-      freq: rootFreq * 2, amp: 0.15 * energy, dur: beatDur * 8,
-      attack: 2.0, release: 2.0,
-      filterEnv: 0.05,
+      freq: rootFreq * 2, amp: 0.4 * energy, dur: beatDur * 4,
+      attack: 1.0, release: 1.5,
+      filterEnv: 0.1,
+    });
+  }
+
+  // === SUPERSAW — energy-driven chord stabs ===
+  for (let bar = 0; bar < Math.ceil(duration / (beatDur * 2)); bar++) {
+    const t = bar * beatDur * 2;
+    if (t >= duration) continue;
+    const section = getSectionAt(t);
+    if (section === "intro" || section === "break") continue;
+    const energy = getEnergy(t) * energyMul;
+    if (energy < 0.4) continue; // only in high-energy sections
+    addEvent(t, "supersaw", {
+      freq: rootFreq * 4, amp: 0.35 * energy, dur: beatDur * 1.5,
+      attack: 0.01, release: 0.5,
+      detune: 0.3, width: 0.7,
     });
   }
 
@@ -400,16 +535,44 @@ if (!writeResult.includes("WRITE_DONE")) {
 }
 
 // Step 2: scsynth renders NRT directly (no sclang hang)
-console.log("Rendering via scsynth NRT...");
+// Render as 10ch (5 stereo stems) for stem splitting, or 2ch for legacy mode
+const multiStem = process.argv.includes("--multi-stem") || process.argv.includes("--no-master");
+const outChannels = multiStem ? String(OUTPUT_CHANNELS) : "2";
+console.log(`Rendering via scsynth NRT (${outChannels}ch)...`);
 const renderResult = execFileSync(SCSYNTH, [
-  "-N", oscPath, "_", outputWav, "44100", "WAV", "int16",
-  "-o", "2", "-u", "0", "-m", "65536",
+  "-N", oscPath, "_", outputWav, "44100", "WAV", "float",
+  "-o", outChannels, "-u", "0", "-m", "65536",
 ], { encoding: "utf-8", timeout: 300000 });
 console.log(renderResult.trim());
 
 if (fs.existsSync(outputWav)) {
   const stat = fs.statSync(outputWav);
   console.log(`Output: ${outputWav} (${(stat.size / 1024 / 1024).toFixed(1)}MB)`);
+
+  // Split 10ch WAV into 5 stereo stems using soundfile (more reliable than ffmpeg)
+  if (multiStem) {
+    const stemsOutDir = path.join(analysisDir, "pro", "stems");
+    fs.mkdirSync(stemsOutDir, { recursive: true });
+    try {
+      execFileSync("python3", ["-c", `
+import soundfile as sf; import numpy as np
+audio, sr = sf.read("${outputWav}")
+stems = ["kick","bass","hat","synth","fx"]
+for i, name in enumerate(stems):
+    ch = i * 2
+    if ch + 1 < audio.shape[1]:
+        stem = audio[:, ch:ch+2]
+    else:
+        stem = np.zeros((audio.shape[0], 2), dtype="float32")
+    sf.write("${stemsOutDir}/stem-" + name + ".wav", stem, sr)
+    rms = np.sqrt(np.mean(stem**2))
+    print(f"  stem-{name}.wav: rms={20*np.log10(rms+1e-10):.1f}dB")
+`], { encoding: "utf-8", timeout: 30000 });
+      console.log(`Stems split: 5 × stereo → ${stemsOutDir}`);
+    } catch (e) {
+      console.warn(`[stem] Split failed: ${e instanceof Error ? e.message : e}`);
+    }
+  }
 
   // === T17: Python mastering chain (AC-2.5) ===
   const noMaster = process.argv.includes("--no-master");

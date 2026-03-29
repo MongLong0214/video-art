@@ -32,9 +32,9 @@ afterAll(() => {
 const makeTestScore = (): NrtScore => ({
   metadata: { duration: 3.0, eventCount: 4, mapped: 4, skipped: 0, skipRate: 0 },
   events: [
-    { time: 0.0, synthDef: "kick", stem: "drums", bus: 0, nodeId: 1000, params: { amp: 1.0, compress: 0.7 } },
-    { time: 0.125, synthDef: "hat", stem: "drums", bus: 0, nodeId: 1010, params: { amp: 0.8 } },
-    { time: 0.250, synthDef: "supersaw", stem: "synth", bus: 4, nodeId: 1020, params: { cutoff: 2000, compress: 0.5, saturate: 0.3 } },
+    { time: 0.0, synthDef: "kick", stem: "kick", bus: 0, nodeId: 1000, params: { amp: 1.0, compress: 0.7 } },
+    { time: 0.125, synthDef: "hat", stem: "hat", bus: 4, nodeId: 1010, params: { amp: 0.8 } },
+    { time: 0.250, synthDef: "supersaw", stem: "synth", bus: 6, nodeId: 1020, params: { cutoff: 2000, compress: 0.5, saturate: 0.3 } },
     { time: 0.500, synthDef: "bass", stem: "bass", bus: 2, nodeId: 1030, params: { amp: 0.9 } },
   ],
 });
@@ -47,9 +47,9 @@ describe("stem-router", () => {
   });
 
   // TC-2: getStemBus supersaw
-  it("maps supersaw to synth bus 4-5", () => {
+  it("maps supersaw to synth bus 6-7", () => {
     const result = getStemBus("supersaw");
-    expect(result).toEqual({ bus: 4, channels: 2 });
+    expect(result).toEqual({ bus: 6, channels: 2 });
   });
 
   // TC-3: getStemBus all 9
@@ -132,13 +132,14 @@ describe("stem-render NRT Score", () => {
   });
 
   // TC-9: splitMultiChannelWav commands
-  it("generates 4 ffmpeg split commands for 8ch", () => {
-    const commands = buildSplitCommands("/tmp/output-8ch.wav", "/tmp/stems");
-    expect(commands).toHaveLength(4);
-    expect(commands[0].outputFile).toContain("stem-drums.wav");
+  it("generates 5 ffmpeg split commands for 10ch", () => {
+    const commands = buildSplitCommands("/tmp/output-10ch.wav", "/tmp/stems");
+    expect(commands).toHaveLength(5);
+    expect(commands[0].outputFile).toContain("stem-kick.wav");
     expect(commands[1].outputFile).toContain("stem-bass.wav");
-    expect(commands[2].outputFile).toContain("stem-synth.wav");
-    expect(commands[3].outputFile).toContain("stem-fx.wav");
+    expect(commands[2].outputFile).toContain("stem-hat.wav");
+    expect(commands[3].outputFile).toContain("stem-synth.wav");
+    expect(commands[4].outputFile).toContain("stem-fx.wav");
   });
 
   // TC-10: stemOutputPath
@@ -224,7 +225,7 @@ describe("stem-render guards", () => {
     writeScoreConfig(entries, "/tmp/nrt.json", outPath);
     expect(fs.existsSync(outPath)).toBe(true);
     const content = JSON.parse(fs.readFileSync(outPath, "utf-8"));
-    expect(content.outputChannels).toBe(8);
+    expect(content.outputChannels).toBe(10);
     expect(content.sampleRate).toBe(48000);
   });
 

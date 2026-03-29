@@ -52,7 +52,7 @@ describe("buildNrtScore", () => {
 
   it("does not target expired nodes", () => {
     const events = [{
-      time: 0, synthDef: "kick", stem: "drums", bus: 0, nodeId: 100,
+      time: 0, synthDef: "kick", stem: "kick", bus: 0, nodeId: 100,
       params: { freq: 50, amp: 0.8, dur: 0.5 },
     }];
     const sections: SectionOverride[] = [{

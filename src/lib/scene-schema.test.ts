@@ -622,7 +622,7 @@ describe("LayerCandidate type", () => {
   it("should accept all optional fields", () => {
     const candidate: LayerCandidate = {
       id: "layer-1-comp-2",
-      source: "depth-split",
+      source: "sam2-segment",
       filePath: "/tmp/layers/layer-1-depth-2.png",
       width: 1080,
       height: 1080,

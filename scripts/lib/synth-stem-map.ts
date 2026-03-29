@@ -8,33 +8,33 @@ export interface StemMapping {
 }
 
 export const SYNTH_STEM_MAP: Record<string, StemMapping> = {
-  // Phase 1 — 9 base
-  kick: { synthDef: "kick", stem: "drums", bus: 0 },
-  hat: { synthDef: "hat", stem: "drums", bus: 0 },
-  clap: { synthDef: "clap", stem: "drums", bus: 0 },
+  // 5-stem layout: kick(0) bass(2) hat(4) synth(6) fx(8)
+  kick: { synthDef: "kick", stem: "kick", bus: 0 },
+  layered_kick: { synthDef: "layered_kick", stem: "kick", bus: 0 },
   bass: { synthDef: "bass", stem: "bass", bus: 2 },
-  supersaw: { synthDef: "supersaw", stem: "synth", bus: 4 },
-  pad: { synthDef: "pad", stem: "synth", bus: 4 },
-  lead: { synthDef: "lead", stem: "synth", bus: 4 },
-  arp_pluck: { synthDef: "arp_pluck", stem: "synth", bus: 4 },
-  riser: { synthDef: "riser", stem: "fx", bus: 6 },
-  // Phase 2 — 7 new
   acid_bass: { synthDef: "acid_bass", stem: "bass", bus: 2 },
-  fm_lead: { synthDef: "fm_lead", stem: "synth", bus: 4 },
-  wavetable_pad: { synthDef: "wavetable_pad", stem: "synth", bus: 4 },
-  granular_pad: { synthDef: "granular_pad", stem: "synth", bus: 4 },
-  layered_kick: { synthDef: "layered_kick", stem: "drums", bus: 0 },
-  squelch: { synthDef: "squelch", stem: "synth", bus: 4 },
-  sample_player: { synthDef: "sample_player", stem: "drums", bus: 0 },
+  hat: { synthDef: "hat", stem: "hat", bus: 4 },
+  clap: { synthDef: "clap", stem: "hat", bus: 4 },
+  supersaw: { synthDef: "supersaw", stem: "synth", bus: 6 },
+  pad: { synthDef: "pad", stem: "synth", bus: 6 },
+  lead: { synthDef: "lead", stem: "synth", bus: 6 },
+  arp_pluck: { synthDef: "arp_pluck", stem: "synth", bus: 6 },
+  fm_lead: { synthDef: "fm_lead", stem: "synth", bus: 6 },
+  wavetable_pad: { synthDef: "wavetable_pad", stem: "synth", bus: 6 },
+  granular_pad: { synthDef: "granular_pad", stem: "synth", bus: 6 },
+  squelch: { synthDef: "squelch", stem: "synth", bus: 6 },
+  riser: { synthDef: "riser", stem: "fx", bus: 8 },
+  sample_player: { synthDef: "sample_player", stem: "kick", bus: 0 },
 };
 
 // sample_player dynamic bus routing — hit type determines stem bus
 export const mapSamplePlayerBus = (hitType: string): number => {
   switch (hitType) {
-    case "kick": case "snare": case "hat": return 0;
+    case "kick": case "snare": return 0;
     case "bass": return 2;
-    case "fx": return 6;
-    default: return 4;
+    case "hat": case "clap": case "ride": return 4;
+    case "fx": return 8;
+    default: return 6;
   }
 };
 
@@ -62,10 +62,10 @@ export const TIDAL_CONTEXT_PARAMS = new Set(["cps", "cycle", "delta"]);
 
 // Dirt-Samples → stem mapping (NRT Buffer.read playback)
 export const DIRT_SAMPLE_STEMS: Record<string, string> = {
-  bd: "drums", sd: "drums", hh: "drums", cp: "drums",
-  cb: "drums", mt: "drums", ht: "drums", lt: "drums",
-  oh: "drums", ch: "drums", cr: "drums", rd: "drums",
-  sn: "drums", rim: "drums", tom: "drums",
+  bd: "kick", sd: "kick", sn: "kick", rim: "kick",
+  mt: "kick", ht: "kick", lt: "kick", tom: "kick",
+  hh: "hat", oh: "hat", ch: "hat", cp: "hat",
+  cr: "hat", rd: "hat", cb: "hat",
 };
 
 export const isSampleEvent = (s: string): boolean =>
@@ -78,7 +78,7 @@ export const mapSynthDef = (s: string): StemMapping | null => {
 export const mapDirtSample = (s: string): StemMapping | null => {
   const stem = DIRT_SAMPLE_STEMS[s];
   if (!stem) return null;
-  const bus = stem === "drums" ? 0 : stem === "bass" ? 2 : stem === "synth" ? 4 : 6;
+  const bus = stem === "kick" ? 0 : stem === "bass" ? 2 : stem === "hat" ? 4 : stem === "synth" ? 6 : 8;
   return { synthDef: s, stem, bus };
 };
 

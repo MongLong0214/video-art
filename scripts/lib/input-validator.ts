@@ -1,10 +1,12 @@
 import sharp from "sharp";
 import fs from "node:fs";
 import path from "node:path";
+import { createHash } from "node:crypto";
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
 const MAX_DIMENSION = 4096;
 const SUPPORTED_FORMATS = new Set(["png", "jpg", "jpeg", "webp"]);
+const DEFAULT_PREPARED_INPUT_DIR = path.resolve(".cache/research/inputs");
 
 export interface ValidatedInput {
   filePath: string;
@@ -13,8 +15,13 @@ export interface ValidatedInput {
   wasResized: boolean;
 }
 
+export interface ValidateAndPrepareOptions {
+  outputDir?: string;
+}
+
 export async function validateAndPrepare(
   inputPath: string,
+  options: ValidateAndPrepareOptions = {},
 ): Promise<ValidatedInput> {
   if (!fs.existsSync(inputPath)) {
     throw new Error(`Input file not found: ${inputPath}`);
@@ -35,7 +42,19 @@ export async function validateAndPrepare(
   }
 
   const metadata = await sharp(inputPath).metadata();
-  const { width = 0, height = 0, space } = metadata;
+  const { width = 0, height = 0, space, channels } = metadata;
+
+  // Check for fully transparent images (H5)
+  if (channels === 4) {
+    const { data } = await sharp(inputPath).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+    let hasOpaque = false;
+    for (let i = 3; i < data.length; i += 4) {
+      if (data[i] > 10) { hasOpaque = true; break; }
+    }
+    if (!hasOpaque) {
+      throw new Error("Input image is fully transparent. Cannot decompose.");
+    }
+  }
 
   let pipeline = sharp(inputPath);
 
@@ -54,10 +73,17 @@ export async function validateAndPrepare(
     wasResized = true;
   }
 
+  const outputDir = options.outputDir ?? DEFAULT_PREPARED_INPUT_DIR;
+  fs.mkdirSync(outputDir, { recursive: true });
+
   // Save prepared file
+  const pathHash = createHash("sha1")
+    .update(path.resolve(inputPath))
+    .digest("hex")
+    .slice(0, 8);
   const preparedPath = path.join(
-    path.dirname(inputPath),
-    `prepared-${path.basename(inputPath, path.extname(inputPath))}.png`,
+    outputDir,
+    `prepared-${path.basename(inputPath, path.extname(inputPath))}-${pathHash}.png`,
   );
   await pipeline.png().toFile(preparedPath);
 
@@ -77,7 +103,11 @@ export function detectManualLayers(layersDir: string): string[] | null {
   const files = fs
     .readdirSync(layersDir)
     .filter((f) => /^layer-\d+\.png$/i.test(f))
-    .sort();
+    .sort((a, b) => {
+      const na = parseInt(a.match(/\d+/)?.[0] ?? "0", 10);
+      const nb = parseInt(b.match(/\d+/)?.[0] ?? "0", 10);
+      return na - nb;
+    });
 
   if (files.length < 2) return null;
 

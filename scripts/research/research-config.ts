@@ -50,9 +50,8 @@ export type ResearchConfig = z.infer<typeof ResearchConfigSchema>;
 
 export function getDefaultConfig(): ResearchConfig {
   return ResearchConfigSchema.parse({
-    samMaskLimit: 3,
-    minRetainedLayers: 1,
-    alphaThreshold: 96,
+    samMaskLimit: 8,
+    minRetainedLayers: 3,
     uniqueCoverageThreshold: 0.02,
   });
 }

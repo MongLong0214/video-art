@@ -107,13 +107,22 @@ describe("computePerMetricStats", () => {
 describe("buildCalibrationResult", () => {
   it("builds result from EvalResult arrays", () => {
     const results = [mockEvalResult(0.65), mockEvalResult(0.67), mockEvalResult(0.66), mockEvalResult(0.68), mockEvalResult(0.64)];
-    const result = buildCalibrationResult(results, "abc123");
-    // compositeScore applies tier weights, so baseline ~0.598
-    expect(result.baselineScore).toBeCloseTo(0.598, 1);
+    const result = buildCalibrationResult(results, "abc123", {
+      evalSchemaVersion: "schema-v1",
+      gateThreshold: 0.15,
+      referenceFingerprint: "ref-123",
+      referenceInputFingerprint: "input-123",
+      vmafMode: "fallback",
+    });
+    expect(result.baselineScore).toBeCloseTo(0.66, 2);
     expect(result.deltaMin).toBeGreaterThanOrEqual(0.01);
     expect(result.modelVersion).toBe("abc123");
+    expect(result.evalSchemaVersion).toBe("schema-v1");
+    expect(result.referenceFingerprint).toBe("ref-123");
+    expect(result.referenceInputFingerprint).toBe("input-123");
+    expect(result.vmafMode).toBe("fallback");
     expect(result.runCount).toBe(5);
-    expect(result.compositeStats.mean).toBeCloseTo(0.598, 1);
+    expect(result.compositeStats.mean).toBeCloseTo(0.66, 2);
     expect(result.perMetricStats).toBeDefined();
     expect(result.perMetricStats.M1).toBeDefined();
     expect(result.calibratedAt).toMatch(/^\d{4}-/);
@@ -138,6 +147,22 @@ describe("buildCalibrationResult", () => {
       expect(stats).toHaveProperty("max");
     }
   });
+
+  it("uses gate-adjusted qualityScore for the baseline", () => {
+    const result = buildCalibrationResult([
+      {
+        metrics: {
+          M1: 0.4, M2: 0.4, M3: 0.4, M4: 0.1, M5: 0.4,
+          M6: 0.1, M7: 0.4, M8: 0.4, M9: 0.1, M10: 0.4,
+        },
+        gatePassed: false,
+        qualityScore: 0,
+      },
+    ], "v1");
+
+    expect(result.baselineScore).toBe(0);
+    expect(result.compositeStats.mean).toBe(0);
+  });
 });
 
 describe("saveCalibration", () => {
@@ -155,11 +180,15 @@ describe("saveCalibration", () => {
     writeFileSync(outPath, JSON.stringify(result, null, 2));
 
     const written = JSON.parse(readFileSync(outPath, "utf-8"));
-    // compositeScore applies tier weights: 0.7 input -> ~0.634 composite
-    expect(written.baselineScore).toBeCloseTo(0.634, 1);
+    expect(written.baselineScore).toBeCloseTo(0.7, 2);
     expect(written.deltaMin).toBe(0.01);
     expect(written.modelVersion).toBe("test-v1");
     expect(written.runCount).toBe(1);
+    expect(written.evalSchemaVersion).toBeDefined();
+    expect(written.gateThreshold).toBeDefined();
+    expect(written.referenceFingerprint).toBeDefined();
+    expect(written.referenceInputFingerprint).toBeDefined();
+    expect(written.vmafMode).toBeDefined();
     expect(written.calibratedAt).toBeDefined();
     expect(written.perMetricStats).toBeDefined();
     expect(written.perMetricStats.M1).toBeDefined();

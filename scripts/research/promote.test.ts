@@ -21,6 +21,11 @@ describe("loadBaseline", () => {
       config: { numLayers: 4 },
       qualityScore: 0.65,
       modelVersion: "v1",
+      evalSchemaVersion: "schema-v1",
+      gateThreshold: 0.15,
+      referenceFingerprint: "ref-123",
+      referenceInputFingerprint: "input-123",
+      vmafMode: "fallback",
       promotedAt: "2026-03-27T00:00:00Z",
     };
     vi.mocked(existsSync).mockReturnValue(true);
@@ -37,6 +42,8 @@ describe("promoteBaseline", () => {
     const result = promoteBaseline("config.ts", 0.72, "v2");
     expect(result.qualityScore).toBe(0.72);
     expect(result.modelVersion).toBe("v2");
+    expect(result.evalSchemaVersion).toBeDefined();
+    expect(result.gateThreshold).toBeDefined();
     expect(result.promotedAt).toBeTruthy();
     expect(result.previous).toBeUndefined();
   });
@@ -46,6 +53,11 @@ describe("promoteBaseline", () => {
       config: { numLayers: 4 },
       qualityScore: 0.65,
       modelVersion: "v1",
+      evalSchemaVersion: "schema-v1",
+      gateThreshold: 0.15,
+      referenceFingerprint: "ref-123",
+      referenceInputFingerprint: "input-123",
+      vmafMode: "fallback",
       promotedAt: "2026-03-27T00:00:00Z",
     };
     vi.mocked(existsSync).mockImplementation((p) => {
@@ -73,5 +85,7 @@ describe("promoteBaseline", () => {
     const result = promoteBaseline("/nonexistent.ts", 0.5, "v1");
     expect(result.config).toBeTruthy();
     expect(Object.keys(result.config).length).toBeGreaterThan(10);
+    expect(result.referenceFingerprint).toBe("unknown");
+    expect(result.referenceInputFingerprint).toBe("unknown");
   });
 });

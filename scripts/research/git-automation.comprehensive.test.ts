@@ -24,6 +24,18 @@ describe("checkDirty", () => {
     vi.mocked(execFileSync).mockReturnValue("  \n  ");
     expect(checkDirty("/repo")).toBe(false);
   });
+
+  it("returns false when only allowed paths are dirty", () => {
+    vi.mocked(execFileSync).mockReturnValue(" M scripts/research/research-config.ts\n");
+    expect(checkDirty("/repo", ["scripts/research/research-config.ts"])).toBe(false);
+  });
+
+  it("returns true when dirty output includes disallowed paths", () => {
+    vi.mocked(execFileSync).mockReturnValue(
+      " M scripts/research/research-config.ts\n?? input.png\n",
+    );
+    expect(checkDirty("/repo", ["scripts/research/research-config.ts"])).toBe(true);
+  });
 });
 
 describe("ensureBranch", () => {

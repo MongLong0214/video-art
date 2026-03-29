@@ -44,21 +44,12 @@ export async function createLayeredPsychedelic(
         uTime: { value: 0 },
         uLoopDuration: { value: loopDuration },
         uOpacity: { value: layerConfig.opacity },
-        // Color cycle
         uColorCycleSpeed: { value: anim.colorCycle?.speed ?? 0 },
         uColorCyclePeriod: { value: anim.colorCycle?.period ?? 10 },
         uPhaseOffset: { value: anim.colorCycle?.phaseOffset ?? 0 },
-        // Wave
-        uWaveAmplitude: { value: anim.wave?.amplitude ?? 0 },
-        uWaveFrequency: { value: anim.wave?.frequency ?? 0 },
-        uWavePeriod: { value: anim.wave?.period ?? 10 },
-        // Glow
         uGlowIntensity: { value: anim.glow?.intensity ?? 0 },
         uGlowPulse: { value: anim.glow?.pulse ?? 0 },
         uGlowPeriod: { value: anim.glow?.period ?? loopDuration },
-        // Parallax
-        uParallaxDepth: { value: anim.parallax?.depth ?? 0 },
-        // Psychedelic color engine
         uSaturationBoost: { value: anim.saturationBoost ?? 2.5 },
         uLuminanceKey: { value: anim.luminanceKey ?? 0.6 },
       },

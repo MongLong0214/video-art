@@ -14,10 +14,11 @@ export interface StemConfig {
 }
 
 export const DEFAULT_STEMS: StemConfig[] = [
-  { name: "drums", bus: 0, channels: 2 },
+  { name: "kick", bus: 0, channels: 2 },
   { name: "bass", bus: 2, channels: 2 },
-  { name: "synth", bus: 4, channels: 2 },
-  { name: "fx", bus: 6, channels: 2 },
+  { name: "hat", bus: 4, channels: 2 },
+  { name: "synth", bus: 6, channels: 2 },
+  { name: "fx", bus: 8, channels: 2 },
 ];
 
 export const SIDECHAIN_BUS = 100;
@@ -175,7 +176,7 @@ export const writeScoreConfig = (
   const config = {
     nrtJsonPath,
     entries: entries.map((e) => ({ time: e.time, cmd: e.cmd })),
-    outputChannels: 8,
+    outputChannels: 10,
     sampleRate: 48000,
   };
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });

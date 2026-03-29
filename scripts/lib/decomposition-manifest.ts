@@ -7,15 +7,21 @@ import type { LayerCandidate, LayerRole } from "../../src/lib/scene-schema.js";
 
 export interface ManifestInput {
   runId: string;
-  pipelineVariant: "qwen-only" | "qwen-zoedepth";
+  pipelineVariant: "sam2" | "qwen-only" | "qwen-zoedepth" | "qwen-luminance";
   sourceImage: string;
   preparedImage: string;
   models: {
-    qwenImageLayered: { model: string; version: string; numLayersBase: number };
+    sam2?: { model: string; version: string; maskLimit: number };
+    qwenImageLayered?: { model: string; version: string; numLayersBase: number };
     zoeDepth?: { model: string; version: string };
   };
   passes: Array<{
-    type: "qwen-base" | "qwen-recursive" | "depth-split";
+    type:
+      | "sam2-segment"
+      | "luminance-fallback"
+      | "manual-layers"
+      | "qwen-base"
+      | "qwen-recursive";
     candidateCount: number;
     parentId?: string;
   }>;
@@ -42,7 +48,7 @@ interface ManifestDroppedCandidate {
 
 export interface ManifestData {
   runId: string;
-  pipelineVariant: "qwen-only" | "qwen-zoedepth";
+  pipelineVariant: ManifestInput["pipelineVariant"];
   createdAt: string;
   sourceImage: string;
   preparedImage: string;
@@ -68,12 +74,11 @@ export interface ManifestData {
  */
 export const generateManifest = (input: ManifestInput): ManifestData => {
   // Validate: reject "latest" as version
-  const allVersions: Array<{ model: string; version: string }> = [
+  const allVersions = [
+    input.models.sam2,
     input.models.qwenImageLayered,
-  ];
-  if (input.models.zoeDepth) {
-    allVersions.push(input.models.zoeDepth);
-  }
+    input.models.zoeDepth,
+  ].filter((entry): entry is { model: string; version: string } => Boolean(entry));
   for (const entry of allVersions) {
     if (input.productionMode && entry.version.toLowerCase() === "latest") {
       throw new Error(

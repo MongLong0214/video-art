@@ -53,7 +53,7 @@ describe("synth-stem-map", () => {
   it("maps kick to drums stem", () => {
     const result = mapSynthDef("kick");
     expect(result).not.toBeNull();
-    expect(result!.stem).toBe("drums");
+    expect(result!.stem).toBe("kick");
     expect(result!.bus).toBe(0);
   });
 
@@ -207,10 +207,10 @@ describe("osc-to-nrt", () => {
     expect(isSampleEvent("kick")).toBe(false);
   });
 
-  it("mapDirtSample bd → drums", () => {
+  it("mapDirtSample bd → kick", () => {
     const result = mapDirtSample("bd");
     expect(result).not.toBeNull();
-    expect(result!.stem).toBe("drums");
+    expect(result!.stem).toBe("kick");
   });
 
   it("mapDirtSample unknown → null", () => {
@@ -225,10 +225,10 @@ describe("osc-to-nrt", () => {
   });
 
   it("DIRT_SAMPLE_STEMS has bd, sd, hh, cp", () => {
-    expect(DIRT_SAMPLE_STEMS.bd).toBe("drums");
-    expect(DIRT_SAMPLE_STEMS.sd).toBe("drums");
-    expect(DIRT_SAMPLE_STEMS.hh).toBe("drums");
-    expect(DIRT_SAMPLE_STEMS.cp).toBe("drums");
+    expect(DIRT_SAMPLE_STEMS.bd).toBe("kick");
+    expect(DIRT_SAMPLE_STEMS.sd).toBe("kick");
+    expect(DIRT_SAMPLE_STEMS.hh).toBe("hat");
+    expect(DIRT_SAMPLE_STEMS.cp).toBe("hat");
   });
 
   // --- B-PROD v0.2: FX_PARAMS ---

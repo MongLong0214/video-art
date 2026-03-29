@@ -3,11 +3,19 @@
 
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from "fs";
 import { getDefaultConfig, ResearchConfigSchema } from "./research-config.js";
+import {
+  BASELINE_PATH,
+  CALIBRATION_PATH,
+  CALIBRATION_DIR as CACHE_DIR,
+  type EvaluationContractFields,
+  buildStaticEvaluationContract,
+  buildRuntimeEvaluationContract,
+  validatePreparedReference,
+  assertEvaluationContractCompatible,
+} from "./contract.js";
+import type { CalibrationResult } from "./calibrate.js";
 
-const CACHE_DIR = ".cache/research";
-const BASELINE_PATH = `${CACHE_DIR}/baseline-config.json`;
-
-export interface BaselineRecord {
+export interface BaselineRecord extends EvaluationContractFields {
   config: Record<string, unknown>;
   qualityScore: number;
   modelVersion: string;
@@ -24,6 +32,7 @@ export function promoteBaseline(
   configPath: string,
   qualityScore: number,
   modelVersion: string,
+  contract: EvaluationContractFields = buildStaticEvaluationContract(),
 ): BaselineRecord {
   mkdirSync(CACHE_DIR, { recursive: true });
 
@@ -43,6 +52,7 @@ export function promoteBaseline(
   }
 
   const record: BaselineRecord = {
+    ...contract,
     config,
     qualityScore,
     modelVersion,
@@ -62,7 +72,34 @@ export function promoteBaseline(
 // CLI entry
 if (process.argv[1]?.endsWith("promote.ts")) {
   const score = parseFloat(process.argv[2] ?? "0");
-  const version = process.argv[3] ?? "unknown";
+  const versionArg = process.argv[3];
   const configPath = "scripts/research/research-config.ts";
-  promoteBaseline(configPath, score, version);
+
+  if (!existsSync(CALIBRATION_PATH)) {
+    console.error("Calibration not found. Run `npm run research:calibrate` before promoting a baseline.");
+    process.exit(1);
+  }
+
+  const refMeta = validatePreparedReference();
+  const currentContract = buildRuntimeEvaluationContract(refMeta);
+  const calibration = JSON.parse(
+    readFileSync(CALIBRATION_PATH, "utf-8"),
+  ) as CalibrationResult;
+
+  assertEvaluationContractCompatible("Calibration", calibration, currentContract);
+
+  if (versionArg && versionArg !== calibration.modelVersion) {
+    console.error(
+      `Model version mismatch: calibration=${calibration.modelVersion}, requested=${versionArg}. ` +
+      "Promote the calibrated model version or recalibrate first.",
+    );
+    process.exit(1);
+  }
+
+  promoteBaseline(
+    configPath,
+    score,
+    calibration.modelVersion,
+    currentContract,
+  );
 }

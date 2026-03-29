@@ -117,8 +117,8 @@ describe("T14 AC-4: buildNrtScore", () => {
   const makeBaseScore = (): ExtendedNrtScore => ({
     metadata: { duration: 30, eventCount: 3, mapped: 3, skipped: 0, skipRate: 0 },
     events: [
-      { time: 0, synthDef: "pad", stem: "synth", bus: 4, nodeId: 1000, params: { freq: 220, amp: 0.4, dur: 30 } },
-      { time: 0, synthDef: "kick", stem: "drums", bus: 0, nodeId: 1001, params: { freq: 50, amp: 0.5, dur: 0.3 } },
+      { time: 0, synthDef: "pad", stem: "synth", bus: 6, nodeId: 1000, params: { freq: 220, amp: 0.4, dur: 30 } },
+      { time: 0, synthDef: "kick", stem: "kick", bus: 0, nodeId: 1001, params: { freq: 50, amp: 0.5, dur: 0.3 } },
       { time: 5, synthDef: "bass", stem: "bass", bus: 2, nodeId: 1002, params: { freq: 110, amp: 0.4, dur: 0.5 } },
     ],
   });

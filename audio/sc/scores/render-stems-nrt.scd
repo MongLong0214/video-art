@@ -105,7 +105,7 @@ score = entries.collect { |entry|
 
 // Render via NRT
 (
-	var channels = config.at("outputChannels").asInteger ? 8;
+	var channels = config.at("outputChannels").asInteger ? 10;
 	var sr = config.at("sampleRate").asInteger ? 48000;
 	var oscPath = configPath.replace(".json", ".osc");
 

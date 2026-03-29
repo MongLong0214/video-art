@@ -5,8 +5,8 @@
 
 export interface PipelineCliArgs {
   inputPath: string;
-  layerOverride?: number;
   description?: string;
+  layerOverride?: number;
   unsafe: boolean;
   duration?: number;
   production: boolean;
@@ -16,44 +16,43 @@ export interface PipelineCliArgs {
  * Parse CLI arguments for the layer decomposition pipeline.
  *
  * Usage: pipeline-layers <input.png> [options]
- *   --layers N                          override layer count (1-8)
- *   --description "text"                scene description for Qwen (default: auto)
- *   --unsafe                            disable safety checker
- *   --duration N                        scene duration in seconds (1-60)
- *   --production                        enforce version pin
+ *   --layers N        override SAM 2 mask count (1-12)
+ *   --unsafe          disable safety checker
+ *   --duration N      scene duration in seconds (1-300)
+ *   --production      enforce version pin
  */
 export function parseCliArgs(argv: string[]): PipelineCliArgs {
   const positional = argv.filter((a) => !a.startsWith("--"));
   const inputPath = positional[0] ?? "";
 
-  // --description
-  let description: string | undefined;
-  const descIdx = argv.indexOf("--description");
-  if (descIdx !== -1 && descIdx + 1 < argv.length) {
-    description = argv[descIdx + 1];
-  }
-
-  // --layers N
+  // --layers N (M9: match schema max 300 for duration, SAM2 supports up to 12)
   let layerOverride: number | undefined;
   const layersIdx = argv.indexOf("--layers");
   if (layersIdx !== -1 && layersIdx + 1 < argv.length) {
     const val = parseInt(argv[layersIdx + 1], 10);
-    if (Number.isNaN(val) || val < 1 || val > 8) {
-      throw new Error(`Invalid --layers value. Must be 1-8 (integer). Qwen API max is 8.`);
+    if (Number.isNaN(val) || val < 1 || val > 12) {
+      throw new Error(`Invalid --layers value. Must be 1-12 (integer).`);
     }
     layerOverride = val;
+  }
+
+  // Compatibility: parsed but unused by the current pipeline.
+  let description: string | undefined;
+  const descriptionIdx = argv.indexOf("--description");
+  if (descriptionIdx !== -1 && descriptionIdx + 1 < argv.length) {
+    description = argv[descriptionIdx + 1];
   }
 
   // --unsafe
   const unsafe = argv.includes("--unsafe");
 
-  // --duration N
+  // --duration N (M9: align with schema max 300)
   let duration: number | undefined;
   const durIdx = argv.indexOf("--duration");
   if (durIdx !== -1 && durIdx + 1 < argv.length) {
     const val = parseInt(argv[durIdx + 1], 10);
-    if (Number.isNaN(val) || val < 1 || val > 60) {
-      throw new Error(`Invalid --duration value. Must be 1-60 (integer).`);
+    if (Number.isNaN(val) || val < 1 || val > 300) {
+      throw new Error(`Invalid --duration value. Must be 1-300 (integer).`);
     }
     duration = val;
   }
@@ -63,8 +62,8 @@ export function parseCliArgs(argv: string[]): PipelineCliArgs {
 
   return {
     inputPath,
-    layerOverride,
     description,
+    layerOverride,
     unsafe,
     duration,
     production,

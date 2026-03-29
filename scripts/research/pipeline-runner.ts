@@ -106,7 +106,15 @@ export function runLayerDecomposition(
 ): string {
   const args = ["tsx", "scripts/pipeline-layers.ts", inputPath];
 
-  if (config?.numLayers) args.push("--layers", String(config.numLayers));
+  const samMaskLimit =
+    typeof config?.samMaskLimit === "number"
+      ? config.samMaskLimit
+      : typeof config?.numLayers === "number"
+        ? config.numLayers
+        : undefined;
+  if (samMaskLimit) {
+    args.push("--layers", String(samMaskLimit));
+  }
 
   const output = execFileSync("npx", args, {
     cwd,
@@ -244,9 +252,14 @@ export function resolveInputImagePath(cwd: string): string {
   const inputPng = path.join(cwd, "input.png");
   if (fs.existsSync(inputPng)) return "input.png";
 
-  // Fallback: any .png in project root (excluding source outputs)
+  // Fallback: any user-provided .png in project root.
+  // Ignore generated artifacts that the pipeline may leave behind.
   const rootFiles = fs.readdirSync(cwd).filter(
-    (f) => f.endsWith(".png") && !f.startsWith(".") && f !== "favicon.png",
+    (f) =>
+      f.endsWith(".png") &&
+      !f.startsWith(".") &&
+      f !== "favicon.png" &&
+      !f.startsWith("prepared-"),
   );
   if (rootFiles.length === 1) return rootFiles[0];
 

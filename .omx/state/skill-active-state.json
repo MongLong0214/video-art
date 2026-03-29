@@ -1,11 +1,12 @@
 {
   "version": 1,
   "active": true,
-  "skill": "code-review",
-  "keyword": "code review",
+  "skill": "build-fix",
+  "keyword": "type errors",
   "phase": "reviewing",
-  "activated_at": "2026-03-27T03:04:03.430Z",
-  "updated_at": "2026-03-27T08:43:07.419Z",
+  "activated_at": "2026-03-29T10:30:55.574Z",
+  "updated_at": "2026-03-29T11:03:54.903Z",
   "source": "keyword-detector",
-  "input_lock": null
+  "iteration": 6,
+  "last_turn_at": "2026-03-29T11:56:41.585Z"
 }

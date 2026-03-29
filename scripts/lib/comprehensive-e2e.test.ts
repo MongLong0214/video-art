@@ -845,50 +845,50 @@ describe("4. OSC to NRT Conversion", () => {
       });
     }
 
-    it("kick maps to drums stem bus 0", () => {
+    it("kick maps to kick stem bus 0", () => {
       const r = mapSynthDef("kick");
-      expect(r!.stem).toBe("drums");
+      expect(r!.stem).toBe("kick");
       expect(r!.bus).toBe(0);
     });
-    it("hat maps to drums stem bus 0", () => {
+    it("hat maps to hat stem bus 4", () => {
       const r = mapSynthDef("hat");
-      expect(r!.stem).toBe("drums");
-      expect(r!.bus).toBe(0);
+      expect(r!.stem).toBe("hat");
+      expect(r!.bus).toBe(4);
     });
-    it("clap maps to drums stem bus 0", () => {
+    it("clap maps to hat stem bus 4", () => {
       const r = mapSynthDef("clap");
-      expect(r!.stem).toBe("drums");
-      expect(r!.bus).toBe(0);
+      expect(r!.stem).toBe("hat");
+      expect(r!.bus).toBe(4);
     });
     it("bass maps to bass stem bus 2", () => {
       const r = mapSynthDef("bass");
       expect(r!.stem).toBe("bass");
       expect(r!.bus).toBe(2);
     });
-    it("supersaw maps to synth stem bus 4", () => {
+    it("supersaw maps to synth stem bus 6", () => {
       const r = mapSynthDef("supersaw");
       expect(r!.stem).toBe("synth");
-      expect(r!.bus).toBe(4);
+      expect(r!.bus).toBe(6);
     });
-    it("pad maps to synth stem bus 4", () => {
+    it("pad maps to synth stem bus 6", () => {
       const r = mapSynthDef("pad");
       expect(r!.stem).toBe("synth");
-      expect(r!.bus).toBe(4);
+      expect(r!.bus).toBe(6);
     });
-    it("lead maps to synth stem bus 4", () => {
+    it("lead maps to synth stem bus 6", () => {
       const r = mapSynthDef("lead");
       expect(r!.stem).toBe("synth");
-      expect(r!.bus).toBe(4);
+      expect(r!.bus).toBe(6);
     });
-    it("arp_pluck maps to synth stem bus 4", () => {
+    it("arp_pluck maps to synth stem bus 6", () => {
       const r = mapSynthDef("arp_pluck");
       expect(r!.stem).toBe("synth");
-      expect(r!.bus).toBe(4);
+      expect(r!.bus).toBe(6);
     });
-    it("riser maps to fx stem bus 6", () => {
+    it("riser maps to fx stem bus 8", () => {
       const r = mapSynthDef("riser");
       expect(r!.stem).toBe("fx");
-      expect(r!.bus).toBe(6);
+      expect(r!.bus).toBe(8);
     });
     it("SUPPORTED_SYNTHDEFS has 16 entries", () => {
       expect(SUPPORTED_SYNTHDEFS.size).toBe(16);
@@ -899,11 +899,24 @@ describe("4. OSC to NRT Conversion", () => {
   describe("Dirt-Samples mapping (15)", () => {
     const dirtSamples = ["bd", "sd", "hh", "cp", "cb", "mt", "ht", "lt", "oh", "ch", "cr", "rd", "sn", "rim", "tom"];
 
-    for (const sample of dirtSamples) {
-      it(`mapDirtSample("${sample}") returns drums`, () => {
+    const kickLikeSamples = ["bd", "sd", "sn", "rim", "mt", "ht", "lt", "tom"];
+    const hatLikeSamples = ["hh", "oh", "ch", "cp", "cr", "rd", "cb"];
+
+    for (const sample of kickLikeSamples) {
+      it(`mapDirtSample("${sample}") returns kick`, () => {
         const r = mapDirtSample(sample);
         expect(r).not.toBeNull();
-        expect(r!.stem).toBe("drums");
+        expect(r!.stem).toBe("kick");
+      });
+      it(`isSampleEvent("${sample}") is true`, () => {
+        expect(isSampleEvent(sample)).toBe(true);
+      });
+    }
+    for (const sample of hatLikeSamples) {
+      it(`mapDirtSample("${sample}") returns hat`, () => {
+        const r = mapDirtSample(sample);
+        expect(r).not.toBeNull();
+        expect(r!.stem).toBe("hat");
       });
       it(`isSampleEvent("${sample}") is true`, () => {
         expect(isSampleEvent(sample)).toBe(true);
@@ -914,9 +927,12 @@ describe("4. OSC to NRT Conversion", () => {
       expect(Object.keys(DIRT_SAMPLE_STEMS)).toHaveLength(15);
     });
 
-    it("all dirt samples map to bus 0 (drums)", () => {
-      for (const sample of dirtSamples) {
+    it("kick-like dirt samples map to bus 0, hat-like to bus 4", () => {
+      for (const sample of kickLikeSamples) {
         expect(mapDirtSample(sample)!.bus).toBe(0);
+      }
+      for (const sample of hatLikeSamples) {
+        expect(mapDirtSample(sample)!.bus).toBe(4);
       }
     });
 
@@ -1144,14 +1160,14 @@ describe("4. OSC to NRT Conversion", () => {
   describe("writeNrtScore", () => {
     it("creates output directory", () => {
       const outPath = path.join(tmpDir, "nrt-out", "sub", "score.json");
-      const score = makeNrtScore([{ time: 0, synthDef: "kick", stem: "drums", bus: 0, nodeId: 1000, params: {} }]);
+      const score = makeNrtScore([{ time: 0, synthDef: "kick", stem: "kick", bus: 0, nodeId: 1000, params: {} }]);
       writeNrtScore(score, outPath);
       expect(fs.existsSync(outPath)).toBe(true);
     });
 
     it("output is valid JSON", () => {
       const outPath = path.join(tmpDir, "nrt-out2", "score.json");
-      const score = makeNrtScore([{ time: 0, synthDef: "kick", stem: "drums", bus: 0, nodeId: 1000, params: {} }]);
+      const score = makeNrtScore([{ time: 0, synthDef: "kick", stem: "kick", bus: 0, nodeId: 1000, params: {} }]);
       writeNrtScore(score, outPath);
       const content = fs.readFileSync(outPath, "utf-8");
       expect(() => JSON.parse(content)).not.toThrow();
@@ -1160,7 +1176,7 @@ describe("4. OSC to NRT Conversion", () => {
     it("preserves metadata in output", () => {
       const outPath = path.join(tmpDir, "nrt-out3", "score.json");
       const score = makeNrtScore(
-        [{ time: 0, synthDef: "kick", stem: "drums", bus: 0, nodeId: 1000, params: {} }],
+        [{ time: 0, synthDef: "kick", stem: "kick", bus: 0, nodeId: 1000, params: {} }],
         10.5,
       );
       writeNrtScore(score, outPath);
@@ -1185,30 +1201,34 @@ describe("5. Stem Render", () => {
       });
     }
 
-    it("drums SynthDefs share bus 0", () => {
+    it("kick SynthDefs on bus 0", () => {
       expect(getStemBus("kick")!.bus).toBe(0);
-      expect(getStemBus("hat")!.bus).toBe(0);
-      expect(getStemBus("clap")!.bus).toBe(0);
+      expect(getStemBus("layered_kick")!.bus).toBe(0);
     });
     it("bass on bus 2", () => { expect(getStemBus("bass")!.bus).toBe(2); });
-    it("synth SynthDefs share bus 4", () => {
-      expect(getStemBus("supersaw")!.bus).toBe(4);
-      expect(getStemBus("pad")!.bus).toBe(4);
-      expect(getStemBus("lead")!.bus).toBe(4);
-      expect(getStemBus("arp_pluck")!.bus).toBe(4);
+    it("hat SynthDefs on bus 4", () => {
+      expect(getStemBus("hat")!.bus).toBe(4);
+      expect(getStemBus("clap")!.bus).toBe(4);
     });
-    it("fx on bus 6", () => { expect(getStemBus("riser")!.bus).toBe(6); });
+    it("synth SynthDefs share bus 6", () => {
+      expect(getStemBus("supersaw")!.bus).toBe(6);
+      expect(getStemBus("pad")!.bus).toBe(6);
+      expect(getStemBus("lead")!.bus).toBe(6);
+      expect(getStemBus("arp_pluck")!.bus).toBe(6);
+    });
+    it("fx on bus 8", () => { expect(getStemBus("riser")!.bus).toBe(8); });
     it("unknown SynthDef returns null", () => { expect(getStemBus("unknown")).toBeNull(); });
     it("empty string returns null", () => { expect(getStemBus("")).toBeNull(); });
   });
 
   // --- 5.2 DEFAULT_STEMS ---
   describe("DEFAULT_STEMS", () => {
-    it("has 4 stems", () => { expect(DEFAULT_STEMS).toHaveLength(4); });
-    it("drums is bus 0", () => { expect(DEFAULT_STEMS.find(s => s.name === "drums")!.bus).toBe(0); });
+    it("has 5 stems", () => { expect(DEFAULT_STEMS).toHaveLength(5); });
+    it("kick is bus 0", () => { expect(DEFAULT_STEMS.find(s => s.name === "kick")!.bus).toBe(0); });
     it("bass is bus 2", () => { expect(DEFAULT_STEMS.find(s => s.name === "bass")!.bus).toBe(2); });
-    it("synth is bus 4", () => { expect(DEFAULT_STEMS.find(s => s.name === "synth")!.bus).toBe(4); });
-    it("fx is bus 6", () => { expect(DEFAULT_STEMS.find(s => s.name === "fx")!.bus).toBe(6); });
+    it("hat is bus 4", () => { expect(DEFAULT_STEMS.find(s => s.name === "hat")!.bus).toBe(4); });
+    it("synth is bus 6", () => { expect(DEFAULT_STEMS.find(s => s.name === "synth")!.bus).toBe(6); });
+    it("fx is bus 8", () => { expect(DEFAULT_STEMS.find(s => s.name === "fx")!.bus).toBe(8); });
     it("all channels are 2", () => {
       for (const stem of DEFAULT_STEMS) expect(stem.channels).toBe(2);
     });
@@ -1271,28 +1291,28 @@ describe("5. Stem Render", () => {
     });
 
     it("instrument node uses s_new", () => {
-      const score = makeNrtScore([{ time: 0, synthDef: "kick", stem: "drums", bus: 0, nodeId: 1000, params: {} }]);
+      const score = makeNrtScore([{ time: 0, synthDef: "kick", stem: "kick", bus: 0, nodeId: 1000, params: {} }]);
       const entries = generateNrtScoreEntries(score);
       const instrEntry = entries.find(e => e.cmd[1] === "kick");
       expect(instrEntry!.cmd[0]).toBe("s_new");
     });
 
     it("kick gets sidechain send node", () => {
-      const score = makeNrtScore([{ time: 0, synthDef: "kick", stem: "drums", bus: 0, nodeId: 1000, params: { compress: 0.5 } }]);
+      const score = makeNrtScore([{ time: 0, synthDef: "kick", stem: "kick", bus: 0, nodeId: 1000, params: { compress: 0.5 } }]);
       const entries = generateNrtScoreEntries(score);
       const scSend = entries.find(e => e.cmd[1] === "nrt_sidechain_send");
       expect(scSend).toBeDefined();
     });
 
     it("non-kick does NOT get sidechain send", () => {
-      const score = makeNrtScore([{ time: 0, synthDef: "hat", stem: "drums", bus: 0, nodeId: 1000, params: { compress: 0.5 } }]);
+      const score = makeNrtScore([{ time: 0, synthDef: "hat", stem: "hat", bus: 4, nodeId: 1000, params: { compress: 0.5 } }]);
       const entries = generateNrtScoreEntries(score);
       const scSend = entries.find(e => e.cmd[1] === "nrt_sidechain_send");
       expect(scSend).toBeUndefined();
     });
 
     it("FX nodes only when FX params exist", () => {
-      const score = makeNrtScore([{ time: 0, synthDef: "hat", stem: "drums", bus: 0, nodeId: 1000, params: { amp: 0.8 } }]);
+      const score = makeNrtScore([{ time: 0, synthDef: "hat", stem: "hat", bus: 4, nodeId: 1000, params: { amp: 0.8 } }]);
       const entries = generateNrtScoreEntries(score);
       const fxEntries = entries.filter(e => String(e.cmd[1]).startsWith("custom") || String(e.cmd[1]).startsWith("nrt"));
       expect(fxEntries).toHaveLength(0);
@@ -1300,8 +1320,8 @@ describe("5. Stem Render", () => {
 
     it("entries sorted by time", () => {
       const score = makeNrtScore([
-        { time: 1.0, synthDef: "hat", stem: "drums", bus: 0, nodeId: 1010, params: {} },
-        { time: 0.0, synthDef: "kick", stem: "drums", bus: 0, nodeId: 1000, params: {} },
+        { time: 1.0, synthDef: "hat", stem: "hat", bus: 4, nodeId: 1010, params: {} },
+        { time: 0.0, synthDef: "kick", stem: "kick", bus: 0, nodeId: 1000, params: {} },
       ]);
       const entries = generateNrtScoreEntries(score);
       for (let i = 1; i < entries.length; i++) {
@@ -1311,7 +1331,7 @@ describe("5. Stem Render", () => {
 
     it("kick with FX: sidechain excluded from kick FX chain", () => {
       const score = makeNrtScore([
-        { time: 0, synthDef: "kick", stem: "drums", bus: 0, nodeId: 1000, params: { compress: 0.5 } },
+        { time: 0, synthDef: "kick", stem: "kick", bus: 0, nodeId: 1000, params: { compress: 0.5 } },
       ]);
       const entries = generateNrtScoreEntries(score);
       const kickFx = entries.filter(e => e.time === 0 && e.cmd[1] === "customSidechain");
@@ -1329,7 +1349,7 @@ describe("5. Stem Render", () => {
 
     it("sidechain send has outBus = SIDECHAIN_BUS", () => {
       const score = makeNrtScore([
-        { time: 0, synthDef: "kick", stem: "drums", bus: 0, nodeId: 1000, params: { compress: 0.5 } },
+        { time: 0, synthDef: "kick", stem: "kick", bus: 0, nodeId: 1000, params: { compress: 0.5 } },
       ]);
       const entries = generateNrtScoreEntries(score);
       const scSend = entries.find(e => e.cmd[1] === "nrt_sidechain_send")!;
@@ -1340,16 +1360,17 @@ describe("5. Stem Render", () => {
 
   // --- 5.6 Split commands ---
   describe("buildSplitCommands", () => {
-    it("default 4 stems produce 4 commands", () => {
+    it("default 5 stems produce 5 commands", () => {
       const cmds = buildSplitCommands("/in.wav", "/out");
-      expect(cmds).toHaveLength(4);
+      expect(cmds).toHaveLength(5);
     });
     it("output files named stem-{name}.wav", () => {
       const cmds = buildSplitCommands("/in.wav", "/out");
-      expect(cmds[0].outputFile).toContain("stem-drums.wav");
+      expect(cmds[0].outputFile).toContain("stem-kick.wav");
       expect(cmds[1].outputFile).toContain("stem-bass.wav");
-      expect(cmds[2].outputFile).toContain("stem-synth.wav");
-      expect(cmds[3].outputFile).toContain("stem-fx.wav");
+      expect(cmds[2].outputFile).toContain("stem-hat.wav");
+      expect(cmds[3].outputFile).toContain("stem-synth.wav");
+      expect(cmds[4].outputFile).toContain("stem-fx.wav");
     });
     it("custom stems produce matching count", () => {
       const custom = [{ name: "a", bus: 0, channels: 2 }, { name: "b", bus: 2, channels: 2 }];
@@ -1437,7 +1458,7 @@ describe("5. Stem Render", () => {
       const outPath = path.join(tmpDir, "sc-cfg", "config.json");
       writeScoreConfig([], "/tmp/nrt.json", outPath);
       const cfg = JSON.parse(fs.readFileSync(outPath, "utf-8"));
-      expect(cfg.outputChannels).toBe(8);
+      expect(cfg.outputChannels).toBe(10);
     });
     it("creates config with 48000 sample rate", () => {
       const outPath = path.join(tmpDir, "sc-cfg2", "config.json");
@@ -1802,10 +1823,13 @@ describe("9. SYNTH_STEM_MAP Structure", () => {
     });
   }
 
-  it("drums stem SynthDefs: kick, hat, clap", () => {
-    expect(SYNTH_STEM_MAP.kick.stem).toBe("drums");
-    expect(SYNTH_STEM_MAP.hat.stem).toBe("drums");
-    expect(SYNTH_STEM_MAP.clap.stem).toBe("drums");
+  it("kick stem SynthDefs: kick, layered_kick", () => {
+    expect(SYNTH_STEM_MAP.kick.stem).toBe("kick");
+    expect(SYNTH_STEM_MAP.layered_kick.stem).toBe("kick");
+  });
+  it("hat stem SynthDefs: hat, clap", () => {
+    expect(SYNTH_STEM_MAP.hat.stem).toBe("hat");
+    expect(SYNTH_STEM_MAP.clap.stem).toBe("hat");
   });
   it("bass stem SynthDef: bass", () => {
     expect(SYNTH_STEM_MAP.bass.stem).toBe("bass");
@@ -1820,18 +1844,19 @@ describe("9. SYNTH_STEM_MAP Structure", () => {
     expect(SYNTH_STEM_MAP.riser.stem).toBe("fx");
   });
 
-  it("only 4 unique bus values (0, 2, 4, 6)", () => {
+  it("only 5 unique bus values (0, 2, 4, 6, 8)", () => {
     const buses = new Set(Object.values(SYNTH_STEM_MAP).map(m => m.bus));
-    expect(buses.size).toBe(4);
+    expect(buses.size).toBe(5);
     expect(buses.has(0)).toBe(true);
     expect(buses.has(2)).toBe(true);
     expect(buses.has(4)).toBe(true);
     expect(buses.has(6)).toBe(true);
+    expect(buses.has(8)).toBe(true);
   });
 
-  it("only 4 unique stem values (drums, bass, synth, fx)", () => {
+  it("only 5 unique stem values (kick, bass, hat, synth, fx)", () => {
     const stems = new Set(Object.values(SYNTH_STEM_MAP).map(m => m.stem));
-    expect(stems.size).toBe(4);
+    expect(stems.size).toBe(5);
   });
 });
 

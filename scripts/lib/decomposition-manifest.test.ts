@@ -18,7 +18,7 @@ const makeCandidate = (
   overrides: Partial<LayerCandidate> = {},
 ): LayerCandidate => ({
   id: "cand-0",
-  source: "qwen-base",
+  source: "sam2-segment",
   filePath: "/tmp/layer-0.png",
   width: 512,
   height: 512,
@@ -32,19 +32,19 @@ const makeCandidate = (
 
 const baseInput: ManifestInput = {
   runId: "run-abc-123",
-  pipelineVariant: "qwen-only",
+  pipelineVariant: "sam2",
   sourceImage: "/tmp/source/original.jpg",
   preparedImage: "/tmp/source/prepared.png",
   models: {
-    qwenImageLayered: {
-      model: "qwen/qwen-image-layered",
-      version: "a1b2c3d4e5f6",
-      numLayersBase: 4,
+    sam2: {
+      model: "lucataco/segment-anything-2",
+      version: "be7cbde9fdf0eecdc8b20ffec9dd0d1cfeace0832d4d0b58a071d993182e1be0",
+      maskLimit: 6,
     },
   },
   passes: [
-    { type: "qwen-base", candidateCount: 4 },
-    { type: "qwen-recursive", candidateCount: 2, parentId: "cand-1" },
+    { type: "sam2-segment", candidateCount: 4 },
+    { type: "luminance-fallback", candidateCount: 2 },
   ],
   retainedLayers: [
     makeCandidate({ id: "layer-0", role: "background-plate", coverage: 0.31 }),
@@ -114,10 +114,10 @@ describe("decomposition-manifest", () => {
     const badInput: ManifestInput = {
       ...baseInput,
       models: {
-        qwenImageLayered: {
-          model: "qwen/qwen-image-layered",
+        sam2: {
+          model: "lucataco/segment-anything-2",
           version: "latest",
-          numLayersBase: 4,
+          maskLimit: 6,
         },
       },
     };
@@ -140,17 +140,21 @@ describe("decomposition-manifest", () => {
 
   it("should record pipeline variant", () => {
     const manifest = generateManifest(baseInput);
-    expect(manifest.pipelineVariant).toBe("qwen-only");
+    expect(manifest.pipelineVariant).toBe("sam2");
 
-    const zoedepthInput: ManifestInput = {
+    const legacyInput: ManifestInput = {
       ...baseInput,
       pipelineVariant: "qwen-zoedepth",
       models: {
-        ...baseInput.models,
+        qwenImageLayered: {
+          model: "qwen/qwen-image-layered",
+          version: "6375723dabc",
+          numLayersBase: 4,
+        },
         zoeDepth: { model: "cjwbw/zoedepth", version: "6375723dabc" },
       },
     };
-    const manifest2 = generateManifest(zoedepthInput);
+    const manifest2 = generateManifest(legacyInput);
     expect(manifest2.pipelineVariant).toBe("qwen-zoedepth");
   });
 
