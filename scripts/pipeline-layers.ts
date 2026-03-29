@@ -172,6 +172,9 @@ async function main() {
       maxLayers: selectedLayerCount,
       alphaThreshold: pipelineConfig?.alphaThreshold,
       minCoverage: pipelineConfig?.minCoverage,
+      pointsPerSide: pipelineConfig?.samPointsPerSide,
+      predIouThresh: pipelineConfig?.samPredIouThresh,
+      stabilityScoreThresh: pipelineConfig?.samStabilityScoreThresh,
     });
 
     console.log(`  ${decomposeResult.files.length} raw layers generated (${decomposeResult.method})`);

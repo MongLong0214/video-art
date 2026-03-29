@@ -12,6 +12,9 @@ export const ResearchConfigSchema = z
   .object({
     // ── SAM 2 Decomposition ─────────────────────────────────
     samMaskLimit: z.number().int().min(3).max(12).nullable().default(null),
+    samPointsPerSide: z.number().int().min(16).max(128).default(64),
+    samPredIouThresh: z.number().min(0.1).max(0.99).default(0.7),
+    samStabilityScoreThresh: z.number().min(0.1).max(0.99).default(0.92),
     maxLayers: z.number().int().min(3).max(16).default(12),
     minRetainedLayers: z.number().int().min(1).max(12).default(MIN_RETAINED_LAYERS),
 

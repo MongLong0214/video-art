@@ -9,6 +9,9 @@ describe("getDefaultConfig", () => {
   it("returns the current SAM2 research defaults", () => {
     const config = getDefaultConfig();
     expect(config.samMaskLimit).toBe(3);
+    expect(config.samPointsPerSide).toBe(64);
+    expect(config.samPredIouThresh).toBe(0.7);
+    expect(config.samStabilityScoreThresh).toBe(0.92);
     expect(config.maxLayers).toBe(12);
     expect(config.minRetainedLayers).toBe(1);
     expect(config.alphaThreshold).toBe(96);
@@ -55,6 +58,9 @@ describe("partial config overrides", () => {
 describe("range boundaries", () => {
   it.each([
     ["samMaskLimit", 3, 12],
+    ["samPointsPerSide", 16, 128],
+    ["samPredIouThresh", 0.1, 0.99],
+    ["samStabilityScoreThresh", 0.1, 0.99],
     ["alphaThreshold", 1, 254],
     ["minCoverage", 0.001, 0.05],
     ["maxLayers", 3, 16],
@@ -80,6 +86,10 @@ describe("invalid values", () => {
   it.each([
     ["samMaskLimit", 2],
     ["samMaskLimit", 13],
+    ["samPointsPerSide", 15],
+    ["samPointsPerSide", 129],
+    ["samPredIouThresh", 0.09],
+    ["samStabilityScoreThresh", 1.0],
     ["alphaThreshold", 0],
     ["alphaThreshold", 255],
     ["minCoverage", 0.0001],

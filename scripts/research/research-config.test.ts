@@ -10,6 +10,9 @@ describe("ResearchConfigSchema", () => {
   it("parses SAM2 defaults from an empty object", () => {
     const config = ResearchConfigSchema.parse({});
     expect(config.samMaskLimit).toBeNull();
+    expect(config.samPointsPerSide).toBe(64);
+    expect(config.samPredIouThresh).toBe(0.7);
+    expect(config.samStabilityScoreThresh).toBe(0.92);
     expect(config.maxLayers).toBe(12);
     expect(config.minRetainedLayers).toBe(6);
     expect(config.alphaThreshold).toBe(128);
@@ -62,6 +65,9 @@ describe("getDefaultConfig", () => {
     const config = getDefaultConfig();
     expect(() => ResearchConfigSchema.parse(config)).not.toThrow();
     expect(config.samMaskLimit).toBe(3);
+    expect(config.samPointsPerSide).toBe(64);
+    expect(config.samPredIouThresh).toBe(0.7);
+    expect(config.samStabilityScoreThresh).toBe(0.92);
     expect(config.maxLayers).toBe(12);
     expect(config.iouDedupeThreshold).toBe(0.92);
     expect(config.uniqueCoverageThreshold).toBe(0.02);

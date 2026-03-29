@@ -50,6 +50,9 @@ Each experiment runs the full pipeline once (~2 minutes). You launch it as: `npm
 | Parameter | Range | Default | Description |
 |-----------|-------|---------|-------------|
 | samMaskLimit | 3-12 or `null` | `null` | Override SAM 2 mask count. `null` means use complexity scoring (6/7/8). |
+| samPointsPerSide | 16-128 | 64 | SAM 2 sampling density |
+| samPredIouThresh | 0.1-0.99 | 0.70 | SAM 2 mask quality threshold |
+| samStabilityScoreThresh | 0.1-0.99 | 0.92 | SAM 2 mask stability threshold |
 | alphaThreshold | 1-254 | 128 | RGBA alpha binarization |
 | minCoverage | 0.001-0.05 | 0.005 | Minimum component coverage |
 | simpleEdgeMax | 0.01-0.3 | 0.10 | Complexity: simple ceiling |
@@ -74,6 +77,7 @@ Each experiment runs the full pipeline once (~2 minutes). You launch it as: `npm
 ### Constraints
 - `simpleEdgeMax` must be less than `complexEdgeMin`
 - `samMaskLimit = null` means the pipeline will choose 6/7/8 masks from complexity scoring
+- Higher `samPointsPerSide` and lower SAM thresholds usually increase candidate count and can trigger different luminance fallback behavior
 - Multipliers of `1.0` = no change from existing presets
 
 ### Live Knobs

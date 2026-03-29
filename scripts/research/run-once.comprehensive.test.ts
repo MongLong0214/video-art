@@ -200,8 +200,11 @@ describe("report comprehensive", () => {
 describe("ResearchConfig comprehensive", () => {
   it("default config has all fields", () => {
     const c = getDefaultConfig();
-    expect(Object.keys(c).length).toBeGreaterThanOrEqual(21);
+    expect(Object.keys(c).length).toBeGreaterThanOrEqual(24);
     expect(c.samMaskLimit).toBe(3);
+    expect(c.samPointsPerSide).toBe(64);
+    expect(c.samPredIouThresh).toBe(0.7);
+    expect(c.samStabilityScoreThresh).toBe(0.92);
     expect(c.minRetainedLayers).toBe(1);
     expect(c.alphaThreshold).toBe(96);
     expect(c.uniqueCoverageThreshold).toBe(0.02);
@@ -209,6 +212,9 @@ describe("ResearchConfig comprehensive", () => {
 
   it.each([
     ["samMaskLimit", 3, 12],
+    ["samPointsPerSide", 16, 128],
+    ["samPredIouThresh", 0.1, 0.99],
+    ["samStabilityScoreThresh", 0.1, 0.99],
     ["alphaThreshold", 1, 254],
     ["minCoverage", 0.001, 0.05],
     ["maxLayers", 3, 16],
@@ -221,6 +227,10 @@ describe("ResearchConfig comprehensive", () => {
   it.each([
     ["samMaskLimit", 2],
     ["samMaskLimit", 13],
+    ["samPointsPerSide", 15],
+    ["samPointsPerSide", 129],
+    ["samPredIouThresh", 0.09],
+    ["samStabilityScoreThresh", 1.0],
     ["alphaThreshold", 0],
     ["alphaThreshold", 255],
     ["minCoverage", -0.01],
