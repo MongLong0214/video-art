@@ -12,6 +12,11 @@ describe("getDefaultConfig", () => {
     expect(config.samPointsPerSide).toBe(64);
     expect(config.samPredIouThresh).toBe(0.7);
     expect(config.samStabilityScoreThresh).toBe(0.92);
+    expect(config.luminanceFallbackEnabled).toBe(true);
+    expect(config.luminanceFallbackMinSamLayers).toBe(3);
+    expect(config.luminanceFallbackZoneCount).toBe(6);
+    expect(config.luminanceFallbackResidualOnly).toBe(false);
+    expect(config.luminanceFallbackResidualCoverageMin).toBe(0);
     expect(config.maxLayers).toBe(12);
     expect(config.minRetainedLayers).toBe(1);
     expect(config.alphaThreshold).toBe(96);
@@ -61,6 +66,9 @@ describe("range boundaries", () => {
     ["samPointsPerSide", 16, 128],
     ["samPredIouThresh", 0.1, 0.99],
     ["samStabilityScoreThresh", 0.1, 0.99],
+    ["luminanceFallbackMinSamLayers", 0, 12],
+    ["luminanceFallbackZoneCount", 1, 8],
+    ["luminanceFallbackResidualCoverageMin", 0.0, 1.0],
     ["alphaThreshold", 1, 254],
     ["minCoverage", 0.001, 0.05],
     ["maxLayers", 3, 16],
@@ -90,6 +98,9 @@ describe("invalid values", () => {
     ["samPointsPerSide", 129],
     ["samPredIouThresh", 0.09],
     ["samStabilityScoreThresh", 1.0],
+    ["luminanceFallbackMinSamLayers", -1],
+    ["luminanceFallbackZoneCount", 0],
+    ["luminanceFallbackResidualCoverageMin", 1.1],
     ["alphaThreshold", 0],
     ["alphaThreshold", 255],
     ["minCoverage", 0.0001],

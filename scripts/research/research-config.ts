@@ -15,6 +15,11 @@ export const ResearchConfigSchema = z
     samPointsPerSide: z.number().int().min(16).max(128).default(64),
     samPredIouThresh: z.number().min(0.1).max(0.99).default(0.7),
     samStabilityScoreThresh: z.number().min(0.1).max(0.99).default(0.92),
+    luminanceFallbackEnabled: z.boolean().default(true),
+    luminanceFallbackMinSamLayers: z.number().int().min(0).max(12).default(3),
+    luminanceFallbackZoneCount: z.number().int().min(1).max(8).default(6),
+    luminanceFallbackResidualOnly: z.boolean().default(false),
+    luminanceFallbackResidualCoverageMin: z.number().min(0.0).max(1.0).default(0.0),
     maxLayers: z.number().int().min(3).max(16).default(12),
     minRetainedLayers: z.number().int().min(1).max(12).default(MIN_RETAINED_LAYERS),
 

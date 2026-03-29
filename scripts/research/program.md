@@ -53,6 +53,11 @@ Each experiment runs the full pipeline once (~2 minutes). You launch it as: `npm
 | samPointsPerSide | 16-128 | 64 | SAM 2 sampling density |
 | samPredIouThresh | 0.1-0.99 | 0.70 | SAM 2 mask quality threshold |
 | samStabilityScoreThresh | 0.1-0.99 | 0.92 | SAM 2 mask stability threshold |
+| luminanceFallbackEnabled | `true/false` | `true` | Enable luminance fallback when SAM under-segments |
+| luminanceFallbackMinSamLayers | 0-12 | 3 | Trigger fallback when SAM retains fewer than this many seed layers |
+| luminanceFallbackZoneCount | 1-8 | 6 | Number of luminance fallback zones to generate |
+| luminanceFallbackResidualOnly | `true/false` | `false` | Split only the residual area not already claimed by SAM |
+| luminanceFallbackResidualCoverageMin | 0.0-1.0 | 0.0 | Skip fallback if unclaimed residual area is below this ratio |
 | alphaThreshold | 1-254 | 128 | RGBA alpha binarization |
 | minCoverage | 0.001-0.05 | 0.005 | Minimum component coverage |
 | simpleEdgeMax | 0.01-0.3 | 0.10 | Complexity: simple ceiling |
@@ -78,6 +83,7 @@ Each experiment runs the full pipeline once (~2 minutes). You launch it as: `npm
 - `simpleEdgeMax` must be less than `complexEdgeMin`
 - `samMaskLimit = null` means the pipeline will choose 6/7/8 masks from complexity scoring
 - Higher `samPointsPerSide` and lower SAM thresholds usually increase candidate count and can trigger different luminance fallback behavior
+- `luminanceFallbackResidualOnly=true` is the main switch for escaping the old fixed 2-SAM + 6-luminance topology
 - Multipliers of `1.0` = no change from existing presets
 
 ### Live Knobs
@@ -85,8 +91,10 @@ Each experiment runs the full pipeline once (~2 minutes). You launch it as: `npm
 - There are no exploratory knobs in this table that only affect the deprecated Qwen or recursive pipeline.
 
 ### Interdependencies
+- `samMaskLimit` + SAM quality thresholds + fallback knobs determine the topology before retention
 - `samMaskLimit` + `maxLayers` + `minRetainedLayers` interact: more initial masks usually increase candidate overlap and make retention thresholds matter more
 - `alphaThreshold` + `minCoverage` interact: aggressive masking can shrink layers below the coverage floor
+- `luminanceFallbackZoneCount` + `luminanceFallbackResidualOnly` + `luminanceFallbackResidualCoverageMin` interact: they control whether hybrid runs behave like true residual completion or full-image repartition
 - `iouDedupeThreshold` + `uniqueCoverageThreshold` together control retention aggressiveness
 - `centralityThreshold` + `bgPlateMinBboxRatio` + `edgeTolerancePx` together steer role assignment
 - Animation multipliers are independent from decomposition, but they still affect the final evaluated video
@@ -95,7 +103,7 @@ Each experiment runs the full pipeline once (~2 minutes). You launch it as: `npm
 
 1. **First run**: Always establish baseline by running with default config.
 2. **Single parameter sweep**: Change one parameter at a time, observe effect.
-3. **Start with high-impact parameters**: `samMaskLimit`, `iouDedupeThreshold`, `uniqueCoverageThreshold`, `maxLayers`, `centralityThreshold`
+3. **Start with high-impact parameters**: `samMaskLimit`, `samPredIouThresh`, `samStabilityScoreThresh`, `luminanceFallbackResidualOnly`, `luminanceFallbackZoneCount`, `uniqueCoverageThreshold`
 4. **Animation tuning**: After layer structure stabilizes, tune multipliers.
 5. **Combination exploration**: After identifying promising single changes, combine them.
 6. **Extreme testing**: Try boundary values to understand parameter sensitivity.

@@ -19,6 +19,11 @@ interface DecomposeOptions {
   pointsPerSide?: number;
   predIouThresh?: number;
   stabilityScoreThresh?: number;
+  luminanceFallbackEnabled?: boolean;
+  luminanceFallbackMinSamLayers?: number;
+  luminanceFallbackZoneCount?: number;
+  luminanceFallbackResidualOnly?: boolean;
+  luminanceFallbackResidualCoverageMin?: number;
 }
 
 interface FileSourceMeta {
@@ -31,6 +36,11 @@ interface DecomposeResult {
   coverages: number[];
   method: string;
   fileMeta: FileSourceMeta[];
+}
+
+interface ResidualMaskResult {
+  residualMask: Uint8Array;
+  residualCoverage: number;
 }
 
 // --- SAM 2 Automatic Mask Generation ---
@@ -102,8 +112,7 @@ async function applyMaskToImage(
   width: number,
   height: number,
   alphaThreshold: number = 128,
-): Promise<{ pixels: Buffer; coverage: number; width: number; height: number }> {
-  // Resize mask to match original dimensions
+): Promise<{ pixels: Buffer; coverage: number; width: number; height: number; binaryMask: Uint8Array }> {
   const maskGray = await sharp(maskBuffer)
     .resize(width, height)
     .grayscale()
@@ -118,11 +127,13 @@ async function applyMaskToImage(
 
   const total = width * height;
   const layerBuf = Buffer.alloc(total * 4);
+  const binaryMask = new Uint8Array(total);
   let opaqueCount = 0;
 
   for (let i = 0; i < total; i++) {
     // SAM masks: white (255) = object, black (0) = background
     if (maskGray[i] > alphaThreshold) {
+      binaryMask[i] = 1;
       const si = i * 4;
       layerBuf[si] = origRaw[si];
       layerBuf[si + 1] = origRaw[si + 1];
@@ -132,14 +143,63 @@ async function applyMaskToImage(
     }
   }
 
-  return { pixels: layerBuf, coverage: opaqueCount / total, width, height };
+  return { pixels: layerBuf, coverage: opaqueCount / total, width, height, binaryMask };
+}
+
+export function buildResidualMask(
+  masks: Uint8Array[],
+  width: number,
+  height: number,
+): ResidualMaskResult {
+  const total = width * height;
+  const claimed = new Uint8Array(total);
+
+  for (const mask of masks) {
+    for (let i = 0; i < total; i++) {
+      if (mask[i] === 1) {
+        claimed[i] = 1;
+      }
+    }
+  }
+
+  const residualMask = new Uint8Array(total);
+  let residualCount = 0;
+  for (let i = 0; i < total; i++) {
+    if (claimed[i] === 0) {
+      residualMask[i] = 1;
+      residualCount++;
+    }
+  }
+
+  return {
+    residualMask,
+    residualCoverage: total === 0 ? 0 : residualCount / total,
+  };
+}
+
+export function shouldRunLuminanceFallback(
+  samLayerCount: number,
+  residualCoverage: number,
+  options: {
+    enabled?: boolean;
+    minSamLayers?: number;
+    residualCoverageMin?: number;
+  } = {},
+): boolean {
+  const enabled = options.enabled ?? true;
+  const minSamLayers = options.minSamLayers ?? 3;
+  const residualCoverageMin = options.residualCoverageMin ?? 0;
+
+  if (!enabled) return false;
+  if (samLayerCount >= minSamLayers) return false;
+  return residualCoverage >= residualCoverageMin;
 }
 
 // --- Luminance-based splitting (for unclaimed regions) ---
 async function splitByLuminanceZones(
   originalImage: Buffer,
   numZones: number,
-  alphaMask?: Buffer,
+  inclusionMask?: Uint8Array,
 ): Promise<{ pixels: Buffer; coverage: number; width: number; height: number }[]> {
   const origInfo = await sharp(originalImage).ensureAlpha().metadata();
   const width = origInfo.width!;
@@ -152,23 +212,13 @@ async function splitByLuminanceZones(
     .raw()
     .toBuffer();
 
-  let maskData: Buffer | null = null;
-  if (alphaMask) {
-    const maskRaw = await sharp(alphaMask)
-      .resize(width, height)
-      .ensureAlpha()
-      .raw()
-      .toBuffer({ resolveWithObject: true });
-    maskData = maskRaw.data;
-  }
-
   const luminanceValues: number[] = [];
   const luminanceMap = new Float32Array(total);
   for (let i = 0; i < total; i++) {
     const offset = i * 4;
     const lum = origRaw[offset] * 0.299 + origRaw[offset + 1] * 0.587 + origRaw[offset + 2] * 0.114;
     luminanceMap[i] = lum;
-    const inMask = !maskData || maskData[i * 4 + 3] > 10;
+    const inMask = !inclusionMask || inclusionMask[i] === 1;
     if (inMask) luminanceValues.push(lum);
   }
   luminanceValues.sort((a, b) => a - b);
@@ -183,7 +233,7 @@ async function splitByLuminanceZones(
     const layerBuf = Buffer.alloc(width * height * 4);
     let count = 0;
     for (let i = 0; i < total; i++) {
-      const inMask = !maskData || maskData[i * 4 + 3] > 10;
+      const inMask = !inclusionMask || inclusionMask[i] === 1;
       if (!inMask) continue;
       let zone = numZones - 1;
       for (let t = 0; t < thresholds.length; t++) {
@@ -216,6 +266,11 @@ export async function decomposeImage(
     pointsPerSide = 64,
     predIouThresh = 0.7,
     stabilityScoreThresh = 0.92,
+    luminanceFallbackEnabled = true,
+    luminanceFallbackMinSamLayers = 3,
+    luminanceFallbackZoneCount = 6,
+    luminanceFallbackResidualOnly = false,
+    luminanceFallbackResidualCoverageMin = 0,
   } = options;
   const replicate = new Replicate({ auth: getToken() });
   const originalImage = fs.readFileSync(imagePath);
@@ -237,6 +292,7 @@ export async function decomposeImage(
   }
 
   const allLayers: LayerEntry[] = [];
+  const samMasks: Uint8Array[] = [];
 
   // Step 1: SAM 2 automatic mask generation
   console.log("  [1/2] SAM 2 segmentation...");
@@ -263,17 +319,32 @@ export async function decomposeImage(
       continue;
     }
     console.log(`  mask[${i}]: ${(layer.coverage * 100).toFixed(1)}% — kept`);
+    samMasks.push(layer.binaryMask);
     allLayers.push({
       ...layer,
       meta: { source: "sam2-segment", groupId: `sam2-${i}` },
     });
   }
 
-  // Fallback: if SAM 2 produced too few layers, split by luminance
-  if (allLayers.length < 3) {
-    const fallbackZones = 6;
-    console.log(`  SAM 2 produced only ${allLayers.length} layers — fallback: ${fallbackZones} luminance zones`);
-    const fallbackLayers = await splitByLuminanceZones(originalImage, fallbackZones);
+  const { residualMask, residualCoverage } = buildResidualMask(samMasks, width, height);
+
+  if (
+    shouldRunLuminanceFallback(allLayers.length, residualCoverage, {
+      enabled: luminanceFallbackEnabled,
+      minSamLayers: luminanceFallbackMinSamLayers,
+      residualCoverageMin: luminanceFallbackResidualCoverageMin,
+    })
+  ) {
+    const fallbackZones = luminanceFallbackZoneCount;
+    console.log(
+      `  SAM 2 produced ${allLayers.length} layers (residual ${(residualCoverage * 100).toFixed(1)}%)` +
+      ` — fallback: ${fallbackZones} luminance zones${luminanceFallbackResidualOnly ? " on residual only" : ""}`,
+    );
+    const fallbackLayers = await splitByLuminanceZones(
+      originalImage,
+      fallbackZones,
+      luminanceFallbackResidualOnly ? residualMask : undefined,
+    );
     allLayers.push(...fallbackLayers.filter((z) => z.coverage >= minCoverage).map((z) => ({
       ...z, meta: { source: "luminance-split" as const, groupId: "luminance-fallback" },
     })));

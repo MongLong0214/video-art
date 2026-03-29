@@ -175,6 +175,11 @@ async function main() {
       pointsPerSide: pipelineConfig?.samPointsPerSide,
       predIouThresh: pipelineConfig?.samPredIouThresh,
       stabilityScoreThresh: pipelineConfig?.samStabilityScoreThresh,
+      luminanceFallbackEnabled: pipelineConfig?.luminanceFallbackEnabled,
+      luminanceFallbackMinSamLayers: pipelineConfig?.luminanceFallbackMinSamLayers,
+      luminanceFallbackZoneCount: pipelineConfig?.luminanceFallbackZoneCount,
+      luminanceFallbackResidualOnly: pipelineConfig?.luminanceFallbackResidualOnly,
+      luminanceFallbackResidualCoverageMin: pipelineConfig?.luminanceFallbackResidualCoverageMin,
     });
 
     console.log(`  ${decomposeResult.files.length} raw layers generated (${decomposeResult.method})`);
