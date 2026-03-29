@@ -77,6 +77,10 @@ const renderOffset = Number.isFinite(rawOffset) ? rawOffset : 0;
 // --mode synth|samples|hybrid (T4: 909 sample integration)
 const modeArg = process.argv.indexOf("--mode");
 const renderMode = modeArg >= 0 ? (process.argv[modeArg + 1] ?? "synth") : "synth";
+if (modeArg >= 0 && !["synth", "samples", "hybrid"].includes(renderMode)) {
+  console.error(`Invalid --mode "${renderMode}". Must be synth|samples|hybrid`);
+  process.exit(1);
+}
 
 // 909 samples directory
 const SAMPLES_909_DIR = path.join(process.cwd(), "audio/samples/909");
@@ -195,9 +199,9 @@ const addEvent = (time: number, synthDef: string, params: Record<string, number>
   if (time < 0 || time >= duration) return;
   // Assign stem bus if not explicitly set
   const bus = params.out ?? STEM_BUS[synthDef] ?? 0;
-  // T9: Section-aware amplitude scaling
+  // T9: Section-aware amplitude scaling (clamped to prevent clipping)
   const sectionScale = getSectionAmp(time);
-  const amp = (params.amp ?? 0.5) * sectionScale;
+  const amp = Math.min((params.amp ?? 0.5) * sectionScale, 1.0);
   const allParams = { ...params, out: bus, amp };
   const paramStr = Object.entries(allParams).map(([k, v]) => `\\${k}, ${v}`).join(", ");
   events.push(`[${time.toFixed(4)}, [\\s_new, \\${synthDef}, ${nodeId++}, 0, 0, ${paramStr}]]`);
@@ -240,7 +244,7 @@ if (use909) {
     ride: "ride.wav",
   };
   const sample909Bufs = new Map<string, number>();
-  let bufIdx = 200; // offset to avoid collision with manifest buffers
+  let bufIdx = 300; // offset above BufferAllocator samples range (100-299)
   for (const [name, file] of Object.entries(sample909Files)) {
     const wavPath = path.join(SAMPLES_909_DIR, file);
     if (fs.existsSync(wavPath)) {
@@ -584,22 +588,17 @@ if (fs.existsSync(outputWav)) {
     const stemsOutDir = path.join(analysisDir, "pro", "stems");
     fs.mkdirSync(stemsOutDir, { recursive: true });
     try {
-      const safeOutputWav = outputWav.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
-      const safeStemsDir = stemsOutDir.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
       execFileSync("python3", ["-c", `
-import soundfile as sf; import numpy as np
-audio, sr = sf.read("${safeOutputWav}")
-stems = ["kick","bass","hat","synth","fx"]
-for i, name in enumerate(stems):
+import sys, soundfile as sf, numpy as np, os
+wav_path, out_dir = sys.argv[1], sys.argv[2]
+audio, sr = sf.read(wav_path)
+for i, name in enumerate(["kick","bass","hat","synth","fx"]):
     ch = i * 2
-    if ch + 1 < audio.shape[1]:
-        stem = audio[:, ch:ch+2]
-    else:
-        stem = np.zeros((audio.shape[0], 2), dtype="float32")
-    sf.write("${safeStemsDir}/stem-" + name + ".wav", stem, sr)
+    stem = audio[:, ch:ch+2] if ch + 1 < audio.shape[1] else np.zeros((audio.shape[0], 2), dtype="float32")
+    sf.write(os.path.join(out_dir, f"stem-{name}.wav"), stem, sr)
     rms = np.sqrt(np.mean(stem**2))
     print(f"  stem-{name}.wav: rms={20*np.log10(rms+1e-10):.1f}dB")
-`], { encoding: "utf-8", timeout: 30000 });
+`, outputWav, stemsOutDir], { encoding: "utf-8", timeout: 30000 });
       console.log(`Stems split: 5 × stereo → ${stemsOutDir}`);
     } catch (e) {
       console.warn(`[stem] Split failed: ${e instanceof Error ? e.message : e}`);

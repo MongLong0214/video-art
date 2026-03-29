@@ -117,13 +117,11 @@ if (missingStems.length > 0) {
     if (name === "kick") {
       fs.copyFileSync(sourceWav, stemPath);
     } else {
-      const safeSrc = sourceWav.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
-      const safeStem = stemPath.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
       execFileSync("python3", ["-c", `
-import soundfile as sf; import numpy as np
-info = sf.info("${safeSrc}")
-sf.write("${safeStem}", np.zeros((info.frames, 2), dtype="float32"), info.samplerate)
-`], { encoding: "utf-8", timeout: 30_000 });
+import sys, soundfile as sf, numpy as np
+info = sf.info(sys.argv[1])
+sf.write(sys.argv[2], np.zeros((info.frames, 2), dtype="float32"), info.samplerate)
+`, sourceWav, stemPath], { encoding: "utf-8", timeout: 30_000 });
     }
   }
 } else {
@@ -160,12 +158,16 @@ if (!fs.existsSync(masterWav)) {
   console.warn("  [mix] mix-pro.py failed, falling back to master.py");
   const masterPy = path.join(process.cwd(), "audio/analyzer/master.py");
   if (fs.existsSync(masterPy)) {
-    execFileSync("python3", [masterPy, sourceWav, analysisJson], {
-      encoding: "utf-8", timeout: 60_000,
-    });
-    const masteredPath = sourceWav.replace(".wav", "-mastered.wav");
-    if (fs.existsSync(masteredPath)) {
-      fs.copyFileSync(masteredPath, masterWav);
+    try {
+      execFileSync("python3", [masterPy, sourceWav, analysisJson], {
+        encoding: "utf-8", timeout: 60_000,
+      });
+      const masteredPath = sourceWav.replace(".wav", "-mastered.wav");
+      if (fs.existsSync(masteredPath)) {
+        fs.copyFileSync(masteredPath, masterWav);
+      }
+    } catch (e) {
+      console.error(`  [mix] Fallback master.py also failed: ${e instanceof Error ? e.message : e}`);
     }
   }
 }

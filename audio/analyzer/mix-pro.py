@@ -173,7 +173,13 @@ def extract_kick_envelope(kick: np.ndarray, sr: int,
 def apply_sidechain(target: np.ndarray, envelope: np.ndarray,
                     depth: float = 0.8) -> np.ndarray:
     """Duck target signal based on kick envelope."""
-    gain = 1.0 - (envelope * depth)
+    # P0 fix: align envelope length to target
+    n = target.shape[0]
+    if len(envelope) >= n:
+        env = envelope[:n]
+    else:
+        env = np.concatenate([envelope, np.zeros(n - len(envelope))])
+    gain = 1.0 - (env * depth)
     if target.ndim == 2:
         return target * gain[:, np.newaxis]
     return target * gain
@@ -224,7 +230,7 @@ def adapt_params_from_analysis(analysis: Optional[dict]) -> dict:
     if loudness:
         integrated = loudness.get("integrated", -14.0)
         target = max(min(integrated, -8.0), -18.0)
-        params["master_limiter_db"] = -0.3 if target <= -12 else -0.1
+        params["limiter_db"] = -0.3 if target <= -12 else -0.1
 
     return params
 
@@ -381,8 +387,15 @@ def run_pipeline(args: argparse.Namespace) -> None:
         # Apply volume automation to synth and fx stems
         if vol_automation is not None and name in ("synth", "fx"):
             n = min(processed[name].shape[0], len(vol_automation))
-            processed[name][:n] *= vol_automation[:n, np.newaxis]
+            if processed[name].ndim == 2:
+                processed[name][:n] *= vol_automation[:n, np.newaxis]
+            else:
+                processed[name][:n] *= vol_automation[:n]
         print(f"  [{name}] {audio.shape[0]/stem_sr:.1f}s processed")
+
+    if not processed:
+        print("ERROR: All stems failed processing")
+        sys.exit(1)
 
     # Step 2: Sidechain ducking (T3)
     if not args.no_sidechain and "kick" in processed:
