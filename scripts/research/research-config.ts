@@ -1,17 +1,23 @@
 import { z } from "zod";
 import { existsSync, readFileSync } from "fs";
+import {
+  ALPHA_THRESHOLD,
+  MIN_COVERAGE,
+  IOU_DEDUPE_THRESHOLD,
+  UNIQUE_COVERAGE_THRESHOLD,
+  MIN_RETAINED_LAYERS,
+} from "../lib/pipeline-constants.js";
 
 export const ResearchConfigSchema = z
   .object({
-    // ── Decomposition ────────────────────────────────────────
-    numLayers: z.number().int().min(2).max(8).default(8),
-    method: z
-      .enum(["qwen-only", "qwen-zoedepth"])
-      .default("qwen-only"),
+    // ── SAM 2 Decomposition ─────────────────────────────────
+    samMaskLimit: z.number().int().min(3).max(12).nullable().default(null),
+    maxLayers: z.number().int().min(3).max(16).default(12),
+    minRetainedLayers: z.number().int().min(1).max(12).default(MIN_RETAINED_LAYERS),
 
     // ── Candidate Extraction ─────────────────────────────────
-    alphaThreshold: z.number().int().min(1).max(254).default(128),
-    minCoverage: z.number().min(0.001).max(0.05).default(0.005),
+    alphaThreshold: z.number().int().min(1).max(254).default(ALPHA_THRESHOLD),
+    minCoverage: z.number().min(0.001).max(0.05).default(MIN_COVERAGE),
 
     // ── Complexity Scoring ───────────────────────────────────
     simpleEdgeMax: z.number().min(0.01).max(0.3).default(0.1),
@@ -20,39 +26,17 @@ export const ResearchConfigSchema = z
     complexEntropyMin: z.number().min(4.0).max(9.0).default(7.0),
     edgePixelThreshold: z.number().int().min(10).max(100).default(30),
 
-    // ── Dedupe & Ownership ───────────────────────────────────
-    iouDedupeThreshold: z.number().min(0.3).max(0.98).default(0.92),
-    uniqueCoverageThreshold: z
-      .number()
-      .min(0.001)
-      .max(0.1)
-      .default(0.005),
+    // ── Ownership ────────────────────────────────────────────
+    iouDedupeThreshold: z.number().min(0.3).max(0.98).default(IOU_DEDUPE_THRESHOLD),
+    uniqueCoverageThreshold: z.number().min(0.001).max(0.1).default(UNIQUE_COVERAGE_THRESHOLD),
 
     // ── Role Assignment ──────────────────────────────────────
     centralityThreshold: z.number().min(0.1).max(0.4).default(0.25),
     bgPlateMinBboxRatio: z.number().min(0.1).max(0.6).default(0.3),
     edgeTolerancePx: z.number().int().min(1).max(10).default(2),
 
-    // ── Retention ────────────────────────────────────────────
-    maxLayers: z.number().int().min(3).max(16).default(16),
-    minRetainedLayers: z.number().int().min(1).max(12).default(6),
-
-    // ── Depth (Variant B only) ───────────────────────────────
-    depthZones: z.number().int().min(2).max(8).default(6),
-    depthSplitThreshold: z.number().min(0.05).max(0.4).default(0.15),
-
-    // ── Variant Selection ────────────────────────────────────
-    qualityThresholdPct: z.number().min(1).max(30).default(10),
-
-    // ── Recursive Decomposition ────────────────────────────
-    recurseCoverageThreshold: z.number().min(0.1).max(0.9).default(0.30),
-    recurseComponentThreshold: z.number().int().min(1).max(20).default(3),
-    recurseEdgeDensityThreshold: z.number().min(0.01).max(0.5).default(0.15),
-
     // ── Scene Generator Multipliers ──────────────────────────
     colorCycleSpeedMul: z.number().min(0.1).max(3.0).default(1.0),
-    parallaxDepthMul: z.number().min(0.1).max(3.0).default(1.0),
-    waveAmplitudeMul: z.number().min(0.0).max(3.0).default(1.0),
     glowIntensityMul: z.number().min(0.0).max(3.0).default(1.0),
     saturationBoostMul: z.number().min(0.1).max(3.0).default(1.0),
     luminanceKeyMul: z.number().min(0.1).max(3.0).default(1.0),
@@ -65,7 +49,28 @@ export const ResearchConfigSchema = z
 export type ResearchConfig = z.infer<typeof ResearchConfigSchema>;
 
 export function getDefaultConfig(): ResearchConfig {
-  return ResearchConfigSchema.parse({});
+  return ResearchConfigSchema.parse({
+    samMaskLimit: 3,
+    minRetainedLayers: 1,
+    alphaThreshold: 96,
+    uniqueCoverageThreshold: 0.02,
+  });
+}
+
+function normalizeLegacyConfigInput(value: unknown): unknown {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return value;
+  }
+
+  const normalized = { ...(value as Record<string, unknown>) };
+  if (
+    normalized.samMaskLimit == null &&
+    typeof normalized.numLayers === "number"
+  ) {
+    normalized.samMaskLimit = normalized.numLayers;
+  }
+
+  return normalized;
 }
 
 export function loadConfig(filePath?: string): ResearchConfig {
@@ -80,7 +85,9 @@ export function loadConfig(filePath?: string): ResearchConfig {
     const raw = readFileSync(targetPath, "utf-8");
 
     if (targetPath.endsWith(".json")) {
-      return ResearchConfigSchema.parse(JSON.parse(raw));
+      return ResearchConfigSchema.parse(
+        normalizeLegacyConfigInput(JSON.parse(raw)),
+      );
     }
 
     // For .ts files: extract object literal from the exported config
@@ -90,7 +97,7 @@ export function loadConfig(filePath?: string): ResearchConfig {
       try {
         // The parse({}) call uses defaults, so an empty object is valid
         const extracted = objMatch[1].replace(/\/\/.*$/gm, "").trim();
-        const parsed = JSON.parse(extracted);
+        const parsed = normalizeLegacyConfigInput(JSON.parse(extracted));
         return ResearchConfigSchema.parse(parsed);
       } catch {
         // Empty {} or unparseable — use defaults

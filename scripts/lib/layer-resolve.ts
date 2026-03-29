@@ -2,15 +2,13 @@ import path from "node:path";
 import sharp from "sharp";
 import type { LayerCandidate, LayerRole } from "../../src/lib/scene-schema.js";
 import type { ResearchConfig } from "../research/research-config.js";
-
-const DEFAULT_ALPHA_THRESHOLD = 128;
-const DEFAULT_IOU_DEDUPE_THRESHOLD = 0.92;
-
-// ---------- T5 constants ----------
-
-const DEFAULT_UNIQUE_COVERAGE_THRESHOLD = 0.005;
-const DEFAULT_MAX_LAYERS = 16;
-const DEFAULT_MIN_RETAINED_LAYERS = 6;
+import {
+  ALPHA_THRESHOLD,
+  IOU_DEDUPE_THRESHOLD,
+  UNIQUE_COVERAGE_THRESHOLD,
+  MAX_LAYERS,
+  MIN_RETAINED_LAYERS,
+} from "./pipeline-constants.js";
 const HOLE_WARNING_THRESHOLD = 0.5;
 const DEFAULT_EDGE_TOLERANCE_PX = 2;
 const DEFAULT_CENTRALITY_THRESHOLD = 0.25;
@@ -59,9 +57,10 @@ async function loadBinaryMask(
   filePath: string,
   width: number,
   height: number,
-  alphaThreshold: number = DEFAULT_ALPHA_THRESHOLD,
+  alphaThreshold: number = ALPHA_THRESHOLD,
 ): Promise<Uint8Array> {
   const { data } = await sharp(filePath)
+    .resize(width, height)
     .ensureAlpha()
     .raw()
     .toBuffer({ resolveWithObject: true });
@@ -85,6 +84,8 @@ export async function buildExclusiveMasks(
   candidates: LayerCandidate[],
   width: number,
   height: number,
+  alphaThreshold: number = ALPHA_THRESHOLD,
+  predecodedMasks?: Map<string, Uint8Array>,
 ): Promise<{ exclusiveMasks: Uint8Array[]; exclusiveCounts: number[]; claimedMask: Uint8Array }> {
   const totalPixels = width * height;
   const claimedMask = new Uint8Array(totalPixels);
@@ -92,7 +93,8 @@ export async function buildExclusiveMasks(
   const exclusiveCounts: number[] = [];
 
   for (const candidate of candidates) {
-    const binaryAlpha = await loadBinaryMask(candidate.filePath, width, height);
+    const binaryAlpha = predecodedMasks?.get(candidate.id)
+      ?? await loadBinaryMask(candidate.filePath, width, height, alphaThreshold);
     const exclusiveMask = new Uint8Array(totalPixels);
     let count = 0;
 
@@ -149,11 +151,12 @@ export async function deduplicateCandidates(
 ): Promise<LayerCandidate[]> {
   if (candidates.length <= 1) return candidates;
 
-  const iouDedupeThreshold = config?.iouDedupeThreshold ?? DEFAULT_IOU_DEDUPE_THRESHOLD;
+  const iouDedupeThreshold = config?.iouDedupeThreshold ?? IOU_DEDUPE_THRESHOLD;
+  const alphaThreshold = config?.alphaThreshold ?? ALPHA_THRESHOLD;
 
   // Load all masks once
   const masks = await Promise.all(
-    candidates.map((c) => loadBinaryMask(c.filePath, c.width, c.height)),
+    candidates.map((c) => loadBinaryMask(c.filePath, c.width, c.height, alphaThreshold)),
   );
 
   // Track which indices are dropped
@@ -203,9 +206,18 @@ export async function resolveExclusiveOwnership(
   candidates: LayerCandidate[],
   width: number,
   height: number,
+  config?: Partial<ResearchConfig>,
+  predecodedMasks?: Map<string, Uint8Array>,
 ): Promise<LayerCandidate[]> {
   const totalPixels = width * height;
-  const { exclusiveCounts } = await buildExclusiveMasks(candidates, width, height);
+  const alphaThreshold = config?.alphaThreshold ?? ALPHA_THRESHOLD;
+  const { exclusiveCounts } = await buildExclusiveMasks(
+    candidates,
+    width,
+    height,
+    alphaThreshold,
+    predecodedMasks,
+  );
 
   return candidates.map((c, idx) => ({
     ...c,
@@ -226,12 +238,15 @@ export async function computePairwiseOverlap(
   candidates: LayerCandidate[],
   width: number,
   height: number,
+  config?: Partial<ResearchConfig>,
 ): Promise<{ idA: string; idB: string; overlap: number }[]> {
   const totalPixels = width * height;
+  const alphaThreshold = config?.alphaThreshold ?? ALPHA_THRESHOLD;
   const { exclusiveMasks, exclusiveCounts } = await buildExclusiveMasks(
     candidates,
     width,
     height,
+    alphaThreshold,
   );
 
   const overlaps: { idA: string; idB: string; overlap: number }[] = [];
@@ -423,12 +438,12 @@ export function orderByRole(candidates: LayerCandidate[]): LayerCandidate[] {
  */
 export function applyRetentionRules(
   candidates: LayerCandidate[],
-  maxLayers: number = DEFAULT_MAX_LAYERS,
+  maxLayers: number = MAX_LAYERS,
   originalImagePath?: string,
   config?: Partial<ResearchConfig>,
 ): LayerCandidate[] {
-  const uniqueCoverageThreshold = config?.uniqueCoverageThreshold ?? DEFAULT_UNIQUE_COVERAGE_THRESHOLD;
-  const minRetainedLayers = config?.minRetainedLayers ?? DEFAULT_MIN_RETAINED_LAYERS;
+  const uniqueCoverageThreshold = config?.uniqueCoverageThreshold ?? UNIQUE_COVERAGE_THRESHOLD;
+  const minRetainedLayers = config?.minRetainedLayers ?? MIN_RETAINED_LAYERS;
 
   // Progressive threshold relaxation to guarantee minimum retained layers
   const thresholds = [uniqueCoverageThreshold, 0.01, 0.005, 0.001, 0];
@@ -489,7 +504,7 @@ export function applyRetentionRules(
   if (!hasBgPlate && originalImagePath) {
     const fallbackPlate: LayerCandidate = {
       id: "fallback-bg-plate",
-      source: "qwen-base",
+      source: "sam2-segment",
       filePath: originalImagePath,
       width: candidates[0]?.width ?? 0,
       height: candidates[0]?.height ?? 0,
@@ -558,7 +573,7 @@ export async function fillBackgroundPlate(
     const px = i * 4;
     const bgAlpha = bgRgba[px + 3];
 
-    if (bgAlpha > DEFAULT_ALPHA_THRESHOLD) {
+    if (bgAlpha > ALPHA_THRESHOLD) {
       // Keep bg plate pixel
       outputRgba[px] = bgRgba[px];
       outputRgba[px + 1] = bgRgba[px + 1];

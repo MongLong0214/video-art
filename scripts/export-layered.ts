@@ -11,13 +11,16 @@ import {
 } from "./lib/archive.js";
 
 import { sceneSchema } from "../src/lib/scene-schema.js";
+import { getBitrate } from "./lib/bitrate.js";
 import { waitForServer } from "./lib/browser-utils.js";
 
-const FPS = Number(process.env.RESEARCH_FPS) || 30;
-const PRESET = process.env.RESEARCH_PRESET || "slow";
+const rawFps = parseInt(process.env.RESEARCH_FPS ?? "", 10);
+const FPS = Number.isFinite(rawFps) && rawFps > 0 ? rawFps : 30;
+const ALLOWED_PRESETS = new Set(["ultrafast","superfast","veryfast","faster","fast","medium","slow","slower","veryslow"]);
+const PRESET = ALLOWED_PRESETS.has(process.env.RESEARCH_PRESET ?? "") ? process.env.RESEARCH_PRESET! : "slow";
 
-function startViteServer(port: number): ChildProcess {
-  return exec(`npx vite --port ${port}`, { cwd: process.cwd() });
+function startViteServer(port: number, projectRoot: string): ChildProcess {
+  return execFile("npx", ["vite", "--port", String(port)], { cwd: projectRoot }) as unknown as ChildProcess;
 }
 
 async function captureFrames(outputDir: string, totalFrames: number, resolution: [number, number]): Promise<void> {
@@ -26,7 +29,7 @@ async function captureFrames(outputDir: string, totalFrames: number, resolution:
   fs.mkdirSync(outputDir, { recursive: true });
 
   console.log("Starting Vite dev server...");
-  const viteProcess = startViteServer(port);
+  const viteProcess = startViteServer(port, process.cwd());
   let browser: Browser | null = null;
 
   // Ensure vite is killed on any exit (SIGINT → RunContext → process.exit → 'exit' event)
@@ -82,14 +85,15 @@ async function captureFrames(outputDir: string, totalFrames: number, resolution:
   }
 }
 
-function encodeVideo(inputFramesDir: string, outputPath: string): Promise<void> {
+function encodeVideo(inputFramesDir: string, outputPath: string, resolution: [number, number]): Promise<void> {
+  const bitrate = getBitrate(resolution);
   const ffmpegArgs = [
     "-y",
     "-framerate", String(FPS),
     "-i", path.join(inputFramesDir, "frame_%05d.png"),
     "-c:v", "libx264",
     "-pix_fmt", "yuv420p",
-    "-b:v", "15M",
+    "-b:v", bitrate,
     "-preset", PRESET,
     "-movflags", "+faststart",
     outputPath,
@@ -136,8 +140,13 @@ async function main() {
   const estimatedMB = (TOTAL_FRAMES * 4.5).toFixed(0);
   console.log(`Estimated disk usage: ~${estimatedMB}MB for ${TOTAL_FRAMES} frames`);
 
-  await captureFrames(ctx.paths.frames, TOTAL_FRAMES, config.resolution);
-  await encodeVideo(ctx.paths.frames, outputPath);
+  try {
+    await captureFrames(ctx.paths.frames, TOTAL_FRAMES, config.resolution);
+    await encodeVideo(ctx.paths.frames, outputPath, config.resolution);
+  } catch (err) {
+    ctx.cleanup();
+    throw err;
+  }
 
   // Snapshot layers + scene.json into archive
   snapshotLayers(projectRoot, ctx.archiveDir);
@@ -151,7 +160,6 @@ async function main() {
   const stats = fs.statSync(outputPath);
   console.log(`Size: ${(stats.size / 1024 / 1024).toFixed(1)}MB`);
 
-  // Cleanup _work/ before listing (unless --keep-frames)
   if (!keepFrames) ctx.cleanup();
 
   const files = fs.readdirSync(ctx.archiveDir, { recursive: true }) as string[];
