@@ -200,7 +200,7 @@ describe("report comprehensive", () => {
 describe("ResearchConfig comprehensive", () => {
   it("default config has all fields", () => {
     const c = getDefaultConfig();
-    expect(Object.keys(c).length).toBeGreaterThanOrEqual(19);
+    expect(Object.keys(c).length).toBeGreaterThanOrEqual(21);
     expect(c.samMaskLimit).toBe(3);
     expect(c.minRetainedLayers).toBe(1);
     expect(c.alphaThreshold).toBe(96);
@@ -236,7 +236,14 @@ describe("ResearchConfig comprehensive", () => {
 
   it("all multipliers default to 1.0", () => {
     const c = getDefaultConfig();
-    const muls = ["colorCycleSpeedMul", "glowIntensityMul", "saturationBoostMul", "luminanceKeyMul"] as const;
+    const muls = [
+      "colorCycleSpeedMul",
+      "glowIntensityMul",
+      "saturationBoostMul",
+      "luminanceKeyMul",
+      "bloomStrengthMul",
+      "chromaticAberrationOffsetMul",
+    ] as const;
     for (const m of muls) expect(c[m]).toBe(1.0);
   });
 });

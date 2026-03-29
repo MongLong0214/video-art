@@ -27,6 +27,8 @@ describe("getDefaultConfig", () => {
     expect(config.glowIntensityMul).toBe(1.0);
     expect(config.saturationBoostMul).toBe(1.0);
     expect(config.luminanceKeyMul).toBe(1.0);
+    expect(config.bloomStrengthMul).toBe(1.0);
+    expect(config.chromaticAberrationOffsetMul).toBe(1.0);
   });
 });
 
@@ -62,6 +64,8 @@ describe("range boundaries", () => {
     ["edgeTolerancePx", 1, 10],
     ["colorCycleSpeedMul", 0.1, 3.0],
     ["glowIntensityMul", 0.0, 3.0],
+    ["bloomStrengthMul", 0.0, 3.0],
+    ["chromaticAberrationOffsetMul", 0.0, 3.0],
   ] as [string, number, number][])("%s accepts range [%d, %d]", (key, min, max) => {
     expect(() => ResearchConfigSchema.parse({ [key]: min })).not.toThrow();
     expect(() => ResearchConfigSchema.parse({ [key]: max })).not.toThrow();
@@ -86,6 +90,8 @@ describe("invalid values", () => {
     ["minRetainedLayers", 13],
     ["colorCycleSpeedMul", 0],
     ["saturationBoostMul", 3.1],
+    ["bloomStrengthMul", 3.1],
+    ["chromaticAberrationOffsetMul", 3.1],
   ] as [string, number][])("%s rejects %d", (key, val) => {
     expect(() => ResearchConfigSchema.parse({ [key]: val })).toThrow();
   });

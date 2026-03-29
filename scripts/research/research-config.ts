@@ -40,6 +40,8 @@ export const ResearchConfigSchema = z
     glowIntensityMul: z.number().min(0.0).max(3.0).default(1.0),
     saturationBoostMul: z.number().min(0.1).max(3.0).default(1.0),
     luminanceKeyMul: z.number().min(0.1).max(3.0).default(1.0),
+    bloomStrengthMul: z.number().min(0.0).max(3.0).default(1.0),
+    chromaticAberrationOffsetMul: z.number().min(0.0).max(3.0).default(1.0),
   })
   .refine((c) => c.simpleEdgeMax < c.complexEdgeMin, {
     message: "simpleEdgeMax must be less than complexEdgeMin",

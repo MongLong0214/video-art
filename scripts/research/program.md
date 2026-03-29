@@ -68,6 +68,8 @@ Each experiment runs the full pipeline once (~2 minutes). You launch it as: `npm
 | glowIntensityMul | 0.0-3.0 | 1.0 | Animation: glow intensity multiplier |
 | saturationBoostMul | 0.1-3.0 | 1.0 | Animation: saturation boost multiplier |
 | luminanceKeyMul | 0.1-3.0 | 1.0 | Animation: luminance key multiplier |
+| bloomStrengthMul | 0.0-3.0 | 1.0 | Post: bloom strength multiplier |
+| chromaticAberrationOffsetMul | 0.0-3.0 | 1.0 | Post: chromatic aberration offset multiplier |
 
 ### Constraints
 - `simpleEdgeMax` must be less than `complexEdgeMin`

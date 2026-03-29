@@ -22,6 +22,8 @@ describe("ResearchConfigSchema", () => {
     expect(config.glowIntensityMul).toBe(1.0);
     expect(config.saturationBoostMul).toBe(1.0);
     expect(config.luminanceKeyMul).toBe(1.0);
+    expect(config.bloomStrengthMul).toBe(1.0);
+    expect(config.chromaticAberrationOffsetMul).toBe(1.0);
   });
 
   it("allows partial override", () => {
@@ -65,6 +67,8 @@ describe("getDefaultConfig", () => {
     expect(config.uniqueCoverageThreshold).toBe(0.02);
     expect(config.minRetainedLayers).toBe(1);
     expect(config.alphaThreshold).toBe(96);
+    expect(config.bloomStrengthMul).toBe(1.0);
+    expect(config.chromaticAberrationOffsetMul).toBe(1.0);
   });
 });
 

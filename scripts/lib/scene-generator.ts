@@ -16,6 +16,8 @@ interface SceneMultipliers {
   glowIntensityMul: number;
   saturationBoostMul: number;
   luminanceKeyMul: number;
+  bloomStrengthMul: number;
+  chromaticAberrationOffsetMul: number;
 }
 
 const DEFAULT_MULTIPLIERS: SceneMultipliers = {
@@ -23,6 +25,8 @@ const DEFAULT_MULTIPLIERS: SceneMultipliers = {
   glowIntensityMul: 1.0,
   saturationBoostMul: 1.0,
   luminanceKeyMul: 1.0,
+  bloomStrengthMul: 1.0,
+  chromaticAberrationOffsetMul: 1.0,
 };
 
 function quantizeLoopSpeed(
@@ -124,6 +128,8 @@ export async function generateSceneJson(
     glowIntensityMul: config?.glowIntensityMul ?? 1.0,
     saturationBoostMul: config?.saturationBoostMul ?? 1.0,
     luminanceKeyMul: config?.luminanceKeyMul ?? 1.0,
+    bloomStrengthMul: config?.bloomStrengthMul ?? 1.0,
+    chromaticAberrationOffsetMul: config?.chromaticAberrationOffsetMul ?? 1.0,
   };
   // Cap resolution while maintaining aspect ratio (Puppeteer + GPU limit)
   const MAX_OUTPUT_DIM = 1920;
@@ -164,8 +170,8 @@ export async function generateSceneJson(
     fps: 30,
     layers: sceneLayers,
     effects: {
-      bloom: { strength: 0.6, radius: 0.4, threshold: 0.7 },
-      chromaticAberration: { offset: 1.5 },
+      bloom: { strength: 0.6 * mul.bloomStrengthMul, radius: 0.4, threshold: 0.7 },
+      chromaticAberration: { offset: 1.5 * mul.chromaticAberrationOffsetMul },
     },
   };
 }
