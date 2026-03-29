@@ -81,6 +81,7 @@ def extract_hits(stem_path, output_dir, stem_type, sr=22050):
                     os.remove(path)
             manifest[t] = manifest[t][:MAX_HITS_PER_TYPE]
 
+    os.makedirs(output_dir, exist_ok=True)
     manifest_path = os.path.join(output_dir, 'manifest.json')
     with open(manifest_path, 'w') as f:
         json.dump(manifest, f, indent=2)
