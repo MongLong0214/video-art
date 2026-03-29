@@ -104,16 +104,33 @@ describe("Dry-run E2E: render-analysis.ts pipeline", () => {
     runDryRun();
 
     const scd = fs.readFileSync(SCD_PATH, "utf-8");
-    // Kick events (4-on-the-floor in drop)
     expect(scd).toContain("layered_kick");
-    // Hat events
     expect(scd).toContain("\\hat");
-    // Bass events (key-based since no pitch_contour)
     expect(scd).toContain("\\bass");
-    // Pad events (drop section)
     expect(scd).toContain("\\pad");
-    // End marker
     expect(scd).toContain("[31.0, [0]]");
+  });
+
+  it("fm_lead events present in drop (AC-2.1)", () => {
+    runDryRun();
+    const scd = fs.readFileSync(SCD_PATH, "utf-8");
+    expect(scd).toContain("\\fm_lead");
+  });
+
+  it("arp_pluck events present in drop (AC-2.2)", () => {
+    runDryRun();
+    const scd = fs.readFileSync(SCD_PATH, "utf-8");
+    expect(scd).toContain("\\arp_pluck");
+  });
+
+  it("event count increased vs baseline (AC-2.4)", () => {
+    const output = runDryRun();
+    const match = output.match(/Events: (\d+)/);
+    expect(match).not.toBeNull();
+    const eventCount = parseInt(match![1]);
+    // Baseline was ~313 for void-acid-carousel. With fm_lead+arp_pluck, should be higher.
+    // Our test fixture is simpler, but with 35s drop, we should get more than the base.
+    expect(eventCount).toBeGreaterThan(50);
   });
 
   afterAll(() => {

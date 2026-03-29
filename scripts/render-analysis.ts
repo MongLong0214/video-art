@@ -250,8 +250,8 @@ for (let bar = 0; bar < Math.ceil(duration / (beatDur * 4)); bar++) {
   const section = getSectionAt(t);
   const energy = getEnergy(t) * energyMul;
 
-  // Pad more prominent in break/intro, quieter in drop
-  const padAmp = section === "break" ? 0.5 : section === "intro" ? 0.4 : 0.2;
+  // Pad more prominent in break/intro, quieter in drop (+50% mid-range boost)
+  const padAmp = section === "break" ? 0.75 : section === "intro" ? 0.6 : 0.3;
   if (energy > 0.05) {
     addEvent(t, "pad", {
       freq: scaleNotes[0] * 4, // root note, 2 octaves up
@@ -301,6 +301,39 @@ if (bassProfile.flux > 0.1) {
   }
 }
 
+// === FM LEAD (drop/build, 8th notes — mid-range fill) ===
+for (let beat = 0; beat < Math.floor(duration / beatDur); beat++) {
+  if (beat % 2 !== 0) continue; // every other beat (8th note feel)
+  const t = beat * beatDur;
+  const section = getSectionAt(t);
+  if (section !== "drop" && section !== "build") continue;
+  const energy = getEnergy(t) * energyMul;
+  const noteIdx = beat % scaleNotes.length;
+  const freq = scaleNotes[noteIdx] * 8; // 3 octaves up → mid-range (260-500Hz base → 2-4kHz)
+  addEvent(t, "fm_lead", {
+    freq, amp: 0.15 * energy, dur: beatDur * 0.8,
+    mRatio: 2, cRatio: 1, index: 2 + brightnessScale,
+    iScale: 3, vibrato: 0.2, drive: saturation * 0.3,
+  });
+}
+
+// === ARP PLUCK (drop, 16th notes — mid-range articulation) ===
+for (let step = 0; step < Math.floor(duration / sixteenthDur); step++) {
+  if (step % 4 === 0) continue; // skip downbeats (kick occupies)
+  if (step % 2 !== 0) continue; // every other 16th
+  const t = step * sixteenthDur;
+  const section = getSectionAt(t);
+  if (section !== "drop") continue;
+  const energy = getEnergy(t) * energyMul;
+  if (energy < 0.2) continue;
+  const noteIdx = step % scaleNotes.length;
+  const freq = scaleNotes[noteIdx] * 8;
+  addEvent(t, "arp_pluck", {
+    freq, amp: 0.12 * energy, dur: sixteenthDur * 0.7,
+    decay: 0.08 + energy * 0.05, brightness: brightnessScale * 0.8,
+  });
+}
+
 // === Section boundary control events (AC-8.6: n_set at section transitions) ===
 interface TrackedNode { nodeId: number; synthDef: string; start: number; end: number; }
 const trackedNodes: TrackedNode[] = [];
@@ -335,20 +368,20 @@ const sectionOverrides: SectionOverride[] = segments.map((seg) => {
 
   switch (seg.label) {
     case "drop":
-      overrides.pad = { amp: 0.15 };
+      overrides.pad = { amp: 0.225 };  // +50% from 0.15
       overrides.supersaw = { amp: 0.25 };
       break;
     case "break":
-      overrides.pad = { amp: 0.5 };
+      overrides.pad = { amp: 0.75 };   // +50% from 0.5
       overrides.supersaw = { amp: 0.05 };
       break;
     case "build":
-      overrides.pad = { amp: 0.3 };
+      overrides.pad = { amp: 0.45 };   // +50% from 0.3
       overrides.supersaw = { amp: 0.15 };
       break;
     case "intro":
     case "outro":
-      overrides.pad = { amp: 0.35 };
+      overrides.pad = { amp: 0.525 };  // +50% from 0.35
       overrides.supersaw = { amp: 0.0 };
       break;
   }

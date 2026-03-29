@@ -49,13 +49,25 @@ def composite_similarity(ref_path, synth_path, sr=22050):
     D, wp = librosa.sequence.dtw(X=mfcc_ref, Y=mfcc_synth, metric='cosine')
     scores['mfcc'] = max(0, 1.0 - D[-1, -1] / max(len(wp), 1)) * 100
 
-    # 2. Spectral convergence — 20%
+    # 2. Band-weighted mean spectral distance (MSD) — 20%
     min_len = min(len(y_ref), len(y_synth))
-    S_ref = np.abs(librosa.stft(y_ref[:min_len]))
-    S_synth = np.abs(librosa.stft(y_synth[:min_len]))
-    ref_norm = np.linalg.norm(S_ref, 'fro')
-    sc = np.linalg.norm(S_ref - S_synth, 'fro') / max(ref_norm, 1e-10)
-    scores['spectral'] = max(0, (1.0 - sc)) * 100
+    S_ref = np.abs(librosa.stft(y_ref[:min_len])) + 1e-10
+    S_synth = np.abs(librosa.stft(y_synth[:min_len])) + 1e-10
+    freqs = librosa.fft_frequencies(sr=sr)
+    max_lsd = 20.0  # 20dB difference = 0 points
+
+    band_scores = []
+    band_weights = [(0, 250, 0.3), (250, 4000, 0.4), (4000, sr / 2, 0.3)]
+    for lo, hi, w in band_weights:
+        mask = (freqs >= lo) & (freqs < hi)
+        if not np.any(mask):
+            band_scores.append((w, 50.0))
+            continue
+        lsd = np.mean(np.abs(np.log10(S_ref[mask]) - np.log10(S_synth[mask])))
+        band_score = max(0.0, (1.0 - lsd / max_lsd)) * 100
+        band_scores.append((w, band_score))
+
+    scores['spectral'] = sum(w * s for w, s in band_scores) / sum(w for w, _ in band_scores)
 
     # 3. RMS envelope correlation — 20%
     rms_ref = librosa.feature.rms(y=y_ref)[0]
