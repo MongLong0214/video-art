@@ -173,14 +173,54 @@ export function checkDirty(cwd: string, allowedPaths: string[] = []): boolean {
   return dirtyPaths.some((dirtyPath) => !allowed.has(dirtyPath));
 }
 
-export function gitCommitConfig(message: string, cwd: string): string {
-  execFileSync("git", ["add", CONFIG_PATH], { cwd, stdio: "pipe" });
-  execFileSync("git", ["commit", "-m", message], { cwd, stdio: "pipe" });
+export interface GitCommitResult {
+  hash: string;
+  committed: boolean;
+}
+
+function getHeadHash(cwd: string): string {
   const hash = execFileSync("git", ["rev-parse", "--short", "HEAD"], {
     cwd,
     encoding: "utf-8",
   });
   return hash.trim();
+}
+
+function hasStagedConfigDiff(cwd: string): boolean {
+  try {
+    execFileSync("git", ["diff", "--cached", "--quiet", "--", CONFIG_PATH], {
+      cwd,
+      stdio: "pipe",
+    });
+    return false;
+  } catch (error) {
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "status" in error &&
+      error.status === 1
+    ) {
+      return true;
+    }
+    throw error;
+  }
+}
+
+export function gitCommitConfig(message: string, cwd: string): GitCommitResult {
+  execFileSync("git", ["add", CONFIG_PATH], { cwd, stdio: "pipe" });
+
+  if (!hasStagedConfigDiff(cwd)) {
+    return {
+      hash: getHeadHash(cwd),
+      committed: false,
+    };
+  }
+
+  execFileSync("git", ["commit", "-m", message], { cwd, stdio: "pipe" });
+  return {
+    hash: getHeadHash(cwd),
+    committed: true,
+  };
 }
 
 export function gitRestoreConfig(cwd: string): void {

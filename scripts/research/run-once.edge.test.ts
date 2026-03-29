@@ -69,7 +69,7 @@ vi.mock("./git-automation.js", () => {
   return {
     checkDirty: vi.fn(() => false),
     ensureBranch: vi.fn(),
-    gitCommitConfig: vi.fn(() => "abc1234"),
+    gitCommitConfig: vi.fn(() => ({ hash: "abc1234", committed: true })),
     gitRestoreConfig: vi.fn(),
     registerSigintHandler: vi.fn(),
     CrashCounter: MockCrashCounter,

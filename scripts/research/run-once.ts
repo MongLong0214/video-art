@@ -271,9 +271,14 @@ export async function main(): Promise<void> {
     // Step 8: Git actions
     if (status === "keep") {
       const msg = `research: exp #${expNum} score=${qualityScore.toFixed(4)} (Δ+${delta.toFixed(4)})`;
-      commitHash = gitCommitConfig(msg, cwd);
+      const commitResult = gitCommitConfig(msg, cwd);
+      commitHash = commitResult.hash;
       promoteBaseline(configPath, qualityScore, calibration.modelVersion, currentContract);
-      console.log(`[exp #${expNum}] KEEP — committed ${commitHash}`);
+      if (commitResult.committed) {
+        console.log(`[exp #${expNum}] KEEP — committed ${commitHash}`);
+      } else {
+        console.log(`[exp #${expNum}] KEEP — baseline advanced on existing commit ${commitHash}`);
+      }
     } else {
       gitRestoreConfig(cwd);
       console.log(`[exp #${expNum}] DISCARD — config restored`);

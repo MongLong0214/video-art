@@ -37,7 +37,7 @@ const mocks = vi.hoisted(() => ({
     promotedAt: "2026-03-29T00:00:00.000Z",
   })),
   promoteBaseline: vi.fn(),
-  gitCommitConfig: vi.fn(() => "keep1234"),
+  gitCommitConfig: vi.fn(() => ({ hash: "keep1234", committed: true })),
 }));
 
 vi.mock("fs", () => ({
@@ -150,5 +150,31 @@ describe("run-once keep path", () => {
       }),
     );
     expect(mocks.appendFileSync).toHaveBeenCalled();
+  });
+
+  it("still promotes the baseline when keep reuses the existing commit", async () => {
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    mocks.gitCommitConfig.mockReturnValueOnce({ hash: "head1234", committed: false });
+
+    await expect(main()).resolves.toBeUndefined();
+
+    expect(mocks.promoteBaseline).toHaveBeenCalledWith(
+      "scripts/research/research-config.ts",
+      0.597,
+      "local-2026-03-29",
+      expect.objectContaining({
+        evalSchemaVersion: "2026-03-29-v2",
+        referenceFingerprint: "ref-123",
+      }),
+    );
+    expect(
+      logSpy.mock.calls.some(
+        ([msg]) =>
+          typeof msg === "string" &&
+          msg.includes("KEEP — baseline advanced on existing commit head1234"),
+      ),
+    ).toBe(true);
+
+    logSpy.mockRestore();
   });
 });
