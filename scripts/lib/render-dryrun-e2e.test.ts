@@ -63,12 +63,11 @@ describe("Dry-run E2E: render-analysis.ts pipeline", () => {
 
     const scd = fs.readFileSync(SCD_PATH, "utf-8");
     expect(scd).toContain("Score([");
-    expect(scd).toContain("score.recordNRT");
+    expect(scd).toContain("score.write");
     expect(scd).toContain("kick.scd");
     expect(scd).toContain("bass.scd");
     expect(scd).toContain("hat.scd");
     expect(scd).toContain("sample_player.scd");
-    expect(scd).toContain("render-synthesis.wav");
     // No b_allocRead in synthesis-only mode
     expect(scd).not.toContain("b_allocRead");
   });
@@ -79,7 +78,6 @@ describe("Dry-run E2E: render-analysis.ts pipeline", () => {
 
     const scd = fs.readFileSync(SCD_PATH, "utf-8");
     expect(scd).toContain("b_allocRead");
-    expect(scd).toContain("render-hybrid.wav");
     expect(scd).toContain("sample_player");
   });
 

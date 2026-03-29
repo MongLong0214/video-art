@@ -179,9 +179,9 @@ for (const t of kicks) {
   if (section === "intro" || section === "break") continue; // no kick in intro/break
   const energy = getEnergy(t) * energyMul;
   addEvent(t, "layered_kick", {
-    freq: 50, amp: Math.min(0.5 * energy, 0.7), dur: 0.25,
-    subDecay: 0.3, bodyDecay: 0.06, clickAmp: 0.4 + punchFactor * 0.3,
-    bodyFreq: 150 + freq.low * 100, drive: saturation * 0.3, punch: punchFactor,
+    freq: 50, amp: Math.min(0.9 * energy, 1.0), dur: 0.25,
+    subDecay: 0.3, bodyDecay: 0.06, clickAmp: 0.6 + punchFactor * 0.3,
+    bodyFreq: 150 + freq.low * 100, drive: saturation * 0.4, punch: punchFactor,
   });
 }
 
@@ -197,7 +197,7 @@ for (const t of hats) {
   const idx = Math.round(t / (beatDur / 2));
   const openHat = idx % 2 === 1;
   addEvent(t, "hat", {
-    freq: 7000 + brightnessScale * 2000, amp: 0.3 * energyMul,
+    freq: 7000 + brightnessScale * 2000, amp: 0.5 * energyMul,
     dur: openHat ? 0.06 : 0.03,
     openness: openHat ? 0.2 : 0.04, tone: 0.3 + brightnessScale * 0.3,
   });
@@ -216,7 +216,7 @@ if (hasPitchData) {
     if (section === "intro") continue;
     const energy = getEnergy(t) * energyMul;
     addEvent(t, "acid_bass", {
-      freq: note.freq, amp: Math.min(0.4 * energy * note.velocity, 0.6),
+      freq: note.freq, amp: Math.min(0.8 * energy * note.velocity, 1.0),
       dur: Math.min(note.duration, beatDur),
       cutoff: 500 + brightnessScale * 600,
       resonance: 1.8, envDepth: 2500, envDecay: 0.15,
@@ -235,7 +235,7 @@ if (hasPitchData) {
     const noteFreq = scaleNotes[bassIdx % scaleNotes.length];
     const energy = getEnergy(t) * energyMul;
     addEvent(t, "bass", {
-      freq: noteFreq, amp: Math.min(0.35 * energy, 0.5),
+      freq: noteFreq, amp: Math.min(0.7 * energy, 0.9),
       dur: beatDur * 0.6,
       cutoff: 400 + brightnessScale * 400, resonance: 0.35, envAmount: 0.45,
     });
@@ -250,8 +250,8 @@ for (let bar = 0; bar < Math.ceil(duration / (beatDur * 4)); bar++) {
   const section = getSectionAt(t);
   const energy = getEnergy(t) * energyMul;
 
-  // Pad more prominent in break/intro, quieter in drop (+50% mid-range boost)
-  const padAmp = section === "break" ? 0.75 : section === "intro" ? 0.6 : 0.3;
+  // Pad — section-aware, boosted for mid-range fill
+  const padAmp = section === "break" ? 0.9 : section === "intro" ? 0.7 : 0.5;
   if (energy > 0.05) {
     addEvent(t, "pad", {
       freq: scaleNotes[0] * 4, // root note, 2 octaves up
@@ -266,7 +266,7 @@ for (let bar = 0; bar < Math.ceil(duration / (beatDur * 4)); bar++) {
   if ((section === "drop" || section === "build") && energy > 0.2) {
     addEvent(t, "supersaw", {
       freq: scaleNotes[0] * 4,
-      amp: 0.2 * energy, dur: beatDur * 4,
+      amp: 0.4 * energy, dur: beatDur * 4,
       detune: 0.25, mix: 0.5,
       cutoff: 1000 + brightnessScale * 1500,
     });
@@ -280,7 +280,7 @@ for (let beat = 0; beat < Math.floor(duration / beatDur); beat++) {
   const section = getSectionAt(t);
   if (section !== "drop" && section !== "build") continue;
   addEvent(t, "clap", {
-    amp: 0.3 * energyMul, dur: 0.1, spread: 0.5, decay: 0.12,
+    amp: 0.5 * energyMul, dur: 0.1, spread: 0.5, decay: 0.12,
   });
 }
 
@@ -292,7 +292,7 @@ if (bassProfile.flux > 0.1) {
     if (section !== "drop" && section !== "build") continue;
     const energy = getEnergy(t);
     addEvent(t, "squelch", {
-      freq: scaleNotes[0] * 4, amp: 0.25 * energy, dur: beatDur * 4,
+      freq: scaleNotes[0] * 4, amp: 0.4 * energy, dur: beatDur * 4,
       sweepStart: 200 + brightnessScale * 200,
       sweepEnd: 3000 + brightnessScale * 3000,
       sweepCurve: -4, resonance: 0.8, source: 1,
@@ -311,7 +311,7 @@ for (let beat = 0; beat < Math.floor(duration / beatDur); beat++) {
   const noteIdx = beat % scaleNotes.length;
   const freq = scaleNotes[noteIdx] * 8; // 3 octaves up → mid-range (260-500Hz base → 2-4kHz)
   addEvent(t, "fm_lead", {
-    freq, amp: 0.15 * energy, dur: beatDur * 0.8,
+    freq, amp: 0.3 * energy, dur: beatDur * 0.8,
     mRatio: 2, cRatio: 1, index: 2 + brightnessScale,
     iScale: 3, vibrato: 0.2, drive: saturation * 0.3,
   });
@@ -329,7 +329,7 @@ for (let step = 0; step < Math.floor(duration / sixteenthDur); step++) {
   const noteIdx = step % scaleNotes.length;
   const freq = scaleNotes[noteIdx] * 8;
   addEvent(t, "arp_pluck", {
-    freq, amp: 0.12 * energy, dur: sixteenthDur * 0.7,
+    freq, amp: 0.25 * energy, dur: sixteenthDur * 0.7,
     decay: 0.08 + energy * 0.05, brightness: brightnessScale * 0.8,
   });
 }
@@ -368,20 +368,20 @@ const sectionOverrides: SectionOverride[] = segments.map((seg) => {
 
   switch (seg.label) {
     case "drop":
-      overrides.pad = { amp: 0.225 };  // +50% from 0.15
-      overrides.supersaw = { amp: 0.25 };
+      overrides.pad = { amp: 0.4 };
+      overrides.supersaw = { amp: 0.4 };
       break;
     case "break":
-      overrides.pad = { amp: 0.75 };   // +50% from 0.5
-      overrides.supersaw = { amp: 0.05 };
+      overrides.pad = { amp: 0.8 };
+      overrides.supersaw = { amp: 0.1 };
       break;
     case "build":
-      overrides.pad = { amp: 0.45 };   // +50% from 0.3
-      overrides.supersaw = { amp: 0.15 };
+      overrides.pad = { amp: 0.6 };
+      overrides.supersaw = { amp: 0.3 };
       break;
     case "intro":
     case "outro":
-      overrides.pad = { amp: 0.525 };  // +50% from 0.35
+      overrides.pad = { amp: 0.6 };
       overrides.supersaw = { amp: 0.0 };
       break;
   }
@@ -437,48 +437,71 @@ const acidBassFile = useRLPFD ? "acid_bass_rlpfd.scd" : "acid_bass.scd";
 console.log(`Filter: ${useRLPFD ? "RLPFD (SC3-plugins)" : "MoogFF (core SC)"}`);
 
 // === Generate SC score ===
-const outputWav = path.join(analysisDir, hybridMode ? "render-hybrid.wav" : "render-synthesis.wav");
+const outputWav = path.resolve(analysisDir, hybridMode ? "render-hybrid.wav" : "render-synthesis.wav");
 const synthDefsDir = path.join(process.cwd(), "audio/sc/synthdefs");
-const scScript = `(
-// Load ALL emitted SynthDefs (Phase 1 + Phase 2)
-${["kick", "bass", "hat", "clap", "supersaw", "pad", "lead", "arp_pluck", "riser"].map((s) => `"${path.join(synthDefsDir, s + ".scd")}".load;`).join("\n")}
-// Phase 2 SynthDefs
-"${path.join(synthDefsDir, acidBassFile)}".load;
-"${path.join(synthDefsDir, "layered_kick.scd")}".load;
-"${path.join(synthDefsDir, "squelch.scd")}".load;
-"${path.join(synthDefsDir, "fm_lead.scd")}".load;
-"${path.join(synthDefsDir, "wavetable_pad.scd")}".load;
-"${path.join(synthDefsDir, "granular_pad.scd")}".load;
-"${path.join(synthDefsDir, "sample_player.scd")}".load;
+const SCSYNTH = "/Applications/SuperCollider.app/Contents/Resources/scsynth";
 
-var score = Score([
-${[...bufferCommands, ...events].join(",\n")}
-]);
-score.recordNRT(
-    outputFilePath: "${outputWav}",
-    headerFormat: "WAV", sampleFormat: "int16", sampleRate: 44100,
-    options: ServerOptions.new.numOutputBusChannels_(2).memSize_(65536),
-    duration: ${duration + 1},
-    action: { "RENDER_DONE".postln; 0.exit; }
-);
-)`;
+const allSynthDefs = [
+  "kick.scd", "bass.scd", "hat.scd", "clap.scd", "supersaw.scd", "pad.scd",
+  "lead.scd", "arp_pluck.scd", "riser.scd", acidBassFile,
+  "layered_kick.scd", "squelch.scd", "fm_lead.scd",
+  "wavetable_pad.scd", "granular_pad.scd", "sample_player.scd",
+];
+
+// Generate d_load commands to load compiled .scsyndef files into scsynth NRT
+const compiledDir = path.join(process.cwd(), "audio/sc/compiled");
+const synthDefLoadCmds: string[] = [];
+for (const sd of allSynthDefs) {
+  const name = sd.replace(".scd", "");
+  const defPath = path.join(compiledDir, `${name}.scsyndef`);
+  if (fs.existsSync(defPath)) {
+    synthDefLoadCmds.push(`[0, [\\d_load, "${defPath}"]]`);
+  }
+}
 
 const scPath = "/tmp/render-analysis.scd";
+const oscPath = "/tmp/render-analysis.osc";
+
+// sclang script: Score.write (SynthDefs loaded via d_load in Score)
+const scScript = `(
+var score = Score([
+${[...synthDefLoadCmds, ...bufferCommands, ...events].join(",\n")}
+]);
+score.write("${oscPath}");
+"WRITE_DONE".postln;
+0.exit;
+)`;
 fs.writeFileSync(scPath, scScript);
 
 const totalEvents = events.length - 1;
 console.log(`Events: ${totalEvents}, Duration: ${duration}s, Sections: ${segments.map(s => s.label).join("→")}`);
 
 if (dryRun) {
-  console.log(`Dry run: ${scPath} written (${totalEvents} events). Skipping sclang.`);
+  console.log(`Dry run: ${scPath} written (${totalEvents} events). Skipping render.`);
   process.exit(0);
 }
 
-console.log("Rendering...");
+// Step 1: sclang writes OSC binary score (fast — no NRT render)
+console.log("Compiling score...");
+const writeResult = execFileSync(SCLANG, ["-i", "none", scPath], {
+  encoding: "utf-8", timeout: 60000,
+});
 
-const result = execFileSync(SCLANG, ["-i", "none", scPath], { encoding: "utf-8", timeout: 120000 });
+if (!writeResult.includes("WRITE_DONE")) {
+  console.error("Score compilation failed");
+  process.exit(1);
+}
 
-if (result.includes("RENDER_DONE")) {
+// Step 2: scsynth renders NRT directly (no sclang hang)
+console.log("Rendering via scsynth NRT...");
+const renderResult = execFileSync(SCSYNTH, [
+  "-N", oscPath, "_", outputWav, "44100", "WAV", "int16",
+  "-o", "2", "-u", "0", "-m", "65536",
+  "-D", "0",
+], { encoding: "utf-8", timeout: 300000 });
+console.log(renderResult.trim());
+
+if (fs.existsSync(outputWav)) {
   const stat = fs.statSync(outputWav);
   console.log(`Output: ${outputWav} (${(stat.size / 1024 / 1024).toFixed(1)}MB)`);
 
