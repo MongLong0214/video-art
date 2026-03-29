@@ -1,29 +1,35 @@
-// fm_lead — 2-operator FM lead
-// Phase 2 US-2. Core SC only (no FM7).
+// fm_lead — dark FM lead for techno
+// 2-op FM + sub layer + distortion
 
 SynthDef(\fm_lead, { |out=0, freq=440, amp=0.5, dur=0.5, pan=0,
     mRatio=2, cRatio=1, index=3, iScale=5,
     vibrato=0.3, drive=0.2|
 
-    var car, mod, env, iEnv, vib;
+    var car, mod, env, iEnv, vib, sub;
 
-    // Modulation index envelope (bright attack → mellow sustain)
+    // FM index envelope
     iEnv = EnvGen.kr(
-        Env.new([index, index * iScale, index], [0.01, dur * 0.8], [4, -4])
+        Env.new([index * iScale, index * 2, index], [0.01, dur * 0.6], [2, -4])
     );
 
-    // Vibrato
-    vib = SinOsc.kr(5) * vibrato * freq * 0.02;
+    vib = SinOsc.kr(4.5) * vibrato * freq * 0.015;
 
     // Modulator → Carrier
     mod = SinOsc.ar((freq + vib) * mRatio, mul: (freq + vib) * mRatio * iEnv);
     car = SinOsc.ar((freq + vib) * cRatio + mod);
 
-    // Drive (.tanh soft clipping)
-    car = (car * (1 + (drive * 3))).tanh;
+    // Sub layer for weight
+    sub = SinOsc.ar(freq * 0.5) * 0.3;
 
-    // Amplitude envelope
-    env = EnvGen.kr(Env.perc(0.01, dur), doneAction: 2);
+    car = car + sub;
+
+    // Aggressive drive
+    car = (car * (1 + (drive * 6))).tanh;
+
+    // Dark filter
+    car = LPF.ar(car, 3000 + (drive * 2000));
+
+    env = EnvGen.kr(Env.perc(0.005, dur, curve: -4), doneAction: 2);
     car = car * env * amp;
 
     car = Pan2.ar(car, pan);

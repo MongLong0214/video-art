@@ -163,257 +163,163 @@ const quantizeToGrid = (positions: number[]): number[] => {
   return [...grid].sort((a, b) => a - b);
 };
 
-// === KICK (4-on-the-floor from analysis, section-aware) ===
-const rawKicks = analysis.kick_pattern?.positions ?? [];
-const kickGrid = quantizeToGrid(rawKicks);
-// Filter to near-beat positions (4-on-the-floor)
-const kickBeats = kickGrid.filter(t => {
-  const beatPhase = (t / beatDur) % 1;
-  return beatPhase < 0.12 || beatPhase > 0.88;
-});
-const kicks = kickBeats.length > 8 ? kickBeats :
-  Array.from({ length: Math.floor(duration / beatDur) }, (_, i) => i * beatDur);
+// =====================================================
+// SAMPLE-BASED — real sounds from reference, no synthesis
+// Pro quality: actual extracted kicks/hats/bass + minimal texture
+// =====================================================
 
-for (const t of kicks) {
-  const section = getSectionAt(t);
-  if (section === "intro" || section === "break") continue; // no kick in intro/break
-  const energy = getEnergy(t) * energyMul;
-  addEvent(t, "layered_kick", {
-    freq: 50, amp: Math.min(0.9 * energy, 1.0), dur: 0.25,
-    subDecay: 0.3, bodyDecay: 0.06, clickAmp: 0.6 + punchFactor * 0.3,
-    bodyFreq: 150 + freq.low * 100, drive: saturation * 0.4, punch: punchFactor,
-  });
-}
+let bufferCommands: string[] = [];
 
-// === HI-HAT (8th notes, section-aware) ===
-const rawHats = analysis.hat_pattern?.positions ?? [];
-const hatGrid = quantizeToGrid(rawHats);
-const hats = hatGrid.length > 8 && hatGrid.length < 500 ? hatGrid :
-  Array.from({ length: Math.floor(duration / (beatDur / 2)) }, (_, i) => i * beatDur / 2);
+// Sample-based mode: load manifest and arrange on grid
+const samplesDir = path.join(analysisDir, "samples");
+const manifestPath = fs.existsSync(path.join(samplesDir, "manifest.json"))
+  ? path.join(samplesDir, "manifest.json")
+  : null;
 
-for (const t of hats) {
-  const section = getSectionAt(t);
-  if (section === "intro") continue;
-  const idx = Math.round(t / (beatDur / 2));
-  const openHat = idx % 2 === 1;
-  addEvent(t, "hat", {
-    freq: 7000 + brightnessScale * 2000, amp: 0.5 * energyMul,
-    dur: openHat ? 0.06 : 0.03,
-    openness: openHat ? 0.2 : 0.04, tone: 0.3 + brightnessScale * 0.3,
-  });
-}
+if (manifestPath) {
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf-8")) as Record<string, Array<{ file: string; duration: number; onset_time: number }>>;
+  const allocator = new BufferAllocator();
+  const sampleBufs = new Map<string, number>();
 
-// === BASS LINE — from pitch_contour or key-based pattern ===
-const noteEvents = analysis.pitch_contour?.note_events ?? [];
-const hasPitchData = noteEvents.length > 5;
+  // Pre-allocate buffers for best samples of each type
+  const pickBest = (type: string, count: number) => {
+    const hits = manifest[type] ?? [];
+    return hits.slice(0, Math.min(count, hits.length));
+  };
 
-if (hasPitchData) {
-  // Use actual extracted pitch contour as bass melody
-  for (const note of noteEvents) {
-    const t = note.time - renderOffset;
-    if (t < 0 || t >= duration) continue;
-    const section = getSectionAt(t);
-    if (section === "intro") continue;
-    const energy = getEnergy(t) * energyMul;
-    addEvent(t, "acid_bass", {
-      freq: note.freq, amp: Math.min(0.8 * energy * note.velocity, 1.0),
-      dur: Math.min(note.duration, beatDur),
-      cutoff: 500 + brightnessScale * 600,
-      resonance: 1.8, envDepth: 2500, envDecay: 0.15,
-      accent: note.velocity > 0.7 ? 1 : 0,
-      slide: note.slide ? 1 : 0, slideTime: 0.1,
-      wave: 0, dist: saturation * 0.5,
-    });
-  }
-  console.log(`Bass: ${noteEvents.filter(n => (n.time - renderOffset) >= 0 && (n.time - renderOffset) < duration).length} pitch events`);
-} else {
-  // Fallback: key-based bass pattern
-  let bassIdx = 0;
-  for (let t = 0; t < duration; t += beatDur / 2) {
-    const section = getSectionAt(t);
-    if (section === "intro") { bassIdx++; continue; }
-    const noteFreq = scaleNotes[bassIdx % scaleNotes.length];
-    const energy = getEnergy(t) * energyMul;
-    addEvent(t, "bass", {
-      freq: noteFreq, amp: Math.min(0.7 * energy, 0.9),
-      dur: beatDur * 0.6,
-      cutoff: 400 + brightnessScale * 400, resonance: 0.35, envAmount: 0.45,
-    });
-    bassIdx++;
-  }
-  console.log(`Bass: key-based pattern (${key ?? "C"} scale)`);
-}
+  const kicks = pickBest("kick", 4);
+  const hats = pickBest("hat", 4);
+  const basses = pickBest("bass", 4);
 
-// === PAD — section-aware, mid-range fill ===
-for (let bar = 0; bar < Math.ceil(duration / (beatDur * 4)); bar++) {
-  const t = bar * beatDur * 4;
-  const section = getSectionAt(t);
-  const energy = getEnergy(t) * energyMul;
+  // Load SynthDefs + allocate buffers — stagger timing to ensure order
+  const samplePlayerDef = path.join(process.cwd(), "audio/sc/compiled/sample_player.scsyndef");
+  const acidBassDef = path.join(process.cwd(), "audio/sc/compiled/acid_bass.scsyndef");
+  const padDef = path.join(process.cwd(), "audio/sc/compiled/pad.scsyndef");
+  bufferCommands.push(`[0, [\\d_load, "${samplePlayerDef}"]]`);
+  bufferCommands.push(`[0, [\\d_load, "${acidBassDef}"]]`);
+  bufferCommands.push(`[0, [\\d_load, "${padDef}"]]`);
 
-  // Pad — section-aware, boosted for mid-range fill
-  const padAmp = section === "break" ? 0.9 : section === "intro" ? 0.7 : 0.5;
-  if (energy > 0.05) {
-    addEvent(t, "pad", {
-      freq: scaleNotes[0] * 4, // root note, 2 octaves up
-      amp: padAmp * energy, dur: beatDur * 4,
-      attack: section === "break" ? 1.0 : 0.3,
-      release: section === "break" ? 2.0 : 0.8,
-      filterEnv: 0.2 + energy * 0.3,
-    });
-  }
-
-  // Supersaw in drop sections
-  if ((section === "drop" || section === "build") && energy > 0.2) {
-    addEvent(t, "supersaw", {
-      freq: scaleNotes[0] * 4,
-      amp: 0.4 * energy, dur: beatDur * 4,
-      detune: 0.25, mix: 0.5,
-      cutoff: 1000 + brightnessScale * 1500,
-    });
-  }
-}
-
-// === CLAP (beats 2 and 4, drop only) ===
-for (let beat = 0; beat < Math.floor(duration / beatDur); beat++) {
-  if (beat % 2 !== 1) continue; // beat 2, 4, 6...
-  const t = beat * beatDur;
-  const section = getSectionAt(t);
-  if (section !== "drop" && section !== "build") continue;
-  addEvent(t, "clap", {
-    amp: 0.5 * energyMul, dur: 0.1, spread: 0.5, decay: 0.12,
-  });
-}
-
-// === SQUELCH (in build/drop, sparse) ===
-if (bassProfile.flux > 0.1) {
-  for (let bar = 4; bar < Math.ceil(duration / (beatDur * 4)); bar += 8) {
-    const t = bar * beatDur * 4;
-    const section = getSectionAt(t);
-    if (section !== "drop" && section !== "build") continue;
-    const energy = getEnergy(t);
-    addEvent(t, "squelch", {
-      freq: scaleNotes[0] * 4, amp: 0.4 * energy, dur: beatDur * 4,
-      sweepStart: 200 + brightnessScale * 200,
-      sweepEnd: 3000 + brightnessScale * 3000,
-      sweepCurve: -4, resonance: 0.8, source: 1,
-      lfoRate: 2, lfoDepth: 500,
-    });
-  }
-}
-
-// === FM LEAD (drop/build, 8th notes — mid-range fill) ===
-for (let beat = 0; beat < Math.floor(duration / beatDur); beat++) {
-  if (beat % 2 !== 0) continue; // every other beat (8th note feel)
-  const t = beat * beatDur;
-  const section = getSectionAt(t);
-  if (section !== "drop" && section !== "build") continue;
-  const energy = getEnergy(t) * energyMul;
-  const noteIdx = beat % scaleNotes.length;
-  const freq = scaleNotes[noteIdx] * 8; // 3 octaves up → mid-range (260-500Hz base → 2-4kHz)
-  addEvent(t, "fm_lead", {
-    freq, amp: 0.3 * energy, dur: beatDur * 0.8,
-    mRatio: 2, cRatio: 1, index: 2 + brightnessScale,
-    iScale: 3, vibrato: 0.2, drive: saturation * 0.3,
-  });
-}
-
-// === ARP PLUCK (drop, 16th notes — mid-range articulation) ===
-for (let step = 0; step < Math.floor(duration / sixteenthDur); step++) {
-  if (step % 4 === 0) continue; // skip downbeats (kick occupies)
-  if (step % 2 !== 0) continue; // every other 16th
-  const t = step * sixteenthDur;
-  const section = getSectionAt(t);
-  if (section !== "drop") continue;
-  const energy = getEnergy(t) * energyMul;
-  if (energy < 0.2) continue;
-  const noteIdx = step % scaleNotes.length;
-  const freq = scaleNotes[noteIdx] * 8;
-  addEvent(t, "arp_pluck", {
-    freq, amp: 0.25 * energy, dur: sixteenthDur * 0.7,
-    decay: 0.08 + energy * 0.05, brightness: brightnessScale * 0.8,
-  });
-}
-
-// === Section boundary control events (AC-8.6: n_set at section transitions) ===
-interface TrackedNode { nodeId: number; synthDef: string; start: number; end: number; }
-const trackedNodes: TrackedNode[] = [];
-
-// Re-parse events to extract tracked long-duration nodes (pad, supersaw)
-for (const ev of events) {
-  const timeMatch = ev.match(/^\[([\d.]+)/);
-  // Match synthDef name: \s_new, \<name> — skip s_new, capture the second backslash-name
-  const synthMatch = ev.match(/\\s_new, \\(\w+)/);
-  const nodeMatch = ev.match(/\\s_new, \\\w+, (\d+)/);
-  const durMatch = ev.match(/\\dur, ([\d.]+)/);
-  if (timeMatch && synthMatch && nodeMatch && durMatch) {
-    const synthDef = synthMatch[1];
-    if (synthDef === "pad" || synthDef === "supersaw") {
-      const t = parseFloat(timeMatch[1]);
-      const dur = parseFloat(durMatch[1]);
-      trackedNodes.push({
-        nodeId: parseInt(nodeMatch[1]),
-        synthDef,
-        start: t,
-        end: t + dur,
-      });
-    }
-  }
-}
-
-// Build section overrides
-const sectionOverrides: SectionOverride[] = segments.map((seg) => {
-  const localStart = seg.start - renderOffset;
-  const localEnd = seg.end - renderOffset;
-  const overrides: Record<string, Record<string, number>> = {};
-
-  switch (seg.label) {
-    case "drop":
-      overrides.pad = { amp: 0.4 };
-      overrides.supersaw = { amp: 0.4 };
-      break;
-    case "break":
-      overrides.pad = { amp: 0.8 };
-      overrides.supersaw = { amp: 0.1 };
-      break;
-    case "build":
-      overrides.pad = { amp: 0.6 };
-      overrides.supersaw = { amp: 0.3 };
-      break;
-    case "intro":
-    case "outro":
-      overrides.pad = { amp: 0.6 };
-      overrides.supersaw = { amp: 0.0 };
-      break;
-  }
-
-  return { label: seg.label, start: localStart, end: localEnd, synthOverrides: overrides };
-});
-
-// Inject n_set events at section boundaries for active long-duration nodes
-for (const section of sectionOverrides) {
-  if (section.start < 0 || section.start >= duration) continue;
-  if (!section.synthOverrides) continue;
-
-  for (const node of trackedNodes) {
-    if (node.start <= section.start && node.end > section.start) {
-      const override = section.synthOverrides[node.synthDef];
-      if (override) {
-        const paramStr = Object.entries(override).map(([k, v]) => `\\${k}, ${v}`).join(", ");
-        events.push(`[${section.start.toFixed(4)}, [\\n_set, ${node.nodeId}, ${paramStr}]]`);
+  for (const hits of [kicks, hats, basses]) {
+    for (const h of hits) {
+      if (!sampleBufs.has(h.file)) {
+        const bufNum = allocator.allocate("samples", h.file);
+        sampleBufs.set(h.file, bufNum);
+        const wavPath = path.join(samplesDir, h.file);
+        bufferCommands.push(`[0, [\\b_allocRead, ${bufNum}, "${wavPath}"]]`);
       }
     }
   }
+
+  console.log(`Samples: ${kicks.length} kicks, ${hats.length} hats, ${basses.length} bass`);
+
+  const rootFreq = scaleNotes[0];
+
+  // === USE ACTUAL ANALYZED POSITIONS from reference ===
+  // Kick: 2690 hits, hat: 1899 hits — place real samples at real times
+  const rawKickPositions = analysis.kick_pattern?.positions ?? [];
+  const rawHatPositions = analysis.hat_pattern?.positions ?? [];
+
+  // === KICK — at analyzed positions (not grid) ===
+  let kickCount = 0;
+  for (const pos of rawKickPositions) {
+    const t = pos - renderOffset;
+    if (t < 0.05 || t >= duration) continue; // start after 0.05s for buffer loading
+    const kick = kicks[kickCount % kicks.length];
+    const buf = sampleBufs.get(kick.file) ?? -1;
+    const energy = getEnergy(t) * energyMul;
+    addEvent(t, "sample_player", {
+      buf, amp: Math.min(0.7 * energy, 0.85), dur: kick.duration,
+      rate: 1.0, hpFreq: 20, lpFreq: 18000, // full range, no coloring
+    });
+    kickCount++;
+  }
+
+  // === HAT — at analyzed positions ===
+  let hatCount = 0;
+  for (const pos of rawHatPositions) {
+    const t = pos - renderOffset;
+    if (t < 0.05 || t >= duration) continue;
+    const hat = hats[hatCount % hats.length];
+    const buf = sampleBufs.get(hat.file) ?? -1;
+    const energy = getEnergy(t) * energyMul;
+    addEvent(t, "sample_player", {
+      buf, amp: Math.min(0.3 * energy, 0.4), dur: hat.duration,
+      rate: 1.0, hpFreq: 2000, lpFreq: 18000,
+    });
+    hatCount++;
+  }
+
+  // === BASS — from pitch contour if available, else sub drone on 8ths ===
+  const pitchEvents = analysis.pitch_contour?.note_events ?? [];
+  if (pitchEvents.length > 5) {
+    for (const note of pitchEvents) {
+      const t = note.time - renderOffset;
+      if (t < 0 || t >= duration) continue;
+      const energy = getEnergy(t) * energyMul;
+      addEvent(t, "acid_bass", {
+        freq: note.freq, amp: Math.min(0.8 * energy, 1.0),
+        dur: Math.min(note.duration, beatDur),
+        cutoff: 200, resonance: 1.5,
+        envDepth: 800, envDecay: 0.12,
+        accent: note.velocity > 0.7 ? 1 : 0,
+        slide: note.slide ? 1 : 0, slideTime: 0.08,
+        wave: 0, dist: 0.2,
+      });
+    }
+    console.log(`Bass: ${pitchEvents.filter(n => (n.time - renderOffset) >= 0 && (n.time - renderOffset) < duration).length} pitch events from analysis`);
+  } else {
+    // Sub drone on 8ths
+    for (let step = 0; step < Math.floor(duration / (beatDur / 2)); step++) {
+      const t = step * (beatDur / 2);
+      if (t >= duration) continue;
+      const section = getSectionAt(t);
+      if (section === "intro") continue;
+      if (step % 2 === 0) continue;
+      const energy = getEnergy(t) * energyMul;
+      addEvent(t, "acid_bass", {
+        freq: rootFreq, amp: 0.7 * energy,
+        dur: beatDur * 0.4,
+        cutoff: 150, resonance: 1.8,
+        envDepth: 600, envDecay: 0.12,
+        accent: 0, slide: 0, slideTime: 0,
+        wave: 0, dist: 0.2,
+      });
+    }
+    console.log(`Bass: sub drone ${rootFreq.toFixed(0)}Hz`);
+  }
+
+  // === MINIMAL PAD — background texture only, very quiet ===
+  for (let bar = 0; bar < Math.ceil(duration / (beatDur * 8)); bar++) {
+    const t = bar * beatDur * 8;
+    if (t >= duration) continue;
+    const section = getSectionAt(t);
+    if (section === "intro") continue;
+    const energy = getEnergy(t) * energyMul;
+    addEvent(t, "pad", {
+      freq: rootFreq * 2, amp: 0.15 * energy, dur: beatDur * 8,
+      attack: 2.0, release: 2.0,
+      filterEnv: 0.05,
+    });
+  }
+
+  console.log(`Kicks: ${kickCount}, Hats: ${hatCount} (from analysis positions)`);
+} else {
+  console.log("No samples found — skipping sample arrangement");
 }
 
-// === T16: Hybrid sample render — manifest → BufferAllocator → sample_player ===
-let bufferCommands: string[] = [];
+// === Hybrid sample render (--hybrid flag adds extra samples on top) ===
 if (hybridMode) {
-  const manifestPath = path.join(analysisDir, "manifest.json");
+  // Look for manifest in samples/ subdirectory first, then root
+  const samplesDir = path.join(analysisDir, "samples");
+  const manifestPath = fs.existsSync(path.join(samplesDir, "manifest.json"))
+    ? path.join(samplesDir, "manifest.json")
+    : path.join(analysisDir, "manifest.json");
+  const sampleBaseDir = fs.existsSync(samplesDir) ? samplesDir : analysisDir;
   const manifest = readManifest(manifestPath);
   if (manifest) {
     try {
       const allocator = new BufferAllocator();
-      const { bufCmds, bufMap } = generateSampleBufferCommands(manifest, allocator, analysisDir);
+      const { bufCmds, bufMap } = generateSampleBufferCommands(manifest, allocator, sampleBaseDir);
       bufferCommands = bufCmds;
       scheduleSampleEvents(manifest, bufMap, addEvent, duration);
       console.log(`Hybrid: ${bufCmds.length} buffers, ${bufMap.size} samples loaded`);
@@ -462,10 +368,11 @@ for (const sd of allSynthDefs) {
 const scPath = "/tmp/render-analysis.scd";
 const oscPath = "/tmp/render-analysis.osc";
 
-// sclang script: Score.write (SynthDefs loaded via d_load in Score)
+// Score.write — no SynthDef loading in sclang (causes hang)
+// SynthDefs loaded via d_load commands in the Score itself
 const scScript = `(
 var score = Score([
-${[...synthDefLoadCmds, ...bufferCommands, ...events].join(",\n")}
+${[...bufferCommands, ...events].join(",\n")}
 ]);
 score.write("${oscPath}");
 "WRITE_DONE".postln;
@@ -497,7 +404,6 @@ console.log("Rendering via scsynth NRT...");
 const renderResult = execFileSync(SCSYNTH, [
   "-N", oscPath, "_", outputWav, "44100", "WAV", "int16",
   "-o", "2", "-u", "0", "-m", "65536",
-  "-D", "0",
 ], { encoding: "utf-8", timeout: 300000 });
 console.log(renderResult.trim());
 

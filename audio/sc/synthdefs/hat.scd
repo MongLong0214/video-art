@@ -1,21 +1,37 @@
-// Hi-hat SynthDef — noise + bandpass filter + short decay
-// Params: freq, amp, dur, pan, openness, tone
+// hat — metallic techno hi-hat
+// Square wave cluster (808/909 method) + noise + HPF
+// Reference: analog drum machine metallic character
 
 SynthDef(\hat, { |out=0, freq=8000, amp=0.5, dur=0.1, pan=0, openness=0, tone=0.5|
-	var sig, env, decayTime;
+    var sig, env, decayTime, metal, noise;
 
-	// Openness controls decay: 0=closed(short), 1=open(long)
-	decayTime = dur * (1 + (openness * 4));
+    decayTime = dur * (1 + (openness * 5));
 
-	sig = WhiteNoise.ar;
-	sig = BPF.ar(sig, freq.clip(200, 18000), tone.clip(0.1, 1));
+    // Metallic: 6 square waves at inharmonic ratios (808 method)
+    metal = Mix.ar([
+        Pulse.ar(263.5, 0.5),
+        Pulse.ar(400, 0.5),
+        Pulse.ar(421, 0.5),
+        Pulse.ar(474, 0.5),
+        Pulse.ar(587, 0.5),
+        Pulse.ar(845, 0.5),
+    ]) / 6;
 
-	// High-frequency shimmer
-	sig = sig + (BPF.ar(WhiteNoise.ar, 12000, 0.3) * 0.3);
+    // HPF for brightness
+    metal = HPF.ar(metal, 4000 + (tone * 4000));
+    metal = BPF.ar(metal, freq.clip(4000, 18000), 0.8) * 2;
 
-	env = EnvGen.kr(Env.perc(0.001, decayTime), doneAction: 2);
-	sig = sig * env * amp;
+    // Minimal noise layer
+    noise = HPF.ar(WhiteNoise.ar, 7000) * 0.15;
 
-	sig = Pan2.ar(sig, pan);
-	Out.ar(out, sig);
+    sig = metal + noise;
+
+    // Gentle
+    sig = (sig * 1.0).tanh;
+
+    env = EnvGen.kr(Env.perc(0.001, decayTime, curve: -6), doneAction: 2);
+    sig = sig * env * amp;
+
+    sig = Pan2.ar(sig, pan);
+    Out.ar(out, sig);
 }).add;
