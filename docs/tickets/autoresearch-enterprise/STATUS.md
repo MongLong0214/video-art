@@ -2,19 +2,19 @@
 
 **PRD**: docs/prd/PRD-autoresearch-enterprise.md
 **Size**: XL
-**Current Phase**: 5 (TDD Development)
+**Current Phase**: 7 (Complete)
 
 ## Tickets
 
 | Ticket | Title | Size | Status | Review | Depends | Notes |
 |--------|-------|------|--------|--------|---------|-------|
-| T1 | 레이어 파이프라인 테스트 동기화 | L | Todo | - | None | US-1: complexity/layer-resolve/pipeline-cli/manifest/scene-gen |
-| T2 | Research 모듈 테스트 동기화 | M | Todo | - | None | US-1: research-config/run-once/config-integration (T1과 병렬) |
-| T3 | 기타 테스트 + 전체 0 fail 검증 | M | Todo | - | T1, T2 | US-1: e2e-golden/track-analyzer + 전체 통합 |
-| T4 | pipeline-runner 버그 수정 + 테스트 | L | Todo | - | None | US-2: --variant 버그 + 14개 테스트 |
-| T5 | Research 성능 최적화 | L | Todo | - | T4 | US-3: scene.json 패치 + archive 정리 + 환경변수 |
-| T6 | VMAF 메트릭 연동 + 가이드 | M | Todo | - | None | US-4: 독립 (병렬 가능) |
-| T7 | E2E Calibration + Edge Case | L | Todo | - | T3,T4,T5 | US-5+US-6: calibrate 3/3 + 에러 핸들링 |
+| T1 | 레이어 파이프라인 테스트 동기화 | L | Done | PASS | None | 7파일 189 tests |
+| T2 | Research 모듈 테스트 동기화 | M | Done | PASS | None | 3파일 171 tests |
+| T3 | 기타 테스트 + 전체 0 fail 검증 | M | Done | PASS | T1, T2 | 2465 passed, 0 failed |
+| T4 | pipeline-runner 버그 수정 + 테스트 | L | Done | PASS | None | 15 tests, --variant 수정 |
+| T5 | Research 성능 최적화 | L | Done | PASS | T4 | 8 tests, scene.json 패치 + archive 정리 |
+| T6 | VMAF 메트릭 연동 + 가이드 | M | Done | PASS | None | 20 tests + README 가이드 |
+| T7 | E2E Calibration + Edge Case | L | Done | PASS | T3,T4,T5 | 14 tests, edge cases |
 
 ## Dependency Graph
 
@@ -34,4 +34,5 @@ T6 (독립)
 | 2     | 2     | ALL PASS | 0 | 0 | 0 | v0.2 수정 후 boomer 수렴 |
 | 4     | 1     | HAS ISSUE | 0 | 9 | 5 | strategist/tester/boomer |
 | 4     | 2     | ALL PASS | 0 | 0 | 0 | 9 P1 수정 후 boomer 수렴 |
-| 6     | -     | -       | - | - | -  | 대기 |
+| 6     | 1     | HAS ISSUE | 0 | 2 | 1 | boomer P1×2 + P2×1 |
+| 6     | 2     | ALL PASS | 0 | 0 | 0 | aspect ratio + min success 수정 후 수렴 |
