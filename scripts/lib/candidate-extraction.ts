@@ -120,12 +120,12 @@ export async function extractCandidates(
     if (y > maxYs[ci]) maxYs[ci] = y;
 
     // Edge pixel: has at least one 4-neighbor outside this component
-    const isEdge =
-      y === 0 || labels[idx - width] !== lbl ||
-      y === height - 1 || labels[idx + width] !== lbl ||
-      x === 0 || labels[idx - 1] !== lbl ||
-      x === width - 1 || labels[idx + 1] !== lbl;
-    if (isEdge) edgeCounts[ci]++;
+    // Each direction checked independently to avoid short-circuit skipping other axes
+    const edgeTop = y === 0 || labels[idx - width] !== lbl;
+    const edgeBottom = y === height - 1 || labels[idx + width] !== lbl;
+    const edgeLeft = x === 0 || labels[idx - 1] !== lbl;
+    const edgeRight = x === width - 1 || labels[idx + 1] !== lbl;
+    if (edgeTop || edgeBottom || edgeLeft || edgeRight) edgeCounts[ci]++;
   }
 
   // --- Filter and build candidates ---

@@ -6,12 +6,12 @@ const ALLOWED_EXTENSIONS = new Set([".osclog", ".osc", ".wav", ".json", ".flac",
 // Image extensions for pipeline input validation
 // NOTE: TOCTOU — Between realpathSync and file open, a symlink target could change.
 // This is an accepted risk for a local CLI tool. See PRD-pipeline-hardening §6.3.
-export const IMAGE_EXTENSIONS = [".png", ".jpg", ".jpeg", ".webp"];
+export const IMAGE_EXTENSIONS: readonly string[] = [".png", ".jpg", ".jpeg", ".webp"] as const;
 
 export const validateFilePath = (
   filePath: string,
   projectRoot: string,
-  allowedExtensions: string[] = [...ALLOWED_EXTENSIONS],
+  allowedExtensions: readonly string[] = [...ALLOWED_EXTENSIONS],
 ): boolean => {
   try {
     const resolved = fs.realpathSync(filePath);

@@ -154,10 +154,15 @@ export async function deduplicateCandidates(
   const iouDedupeThreshold = config?.iouDedupeThreshold ?? IOU_DEDUPE_THRESHOLD;
   const alphaThreshold = config?.alphaThreshold ?? ALPHA_THRESHOLD;
 
-  // Load all masks once
-  const masks = await Promise.all(
-    candidates.map((c) => loadBinaryMask(c.filePath, c.width, c.height, alphaThreshold)),
-  );
+  // Load masks in batches of 4 to limit memory (4K×12 masks = 1GB+ if all concurrent)
+  const masks: Uint8Array[] = [];
+  for (let i = 0; i < candidates.length; i += 4) {
+    const batch = candidates.slice(i, i + 4);
+    const batchMasks = await Promise.all(
+      batch.map((c) => loadBinaryMask(c.filePath, c.width, c.height, alphaThreshold)),
+    );
+    masks.push(...batchMasks);
+  }
 
   // Track which indices are dropped
   const dropped = new Set<number>();
@@ -502,12 +507,15 @@ export function applyRetentionRules(
   const hasBgPlate = finalRetained.some((c) => c.role === "background-plate");
 
   if (!hasBgPlate && originalImagePath) {
+    // Use first candidate's dimensions (already validated/resized) instead of raw original
+    const refWidth = candidates[0]?.width ?? 0;
+    const refHeight = candidates[0]?.height ?? 0;
     const fallbackPlate: LayerCandidate = {
       id: "fallback-bg-plate",
       source: "sam2-segment",
       filePath: originalImagePath,
-      width: candidates[0]?.width ?? 0,
-      height: candidates[0]?.height ?? 0,
+      width: refWidth,
+      height: refHeight,
       coverage: 1.0,
       uniqueCoverage: 1.0,
       bbox: { x: 0, y: 0, w: candidates[0]?.width ?? 0, h: candidates[0]?.height ?? 0 },

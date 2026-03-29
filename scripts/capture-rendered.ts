@@ -71,7 +71,12 @@ async function main() {
   console.log(`Loop dur: ${opts.loopDur}s`);
   console.log(`Out dir:  ${opts.outDir}`);
 
-  // Clean & create output directory
+  // Clean & create output directory (with path validation)
+  const resolvedOut = fs.realpathSync(path.resolve(opts.outDir));
+  const resolvedRoot = fs.realpathSync(process.cwd());
+  if (!resolvedOut.startsWith(resolvedRoot + path.sep) && resolvedOut !== resolvedRoot) {
+    throw new Error(`Output directory must be within project root: ${resolvedOut}`);
+  }
   if (fs.existsSync(opts.outDir)) {
     fs.rmSync(opts.outDir, { recursive: true, force: true });
   }
