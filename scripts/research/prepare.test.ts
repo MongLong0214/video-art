@@ -3,7 +3,14 @@ import { prepareReference } from "./prepare.js";
 
 vi.mock("fs", async () => {
   const actual = await vi.importActual<typeof import("fs")>("fs");
-  return { ...actual, existsSync: vi.fn(), mkdirSync: vi.fn(), writeFileSync: vi.fn() };
+  return {
+    ...actual,
+    existsSync: vi.fn(),
+    mkdirSync: vi.fn(),
+    writeFileSync: vi.fn(),
+    readFileSync: vi.fn(),
+    rmSync: vi.fn(),
+  };
 });
 vi.mock("./frame-extractor", () => ({
   calcProportionalTimestamps: vi.fn(() => [0, 1, 2]),
@@ -12,9 +19,16 @@ vi.mock("./frame-extractor", () => ({
   extractSingleFrame: vi.fn(),
   checkFfmpegAvailable: vi.fn(() => true),
 }));
+vi.mock("./contract.js", () => ({
+  REFERENCE_CACHE_DIR: ".cache/research/reference",
+  REFERENCE_METADATA_PATH: ".cache/research/reference/metadata.json",
+  REFERENCE_INPUT_PATH: ".cache/research/reference/input.png",
+  computeFileFingerprint: vi.fn(() => "fingerprint-123"),
+}));
 
-import { existsSync, writeFileSync } from "fs";
+import { existsSync, readFileSync, rmSync, writeFileSync } from "fs";
 import { extractSingleFrame, checkFfmpegAvailable } from "./frame-extractor.js";
+import { computeFileFingerprint } from "./contract.js";
 
 beforeEach(() => { vi.clearAllMocks(); });
 
@@ -39,12 +53,20 @@ describe("prepareReference", () => {
 
     prepareReference("/test.mp4");
 
-    // 3 keyframes + 6 temporal pair frames = 9 extractSingleFrame calls
-    expect(vi.mocked(extractSingleFrame).mock.calls.length).toBeGreaterThanOrEqual(9);
+    // 3 keyframes + 6 temporal pair frames + 1 canonical input frame
+    expect(vi.mocked(extractSingleFrame).mock.calls.length).toBeGreaterThanOrEqual(10);
   });
 
   it("skips existing frame files", () => {
     vi.mocked(existsSync).mockReturnValue(true); // all exist
+    vi.mocked(readFileSync).mockReturnValue(
+      JSON.stringify({
+        sourcePath: "/test.mp4",
+        sourceFingerprint: "fingerprint-123",
+        researchInputPath: ".cache/research/reference/input.png",
+        researchInputFingerprint: "fingerprint-123",
+      }),
+    );
     vi.mocked(checkFfmpegAvailable).mockReturnValue(true);
 
     prepareReference("/test.mp4");
@@ -57,6 +79,14 @@ describe("prepareReference", () => {
       if (String(p).endsWith(".mp4")) return true;
       return true; // frames exist (skip extraction)
     });
+    vi.mocked(readFileSync).mockReturnValue(
+      JSON.stringify({
+        sourcePath: "/different.mp4",
+        sourceFingerprint: "stale-fingerprint",
+        researchInputPath: ".cache/research/reference/input.png",
+        researchInputFingerprint: "stale-fingerprint",
+      }),
+    );
     vi.mocked(checkFfmpegAvailable).mockReturnValue(true);
 
     prepareReference("/test.mp4");
@@ -65,5 +95,37 @@ describe("prepareReference", () => {
       expect.stringContaining("metadata.json"),
       expect.stringContaining("duration"),
     );
+    expect(vi.mocked(writeFileSync)).toHaveBeenCalledWith(
+      expect.stringContaining("metadata.json"),
+      expect.stringContaining("sourceFingerprint"),
+    );
+    expect(vi.mocked(writeFileSync)).toHaveBeenCalledWith(
+      expect.stringContaining("metadata.json"),
+      expect.stringContaining("researchInputFingerprint"),
+    );
+  });
+
+  it("refreshes cached frames when the source fingerprint changes", () => {
+    vi.mocked(existsSync).mockImplementation((p) => {
+      if (String(p).endsWith(".mp4")) return true;
+      return true;
+    });
+    vi.mocked(readFileSync).mockReturnValue(
+      JSON.stringify({
+        sourcePath: "/test.mp4",
+        sourceFingerprint: "old-fingerprint",
+        researchInputPath: ".cache/research/reference/input.png",
+        researchInputFingerprint: "old-fingerprint",
+      }),
+    );
+
+    prepareReference("/test.mp4");
+
+    expect(vi.mocked(computeFileFingerprint)).toHaveBeenCalledWith("/test.mp4");
+    expect(vi.mocked(rmSync)).toHaveBeenCalledWith(
+      ".cache/research/reference",
+      { recursive: true, force: true },
+    );
+    expect(vi.mocked(extractSingleFrame)).toHaveBeenCalled();
   });
 });

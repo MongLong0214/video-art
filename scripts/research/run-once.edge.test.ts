@@ -33,6 +33,11 @@ vi.mock("./promote.js", () => ({
   loadBaseline: vi.fn(() => ({
     qualityScore: 0.7,
     modelVersion: "model-v1",
+    evalSchemaVersion: "schema-v1",
+    gateThreshold: 0.15,
+    referenceFingerprint: "ref-123",
+    referenceInputFingerprint: "input-123",
+    vmafMode: "fallback",
     commit: "abc",
     calibratedAt: "2026-01-01",
   })),
@@ -73,11 +78,30 @@ vi.mock("./git-automation.js", () => {
 
 vi.mock("./pipeline-runner.js", () => ({
   runFullPipeline: vi.fn(),
-  resolveInputImagePath: vi.fn(() => "input.png"),
 }));
 
 vi.mock("./evaluate.js", () => ({
   evaluateVideo: vi.fn(),
+}));
+vi.mock("./contract.js", () => ({
+  CALIBRATION_PATH: ".cache/research/calibration.json",
+  RESULTS_TSV_PATH: ".cache/research/results.tsv",
+  REFERENCE_CACHE_DIR: ".cache/research/reference",
+  buildRuntimeEvaluationContract: vi.fn(() => ({
+    evalSchemaVersion: "schema-v1",
+    gateThreshold: 0.15,
+    referenceFingerprint: "ref-123",
+    referenceInputFingerprint: "input-123",
+    vmafMode: "fallback",
+  })),
+  validatePreparedReference: vi.fn(() => ({
+    sourcePath: "/source.mp4",
+    sourceFingerprint: "ref-123",
+    researchInputPath: "/reference/input.png",
+    researchInputFingerprint: "input-123",
+  })),
+  assertEvaluationContractCompatible: vi.fn(),
+  formatReferenceFingerprint: vi.fn(() => "ref-123"),
 }));
 
 import { main } from "./run-once.js";

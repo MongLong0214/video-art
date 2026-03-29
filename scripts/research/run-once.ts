@@ -16,11 +16,16 @@ import {
   ensureBranch,
   checkDirty,
 } from "./git-automation.js";
-import { runFullPipeline, resolveInputImagePath } from "./pipeline-runner.js";
-
-const CALIBRATION_PATH = ".cache/research/calibration.json";
-const RESULTS_TSV_PATH = ".cache/research/results.tsv";
-const REFERENCE_CACHE_DIR = ".cache/research/reference";
+import { runFullPipeline } from "./pipeline-runner.js";
+import {
+  CALIBRATION_PATH,
+  RESULTS_TSV_PATH,
+  REFERENCE_CACHE_DIR,
+  buildRuntimeEvaluationContract,
+  validatePreparedReference,
+  assertEvaluationContractCompatible,
+  formatReferenceFingerprint,
+} from "./contract.js";
 
 export function ensureCalibrationExists(): void {
   if (!existsSync(CALIBRATION_PATH)) {
@@ -38,6 +43,8 @@ const TSV_HEADER = [
   "M9_layer_indep", "M10_role_cohere",
   "model_version", "elapsed_ms", "status", "description",
 ].join("\t");
+
+const CONFIG_PATH = "scripts/research/research-config.ts";
 
 export interface TsvRowData {
   commit: string;
@@ -155,8 +162,11 @@ export async function main(): Promise<void> {
   const cliArgs = parseRunOnceArgs(process.argv.slice(2));
 
   // Step 0a: Check dirty working tree (T11-AC6)
-  if (checkDirty(cwd)) {
-    throw new Error("Working tree has uncommitted changes. Commit or stash first.");
+  if (checkDirty(cwd, [CONFIG_PATH])) {
+    throw new Error(
+      "Working tree has uncommitted changes outside scripts/research/research-config.ts. " +
+      "Commit or stash unrelated changes first.",
+    );
   }
 
   const crashCounter = CrashCounter.persisted();
@@ -181,15 +191,24 @@ export async function main(): Promise<void> {
   ensureBranch(tag, cwd);
 
   // Step 1: Load config from file (T10-AC2)
-  const configPath = "scripts/research/research-config.ts";
+  const configPath = CONFIG_PATH;
   const config = loadConfig(configPath) as Record<string, unknown>;
 
   // Step 2: Load calibration
   const calibration = loadCalibration();
+  const referenceMeta = validatePreparedReference();
+  const currentContract = buildRuntimeEvaluationContract(referenceMeta);
 
   // Step 3: Load baseline score (A6.3: prefer baseline-config.json)
   const { score: baselineScore, deltaMin, modelVersion: baselineModelVersion } =
     loadBaselineScore();
+
+  assertEvaluationContractCompatible("Calibration", calibration, currentContract);
+
+  const baseline = loadBaseline();
+  if (baseline) {
+    assertEvaluationContractCompatible("Baseline", baseline, currentContract);
+  }
 
   // Step 4: A1.12 fix — version mismatch → hard abort (T10-AC9)
   if (calibration.modelVersion !== baselineModelVersion) {
@@ -198,6 +217,12 @@ export async function main(): Promise<void> {
       `Run \`npm run research:calibrate\` to recalibrate before proceeding.`,
     );
   }
+
+  console.log(
+    `[exp #preflight] reference=${formatReferenceFingerprint(referenceMeta.sourceFingerprint)} ` +
+    `schema=${currentContract.evalSchemaVersion} vmaf=${currentContract.vmafMode}`,
+  );
+  console.log(`[exp #preflight] input=${referenceMeta.researchInputPath}`);
 
   // Ensure results.tsv dir exists
   mkdirSync(".cache/research", { recursive: true });
@@ -223,17 +248,16 @@ export async function main(): Promise<void> {
   try {
     // Step 5: Run full pipeline (layers → video capture → encode)
     console.log(`[exp #${expNum}] Running full pipeline...`);
-    const inputPath = resolveInputImagePath(cwd);
+    const inputPath = referenceMeta.researchInputPath;
     const pipeline = await runFullPipeline(cwd, inputPath, config);
 
     // Step 6: Evaluate generated video
     console.log(`[exp #${expNum}] Evaluating...`);
-    const refMeta = JSON.parse(readFileSync(`${REFERENCE_CACHE_DIR}/metadata.json`, "utf-8"));
     const evalResult = await evaluateVideo({
       videoPath: pipeline.videoPath,
       referenceCacheDir: REFERENCE_CACHE_DIR,
       manifestPath: pipeline.manifestPath || undefined,
-      sourceVideoPath: refMeta.sourcePath,
+      sourceVideoPath: referenceMeta.sourcePath,
     });
 
     qualityScore = evalResult.qualityScore;

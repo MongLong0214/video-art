@@ -9,7 +9,7 @@ import {
 } from "./lib/input-validator.js";
 import { parseCliArgs } from "./lib/pipeline-cli.js";
 import { scoreComplexity } from "./lib/complexity-scoring.js";
-import { decomposeImage } from "./lib/image-decompose.js";
+import { decomposeImage, SAM2_MODEL, SAM2_VERSION } from "./lib/image-decompose.js";
 import { extractCandidates } from "./lib/candidate-extraction.js";
 import {
   deduplicateCandidates,
@@ -20,7 +20,11 @@ import {
   fillBackgroundPlate,
   buildExclusiveMasks,
 } from "./lib/layer-resolve.js";
-import { shouldRecurse, recursiveDecompose } from "./lib/image-decompose.js";
+import { SAM_OPACITY_THRESHOLD, SAM_MIN_COVERAGE } from "./lib/pipeline-constants.js";
+import { validateFilePath, IMAGE_EXTENSIONS } from "./lib/validate-file-path.js";
+import { computeMaskStats } from "./lib/mask-stats.js";
+import { buildMaskCache } from "./lib/mask-cache.js";
+import { batchProcess } from "./lib/batch-process.js";
 import { generateSceneJson } from "./lib/scene-generator.js";
 import type { RetainedLayer } from "./lib/scene-generator.js";
 import {
@@ -45,7 +49,7 @@ async function main() {
   }
 
   // Optional ResearchConfig for threshold overrides (loaded if available)
-  let pipelineConfig: Partial<ResearchConfig> | undefined;
+  let pipelineConfig: (Partial<ResearchConfig> & { numLayers?: number }) | undefined;
   try {
     const { loadConfig } = await import("./research/research-config.js");
     pipelineConfig = loadConfig("scripts/research/research-config.ts");
@@ -63,21 +67,56 @@ async function main() {
   const publicDir = path.join(projectRoot, "public");
   const publicLayersDir = path.join(publicDir, "layers");
 
+  // --- Step 0: Path traversal validation ---
+  const resolvedInput = path.resolve(cliArgs.inputPath);
+  if (!validateFilePath(resolvedInput, projectRoot, IMAGE_EXTENSIONS)) {
+    console.error(`Input path must be within project root: ${resolvedInput}`);
+    process.exit(1);
+  }
+
   // --- Step 1: Input validation OR manual layers ---
   const manualLayersInput = path.join(projectRoot, "layers");
-  const manualLayers = detectManualLayers(manualLayersInput);
+
+  // Validate layers/ directory is within project root (symlinked dir attack)
+  let manualLayers: string[] | null = null;
+  if (fs.existsSync(manualLayersInput)) {
+    try {
+      const realLayersDir = fs.realpathSync(manualLayersInput);
+      const realProjectRoot = fs.realpathSync(projectRoot);
+      if (!realLayersDir.startsWith(realProjectRoot + path.sep) && realLayersDir !== realProjectRoot) {
+        console.error(`Layers directory must be within project root: ${realLayersDir}`);
+        process.exit(1);
+      }
+    } catch {
+      console.error(`Cannot resolve layers directory: ${manualLayersInput}`);
+      process.exit(1);
+    }
+    manualLayers = detectManualLayers(manualLayersInput);
+  }
   let imageWidth: number;
   let imageHeight: number;
   let preparedPath: string;
   let candidates: LayerCandidate[];
+  let selectedLayerCount: number | null = null;
   const passes: ManifestInput["passes"] = [];
 
   if (manualLayers) {
+    // Validate each manual layer file before any I/O
+    for (const layerFile of manualLayers) {
+      if (!validateFilePath(layerFile, projectRoot, IMAGE_EXTENSIONS)) {
+        console.error(`Manual layer path must be within project root: ${layerFile}`);
+        process.exit(1);
+      }
+    }
+
     // Manual layers bypass: copy to work dir, extract candidates, skip API
     console.log(`Found ${manualLayers.length} manual layers in layers/. Skipping API call.`);
     const meta = await sharp(manualLayers[0]).metadata();
     imageWidth = meta.width || 1080;
     imageHeight = meta.height || 1920;
+    if (imageWidth > 4096 || imageHeight > 4096) {
+      throw new Error(`Manual layer dimensions ${imageWidth}x${imageHeight} exceed 4096px limit. Resize layers first.`);
+    }
     preparedPath = manualLayers[0];
     console.log(`Layer dimensions: ${imageWidth}x${imageHeight}`);
 
@@ -96,108 +135,112 @@ async function main() {
       const extracted = await extractCandidates(layerPath, layersDir, pipelineConfig);
       candidates.push(...extracted);
     }
-    passes.push({ type: "qwen-base", candidateCount: candidates.length });
+    candidates = await deduplicateCandidates(candidates, pipelineConfig);
+    selectedLayerCount = candidates.length;
+    passes.push({ type: "manual-layers", candidateCount: candidates.length });
   } else {
     // API-based decomposition
     console.log("Validating input...");
-    const prepared = await validateAndPrepare(path.resolve(cliArgs.inputPath));
+    const prepared = await validateAndPrepare(path.resolve(cliArgs.inputPath), {
+      outputDir: path.resolve(".cache/research/inputs"),
+    });
     imageWidth = prepared.width;
     imageHeight = prepared.height;
     preparedPath = prepared.filePath;
     console.log(`Input: ${prepared.width}x${prepared.height}${prepared.wasResized ? " (resized)" : ""}`);
 
-    // --- Step 2: Complexity scoring (when --layers not specified) ---
-    const numLayers = cliArgs.layerOverride ?? (() => {
+    // --- Step 2: Complexity scoring ---
+    if (cliArgs.layerOverride) {
+      selectedLayerCount = cliArgs.layerOverride;
+      console.log(`  Layer count override: ${selectedLayerCount}`);
+    } else if (typeof pipelineConfig?.samMaskLimit === "number") {
+      selectedLayerCount = pipelineConfig.samMaskLimit;
+      console.log(`  Configured SAM 2 mask limit: ${selectedLayerCount}`);
+    } else if (typeof pipelineConfig?.numLayers === "number") {
+      selectedLayerCount = pipelineConfig.numLayers;
+      console.log(`  Legacy config layer count override: ${selectedLayerCount}`);
+    } else {
       console.log("\nScoring image complexity...");
-      // scoreComplexity is async but we need sync layer count decision
-      // Use default 8 here; actual scoring happens below for the manifest
-      return 8;
-    })();
-
-    // If --layers not specified, use complexity scoring to determine layer count
-    let selectedLayerCount = numLayers;
-    if (!cliArgs.layerOverride) {
       const complexity = await scoreComplexity(preparedPath, pipelineConfig);
       selectedLayerCount = complexity.layerCount;
       console.log(`  Complexity: tier=${complexity.tier}, edgeDensity=${complexity.edgeDensity.toFixed(3)}, colorEntropy=${complexity.colorEntropy.toFixed(3)} → ${selectedLayerCount} layers`);
-    } else {
-      console.log(`  Layer count override: ${selectedLayerCount}`);
     }
 
-    // --- Step 3: Decomposition (Qwen + Luminance) ---
-    const descLabel = cliArgs.description ? `"${cliArgs.description}"` : "auto";
-    console.log(`\nDecomposing image (qwen-luminance, layers: ${selectedLayerCount}, description: ${descLabel})...`);
+    // --- Step 3: Decomposition (SAM 2) ---
+    console.log(`\nDecomposing image (SAM 2, max layers: ${selectedLayerCount})...`);
     const decomposeResult = await decomposeImage(preparedPath, layersDir, {
-      numLayers: selectedLayerCount,
-      luminanceZones: 6,
-      description: cliArgs.description,
+      maxLayers: selectedLayerCount,
+      alphaThreshold: pipelineConfig?.alphaThreshold,
+      minCoverage: pipelineConfig?.minCoverage,
     });
 
     console.log(`  ${decomposeResult.files.length} raw layers generated (${decomposeResult.method})`);
+    const rawPassCounts = decomposeResult.fileMeta.reduce(
+      (acc, meta) => {
+        acc[meta.source] = (acc[meta.source] ?? 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+    if ((rawPassCounts["sam2-segment"] ?? 0) > 0) {
+      passes.push({
+        type: "sam2-segment",
+        candidateCount: rawPassCounts["sam2-segment"],
+      });
+    }
+    if ((rawPassCounts["luminance-split"] ?? 0) > 0) {
+      passes.push({
+        type: "luminance-fallback",
+        candidateCount: rawPassCounts["luminance-split"],
+      });
+    }
 
-    // --- Step 4: Extract candidates from each RGBA layer ---
-    console.log("\nExtracting candidates from layers...");
-    candidates = [];
-    for (let fi = 0; fi < decomposeResult.files.length; fi++) {
+    // --- Step 4: Convert SAM masks directly to candidates (batched, concurrency=4) ---
+    console.log("\nConverting SAM masks to candidates...");
+    const indices = Array.from({ length: decomposeResult.files.length }, (_, i) => i);
+    const batchResults = await batchProcess(indices, 4, async (fi) => {
       const file = decomposeResult.files[fi];
-      const meta = decomposeResult.fileMeta?.[fi];
-      const extracted = await extractCandidates(file, layersDir, pipelineConfig);
-      for (const c of extracted) {
-        if (meta?.source === "depth-split") {
-          c.source = "depth-split";
-          if (meta.depthGroupId) c.parentId = meta.depthGroupId;
-        }
-      }
-      candidates.push(...extracted);
-    }
-    console.log(`  ${candidates.length} candidates extracted`);
-    passes.push({ type: "qwen-base", candidateCount: candidates.length });
+      const sourceMeta = decomposeResult.fileMeta[fi];
+      const meta = await sharp(file).metadata();
+      const { data } = await sharp(file).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+      const w = meta.width!;
+      const h = meta.height!;
+      const rgba = new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
 
-    // --- Step 4b: Selective recursive decomposition (T9) ---
-    const apiCallCount = { current: 0 };
-    const maxRecursiveCalls = 5;
-    const recursiveChildren: LayerCandidate[] = [];
+      const stats = computeMaskStats(rgba, w, h, SAM_OPACITY_THRESHOLD);
+      if (stats.coverage < SAM_MIN_COVERAGE) return null;
 
-    for (const c of candidates) {
-      if (shouldRecurse(c, pipelineConfig)) {
-        console.log(`  Candidate ${c.id.slice(0, 8)} triggers recursive decompose (coverage=${(c.coverage * 100).toFixed(1)}%, components=${c.componentCount})`);
-        const children = await recursiveDecompose(c, {
-          outputDir: layersDir,
-          apiCallCount,
-          maxRecursiveCalls,
-        });
-        if (children.length > 0) {
-          recursiveChildren.push(...children);
-          passes.push({
-            type: "qwen-recursive",
-            candidateCount: children.length,
-            parentId: c.id,
-          });
-        }
-      }
-    }
-
-    // Reintegrate: replace parents with children
-    if (recursiveChildren.length > 0) {
-      const parentIds = new Set(recursiveChildren.map((c) => c.parentId));
-      candidates = [
-        ...candidates.filter((c) => !parentIds.has(c.id)),
-        ...recursiveChildren,
-      ];
-      console.log(`  After recursive reintegration: ${candidates.length} candidates`);
-    }
+      return {
+        id: crypto.randomUUID(),
+        source: sourceMeta?.source ?? "sam2-segment",
+        filePath: file,
+        width: w,
+        height: h,
+        coverage: stats.coverage,
+        bbox: stats.bbox,
+        centroid: stats.centroid,
+        edgeDensity: 0,
+        componentCount: 1,
+      } as LayerCandidate;
+    });
+    candidates = batchResults.filter((c): c is LayerCandidate => c !== null);
+    console.log(`  ${candidates.length} candidates from SAM masks`);
+    candidates = await deduplicateCandidates(candidates, pipelineConfig);
   }
 
-  // --- Step 5: Deduplicate candidates ---
-  console.log("\nDeduplicating candidates...");
-  candidates = await deduplicateCandidates(candidates);
-  const activeAfterDedup = candidates.filter((c) => !c.droppedReason);
-  console.log(`  ${activeAfterDedup.length} candidates after dedup (${candidates.length - activeAfterDedup.length} dropped)`);
+  // --- Step 5.5: Build per-candidate mask cache ---
+  const activeCandidates = candidates.filter((c) => !c.droppedReason);
+  const maskCache = await buildMaskCache(activeCandidates, imageWidth, imageHeight, pipelineConfig?.alphaThreshold);
 
   // --- Step 6: Resolve exclusive ownership ---
   console.log("Resolving exclusive pixel ownership...");
-  const activeCandidates = candidates.filter((c) => !c.droppedReason);
-  const withOwnership = await resolveExclusiveOwnership(activeCandidates, imageWidth, imageHeight);
+  const withOwnership = await resolveExclusiveOwnership(
+    activeCandidates,
+    imageWidth,
+    imageHeight,
+    pipelineConfig,
+    maskCache,
+  );
   // Merge ownership results back
   const ownershipMap = new Map(withOwnership.map((c) => [c.id, c]));
   candidates = candidates.map((c) =>
@@ -207,7 +250,7 @@ async function main() {
   // --- Step 7: Assign roles ---
   console.log("Assigning roles...");
   const forRoles = candidates.filter((c) => !c.droppedReason);
-  const withRoles = assignRoles(forRoles, imageWidth, imageHeight);
+  const withRoles = assignRoles(forRoles, imageWidth, imageHeight, pipelineConfig);
   const roleMap = new Map(withRoles.map((c) => [c.id, c]));
   candidates = candidates.map((c) =>
     roleMap.has(c.id) ? roleMap.get(c.id)! : c,
@@ -218,8 +261,14 @@ async function main() {
   const forOrder = candidates.filter((c) => !c.droppedReason);
   const ordered = orderByRole(forOrder);
 
-  // Re-resolve exclusive ownership in role order (T5)
-  const reordered = await resolveExclusiveOwnership(ordered, imageWidth, imageHeight);
+  // Re-resolve exclusive ownership in role order (T5) — reuse mask cache
+  const reordered = await resolveExclusiveOwnership(
+    ordered,
+    imageWidth,
+    imageHeight,
+    pipelineConfig,
+    maskCache,
+  );
   const reorderMap = new Map(reordered.map((c) => [c.id, c]));
   candidates = candidates.map((c) =>
     reorderMap.has(c.id) ? reorderMap.get(c.id)! : c,
@@ -227,8 +276,13 @@ async function main() {
 
   // --- Step 9: Apply retention rules ---
   console.log("Applying retention rules...");
-  const maxLayers = 16;
-  candidates = applyRetentionRules(candidates, maxLayers, path.resolve(cliArgs.inputPath));
+  const maxLayers = pipelineConfig?.maxLayers ?? 16;
+  candidates = applyRetentionRules(
+    candidates,
+    maxLayers,
+    path.resolve(cliArgs.inputPath),
+    pipelineConfig,
+  );
 
   // Re-sort retained by role z-ladder (handles fallback bg-plate inserted at end)
   let retained = orderByRole(candidates.filter((c) => !c.droppedReason));
@@ -239,7 +293,12 @@ async function main() {
   const bgPlate = retained.find((c) => c.role === "background-plate");
   if (bgPlate) {
     console.log("Filling background plate...");
-    const { claimedMask } = await buildExclusiveMasks(retained, imageWidth, imageHeight);
+    const { claimedMask } = await buildExclusiveMasks(
+      retained,
+      imageWidth,
+      imageHeight,
+      pipelineConfig?.alphaThreshold,
+    );
     const filled = await fillBackgroundPlate(
       bgPlate,
       path.resolve(cliArgs.inputPath),
@@ -281,23 +340,22 @@ async function main() {
     retainedLayers,
     [imageWidth, imageHeight],
     cliArgs.duration,
+    pipelineConfig,
   );
+
+  const manifestLayerCount = selectedLayerCount ?? retained.length;
 
   // --- Step 13: Generate + write manifest ---
   const manifestInput: ManifestInput = {
     runId: ctx.runId,
-    pipelineVariant: "qwen-luminance",
+    pipelineVariant: "sam2",
     sourceImage: path.resolve(cliArgs.inputPath),
     preparedImage: preparedPath,
     models: {
-      qwenImageLayered: {
-        model: "qwen/qwen-image-layered",
-        version: cliArgs.production ? "MUST_BE_PINNED" : "unversioned",
-        numLayersBase: (() => {
-          if (cliArgs.layerOverride) return cliArgs.layerOverride;
-          const active = candidates.filter((c) => !c.droppedReason);
-          return active.length || 4;
-        })(),
+      sam2: {
+        model: SAM2_MODEL,
+        version: SAM2_VERSION,
+        maskLimit: manifestLayerCount,
       },
     },
     passes,
@@ -306,7 +364,7 @@ async function main() {
     unsafeFlag: cliArgs.unsafe,
     productionMode: cliArgs.production,
     requestedLayerCount: cliArgs.layerOverride,
-    selectedLayerCount: retained.length,
+    selectedLayerCount: manifestLayerCount,
   };
 
   try {
@@ -350,6 +408,6 @@ async function main() {
 
 main().catch((err) => {
   const token = process.env.REPLICATE_API_TOKEN ?? "";
-  console.error("Error:", maskToken(err.message, token));
+  console.error("Error:", maskToken(String(err), token));
   process.exit(1);
 });

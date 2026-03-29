@@ -25,7 +25,7 @@ afterAll(() => {
 
 function makeCandidate(overrides: Partial<LayerCandidate> & { id: string }): LayerCandidate {
   return {
-    source: "qwen-base",
+    source: "sam2-segment",
     filePath: "/tmp/test.png",
     width: 100,
     height: 100,
@@ -41,13 +41,17 @@ function makeCandidate(overrides: Partial<LayerCandidate> & { id: string }): Lay
 function makeBaseInput(overrides?: Partial<ManifestInput>): ManifestInput {
   return {
     runId: "test-run-001",
-    pipelineVariant: "qwen-luminance",
+    pipelineVariant: "sam2",
     sourceImage: "/tmp/source.jpg",
     preparedImage: "/tmp/prepared.png",
     models: {
-      qwenImageLayered: { model: "qwen-vl", version: "v1.0.0", numLayersBase: 4 },
+      sam2: {
+        model: "lucataco/segment-anything-2",
+        version: "be7cbde9fdf0eecdc8b20ffec9dd0d1cfeace0832d4d0b58a071d993182e1be0",
+        maskLimit: 6,
+      },
     },
-    passes: [{ type: "qwen-base", candidateCount: 4 }],
+    passes: [{ type: "sam2-segment", candidateCount: 4 }],
     retainedLayers: [
       makeCandidate({ id: "l1", role: "background-plate" as LayerRole, uniqueCoverage: 0.4 }),
       makeCandidate({ id: "l2", role: "subject" as LayerRole, uniqueCoverage: 0.3 }),
@@ -71,7 +75,7 @@ describe("generateManifest", () => {
     const input = makeBaseInput();
     const manifest = generateManifest(input);
     expect(manifest.runId).toBe("test-run-001");
-    expect(manifest.pipelineVariant).toBe("qwen-luminance");
+    expect(manifest.pipelineVariant).toBe("sam2");
     expect(manifest.createdAt).toBeDefined();
     expect(manifest.sourceImage).toBe("/tmp/source.jpg");
     expect(manifest.preparedImage).toBe("/tmp/prepared.png");
@@ -81,7 +85,7 @@ describe("generateManifest", () => {
     const input = makeBaseInput({
       productionMode: true,
       models: {
-        qwenImageLayered: { model: "qwen-vl", version: "latest", numLayersBase: 4 },
+        sam2: { model: "lucataco/segment-anything-2", version: "latest", maskLimit: 6 },
       },
     });
     expect(() => generateManifest(input)).toThrow(/latest/i);
@@ -91,17 +95,17 @@ describe("generateManifest", () => {
     const input = makeBaseInput({
       productionMode: false,
       models: {
-        qwenImageLayered: { model: "qwen-vl", version: "latest", numLayersBase: 4 },
+        sam2: { model: "lucataco/segment-anything-2", version: "latest", maskLimit: 6 },
       },
     });
     expect(() => generateManifest(input)).not.toThrow();
   });
 
-  it("should throw for latest qwenImageLayered version in production mode (case: LATEST)", () => {
+  it("should throw for latest SAM2 version in production mode (case: LATEST)", () => {
     const input = makeBaseInput({
       productionMode: true,
       models: {
-        qwenImageLayered: { model: "qwen-vl", version: "LATEST", numLayersBase: 4 },
+        sam2: { model: "lucataco/segment-anything-2", version: "LATEST", maskLimit: 6 },
       },
     });
     expect(() => generateManifest(input)).toThrow(/latest/i);
@@ -204,30 +208,34 @@ describe("generateManifest", () => {
   it("should include passes data", () => {
     const input = makeBaseInput({
       passes: [
-        { type: "qwen-base", candidateCount: 4 },
-        { type: "qwen-recursive", candidateCount: 2, parentId: "l1" },
+        { type: "sam2-segment", candidateCount: 4 },
+        { type: "luminance-fallback", candidateCount: 2 },
       ],
     });
     const manifest = generateManifest(input);
     expect(manifest.passes.length).toBe(2);
-    expect(manifest.passes[1].parentId).toBe("l1");
+    expect(manifest.passes[1].type).toBe("luminance-fallback");
   });
 
-  it("should include models data with qwenImageLayered version", () => {
+  it("should include models data with SAM2 version", () => {
     const input = makeBaseInput({
       models: {
-        qwenImageLayered: { model: "qwen-vl", version: "v1.0.0", numLayersBase: 4 },
+        sam2: {
+          model: "lucataco/segment-anything-2",
+          version: "v1.0.0",
+          maskLimit: 6,
+        },
       },
     });
     const manifest = generateManifest(input);
-    expect(manifest.models.qwenImageLayered.version).toBe("v1.0.0");
+    expect(manifest.models.sam2?.version).toBe("v1.0.0");
   });
 
   it("should handle case-insensitive 'Latest' in production mode", () => {
     const input = makeBaseInput({
       productionMode: true,
       models: {
-        qwenImageLayered: { model: "qwen-vl", version: "Latest", numLayersBase: 4 },
+        sam2: { model: "lucataco/segment-anything-2", version: "Latest", maskLimit: 6 },
       },
     });
     expect(() => generateManifest(input)).toThrow();
@@ -237,7 +245,7 @@ describe("generateManifest", () => {
     const input = makeBaseInput({
       productionMode: true,
       models: {
-        qwenImageLayered: { model: "qwen-vl", version: "LATEST", numLayersBase: 4 },
+        sam2: { model: "lucataco/segment-anything-2", version: "LATEST", maskLimit: 6 },
       },
     });
     expect(() => generateManifest(input)).toThrow();
@@ -400,22 +408,26 @@ describe("copySourceImages", () => {
 // ==========================================================================
 
 describe("ManifestInput combinations", () => {
-  it("should handle qwen-luminance variant", () => {
+  it("should handle the current sam2 variant", () => {
     const input = makeBaseInput({
       models: {
-        qwenImageLayered: { model: "qwen-vl", version: "v1.0.0", numLayersBase: 4 },
+        sam2: {
+          model: "lucataco/segment-anything-2",
+          version: "v1.0.0",
+          maskLimit: 6,
+        },
       },
     });
     const manifest = generateManifest(input);
-    expect(manifest.pipelineVariant).toBe("qwen-luminance");
+    expect(manifest.pipelineVariant).toBe("sam2");
   });
 
   it("should handle multiple passes", () => {
     const input = makeBaseInput({
       passes: [
-        { type: "qwen-base", candidateCount: 4 },
-        { type: "qwen-recursive", candidateCount: 2, parentId: "l1" },
-        { type: "qwen-recursive", candidateCount: 3 },
+        { type: "sam2-segment", candidateCount: 4 },
+        { type: "luminance-fallback", candidateCount: 2 },
+        { type: "manual-layers", candidateCount: 3 },
       ],
     });
     const manifest = generateManifest(input);
@@ -424,7 +436,7 @@ describe("ManifestInput combinations", () => {
 
   it("should handle large number of passes", () => {
     const passes = Array.from({ length: 10 }, (_, i) => ({
-      type: "qwen-base" as const,
+      type: "sam2-segment" as const,
       candidateCount: i + 1,
     }));
     const input = makeBaseInput({ passes });

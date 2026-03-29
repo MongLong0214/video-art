@@ -4,22 +4,14 @@ import {
   ResearchConfigSchema,
   getDefaultConfig,
 } from "./research-config.js";
-import type { ResearchConfig } from "./research-config.js";
-
-// ==========================================================================
-// Default config
-// ==========================================================================
 
 describe("getDefaultConfig", () => {
-  it("should return valid config", () => {
+  it("returns the current SAM2 research defaults", () => {
     const config = getDefaultConfig();
-    expect(config).toBeDefined();
-  });
-
-  it("should match all expected default values", () => {
-    const config = getDefaultConfig();
-    expect(config.numLayers).toBe(8);
-    expect(config.alphaThreshold).toBe(128);
+    expect(config.samMaskLimit).toBe(3);
+    expect(config.maxLayers).toBe(12);
+    expect(config.minRetainedLayers).toBe(1);
+    expect(config.alphaThreshold).toBe(96);
     expect(config.minCoverage).toBe(0.005);
     expect(config.simpleEdgeMax).toBe(0.1);
     expect(config.simpleEntropyMax).toBe(5.5);
@@ -27,17 +19,10 @@ describe("getDefaultConfig", () => {
     expect(config.complexEntropyMin).toBe(7.0);
     expect(config.edgePixelThreshold).toBe(30);
     expect(config.iouDedupeThreshold).toBe(0.92);
-    expect(config.uniqueCoverageThreshold).toBe(0.005);
+    expect(config.uniqueCoverageThreshold).toBe(0.02);
     expect(config.centralityThreshold).toBe(0.25);
     expect(config.bgPlateMinBboxRatio).toBe(0.3);
     expect(config.edgeTolerancePx).toBe(2);
-    expect(config.maxLayers).toBe(16);
-    expect(config.minRetainedLayers).toBe(6);
-    expect(config.luminanceZones).toBe(6);
-  });
-
-  it("should match multiplier defaults (all 1.0)", () => {
-    const config = getDefaultConfig();
     expect(config.colorCycleSpeedMul).toBe(1.0);
     expect(config.glowIntensityMul).toBe(1.0);
     expect(config.saturationBoostMul).toBe(1.0);
@@ -45,162 +30,69 @@ describe("getDefaultConfig", () => {
   });
 });
 
-// ==========================================================================
-// Partial overrides
-// ==========================================================================
-
 describe("partial config overrides", () => {
-  it("should accept partial override of 1 param", () => {
-    const result = ResearchConfigSchema.parse({ numLayers: 6 });
-    expect(result.numLayers).toBe(6);
-    expect(result.alphaThreshold).toBe(128); // default preserved
-  });
-
-  it("should accept override of only alphaThreshold", () => {
-    const result = ResearchConfigSchema.parse({ alphaThreshold: 200 });
-    expect(result.alphaThreshold).toBe(200);
-    expect(result.numLayers).toBe(8);
-  });
-
-  it("should accept multiple overrides", () => {
-    const result = ResearchConfigSchema.parse({
-      numLayers: 8,
-      minCoverage: 0.01,
-      maxLayers: 12,
-    });
-    expect(result.numLayers).toBe(8);
-    expect(result.minCoverage).toBe(0.01);
+  it("accepts a SAM mask override without losing defaults", () => {
+    const result = ResearchConfigSchema.parse({ samMaskLimit: 6 });
+    expect(result.samMaskLimit).toBe(6);
+    expect(result.alphaThreshold).toBe(128);
     expect(result.maxLayers).toBe(12);
   });
-});
 
-// ==========================================================================
-// Min boundary values
-// ==========================================================================
-
-describe("min boundary values", () => {
-  it("should accept numLayers=2 (min)", () => {
-    const result = ResearchConfigSchema.parse({ numLayers: 2 });
-    expect(result.numLayers).toBe(2);
-  });
-
-  it("should accept alphaThreshold=1 (min)", () => {
-    const result = ResearchConfigSchema.parse({ alphaThreshold: 1 });
-    expect(result.alphaThreshold).toBe(1);
-  });
-
-  it("should accept minCoverage=0.001 (min)", () => {
-    const result = ResearchConfigSchema.parse({ minCoverage: 0.001 });
-    expect(result.minCoverage).toBe(0.001);
-  });
-
-  it("should accept maxLayers=3 (min)", () => {
-    const result = ResearchConfigSchema.parse({ maxLayers: 3 });
-    expect(result.maxLayers).toBe(3);
-  });
-
-  it("should accept colorCycleSpeedMul=0.1 (min)", () => {
-    const result = ResearchConfigSchema.parse({ colorCycleSpeedMul: 0.1 });
-    expect(result.colorCycleSpeedMul).toBe(0.1);
-  });
-
-  it("should accept glowIntensityMul=0.0 (min)", () => {
-    const result = ResearchConfigSchema.parse({ glowIntensityMul: 0.0 });
-    expect(result.glowIntensityMul).toBe(0.0);
+  it("accepts multiple live pipeline overrides together", () => {
+    const result = ResearchConfigSchema.parse({
+      minCoverage: 0.01,
+      maxLayers: 10,
+      centralityThreshold: 0.2,
+    });
+    expect(result.minCoverage).toBe(0.01);
+    expect(result.maxLayers).toBe(10);
+    expect(result.centralityThreshold).toBe(0.2);
   });
 });
 
-// ==========================================================================
-// Max boundary values
-// ==========================================================================
-
-describe("max boundary values", () => {
-  it("should accept numLayers=8 (max)", () => {
-    const result = ResearchConfigSchema.parse({ numLayers: 8 });
-    expect(result.numLayers).toBe(8);
+describe("range boundaries", () => {
+  it.each([
+    ["samMaskLimit", 3, 12],
+    ["alphaThreshold", 1, 254],
+    ["minCoverage", 0.001, 0.05],
+    ["maxLayers", 3, 16],
+    ["minRetainedLayers", 1, 12],
+    ["iouDedupeThreshold", 0.3, 0.98],
+    ["uniqueCoverageThreshold", 0.001, 0.1],
+    ["edgeTolerancePx", 1, 10],
+    ["colorCycleSpeedMul", 0.1, 3.0],
+    ["glowIntensityMul", 0.0, 3.0],
+  ] as [string, number, number][])("%s accepts range [%d, %d]", (key, min, max) => {
+    expect(() => ResearchConfigSchema.parse({ [key]: min })).not.toThrow();
+    expect(() => ResearchConfigSchema.parse({ [key]: max })).not.toThrow();
   });
 
-  it("should accept alphaThreshold=254 (max)", () => {
-    const result = ResearchConfigSchema.parse({ alphaThreshold: 254 });
-    expect(result.alphaThreshold).toBe(254);
-  });
-
-  it("should accept minCoverage=0.05 (max)", () => {
-    const result = ResearchConfigSchema.parse({ minCoverage: 0.05 });
-    expect(result.minCoverage).toBe(0.05);
-  });
-
-  it("should accept maxLayers=16 (max)", () => {
-    const result = ResearchConfigSchema.parse({ maxLayers: 16 });
-    expect(result.maxLayers).toBe(16);
-  });
-
-  it("should accept colorCycleSpeedMul=3.0 (max)", () => {
-    const result = ResearchConfigSchema.parse({ colorCycleSpeedMul: 3.0 });
-    expect(result.colorCycleSpeedMul).toBe(3.0);
+  it("accepts null samMaskLimit to defer to complexity scoring", () => {
+    expect(ResearchConfigSchema.parse({ samMaskLimit: null }).samMaskLimit).toBeNull();
   });
 });
 
-// ==========================================================================
-// Invalid values (out of range)
-// ==========================================================================
-
-describe("invalid out-of-range values", () => {
-  it("should reject numLayers=1 (below min)", () => {
-    expect(() => ResearchConfigSchema.parse({ numLayers: 1 })).toThrow();
-  });
-
-  it("should reject numLayers=9 (above max)", () => {
-    expect(() => ResearchConfigSchema.parse({ numLayers: 9 })).toThrow();
-  });
-
-  it("should reject alphaThreshold=0 (below min)", () => {
-    expect(() => ResearchConfigSchema.parse({ alphaThreshold: 0 })).toThrow();
-  });
-
-  it("should reject alphaThreshold=255 (above max)", () => {
-    expect(() => ResearchConfigSchema.parse({ alphaThreshold: 255 })).toThrow();
-  });
-
-  it("should reject minCoverage=0.0001 (below min)", () => {
-    expect(() => ResearchConfigSchema.parse({ minCoverage: 0.0001 })).toThrow();
-  });
-
-  it("should reject minCoverage=0.1 (above max)", () => {
-    expect(() => ResearchConfigSchema.parse({ minCoverage: 0.1 })).toThrow();
-  });
-
-  it("should reject maxLayers=2 (below min)", () => {
-    expect(() => ResearchConfigSchema.parse({ maxLayers: 2 })).toThrow();
-  });
-
-  it("should reject maxLayers=17 (above max)", () => {
-    expect(() => ResearchConfigSchema.parse({ maxLayers: 17 })).toThrow();
-  });
-
-  it("should reject non-integer numLayers", () => {
-    expect(() => ResearchConfigSchema.parse({ numLayers: 4.5 })).toThrow();
-  });
-
-  it("should reject non-integer alphaThreshold", () => {
-    expect(() => ResearchConfigSchema.parse({ alphaThreshold: 128.5 })).toThrow();
-  });
-
-  it("should reject colorCycleSpeedMul=0 (below min)", () => {
-    expect(() => ResearchConfigSchema.parse({ colorCycleSpeedMul: 0 })).toThrow();
-  });
-
-  it("should reject colorCycleSpeedMul=4 (above max)", () => {
-    expect(() => ResearchConfigSchema.parse({ colorCycleSpeedMul: 4 })).toThrow();
+describe("invalid values", () => {
+  it.each([
+    ["samMaskLimit", 2],
+    ["samMaskLimit", 13],
+    ["alphaThreshold", 0],
+    ["alphaThreshold", 255],
+    ["minCoverage", 0.0001],
+    ["minCoverage", 0.1],
+    ["maxLayers", 2],
+    ["maxLayers", 17],
+    ["minRetainedLayers", 0],
+    ["minRetainedLayers", 13],
+    ["colorCycleSpeedMul", 0],
+    ["saturationBoostMul", 3.1],
+  ] as [string, number][])("%s rejects %d", (key, val) => {
+    expect(() => ResearchConfigSchema.parse({ [key]: val })).toThrow();
   });
 });
-
-// ==========================================================================
-// Constraint validation: simpleEdgeMax < complexEdgeMin
-// ==========================================================================
 
 describe("constraint validation", () => {
-  it("should accept simpleEdgeMax < complexEdgeMin", () => {
+  it("accepts simpleEdgeMax < complexEdgeMin", () => {
     const result = ResearchConfigSchema.parse({
       simpleEdgeMax: 0.1,
       complexEdgeMin: 0.2,
@@ -208,82 +100,18 @@ describe("constraint validation", () => {
     expect(result.simpleEdgeMax).toBe(0.1);
   });
 
-  it("should reject simpleEdgeMax == complexEdgeMin", () => {
+  it("rejects simpleEdgeMax >= complexEdgeMin", () => {
     expect(() =>
       ResearchConfigSchema.parse({
-        simpleEdgeMax: 0.15,
-        complexEdgeMin: 0.15,
+        simpleEdgeMax: 0.2,
+        complexEdgeMin: 0.2,
       }),
     ).toThrow();
-  });
-
-  it("should reject simpleEdgeMax > complexEdgeMin", () => {
     expect(() =>
       ResearchConfigSchema.parse({
         simpleEdgeMax: 0.25,
-        complexEdgeMin: 0.15,
+        complexEdgeMin: 0.2,
       }),
     ).toThrow();
-  });
-});
-
-// ==========================================================================
-// Multiplier application
-// ==========================================================================
-
-describe("multiplier values", () => {
-  it("should accept multiplier at 0.1x", () => {
-    const result = ResearchConfigSchema.parse({
-      colorCycleSpeedMul: 0.1,
-      saturationBoostMul: 0.1,
-      luminanceKeyMul: 0.1,
-    });
-    expect(result.colorCycleSpeedMul).toBe(0.1);
-    expect(result.saturationBoostMul).toBe(0.1);
-    expect(result.luminanceKeyMul).toBe(0.1);
-  });
-
-  it("should accept multiplier at 1.0x", () => {
-    const result = ResearchConfigSchema.parse({ saturationBoostMul: 1.0 });
-    expect(result.saturationBoostMul).toBe(1.0);
-  });
-
-  it("should accept multiplier at 3.0x", () => {
-    const result = ResearchConfigSchema.parse({ saturationBoostMul: 3.0 });
-    expect(result.saturationBoostMul).toBe(3.0);
-  });
-
-  it("should reject multiplier below min for colorCycleSpeedMul", () => {
-    expect(() => ResearchConfigSchema.parse({ colorCycleSpeedMul: 0 })).toThrow();
-  });
-
-  it("should reject multiplier > 3.0 for saturationBoostMul", () => {
-    expect(() => ResearchConfigSchema.parse({ saturationBoostMul: 3.1 })).toThrow();
-  });
-});
-
-// ==========================================================================
-// Additional param ranges
-// ==========================================================================
-
-describe("additional parameter ranges", () => {
-  it("should accept iouDedupeThreshold at bounds", () => {
-    expect(ResearchConfigSchema.parse({ iouDedupeThreshold: 0.3 }).iouDedupeThreshold).toBe(0.3);
-    expect(ResearchConfigSchema.parse({ iouDedupeThreshold: 0.98 }).iouDedupeThreshold).toBe(0.98);
-  });
-
-  it("should reject iouDedupeThreshold out of bounds", () => {
-    expect(() => ResearchConfigSchema.parse({ iouDedupeThreshold: 0.2 })).toThrow();
-    expect(() => ResearchConfigSchema.parse({ iouDedupeThreshold: 0.99 })).toThrow();
-  });
-
-  it("should accept edgeTolerancePx at bounds", () => {
-    expect(ResearchConfigSchema.parse({ edgeTolerancePx: 1 }).edgeTolerancePx).toBe(1);
-    expect(ResearchConfigSchema.parse({ edgeTolerancePx: 10 }).edgeTolerancePx).toBe(10);
-  });
-
-  it("should accept luminanceZones at bounds", () => {
-    expect(ResearchConfigSchema.parse({ luminanceZones: 2 }).luminanceZones).toBe(2);
-    expect(ResearchConfigSchema.parse({ luminanceZones: 8 }).luminanceZones).toBe(8);
   });
 });

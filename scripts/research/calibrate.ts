@@ -3,13 +3,18 @@
 
 import { mkdirSync, writeFileSync, readFileSync, existsSync } from "fs";
 import type { EvalResult, MetricValues } from "./evaluate.js";
-import { compositeScore } from "./evaluate.js";
-import { runFullPipeline, resolveInputImagePath } from "./pipeline-runner.js";
-
+import { runFullPipeline } from "./pipeline-runner.js";
 const DELTA_MIN_FLOOR = 0.01;
-const CALIBRATION_DIR = ".cache/research";
-const CALIBRATION_PATH = `${CALIBRATION_DIR}/calibration.json`;
-const REFERENCE_CACHE_DIR = ".cache/research/reference";
+import {
+  CALIBRATION_DIR,
+  CALIBRATION_PATH,
+  REFERENCE_CACHE_DIR,
+  type EvaluationContractFields,
+  buildRuntimeEvaluationContract,
+  buildStaticEvaluationContract,
+  validatePreparedReference,
+  formatReferenceFingerprint,
+} from "./contract.js";
 
 export interface Stats {
   mean: number;
@@ -22,7 +27,7 @@ export type MetricKey = "M1" | "M2" | "M3" | "M4" | "M5" | "M6" | "M7" | "M8" | 
 
 export type PerMetricStats = Record<MetricKey, Stats>;
 
-export interface CalibrationResult {
+export interface CalibrationResult extends EvaluationContractFields {
   baselineScore: number;
   deltaMin: number;
   compositeStats: Stats;
@@ -69,13 +74,15 @@ export function computeDeltaMin(compositeSigma: number): number {
 export function buildCalibrationResult(
   results: EvalResult[],
   modelVersion: string,
+  contract: EvaluationContractFields = buildStaticEvaluationContract(),
 ): CalibrationResult {
-  const compositeScores = results.map((r) => compositeScore(r.metrics));
-  const compositeStatsResult = computeStats(compositeScores);
+  const qualityScores = results.map((r) => r.qualityScore);
+  const compositeStatsResult = computeStats(qualityScores);
   const deltaMin = computeDeltaMin(compositeStatsResult.std);
   const perMetricStats = computePerMetricStats(results);
 
   return {
+    ...contract,
     baselineScore: compositeStatsResult.mean,
     deltaMin,
     compositeStats: compositeStatsResult,
@@ -153,7 +160,7 @@ export async function runCalibrationLoop(
 
       results.push(result);
       const elapsed = ((Date.now() - runStart) / 1000).toFixed(1);
-      console.log(`[calibrate ${i}/${runs}] composite=${compositeScore(result.metrics).toFixed(4)} (${elapsed}s)\n`);
+      console.log(`[calibrate ${i}/${runs}] quality=${result.qualityScore.toFixed(4)} (${elapsed}s)\n`);
     } catch (err) {
       const elapsed = ((Date.now() - runStart) / 1000).toFixed(1);
       console.error(`[calibrate ${i}/${runs}] FAILED (${elapsed}s): ${err instanceof Error ? err.message : err}\n`);
@@ -172,19 +179,16 @@ if (process.argv[1]?.endsWith("calibrate.ts")) {
   console.log(`Calibration: ${runs} runs, model=${modelVersion}`);
 
   // Verify prerequisites
-  if (!existsSync(`${REFERENCE_CACHE_DIR}/metadata.json`)) {
-    console.error("Reference not prepared. Run: npm run research:prepare -- source.mp4");
-    process.exit(1);
-  }
+  const refMeta = validatePreparedReference();
+  const contract = buildRuntimeEvaluationContract(refMeta);
+  console.log(`Reference: ${formatReferenceFingerprint(refMeta.sourceFingerprint)} (${contract.vmafMode})`);
 
-  const inputPath = resolveInputImagePath(cwd);
+  const inputPath = refMeta.researchInputPath;
   console.log(`Input image: ${inputPath}`);
   console.log("Running full pipeline (layers → video → evaluate) per run...\n");
 
   // Dynamic import to avoid pulling heavy deps at module load
   import("./evaluate.js").then(async ({ evaluateVideo }) => {
-    const refMeta = JSON.parse(readFileSync(`${REFERENCE_CACHE_DIR}/metadata.json`, "utf-8"));
-
     const results = await runCalibrationLoop(runs, cwd, inputPath, refMeta, {
       runPipeline: (c, i) => runFullPipeline(c, i),
       evaluate: evaluateVideo,
@@ -203,7 +207,7 @@ if (process.argv[1]?.endsWith("calibrate.ts")) {
       process.exit(1);
     }
 
-    const calibration = buildCalibrationResult(results, modelVersion);
+    const calibration = buildCalibrationResult(results, modelVersion, contract);
     const outPath = saveCalibration(calibration);
 
     console.log(`\nCalibration complete (${results.length}/${runs} successful runs)`);

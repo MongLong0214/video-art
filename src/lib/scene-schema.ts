@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 export const getValidPeriods = (duration: number): number[] => {
+  if (duration <= 0) throw new Error("Duration must be positive");
   const divisors: number[] = [];
   for (let i = 1; i <= duration; i++) {
     if (duration % i === 0) divisors.push(i);
@@ -52,7 +53,7 @@ const animationSchema = z.object({
 
 const layerSchema = z.object({
   id: z.string(),
-  file: z.string(),
+  file: z.string().regex(/^[\w\-\/\.]+\.png$/, "Layer file must be a relative PNG path"),
   zIndex: z.number().int().min(0),
   opacity: z.number().min(0).max(1).default(1),
   role: layerRoleSchema.optional(),
@@ -135,7 +136,7 @@ export type AudioConfig = z.infer<typeof audioSchema>;
 
 export interface LayerCandidate {
   id: string;
-  source: "qwen-base" | "qwen-recursive" | "depth-split";
+  source: "qwen-base" | "qwen-recursive" | "luminance-split" | "sam2-segment";
   filePath: string;
   width: number;
   height: number;

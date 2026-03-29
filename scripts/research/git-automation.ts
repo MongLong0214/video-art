@@ -147,12 +147,30 @@ export function ensureBranch(tag: string, cwd: string): void {
   }
 }
 
-export function checkDirty(cwd: string): boolean {
+function parseDirtyPaths(statusOutput: string): string[] {
+  return statusOutput
+    .split("\n")
+    .map((line) => line.trimEnd())
+    .filter(Boolean)
+    .map((line) => line.slice(3).trim())
+    .map((pathSpec) => {
+      const renameParts = pathSpec.split(" -> ");
+      return renameParts[renameParts.length - 1];
+    });
+}
+
+export function checkDirty(cwd: string, allowedPaths: string[] = []): boolean {
   const output = execFileSync("git", ["status", "--porcelain"], {
     cwd,
     encoding: "utf-8",
   });
-  return output.trim().length > 0;
+  if (output.trim().length === 0) {
+    return false;
+  }
+
+  const allowed = new Set(allowedPaths);
+  const dirtyPaths = parseDirtyPaths(output);
+  return dirtyPaths.some((dirtyPath) => !allowed.has(dirtyPath));
 }
 
 export function gitCommitConfig(message: string, cwd: string): string {

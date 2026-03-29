@@ -38,10 +38,13 @@ async function createTestImage(
 describe("validateAndPrepare", () => {
   it("should accept a valid PNG under limits", async () => {
     const img = await createTestImage("valid.png", 512, 512);
-    const result = await validateAndPrepare(img);
+    const result = await validateAndPrepare(img, {
+      outputDir: path.join(TMP, "prepared"),
+    });
     expect(result.width).toBe(512);
     expect(result.height).toBe(512);
     expect(result.wasResized).toBe(false);
+    expect(result.filePath).toContain(path.join(TMP, "prepared"));
   });
 
   it("should reject unsupported formats", async () => {
@@ -60,7 +63,9 @@ describe("validateAndPrepare", () => {
 
   it("should auto-resize images exceeding 4096px", async () => {
     const img = await createTestImage("large.png", 5000, 3000);
-    const result = await validateAndPrepare(img);
+    const result = await validateAndPrepare(img, {
+      outputDir: path.join(TMP, "prepared"),
+    });
     expect(result.wasResized).toBe(true);
     expect(result.width).toBeLessThanOrEqual(4096);
     expect(result.height).toBeLessThanOrEqual(4096);

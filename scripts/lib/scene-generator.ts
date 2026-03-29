@@ -13,8 +13,6 @@ export interface RetainedLayer {
 // Multiplier keys from ResearchConfig for scene animation scaling
 interface SceneMultipliers {
   colorCycleSpeedMul: number;
-  parallaxDepthMul: number;
-  waveAmplitudeMul: number;
   glowIntensityMul: number;
   saturationBoostMul: number;
   luminanceKeyMul: number;
@@ -22,12 +20,22 @@ interface SceneMultipliers {
 
 const DEFAULT_MULTIPLIERS: SceneMultipliers = {
   colorCycleSpeedMul: 1.0,
-  parallaxDepthMul: 1.0,
-  waveAmplitudeMul: 1.0,
   glowIntensityMul: 1.0,
   saturationBoostMul: 1.0,
   luminanceKeyMul: 1.0,
 };
+
+function quantizeLoopSpeed(
+  speed: number,
+  period: number,
+  duration: number,
+): number {
+  const cyclesPerLoop = duration / period;
+  if (!Number.isFinite(cyclesPerLoop) || cyclesPerLoop <= 0) {
+    return speed;
+  }
+  return Math.round(speed * cyclesPerLoop) / cyclesPerLoop;
+}
 
 // Role-based preset factory: returns animation config for a given role
 // Period selection: background roles get longer periods, detail/fg get shorter
@@ -48,55 +56,54 @@ function getRolePreset(
     return periods[idx];
   };
 
-  // Global tempo scale: 0.7 = 30% slower across all animations
-  const tempo = 0.7;
+  const tempo = 0.85;
+  const colorCycle = (baseSpeed: number, tier: number) => {
+    const period = pickPeriod(tier);
+    return {
+      speed: quantizeLoopSpeed(
+        baseSpeed * mul.colorCycleSpeedMul * tempo,
+        period,
+        duration,
+      ),
+      period,
+      phaseOffset,
+    };
+  };
 
   const presets: Record<LayerRole, AnimationConfig> = {
     "background-plate": {
-      colorCycle: { speed: 5 * mul.colorCycleSpeedMul * tempo, period: pickPeriod(0), phaseOffset },
-      wave: { amplitude: 1 * mul.waveAmplitudeMul, frequency: 0.2 * tempo, period: pickPeriod(0) },
+      colorCycle: colorCycle(5, 0),
       glow: { intensity: 0.1 * mul.glowIntensityMul, pulse: 0.2 * tempo, period: pickPeriod(0) },
-      parallax: { depth: 0.1 * mul.parallaxDepthMul },
       saturationBoost: 2.5 * mul.saturationBoostMul,
       luminanceKey: 0.4 * mul.luminanceKeyMul,
     },
     background: {
-      colorCycle: { speed: 8 * mul.colorCycleSpeedMul * tempo, period: pickPeriod(1), phaseOffset },
-      wave: { amplitude: 1.5 * mul.waveAmplitudeMul, frequency: 0.3 * tempo, period: pickPeriod(1) },
+      colorCycle: colorCycle(8, 1),
       glow: { intensity: 0.15 * mul.glowIntensityMul, pulse: 0.3 * tempo, period: pickPeriod(1) },
-      parallax: { depth: 0.2 * mul.parallaxDepthMul },
       saturationBoost: 2.3 * mul.saturationBoostMul,
       luminanceKey: 0.45 * mul.luminanceKeyMul,
     },
     midground: {
-      colorCycle: { speed: 10 * mul.colorCycleSpeedMul * tempo, period: pickPeriod(2), phaseOffset },
-      wave: { amplitude: 2 * mul.waveAmplitudeMul, frequency: 0.35 * tempo, period: pickPeriod(2) },
+      colorCycle: colorCycle(10, 2),
       glow: { intensity: 0.2 * mul.glowIntensityMul, pulse: 0.4 * tempo, period: pickPeriod(2) },
-      parallax: { depth: 0.3 * mul.parallaxDepthMul },
       saturationBoost: 2.5 * mul.saturationBoostMul,
       luminanceKey: 0.55 * mul.luminanceKeyMul,
     },
     subject: {
-      colorCycle: { speed: 10 * mul.colorCycleSpeedMul * tempo, period: pickPeriod(2), phaseOffset },
-      wave: { amplitude: 2 * mul.waveAmplitudeMul, frequency: 0.4 * tempo, period: pickPeriod(2) },
+      colorCycle: colorCycle(10, 2),
       glow: { intensity: 0.25 * mul.glowIntensityMul, pulse: 0.45 * tempo, period: pickPeriod(3) },
-      parallax: { depth: 0.35 * mul.parallaxDepthMul },
       saturationBoost: 2.8 * mul.saturationBoostMul,
       luminanceKey: 0.6 * mul.luminanceKeyMul,
     },
     detail: {
-      colorCycle: { speed: 15 * mul.colorCycleSpeedMul * tempo, period: pickPeriod(4), phaseOffset },
-      wave: { amplitude: 0.5 * mul.waveAmplitudeMul, frequency: 0.5 * tempo, period: pickPeriod(4) },
+      colorCycle: colorCycle(15, 4),
       glow: { intensity: 0.3 * mul.glowIntensityMul, pulse: 0.5 * tempo, period: pickPeriod(4) },
-      parallax: { depth: 0.4 * mul.parallaxDepthMul },
       saturationBoost: 2.2 * mul.saturationBoostMul,
       luminanceKey: 0.65 * mul.luminanceKeyMul,
     },
     "foreground-occluder": {
-      colorCycle: { speed: 8 * mul.colorCycleSpeedMul * tempo, period: pickPeriod(3), phaseOffset },
-      wave: { amplitude: 1.2 * mul.waveAmplitudeMul, frequency: 0.3 * tempo, period: pickPeriod(3) },
+      colorCycle: colorCycle(8, 3),
       glow: { intensity: 0.15 * mul.glowIntensityMul, pulse: 0.3 * tempo, period: pickPeriod(3) },
-      parallax: { depth: 0.45 * mul.parallaxDepthMul },
       saturationBoost: 1.8 * mul.saturationBoostMul,
       luminanceKey: 0.5 * mul.luminanceKeyMul,
     },
@@ -114,8 +121,6 @@ export async function generateSceneJson(
 ): Promise<SceneConfig> {
   const mul: SceneMultipliers = {
     colorCycleSpeedMul: config?.colorCycleSpeedMul ?? 1.0,
-    parallaxDepthMul: config?.parallaxDepthMul ?? 1.0,
-    waveAmplitudeMul: config?.waveAmplitudeMul ?? 1.0,
     glowIntensityMul: config?.glowIntensityMul ?? 1.0,
     saturationBoostMul: config?.saturationBoostMul ?? 1.0,
     luminanceKeyMul: config?.luminanceKeyMul ?? 1.0,

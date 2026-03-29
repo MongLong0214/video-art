@@ -3,9 +3,7 @@ import path from "node:path";
 import crypto from "node:crypto";
 import type { LayerCandidate } from "../../src/lib/scene-schema.js";
 import type { ResearchConfig } from "../research/research-config.js";
-
-const DEFAULT_ALPHA_THRESHOLD = 128;
-const DEFAULT_MIN_COVERAGE = 0.005;
+import { ALPHA_THRESHOLD, MIN_COVERAGE } from "./pipeline-constants.js";
 
 /**
  * Extract layer candidates from an RGBA PNG using BFS connected component analysis.
@@ -21,8 +19,8 @@ export async function extractCandidates(
   outputDir: string,
   config?: Partial<ResearchConfig>,
 ): Promise<LayerCandidate[]> {
-  const alphaThreshold = config?.alphaThreshold ?? DEFAULT_ALPHA_THRESHOLD;
-  const minCoverage = config?.minCoverage ?? DEFAULT_MIN_COVERAGE;
+  const alphaThreshold = config?.alphaThreshold ?? ALPHA_THRESHOLD;
+  const minCoverage = config?.minCoverage ?? MIN_COVERAGE;
   const { data, info } = await sharp(rgbaPath)
     .ensureAlpha()
     .raw()

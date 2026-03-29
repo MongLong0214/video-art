@@ -37,6 +37,8 @@ recordings/
 results.tsv
 source.mp4
 input.png
+prepared-*.png
 
 # Reference tracks (copyright)
 audio/references/
+.cache/test-baseline.json
