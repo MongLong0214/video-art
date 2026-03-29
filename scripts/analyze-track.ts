@@ -8,7 +8,7 @@ import { promisify } from "node:util";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { validateFilePath } from "./lib/validate-file-path.js";
-import { generatePreset, generateTidalPattern, generateSceneAudio } from "./lib/track-analyzer.js";
+import { generatePreset, generateTidalPattern, generateTidalSections, generateSceneAudio } from "./lib/track-analyzer.js";
 import { presetSchema } from "./lib/genre-preset.js";
 
 const execFile = promisify(execFileCb);
@@ -131,17 +131,57 @@ const main = async () => {
       : "~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~";
 
     const tidalContent = `-- Auto-generated from: ${path.basename(resolvedInput)}
--- BPM: ${analysis.bpm.value} | Key: ${analysis.key}
-
-d1 $ s "kick" # n "${kickPattern}"
-
-d2 $ s "hat" # n "${hatPattern}"
+-- Key: ${analysis.key}
+${generateTidalSections(analysis)}
 `;
     const tidalPath = path.join(outputDir, "patterns.tidal");
     fs.writeFileSync(tidalPath, tidalContent);
     console.log(`Patterns: ${tidalPath}`);
 
-    // 5. Generate scene-audio.json
+    // 5. Extract samples from demucs stems (T08 AC-12: drums + bass + other→FX)
+    const SAMPLE_EXTRACT = path.join(PROJECT_ROOT, "audio", "analyzer", "sample_extract.py");
+    const stemsDir = path.join(outputDir, "stems");
+    const samplesDir = path.join(outputDir, "samples");
+    if (fs.existsSync(stemsDir) && fs.existsSync(SAMPLE_EXTRACT)) {
+      const stemTypes = [
+        { file: "drums.wav", type: "drums" },
+        { file: "bass.wav", type: "bass" },
+        { file: "other.wav", type: "other" },
+      ];
+      // Merge manifests from all stem extractions (each overwrites manifest.json)
+      const mergedManifest: Record<string, unknown[]> = {};
+      for (const { file, type } of stemTypes) {
+        const stemPath = path.join(stemsDir, file);
+        if (fs.existsSync(stemPath)) {
+          try {
+            await execFile("python3", [SAMPLE_EXTRACT, stemPath, samplesDir, type], {
+              timeout: 60_000, cwd: PROJECT_ROOT,
+            });
+            // Read per-stem manifest and merge
+            const manifestPath = path.join(samplesDir, "manifest.json");
+            if (fs.existsSync(manifestPath)) {
+              const stemManifest = JSON.parse(fs.readFileSync(manifestPath, "utf-8"));
+              for (const [hitType, hits] of Object.entries(stemManifest)) {
+                mergedManifest[hitType] = [...(mergedManifest[hitType] ?? []), ...(hits as unknown[])];
+              }
+            }
+            console.log(`Samples extracted: ${type}`);
+          } catch (e) {
+            console.warn(`Sample extraction failed for ${type}: ${(e as Error).message}`);
+          }
+        }
+      }
+      // Write merged manifest with all stem types
+      if (Object.keys(mergedManifest).length > 0) {
+        fs.writeFileSync(
+          path.join(samplesDir, "manifest.json"),
+          JSON.stringify(mergedManifest, null, 2),
+        );
+        console.log(`Manifest merged: ${Object.keys(mergedManifest).join(", ")}`);
+      }
+    }
+
+    // 6. Generate scene-audio.json
     const sceneAudio = generateSceneAudio(analysis, filename);
     const scenePath = path.join(outputDir, "scene-audio.json");
     fs.writeFileSync(scenePath, JSON.stringify(sceneAudio, null, 2));

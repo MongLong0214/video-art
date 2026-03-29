@@ -103,17 +103,89 @@ def composite_similarity(ref_path, synth_path, sr=22050):
     }
 
 
-if __name__ == "__main__":
-    if len(sys.argv) < 3:
-        print(f"Usage: python3 {sys.argv[0]} <reference.wav> <synthesized.wav> [output.json]", file=sys.stderr)
-        sys.exit(1)
+def per_stem_scores(ref_stems_dir, synth_stems_dir, sr=22050):
+    """Per-stem comparison (AC-9.5). Returns scores for each stem type."""
+    stem_types = ['drums', 'bass', 'vocals', 'other']
+    results = {}
+    for stem in stem_types:
+        ref_path = os.path.join(ref_stems_dir, f'{stem}.wav')
+        synth_path = os.path.join(synth_stems_dir, f'{stem}.wav')
+        if os.path.exists(ref_path) and os.path.exists(synth_path):
+            score = composite_similarity(ref_path, synth_path, sr=sr)
+            results[stem] = {'score': score['total_score'], 'breakdown': score['breakdown']}
+    return results
 
-    ref = os.path.realpath(sys.argv[1])
-    synth = os.path.realpath(sys.argv[2])
+
+def dual_score(ref_path, synth_path, hybrid_path=None, ref_stems_dir=None,
+               synth_stems_dir=None, sr=22050):
+    """Dual-score calibration (AC-9.6). synthesis_only + hybrid + per-stem."""
+    synthesis = composite_similarity(ref_path, synth_path, sr=sr)
+
+    result = {
+        'synthesis_only_score': synthesis['total_score'],
+        'mode': 'synthesis_only',
+        'breakdown': {
+            'synthesis_only': synthesis['breakdown'],
+        },
+        'weights': synthesis['weights'],
+        'lufs_normalized': synthesis.get('lufs_normalized', False),
+    }
+
+    if synthesis.get('warning'):
+        result['warning'] = synthesis['warning']
+
+    # Hybrid score if hybrid render available
+    if hybrid_path and os.path.exists(hybrid_path):
+        hybrid = composite_similarity(ref_path, hybrid_path, sr=sr)
+        result['hybrid_score'] = hybrid['total_score']
+        result['mode'] = 'hybrid'
+        result['breakdown']['hybrid'] = hybrid['breakdown']
+
+    # Per-stem scores if stems available
+    if ref_stems_dir and synth_stems_dir:
+        stems = per_stem_scores(ref_stems_dir, synth_stems_dir, sr=sr)
+        if stems:
+            result['breakdown']['per_stem'] = {}
+            for stem, data in stems.items():
+                result['breakdown']['per_stem'][stem] = {
+                    'score': data['score'],
+                }
+
+    # Per-stem targets (AC-9.6)
+    result['per_stem_targets'] = {
+        'drums': 80, 'bass': 75, 'synth': 70,
+    }
+
+    # Quality label
+    hybrid_s = result.get('hybrid_score', result['synthesis_only_score'])
+    if hybrid_s >= 75:
+        result['quality'] = 'Production Ready'
+    elif hybrid_s >= 65:
+        result['quality'] = 'Good'
+    else:
+        result['quality'] = 'Needs Work'
+
+    return result
+
+
+if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser(description='Calibrate synthesis vs reference')
+    parser.add_argument('reference', help='Reference WAV/FLAC path')
+    parser.add_argument('synthesized', help='Synthesized WAV/FLAC path')
+    parser.add_argument('--hybrid', help='Hybrid render WAV path', default=None)
+    parser.add_argument('--ref-stems', help='Reference stems directory', default=None)
+    parser.add_argument('--synth-stems', help='Synthesized stems directory', default=None)
+    parser.add_argument('--output', '-o', help='Output JSON path', default=None)
+    args = parser.parse_args()
+
+    project_root = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', '..'))
 
     # Path validation
-    project_root = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', '..'))
-    for p in [ref, synth]:
+    paths_to_check = [os.path.realpath(args.reference), os.path.realpath(args.synthesized)]
+    if args.hybrid:
+        paths_to_check.append(os.path.realpath(args.hybrid))
+    for p in paths_to_check:
         if not p.startswith(project_root):
             print(f"Error: path outside project root: {p}", file=sys.stderr)
             sys.exit(1)
@@ -121,18 +193,31 @@ if __name__ == "__main__":
             print(f"Error: unsupported format (need .wav/.flac): {p}", file=sys.stderr)
             sys.exit(1)
 
-    result = composite_similarity(ref, synth)
+    result = dual_score(
+        os.path.realpath(args.reference),
+        os.path.realpath(args.synthesized),
+        hybrid_path=os.path.realpath(args.hybrid) if args.hybrid else None,
+        ref_stems_dir=os.path.realpath(args.ref_stems) if args.ref_stems else None,
+        synth_stems_dir=os.path.realpath(args.synth_stems) if args.synth_stems else None,
+    )
 
-    if len(sys.argv) > 3:
-        out_path = os.path.realpath(sys.argv[3])
-        if not out_path.startswith(project_root):
-            print(f"Error: output path outside project root", file=sys.stderr)
-            sys.exit(1)
-        os.makedirs(os.path.dirname(out_path) or '.', exist_ok=True)
-        with open(out_path, 'w') as f:
-            json.dump(result, f, indent=2)
-        print(f"Calibration saved: {out_path}")
+    # AC-9.4: default save path = out/analysis/{filename}/calibration.json
+    if args.output:
+        out_path = os.path.realpath(args.output)
     else:
-        print(json.dumps(result, indent=2))
+        # Derive from synthesized file path
+        synth_dir = os.path.dirname(os.path.realpath(args.synthesized))
+        out_path = os.path.join(synth_dir, 'calibration.json')
 
-    print(f"Score: {result['total_score']}/100")
+    if not out_path.startswith(project_root):
+        print(f"Error: output path outside project root", file=sys.stderr)
+        sys.exit(1)
+    os.makedirs(os.path.dirname(out_path) or '.', exist_ok=True)
+    with open(out_path, 'w') as f:
+        json.dump(result, f, indent=2)
+    print(f"Calibration saved: {out_path}")
+
+    print(f"Synthesis: {result['synthesis_only_score']}/100", end='')
+    if 'hybrid_score' in result:
+        print(f" | Hybrid: {result['hybrid_score']}/100", end='')
+    print(f" | {result['quality']}")

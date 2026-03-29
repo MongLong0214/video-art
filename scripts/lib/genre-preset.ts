@@ -60,6 +60,14 @@ const fxDefaultsSchema = z.object({
 
 const stemGroupsSchema = z.record(z.string(), z.array(z.string()));
 
+const sectionSchema = z.object({
+  label: z.string(),
+  start: z.number().min(0),
+  end: z.number().min(0),
+  synthOverrides: z.record(z.string(), z.record(z.string(), z.number())).optional(),
+  fxOverrides: z.record(z.string(), z.number()).optional(),
+}).refine((s) => s.end > s.start, "Section end must be after start");
+
 export const presetSchema = z.object({
   name: z.string().regex(/^[a-zA-Z0-9_-]+$/),
   bpm: bpmSchema,
@@ -85,6 +93,7 @@ export const presetSchema = z.object({
   }),
   fxDefaults: fxDefaultsSchema,
   stemGroups: stemGroupsSchema,
+  sections: z.array(sectionSchema).optional(),
 });
 
 export type Preset = z.infer<typeof presetSchema>;

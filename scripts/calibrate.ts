@@ -10,11 +10,17 @@ if (!ref || !synth) {
   process.exit(1);
 }
 
-validateFilePath(ref, PROJECT_ROOT, [".wav", ".flac"]);
-validateFilePath(synth, PROJECT_ROOT, [".wav", ".flac"]);
+if (!validateFilePath(ref, PROJECT_ROOT, [".wav", ".flac"])) {
+  console.error("Invalid reference path:", ref);
+  process.exit(1);
+}
+if (!validateFilePath(synth, PROJECT_ROOT, [".wav", ".flac"])) {
+  console.error("Invalid synthesized path:", synth);
+  process.exit(1);
+}
 
 const args = [path.join(PROJECT_ROOT, "audio/analyzer/calibrate.py"), ref, synth];
-if (outJson) args.push(outJson);
+if (outJson) args.push("--output", outJson);
 
 try {
   const result = execFileSync("python3", args, { cwd: PROJECT_ROOT, encoding: "utf-8", maxBuffer: 10 * 1024 * 1024 });

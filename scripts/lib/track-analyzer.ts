@@ -25,7 +25,20 @@ interface AnalysisResult {
   mfcc: { mean: number[]; std: number[] } | null;
   spectral_contrast: { mean: number[]; std: number[] } | null;
   danceability: { score: number } | null;
+  pitch_contour: {
+    tracker_used: string;
+    note_events: { time: number; freq: number; duration: number; velocity: number; slide: boolean }[];
+  } | null;
   warnings: string[];
+}
+
+// === Section types (AC-8.1) ===
+interface SectionConfig {
+  label: string;
+  start: number;
+  end: number;
+  synthOverrides?: Record<string, Record<string, number>>;
+  fxOverrides?: Record<string, number>;
 }
 
 // === BPM ===
@@ -140,6 +153,66 @@ export const quantizeOnsets = (positions: number[], bpm: number): string => {
 
 export const generateTidalPattern = quantizeOnsets;
 
+// === Section-aware Tidal output (AC-8.7) ===
+export const generateTidalSections = (
+  analysis: AnalysisResult,
+): string => {
+  const bpm = analysis.bpm?.value ?? 130;
+  const sections = analysis.structure?.segments ?? [];
+  const kickPositions = analysis.kick_pattern?.positions ?? [];
+  const hatPositions = analysis.hat_pattern?.positions ?? [];
+
+  if (sections.length === 0) {
+    // No sections — single block (backward compat)
+    const kick = quantizeOnsets(kickPositions, bpm);
+    const hat = quantizeOnsets(hatPositions, bpm);
+    return `-- BPM: ${bpm}\n\nd1 $ s "kick" # n "${kick}"\n\nd2 $ s "hat" # n "${hat}"\n`;
+  }
+
+  const lines: string[] = [`-- BPM: ${bpm}`, `-- Sections: ${sections.map((s) => s.label).join(" → ")}`, ""];
+
+  for (const seg of sections) {
+    const segKicks = kickPositions.filter((t) => t >= seg.start && t < seg.end);
+    const segHats = hatPositions.filter((t) => t >= seg.start && t < seg.end);
+    const kick = quantizeOnsets(segKicks, bpm);
+    const hat = quantizeOnsets(segHats, bpm);
+
+    lines.push(`-- ${seg.label} (${seg.start.toFixed(1)}s - ${seg.end.toFixed(1)}s)`);
+
+    switch (seg.label) {
+      case "drop":
+        lines.push(`d1 $ s "kick" # n "${kick}"`);
+        lines.push(`d2 $ s "hat" # n "${hat}"`);
+        lines.push(`d3 $ s "bass" # n "${kick}"`);
+        break;
+      case "break":
+        lines.push(`-- d1 $ silence`);
+        lines.push(`d2 $ s "hat" # n "${hat}" # gain 0.6`);
+        lines.push(`d4 $ s "pad"`);
+        break;
+      case "build":
+        lines.push(`d1 $ s "kick" # n "${kick}" # gain 0.7`);
+        lines.push(`d2 $ s "hat" # n "${hat}"`);
+        lines.push(`d5 $ s "riser"`);
+        break;
+      case "intro":
+        lines.push(`-- d1 $ silence`);
+        lines.push(`d4 $ s "pad" # gain 0.5`);
+        break;
+      case "outro":
+        lines.push(`d1 $ s "kick" # n "${kick}" # gain 0.5`);
+        lines.push(`d4 $ s "pad" # gain 0.4`);
+        break;
+      default:
+        lines.push(`d1 $ s "kick" # n "${kick}"`);
+        lines.push(`d2 $ s "hat" # n "${hat}"`);
+    }
+    lines.push("");
+  }
+
+  return lines.join("\n");
+};
+
 // === Scene audio generation ===
 export const generateSceneAudio = (
   analysis: AnalysisResult,
@@ -154,6 +227,114 @@ export const generateSceneAudio = (
     bpm: Math.round(bpm),
     preset: presetName,
   };
+};
+
+// === RMS envelope following (AC-8.3) ===
+export const mapRmsToOverrides = (energyCurve: number[], segStart: number, segEnd: number): { compress: number; drive: number } => {
+  if (!energyCurve.length) return { compress: 0.5, drive: 0.3 };
+  const len = energyCurve.length;
+  const startIdx = Math.floor((segStart) * len);
+  const endIdx = Math.ceil((segEnd) * len);
+  const slice = energyCurve.slice(Math.max(0, startIdx), Math.min(len, endIdx));
+  if (!slice.length) return { compress: 0.5, drive: 0.3 };
+  const avgRms = slice.reduce((a, b) => a + b, 0) / slice.length;
+  // High RMS → more compression, more drive
+  return {
+    compress: avgRms > 0.7 ? 0.8 : avgRms > 0.4 ? 0.5 : 0.25,
+    drive: avgRms > 0.7 ? 0.6 : avgRms > 0.4 ? 0.35 : 0.15,
+  };
+};
+
+// === Accent extraction from pitch_contour velocity (AC-8.4) ===
+export const extractAccents = (
+  noteEvents: { time: number; velocity: number }[],
+  segStart: number,
+  segEnd: number,
+  threshold = 0.7,
+): number[] => {
+  return noteEvents
+    .filter((n) => n.time >= segStart && n.time < segEnd && n.velocity > threshold)
+    .map((n) => n.time);
+};
+
+// === Section overrides by label (AC-8.2) ===
+const buildSectionOverrides = (
+  label: string,
+  energyCurve: number[],
+  segStartNorm: number,
+  segEndNorm: number,
+  bassType: string,
+): { synthOverrides: Record<string, Record<string, number>>; fxOverrides: Record<string, number> } => {
+  const rms = mapRmsToOverrides(energyCurve, segStartNorm, segEndNorm);
+
+  switch (label) {
+    case "drop":
+      return {
+        synthOverrides: {
+          kick: { drive: 0.7 },
+          ...(bassType === "acid" ? { acid_bass: { cutoff: 2200, resonance: 2.5, dist: 0.4 } } : { bass: { cutoff: 1200 } }),
+        },
+        fxOverrides: { compress: rms.compress, drive: rms.drive, saturate: 0.3 },
+      };
+    case "break":
+      return {
+        synthOverrides: {
+          pad: { attack: 1.0, release: 2.5, filterEnv: 0.5 },
+        },
+        fxOverrides: { compress: 0.2, drive: 0.1, saturate: 0.1 },
+      };
+    case "build":
+      return {
+        synthOverrides: {
+          riser: { sweepRange: 0.9, noiseAmount: 0.5 },
+        },
+        fxOverrides: { compress: rms.compress, drive: rms.drive * 1.2, saturate: 0.4 },
+      };
+    case "intro":
+      return {
+        synthOverrides: {
+          pad: { attack: 1.5, release: 3.0, filterEnv: 0.2 },
+        },
+        fxOverrides: { compress: 0.15, drive: 0.05, saturate: 0.05 },
+      };
+    case "outro":
+      return {
+        synthOverrides: {
+          pad: { attack: 1.0, release: 3.0, filterEnv: 0.3 },
+        },
+        fxOverrides: { compress: 0.2, drive: 0.1, saturate: 0.1 },
+      };
+    default:
+      return {
+        synthOverrides: {},
+        fxOverrides: { compress: rms.compress, drive: rms.drive },
+      };
+  }
+};
+
+// === Generate sections from analysis structure (AC-8.1, AC-8.2, AC-8.3) ===
+export const generateSections = (
+  analysis: AnalysisResult,
+): SectionConfig[] => {
+  const segments = analysis.structure?.segments;
+  if (!segments || segments.length === 0) return [];
+
+  const energyCurve = analysis.energy_curve ?? [];
+  const totalDuration = segments[segments.length - 1]?.end ?? 1;
+  const bassType = analysis.bass_profile?.type ?? "rolling";
+
+  return segments.map((seg) => {
+    const startNorm = seg.start / totalDuration;
+    const endNorm = seg.end / totalDuration;
+    const overrides = buildSectionOverrides(seg.label, energyCurve, startNorm, endNorm, bassType);
+    return {
+      label: seg.label,
+      start: Math.max(0, seg.start),
+      end: seg.end,
+      synthOverrides: overrides.synthOverrides,
+      fxOverrides: overrides.fxOverrides,
+    };
+  });
 };
 
 // === Phase 2 SynthDef mapping functions ===
@@ -229,10 +410,12 @@ export const generatePreset = (analysis: AnalysisResult, name: string): Preset =
 
   const bassParams = mapBassType(bass.type);
   const genre = mapGenre(bpm);
+  const sections = generateSections(analysis);
 
   return {
     name: sanitizedName,
     bpm: mapBpmToPreset(bpm),
+    ...(sections.length > 0 ? { sections } : {}),
     synthParams: {
       kick: { drive: mapKickDrive(freq.low), click: density > 6 ? 0.6 : 0.3, decay: dyn.crest > 4 ? 0.35 : 0.2 },
       bass: { cutoff: bassParams.cutoff, resonance: bassParams.resonance, envAmount: bassParams.envAmount },
