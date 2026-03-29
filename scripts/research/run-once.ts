@@ -6,7 +6,7 @@ import type { MetricValues } from "./evaluate.js";
 import { evaluateVideo } from "./evaluate.js";
 import { loadConfig } from "./research-config.js";
 import type { CalibrationResult } from "./calibrate.js";
-import { loadBaseline, type BaselineRecord } from "./promote.js";
+import { loadBaseline, promoteBaseline, type BaselineRecord } from "./promote.js";
 import {
   gitCommitConfig,
   gitRestoreConfig,
@@ -272,6 +272,7 @@ export async function main(): Promise<void> {
     if (status === "keep") {
       const msg = `research: exp #${expNum} score=${qualityScore.toFixed(4)} (Δ+${delta.toFixed(4)})`;
       commitHash = gitCommitConfig(msg, cwd);
+      promoteBaseline(configPath, qualityScore, calibration.modelVersion, currentContract);
       console.log(`[exp #${expNum}] KEEP — committed ${commitHash}`);
     } else {
       gitRestoreConfig(cwd);

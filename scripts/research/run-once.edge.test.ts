@@ -41,6 +41,7 @@ vi.mock("./promote.js", () => ({
     commit: "abc",
     calibratedAt: "2026-01-01",
   })),
+  promoteBaseline: vi.fn(),
 }));
 
 vi.mock("./research-config.js", () => ({
