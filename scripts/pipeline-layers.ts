@@ -280,7 +280,7 @@ async function main() {
   candidates = applyRetentionRules(
     candidates,
     maxLayers,
-    path.resolve(cliArgs.inputPath),
+    preparedPath,
     pipelineConfig,
   );
 
