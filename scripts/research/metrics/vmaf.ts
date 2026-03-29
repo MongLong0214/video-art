@@ -65,18 +65,14 @@ export function computeVmaf(
   }
 
   try {
-    // Use two-pass filtergraph: ref passes through, gen is scaled to ref's dimensions
-    const lavfi = options?.refWidth && options?.refHeight
-      ? `[0:v]setpts=PTS-STARTPTS[ref];[1:v]setpts=PTS-STARTPTS,${scaleFilter}[gen];[ref][gen]libvmaf=log_fmt=json:log_path=${logPath}`
-      : `[0:v]setpts=PTS-STARTPTS[ref0];[ref0]split[ref][refsize];[refsize]scale=iw:ih,format=pix_fmts=yuv420p[dummy];[1:v]setpts=PTS-STARTPTS[gen0];[ref]scale=iw:ih[refout];[gen0][refout]scale2ref[genscaled][refout2];[refout2][genscaled]libvmaf=log_fmt=json:log_path=${logPath}`;
-
+    // Simple approach: libvmaf handles resolution matching internally
+    // Just pass both videos and let ffmpeg align them
     execFileSync(
       "ffmpeg",
       [
         "-i", refVideoPath,
         "-i", genVideoPath,
-        "-lavfi",
-        lavfi,
+        "-lavfi", `libvmaf=log_fmt=json:log_path=${logPath}`,
         "-f", "null",
         "-",
       ],
