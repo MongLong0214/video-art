@@ -13,11 +13,6 @@ describe("ResearchConfigSchema", () => {
     expect(config.samPointsPerSide).toBe(64);
     expect(config.samPredIouThresh).toBe(0.7);
     expect(config.samStabilityScoreThresh).toBe(0.92);
-    expect(config.luminanceFallbackEnabled).toBe(true);
-    expect(config.luminanceFallbackMinSamLayers).toBe(3);
-    expect(config.luminanceFallbackZoneCount).toBe(6);
-    expect(config.luminanceFallbackResidualOnly).toBe(false);
-    expect(config.luminanceFallbackResidualCoverageMin).toBe(0);
     expect(config.maxLayers).toBe(12);
     expect(config.minRetainedLayers).toBe(6);
     expect(config.alphaThreshold).toBe(128);
@@ -132,6 +127,30 @@ describe("ResearchConfigSchema", () => {
       }),
     ).toThrow();
   });
+
+  // ── Depth Axes ──────────────────────────────────
+
+  it("keeps depth axes at correct defaults", () => {
+    const config = ResearchConfigSchema.parse({});
+    expect(config.depthRoleWeight).toBe(0.5);
+    expect(config.depthForegroundThreshold).toBe(0.3);
+    expect(config.depthBackgroundThreshold).toBe(0.7);
+  });
+
+  it("rejects depthRoleWeight out of range", () => {
+    expect(() => ResearchConfigSchema.parse({ depthRoleWeight: -0.1 })).toThrow();
+    expect(() => ResearchConfigSchema.parse({ depthRoleWeight: 1.1 })).toThrow();
+  });
+
+  it("rejects depthForegroundThreshold out of range", () => {
+    expect(() => ResearchConfigSchema.parse({ depthForegroundThreshold: 0.05 })).toThrow();
+    expect(() => ResearchConfigSchema.parse({ depthForegroundThreshold: 0.5 })).toThrow();
+  });
+
+  it("rejects depthBackgroundThreshold out of range", () => {
+    expect(() => ResearchConfigSchema.parse({ depthBackgroundThreshold: 0.4 })).toThrow();
+    expect(() => ResearchConfigSchema.parse({ depthBackgroundThreshold: 1.0 })).toThrow();
+  });
 });
 
 describe("getDefaultConfig", () => {
@@ -141,8 +160,13 @@ describe("getDefaultConfig", () => {
     expect(config.samMaskLimit === null || config.samMaskLimit >= 3).toBe(true);
     expect(config.minRetainedLayers).toBeGreaterThanOrEqual(1);
     expect(config.alphaThreshold).toBeGreaterThanOrEqual(1);
-    expect(config.luminanceFallbackEnabled).toEqual(expect.any(Boolean));
-    expect(config.luminanceFallbackResidualOnly).toEqual(expect.any(Boolean));
+  });
+
+  it("returns depth axis defaults", () => {
+    const config = getDefaultConfig();
+    expect(config.depthRoleWeight).toBe(0.5);
+    expect(config.depthForegroundThreshold).toBe(0.3);
+    expect(config.depthBackgroundThreshold).toBe(0.7);
   });
 });
 

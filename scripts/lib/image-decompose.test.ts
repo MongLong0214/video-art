@@ -1,65 +1,62 @@
-import { describe, expect, it } from "vitest";
+import { describe, it, expect } from "vitest";
+import { DAV2_MODEL, DAV2_VERSION, SAM2_MODEL, SAM2_VERSION } from "./image-decompose.js";
+import type { DecomposeResult } from "./image-decompose.js";
 
-import {
-  buildResidualMask,
-  shouldRunLuminanceFallback,
-} from "./image-decompose.js";
+describe("image-decompose", () => {
+  describe("model constants", () => {
+    it("DAV2_MODEL is chenxwh/depth-anything-v2", () => {
+      expect(DAV2_MODEL).toBe("chenxwh/depth-anything-v2");
+    });
 
-describe("buildResidualMask", () => {
-  it("computes the uncovered residual area across multiple SAM masks", () => {
-    const width = 2;
-    const height = 2;
-    const maskA = Uint8Array.from([1, 0, 0, 0]);
-    const maskB = Uint8Array.from([0, 1, 0, 0]);
+    it("DAV2_VERSION is a 64-char hex string", () => {
+      expect(DAV2_VERSION).toMatch(/^[a-f0-9]{64}$/);
+    });
 
-    const result = buildResidualMask([maskA, maskB], width, height);
+    it("SAM2_MODEL is lucataco/segment-anything-2", () => {
+      expect(SAM2_MODEL).toBe("lucataco/segment-anything-2");
+    });
 
-    expect(Array.from(result.residualMask)).toEqual([0, 0, 1, 1]);
-    expect(result.residualCoverage).toBe(0.5);
+    it("SAM2_VERSION is a 64-char hex string", () => {
+      expect(SAM2_VERSION).toMatch(/^[a-f0-9]{64}$/);
+    });
   });
 
-  it("returns full residual coverage when SAM produced no masks", () => {
-    const result = buildResidualMask([], 2, 2);
-    expect(Array.from(result.residualMask)).toEqual([1, 1, 1, 1]);
-    expect(result.residualCoverage).toBe(1);
-  });
-});
+  describe("getDepthMap", () => {
+    it("should be exported", async () => {
+      const mod = await import("./image-decompose.js");
+      expect(typeof mod.getDepthMap).toBe("function");
+    });
 
-describe("shouldRunLuminanceFallback", () => {
-  it("does not run when fallback is disabled", () => {
-    expect(
-      shouldRunLuminanceFallback(0, 1, {
-        enabled: false,
-        minSamLayers: 3,
-        residualCoverageMin: 0,
-      }),
-    ).toBe(false);
-  });
+    it("should return null on file read failure (graceful fallback)", async () => {
+      const { getDepthMap } = await import("./image-decompose.js");
+      const Replicate = (await import("replicate")).default;
+      const mockReplicate = new Replicate({ auth: "test-token" });
 
-  it("does not run when SAM already met the minimum layer target", () => {
-    expect(
-      shouldRunLuminanceFallback(3, 0.4, {
-        enabled: true,
-        minSamLayers: 3,
-        residualCoverageMin: 0,
-      }),
-    ).toBe(false);
+      // Non-existent file triggers fs.readFileSync error → caught → returns null
+      const result = await getDepthMap(mockReplicate, "/nonexistent/image.png");
+      expect(result).toBeNull();
+    });
   });
 
-  it("requires sufficient residual coverage when a minimum is set", () => {
-    expect(
-      shouldRunLuminanceFallback(2, 0.04, {
-        enabled: true,
-        minSamLayers: 4,
-        residualCoverageMin: 0.05,
-      }),
-    ).toBe(false);
-    expect(
-      shouldRunLuminanceFallback(2, 0.08, {
-        enabled: true,
-        minSamLayers: 4,
-        residualCoverageMin: 0.05,
-      }),
-    ).toBe(true);
+  describe("DecomposeResult type", () => {
+    it("should include optional depthMap field", () => {
+      const result: DecomposeResult = {
+        files: [],
+        coverages: [],
+        method: "sam2",
+        fileMeta: [],
+        depthMap: undefined,
+      };
+      expect(result.depthMap).toBeUndefined();
+
+      const withDepth: DecomposeResult = {
+        files: [],
+        coverages: [],
+        method: "sam2",
+        fileMeta: [],
+        depthMap: Buffer.from([0, 128, 255]),
+      };
+      expect(withDepth.depthMap).toBeInstanceOf(Buffer);
+    });
   });
 });

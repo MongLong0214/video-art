@@ -44,7 +44,6 @@ const baseInput: ManifestInput = {
   },
   passes: [
     { type: "sam2-segment", candidateCount: 4 },
-    { type: "luminance-fallback", candidateCount: 2 },
   ],
   retainedLayers: [
     makeCandidate({ id: "layer-0", role: "background-plate", coverage: 0.31 }),
@@ -141,6 +140,74 @@ describe("decomposition-manifest", () => {
   it("should record pipeline variant", () => {
     const manifest = generateManifest(baseInput);
     expect(manifest.pipelineVariant).toBe("sam2");
+  });
+
+  it("should include depthStats when provided", () => {
+    const inputWithDepth: ManifestInput = {
+      ...baseInput,
+      depthStats: { min: 20, max: 230, mean: 125, stddev: 45.2, count: 5 },
+    };
+    const manifest = generateManifest(inputWithDepth);
+    expect(manifest.depthStats).toBeDefined();
+    expect(manifest.depthStats!.min).toBe(20);
+    expect(manifest.depthStats!.max).toBe(230);
+    expect(manifest.depthStats!.stddev).toBeCloseTo(45.2);
+    expect(manifest.depthStats!.count).toBe(5);
+  });
+
+  it("should include DA V2 model info with status", () => {
+    const inputWithDA: ManifestInput = {
+      ...baseInput,
+      models: {
+        ...baseInput.models,
+        depthAnything: {
+          model: "chenxwh/depth-anything-v2",
+          version: "8a4b66f2b04f54c10265e44dcd88f30a01a3eb38a5cd84879dede6cd926cceb1",
+          depthConvention: "near-is-high",
+          status: "success",
+        },
+      },
+    };
+    const manifest = generateManifest(inputWithDA);
+    expect(manifest.models.depthAnything).toBeDefined();
+    expect(manifest.models.depthAnything!.status).toBe("success");
+    expect(manifest.models.depthAnything!.depthConvention).toBe("near-is-high");
+  });
+
+  it("should include roleComparison when provided", () => {
+    const inputWithComparison: ManifestInput = {
+      ...baseInput,
+      depthRoleWeight: 0.5,
+      roleComparison: [
+        { id: "layer-0", roleWithoutDepth: "background-plate", roleWithDepth: "background-plate" },
+        { id: "layer-1", roleWithoutDepth: "foreground-occluder", roleWithDepth: "subject" },
+      ],
+    };
+    const manifest = generateManifest(inputWithComparison);
+    expect(manifest.roleComparison).toHaveLength(2);
+    expect(manifest.depthRoleWeight).toBe(0.5);
+    expect(manifest.roleComparison![1].roleWithoutDepth).toBe("foreground-occluder");
+    expect(manifest.roleComparison![1].roleWithDepth).toBe("subject");
+  });
+
+  it("should omit depthStats/roleComparison when not provided", () => {
+    const manifest = generateManifest(baseInput);
+    expect(manifest.depthStats).toBeUndefined();
+    expect(manifest.roleComparison).toBeUndefined();
+    expect(manifest.depthRoleWeight).toBeUndefined();
+  });
+
+  it("should include meanDepth in finalLayers", () => {
+    const inputWithDepth: ManifestInput = {
+      ...baseInput,
+      retainedLayers: [
+        makeCandidate({ id: "layer-0", role: "background-plate", meanDepth: 45 }),
+        makeCandidate({ id: "layer-1", role: "subject", meanDepth: 210 }),
+      ],
+    };
+    const manifest = generateManifest(inputWithDepth);
+    expect(manifest.finalLayers[0].meanDepth).toBe(45);
+    expect(manifest.finalLayers[1].meanDepth).toBe(210);
   });
 
   it("should copy source and prepared images to archive", () => {

@@ -9,7 +9,8 @@ import {
 } from "./lib/input-validator.js";
 import { parseCliArgs } from "./lib/pipeline-cli.js";
 import { scoreComplexity } from "./lib/complexity-scoring.js";
-import { decomposeImage, SAM2_MODEL, SAM2_VERSION } from "./lib/image-decompose.js";
+import { decomposeImage, SAM2_MODEL, SAM2_VERSION, DAV2_MODEL, DAV2_VERSION } from "./lib/image-decompose.js";
+import { computeMeanDepth, computeDepthStats } from "./lib/depth-computation.js";
 import { extractCandidates } from "./lib/candidate-extraction.js";
 import {
   deduplicateCandidates,
@@ -98,6 +99,7 @@ async function main() {
   let preparedPath: string;
   let candidates: LayerCandidate[];
   let selectedLayerCount: number | null = null;
+  let depthMapBuffer: Buffer | undefined;
   const passes: ManifestInput["passes"] = [];
 
   if (manualLayers) {
@@ -172,13 +174,9 @@ async function main() {
       pointsPerSide: pipelineConfig?.samPointsPerSide,
       predIouThresh: pipelineConfig?.samPredIouThresh,
       stabilityScoreThresh: pipelineConfig?.samStabilityScoreThresh,
-      luminanceFallbackEnabled: pipelineConfig?.luminanceFallbackEnabled,
-      luminanceFallbackMinSamLayers: pipelineConfig?.luminanceFallbackMinSamLayers,
-      luminanceFallbackZoneCount: pipelineConfig?.luminanceFallbackZoneCount,
-      luminanceFallbackResidualOnly: pipelineConfig?.luminanceFallbackResidualOnly,
-      luminanceFallbackResidualCoverageMin: pipelineConfig?.luminanceFallbackResidualCoverageMin,
     });
 
+    depthMapBuffer = decomposeResult.depthMap;
     console.log(`  ${decomposeResult.files.length} raw layers generated (${decomposeResult.method})`);
     const rawPassCounts = decomposeResult.fileMeta.reduce(
       (acc, meta) => {
@@ -191,12 +189,6 @@ async function main() {
       passes.push({
         type: "sam2-segment",
         candidateCount: rawPassCounts["sam2-segment"],
-      });
-    }
-    if ((rawPassCounts["luminance-split"] ?? 0) > 0) {
-      passes.push({
-        type: "luminance-fallback",
-        candidateCount: rawPassCounts["luminance-split"],
       });
     }
 
@@ -252,14 +244,52 @@ async function main() {
     ownershipMap.has(c.id) ? ownershipMap.get(c.id)! : c,
   );
 
-  // --- Step 7: Assign roles ---
+  // --- Step 6.5: Compute meanDepth from depth map ---
+  if (depthMapBuffer) {
+    console.log("Computing per-candidate meanDepth...");
+    const depthRaw = await sharp(depthMapBuffer)
+      .resize(imageWidth, imageHeight)
+      .grayscale()
+      .raw()
+      .toBuffer();
+    const depthArray = new Uint8Array(depthRaw.buffer, depthRaw.byteOffset, depthRaw.byteLength);
+
+    const depthMap = new Map<string, number>();
+    for (const c of candidates.filter((c) => !c.droppedReason)) {
+      const mask = maskCache.get(c.id);
+      if (mask) {
+        depthMap.set(c.id, computeMeanDepth(depthArray, mask, imageWidth, imageHeight));
+      }
+    }
+    candidates = candidates.map((c) =>
+      depthMap.has(c.id) ? { ...c, meanDepth: depthMap.get(c.id)! } : c,
+    );
+    const depths = candidates.filter((c) => !c.droppedReason).map((c) => c.meanDepth ?? 128);
+    const depthStats = computeDepthStats(depths);
+    console.log(`  Depth stats: min=${depthStats.min.toFixed(0)}, max=${depthStats.max.toFixed(0)}, mean=${depthStats.mean.toFixed(0)}, stddev=${depthStats.stddev.toFixed(1)}`);
+  } else {
+    console.log("  No depth map available — using default meanDepth=128");
+  }
+
+  // --- Step 7: Assign roles (with depth comparison for Phase 2 validation) ---
   console.log("Assigning roles...");
   const forRoles = candidates.filter((c) => !c.droppedReason);
+
+  // Role comparison: heuristic-only baseline vs depth-boosted
+  const baselineRoles = assignRoles(forRoles, imageWidth, imageHeight, { ...pipelineConfig, depthRoleWeight: 0 });
+  const baselineRoleMap = new Map(baselineRoles.map((c) => [c.id, c.role ?? "midground"]));
+
   const withRoles = assignRoles(forRoles, imageWidth, imageHeight, pipelineConfig);
   const roleMap = new Map(withRoles.map((c) => [c.id, c]));
   candidates = candidates.map((c) =>
     roleMap.has(c.id) ? roleMap.get(c.id)! : c,
   );
+
+  const roleComparison = forRoles.map((c) => ({
+    id: c.id,
+    roleWithoutDepth: String(baselineRoleMap.get(c.id) ?? "midground"),
+    roleWithDepth: String(roleMap.get(c.id)?.role ?? "midground"),
+  }));
 
   // --- Step 8: Order by role z-ladder ---
   console.log("Ordering by role...");
@@ -329,6 +359,7 @@ async function main() {
     role: c.role ?? "midground",
     coverage: c.coverage,
     uniqueCoverage: c.uniqueCoverage ?? c.coverage,
+    meanDepth: c.meanDepth,
   }));
 
   console.log(`\nFinal layer stack (${retainedLayers.length} layers):`);
@@ -351,6 +382,12 @@ async function main() {
   const manifestLayerCount = selectedLayerCount ?? retained.length;
 
   // --- Step 13: Generate + write manifest ---
+  // Compute depthStats for manifest
+  const manifestDepthStats = depthMapBuffer ? (() => {
+    const depths = retained.map((c) => c.meanDepth).filter((d): d is number => d !== undefined);
+    return depths.length > 0 ? computeDepthStats(depths) : undefined;
+  })() : undefined;
+
   const manifestInput: ManifestInput = {
     runId: ctx.runId,
     pipelineVariant: "sam2",
@@ -362,6 +399,12 @@ async function main() {
         version: SAM2_VERSION,
         maskLimit: manifestLayerCount,
       },
+      depthAnything: {
+        model: DAV2_MODEL,
+        version: DAV2_VERSION,
+        depthConvention: "near-is-high" as const,
+        status: depthMapBuffer ? "success" : "failed",
+      },
     },
     passes,
     retainedLayers: retained,
@@ -370,6 +413,9 @@ async function main() {
     productionMode: cliArgs.production,
     requestedLayerCount: cliArgs.layerOverride,
     selectedLayerCount: manifestLayerCount,
+    depthStats: manifestDepthStats,
+    depthRoleWeight: pipelineConfig?.depthRoleWeight,
+    roleComparison,
   };
 
   try {
@@ -384,6 +430,11 @@ async function main() {
 
   // --- Step 14: Copy source images to archive ---
   copySourceImages(path.resolve(cliArgs.inputPath), preparedPath, ctx.archiveDir);
+  if (depthMapBuffer) {
+    const sourceDir = path.join(ctx.archiveDir, "source");
+    fs.mkdirSync(sourceDir, { recursive: true });
+    fs.writeFileSync(path.join(sourceDir, "depth-map.png"), depthMapBuffer);
+  }
 
   // --- Step 15: Copy layers + scene.json to public/ ---
   fs.mkdirSync(publicLayersDir, { recursive: true });

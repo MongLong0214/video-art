@@ -65,6 +65,7 @@ const layerSchema = z.object({
   opacity: z.number().min(0).max(1).default(1),
   blending: blendModeSchema,
   role: layerRoleSchema.optional(),
+  meanDepth: z.number().min(0).max(255).optional(),
   animation: animationSchema.default({
     saturationBoost: 2.5,
     luminanceKey: 0.6,
@@ -153,7 +154,7 @@ export type AudioConfig = z.infer<typeof audioSchema>;
 
 export interface LayerCandidate {
   id: string;
-  source: "luminance-split" | "sam2-segment";
+  source: "sam2-segment";
   filePath: string;
   width: number;
   height: number;
