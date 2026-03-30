@@ -77,6 +77,13 @@ export const ResearchConfigSchema = z
     hazeIntensity: z.number().min(0.0).max(1.0).default(0.0),
     featherRadius: z.number().min(0.0).max(0.2).default(0.0),
 
+    // ── SAM3 / VLM Axes ────────────────────────────────────────
+    sam3Threshold: z.number().min(0.1).max(0.9).default(0.25),
+    vlmMaxPrompts: z.number().int().min(3).max(10).default(6),
+    secondPassEnabled: z.boolean().default(true),
+    secondPassThreshold: z.number().min(0.5).max(0.95).default(0.8),
+    useSam3: z.boolean().default(true),
+
     // ── Blend Mode ───────────────────────────────────────────
     blendMode: z.enum(["normal", "add", "multiply", "screen"]).default("normal"),
   })
@@ -129,6 +136,11 @@ export function getDefaultConfig(): ResearchConfig {
     depthParallaxScale: 0,
     hazeIntensity: 0,
     featherRadius: 0,
+    sam3Threshold: 0.25,
+    vlmMaxPrompts: 6,
+    secondPassEnabled: true,
+    secondPassThreshold: 0.8,
+    useSam3: true,
   });
 }
 

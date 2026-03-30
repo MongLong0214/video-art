@@ -172,7 +172,7 @@ export type AudioConfig = z.infer<typeof audioSchema>;
 
 export interface LayerCandidate {
   id: string;
-  source: "sam2-segment";
+  source: "sam2-segment" | "sam3-semantic";
   filePath: string;
   width: number;
   height: number;

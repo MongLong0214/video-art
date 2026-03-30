@@ -191,6 +191,12 @@ async function main() {
         candidateCount: rawPassCounts["sam2-segment"],
       });
     }
+    if ((rawPassCounts["sam3-semantic"] ?? 0) > 0) {
+      passes.push({
+        type: "sam3-semantic",
+        candidateCount: rawPassCounts["sam3-semantic"],
+      });
+    }
 
     // --- Step 4: Convert SAM masks directly to candidates (batched, concurrency=4) ---
     console.log("\nConverting SAM masks to candidates...");

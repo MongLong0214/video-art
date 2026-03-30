@@ -15,7 +15,7 @@ export interface DepthStats {
 
 export interface ManifestInput {
   runId: string;
-  pipelineVariant: "sam2";
+  pipelineVariant: "sam2" | "sam3";
   sourceImage: string;
   preparedImage: string;
   models: {

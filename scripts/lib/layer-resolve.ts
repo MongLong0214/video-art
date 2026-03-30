@@ -494,7 +494,7 @@ export function applyRetentionRules(
     const refHeight = candidates[0]?.height ?? 0;
     const fallbackPlate: LayerCandidate = {
       id: "fallback-bg-plate",
-      source: "sam2-segment",
+      source: (config?.useSam3 ? "sam3-semantic" : "sam2-segment") as LayerCandidate["source"],
       filePath: originalImagePath,
       width: refWidth,
       height: refHeight,

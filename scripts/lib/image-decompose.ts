@@ -11,6 +11,78 @@ export const SAM2_VERSION = "be7cbde9fdf0eecdc8b20ffec9dd0d1cfeace0832d4d0b58a07
 export const DAV2_MODEL = "chenxwh/depth-anything-v2";
 export const DAV2_VERSION = "b239ea33cff32bb7abb5db39ffe9a09c14cbc2894331d1ef66fe096eed88ebd4";
 
+export const SAM3_MODEL = "mattsays/sam3-image";
+export const SAM3_VERSION = "d73db077226443ba4fafd34e233b3626b552eac2a433f90c7c32a9ac89bd9e72";
+
+export const VLM_MODEL = "lucataco/qwen3-vl-8b-instruct";
+export const VLM_VERSION = "39e893666996acf464cff75688ad49ac95ef54e9f1c688fbc677330acc478e11";
+
+const DEFAULT_PROMPTS = ["main subject", "background", "foreground details"];
+
+// --- VLM Prompt Utilities ---
+
+export function parseVlmResponse(text: string): string[] | null {
+  const match = text.match(/\[.*\]/s);
+  if (!match) return null;
+  try {
+    const parsed = JSON.parse(match[0]);
+    if (!Array.isArray(parsed) || !parsed.every((p: unknown) => typeof p === "string")) return null;
+    return parsed as string[];
+  } catch {
+    return null;
+  }
+}
+
+export function sanitizePrompts(prompts: string[], maxCount: number): string[] {
+  return prompts
+    .map(p => p.replace(/[\x00-\x1f\x7f]/g, "").trim().slice(0, 100))
+    .filter(p => p.length > 0)
+    .slice(0, maxCount);
+}
+
+export function ensureMinPrompts(prompts: string[], defaults: string[] = DEFAULT_PROMPTS): string[] {
+  if (prompts.length >= 3) return prompts;
+  const needed = defaults.filter(d => !prompts.includes(d));
+  return [...prompts, ...needed].slice(0, Math.max(3, prompts.length));
+}
+
+export async function getVlmPrompts(
+  replicate: Replicate,
+  imagePath: string,
+  options: { vlmMaxPrompts?: number } = {},
+): Promise<string[]> {
+  const maxPrompts = options.vlmMaxPrompts ?? 6;
+  try {
+    const imageData = fs.readFileSync(imagePath);
+    const ext = path.extname(imagePath).toLowerCase().replace(".", "");
+    const mime = { png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp" }[ext] || "image/png";
+    const dataUri = `data:${mime};base64,${imageData.toString("base64")}`;
+
+    console.log("  Running VLM (Qwen3-VL) for auto-prompts...");
+    const output = await withRetry(async () => {
+      return replicate.run(`${VLM_MODEL}:${VLM_VERSION}`, {
+        input: {
+          media: dataUri,
+          prompt: `/no_think List the ${maxPrompts} distinct visual regions/objects in this image as a JSON array. Each item: short description (3-8 words) for segmentation. Output ONLY the JSON array.`,
+          max_new_tokens: 256,
+          temperature: 0.1,
+        },
+      });
+    });
+
+    const text = typeof output === "string" ? output : Array.isArray(output) ? output.join("") : String(output);
+    const parsed = parseVlmResponse(text);
+    if (!parsed) {
+      console.warn("  VLM response parsing failed, using defaults");
+      return ensureMinPrompts([]);
+    }
+    return ensureMinPrompts(sanitizePrompts(parsed, maxPrompts));
+  } catch (err) {
+    console.warn(`  VLM failed: ${err instanceof Error ? err.message : err}, using defaults`);
+    return ensureMinPrompts([]);
+  }
+}
+
 interface DecomposeOptions {
   maxLayers?: number;
   alphaThreshold?: number;

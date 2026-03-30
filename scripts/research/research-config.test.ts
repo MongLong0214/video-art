@@ -201,6 +201,43 @@ describe("ResearchConfigSchema", () => {
   it("rejects featherRadius > 0.2", () => {
     expect(() => ResearchConfigSchema.parse({ featherRadius: 0.3 })).toThrow();
   });
+
+  // ── SAM3 / VLM Axes ──────────────────────────────────
+
+  it("defaults SAM3 axes correctly", () => {
+    const config = ResearchConfigSchema.parse({});
+    expect(config.sam3Threshold).toBe(0.25);
+    expect(config.vlmMaxPrompts).toBe(6);
+    expect(config.secondPassEnabled).toBe(true);
+    expect(config.secondPassThreshold).toBe(0.8);
+    expect(config.useSam3).toBe(true);
+  });
+
+  it("accepts sam3Threshold valid range", () => {
+    const config = ResearchConfigSchema.parse({ sam3Threshold: 0.5 });
+    expect(config.sam3Threshold).toBe(0.5);
+  });
+
+  it("rejects sam3Threshold > 0.9", () => {
+    expect(() => ResearchConfigSchema.parse({ sam3Threshold: 1.0 })).toThrow();
+  });
+
+  it("rejects sam3Threshold < 0.1", () => {
+    expect(() => ResearchConfigSchema.parse({ sam3Threshold: 0.05 })).toThrow();
+  });
+
+  it("rejects vlmMaxPrompts > 10", () => {
+    expect(() => ResearchConfigSchema.parse({ vlmMaxPrompts: 11 })).toThrow();
+  });
+
+  it("rejects secondPassThreshold > 0.95", () => {
+    expect(() => ResearchConfigSchema.parse({ secondPassThreshold: 1.0 })).toThrow();
+  });
+
+  it("accepts useSam3=false", () => {
+    const config = ResearchConfigSchema.parse({ useSam3: false });
+    expect(config.useSam3).toBe(false);
+  });
 });
 
 describe("getDefaultConfig", () => {
@@ -226,6 +263,15 @@ describe("getDefaultConfig", () => {
     expect(config.depthParallaxScale).toBe(0);
     expect(config.hazeIntensity).toBe(0);
     expect(config.featherRadius).toBe(0);
+  });
+
+  it("includes SAM3 axes with correct defaults", () => {
+    const config = getDefaultConfig();
+    expect(config.sam3Threshold).toBe(0.25);
+    expect(config.vlmMaxPrompts).toBe(6);
+    expect(config.secondPassEnabled).toBe(true);
+    expect(config.secondPassThreshold).toBe(0.8);
+    expect(config.useSam3).toBe(true);
   });
 });
 
