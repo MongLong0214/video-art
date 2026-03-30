@@ -18,6 +18,20 @@ interface SceneMultipliers {
   luminanceKeyMul: number;
   bloomStrengthMul: number;
   chromaticAberrationOffsetMul: number;
+  bloomRadiusMul: number;
+  bloomThresholdMul: number;
+  caModulationOffsetMul: number;
+  satBlendLow: number;
+  satBlendHigh: number;
+  satInjectionMul: number;
+  glowPulseFloor: number;
+  lumExponent: number;
+  tempoMul: number;
+  phaseSpreadMul: number;
+  periodRangeLow: number;
+  periodRangeHigh: number;
+  glowPeriodMul: number;
+  blendMode: "normal" | "add" | "multiply" | "screen";
 }
 
 const DEFAULT_MULTIPLIERS: SceneMultipliers = {
@@ -27,7 +41,48 @@ const DEFAULT_MULTIPLIERS: SceneMultipliers = {
   luminanceKeyMul: 1.0,
   bloomStrengthMul: 1.0,
   chromaticAberrationOffsetMul: 1.0,
+  bloomRadiusMul: 1.0,
+  bloomThresholdMul: 1.0,
+  caModulationOffsetMul: 1.0,
+  satBlendLow: 0.1,
+  satBlendHigh: 0.4,
+  satInjectionMul: 0.35,
+  glowPulseFloor: 0.0,
+  lumExponent: 1.0,
+  tempoMul: 1.0,
+  phaseSpreadMul: 1.0,
+  periodRangeLow: 1.0,
+  periodRangeHigh: 20.0,
+  glowPeriodMul: 1.0,
+  blendMode: "normal" as const,
 };
+
+export function filterPeriods(
+  duration: number,
+  low: number,
+  high: number,
+): number[] {
+  const all = getValidPeriods(duration).sort((a, b) => b - a);
+  const filtered = all.filter((p) => p >= low && p <= high);
+  return filtered.length > 0 ? filtered : all;
+}
+
+export function quantizeToNearestDivisor(
+  raw: number,
+  validPeriods: number[],
+): number {
+  if (validPeriods.length === 0) return raw;
+  let best = validPeriods[0];
+  let bestDist = Math.abs(raw - best);
+  for (const p of validPeriods) {
+    const dist = Math.abs(raw - p);
+    if (dist < bestDist || (dist === bestDist && p > best)) {
+      best = p;
+      bestDist = dist;
+    }
+  }
+  return best;
+}
 
 function quantizeLoopSpeed(
   speed: number,
@@ -50,8 +105,8 @@ function getRolePreset(
   duration: number,
   mul: SceneMultipliers = DEFAULT_MULTIPLIERS,
 ): AnimationConfig {
-  const periods = getValidPeriods(duration).sort((a, b) => b - a);
-  const phaseOffset = Math.round((360 * index) / total);
+  const periods = filterPeriods(duration, mul.periodRangeLow, mul.periodRangeHigh);
+  const phaseOffset = Math.round((360 * index) / total * mul.phaseSpreadMul) % 360;
 
   // Period selection helper: pick from sorted periods (descending) by tier
   // tier 0 = longest period (background-plate), tier 4 = shortest (detail)
@@ -60,7 +115,13 @@ function getRolePreset(
     return periods[idx];
   };
 
-  const tempo = 0.85;
+  const pickGlowPeriod = (tier: number): number => {
+    const basePeriod = pickPeriod(tier);
+    const raw = basePeriod * mul.glowPeriodMul;
+    return quantizeToNearestDivisor(raw, getValidPeriods(duration));
+  };
+
+  const tempo = 0.85 * mul.tempoMul;
   const colorCycle = (baseSpeed: number, tier: number) => {
     const period = pickPeriod(tier);
     return {
@@ -74,42 +135,56 @@ function getRolePreset(
     };
   };
 
+  const shaderParams = {
+    satBlendLow: mul.satBlendLow,
+    satBlendHigh: mul.satBlendHigh,
+    satInjectionMul: mul.satInjectionMul,
+    glowPulseFloor: mul.glowPulseFloor,
+    lumExponent: mul.lumExponent,
+  };
+
   const presets: Record<LayerRole, AnimationConfig> = {
     "background-plate": {
       colorCycle: colorCycle(5, 0),
-      glow: { intensity: 0.1 * mul.glowIntensityMul, pulse: 0.2 * tempo, period: pickPeriod(0) },
+      glow: { intensity: 0.1 * mul.glowIntensityMul, pulse: 0.2 * tempo, period: pickGlowPeriod(0) },
       saturationBoost: 2.5 * mul.saturationBoostMul,
       luminanceKey: 0.4 * mul.luminanceKeyMul,
+      ...shaderParams,
     },
     background: {
       colorCycle: colorCycle(8, 1),
-      glow: { intensity: 0.15 * mul.glowIntensityMul, pulse: 0.3 * tempo, period: pickPeriod(1) },
+      glow: { intensity: 0.15 * mul.glowIntensityMul, pulse: 0.3 * tempo, period: pickGlowPeriod(1) },
       saturationBoost: 2.3 * mul.saturationBoostMul,
       luminanceKey: 0.45 * mul.luminanceKeyMul,
+      ...shaderParams,
     },
     midground: {
       colorCycle: colorCycle(10, 2),
-      glow: { intensity: 0.2 * mul.glowIntensityMul, pulse: 0.4 * tempo, period: pickPeriod(2) },
+      glow: { intensity: 0.2 * mul.glowIntensityMul, pulse: 0.4 * tempo, period: pickGlowPeriod(2) },
       saturationBoost: 2.5 * mul.saturationBoostMul,
       luminanceKey: 0.55 * mul.luminanceKeyMul,
+      ...shaderParams,
     },
     subject: {
       colorCycle: colorCycle(10, 2),
-      glow: { intensity: 0.25 * mul.glowIntensityMul, pulse: 0.45 * tempo, period: pickPeriod(3) },
+      glow: { intensity: 0.25 * mul.glowIntensityMul, pulse: 0.45 * tempo, period: pickGlowPeriod(3) },
       saturationBoost: 2.8 * mul.saturationBoostMul,
       luminanceKey: 0.6 * mul.luminanceKeyMul,
+      ...shaderParams,
     },
     detail: {
       colorCycle: colorCycle(15, 4),
-      glow: { intensity: 0.3 * mul.glowIntensityMul, pulse: 0.5 * tempo, period: pickPeriod(4) },
+      glow: { intensity: 0.3 * mul.glowIntensityMul, pulse: 0.5 * tempo, period: pickGlowPeriod(4) },
       saturationBoost: 2.2 * mul.saturationBoostMul,
       luminanceKey: 0.65 * mul.luminanceKeyMul,
+      ...shaderParams,
     },
     "foreground-occluder": {
       colorCycle: colorCycle(8, 3),
-      glow: { intensity: 0.15 * mul.glowIntensityMul, pulse: 0.3 * tempo, period: pickPeriod(3) },
+      glow: { intensity: 0.15 * mul.glowIntensityMul, pulse: 0.3 * tempo, period: pickGlowPeriod(3) },
       saturationBoost: 1.8 * mul.saturationBoostMul,
       luminanceKey: 0.5 * mul.luminanceKeyMul,
+      ...shaderParams,
     },
   };
 
@@ -130,6 +205,20 @@ export async function generateSceneJson(
     luminanceKeyMul: config?.luminanceKeyMul ?? 1.0,
     bloomStrengthMul: config?.bloomStrengthMul ?? 1.0,
     chromaticAberrationOffsetMul: config?.chromaticAberrationOffsetMul ?? 1.0,
+    bloomRadiusMul: config?.bloomRadiusMul ?? 1.0,
+    bloomThresholdMul: config?.bloomThresholdMul ?? 1.0,
+    caModulationOffsetMul: config?.caModulationOffsetMul ?? 1.0,
+    satBlendLow: config?.satBlendLow ?? 0.1,
+    satBlendHigh: config?.satBlendHigh ?? 0.4,
+    satInjectionMul: config?.satInjectionMul ?? 0.35,
+    glowPulseFloor: config?.glowPulseFloor ?? 0.0,
+    lumExponent: config?.lumExponent ?? 1.0,
+    tempoMul: config?.tempoMul ?? 1.0,
+    phaseSpreadMul: config?.phaseSpreadMul ?? 1.0,
+    periodRangeLow: config?.periodRangeLow ?? 1.0,
+    periodRangeHigh: config?.periodRangeHigh ?? 20.0,
+    glowPeriodMul: config?.glowPeriodMul ?? 1.0,
+    blendMode: config?.blendMode ?? "normal",
   };
   // Cap resolution while maintaining aspect ratio (Puppeteer + GPU limit)
   const MAX_OUTPUT_DIM = 1920;
@@ -157,6 +246,7 @@ export async function generateSceneJson(
       file: layer.file.startsWith("layers/") ? layer.file : `layers/${path.basename(layer.file)}`,
       zIndex: i,
       opacity: 1.0,
+      blending: mul.blendMode,
       role,
       animation: preset,
     });
@@ -170,8 +260,15 @@ export async function generateSceneJson(
     fps: 30,
     layers: sceneLayers,
     effects: {
-      bloom: { strength: 0.6 * mul.bloomStrengthMul, radius: 0.4, threshold: 0.7 },
-      chromaticAberration: { offset: 1.5 * mul.chromaticAberrationOffsetMul },
+      bloom: {
+        strength: 0.6 * mul.bloomStrengthMul,
+        radius: Math.min(0.4 * mul.bloomRadiusMul, 1.0),
+        threshold: Math.min(0.7 * mul.bloomThresholdMul, 1.0),
+      },
+      chromaticAberration: {
+        offset: 1.5 * mul.chromaticAberrationOffsetMul,
+        modulationOffset: 0.3 * mul.caModulationOffsetMul,
+      },
     },
   };
 }

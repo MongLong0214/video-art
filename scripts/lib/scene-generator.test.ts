@@ -213,4 +213,117 @@ describe("generateSceneJson (role-based)", () => {
     expect(scene.effects.bloom.threshold).toBe(0.7);
     expect(scene.effects.chromaticAberration.offset).toBeCloseTo(0.375);
   });
+
+  // ── T1: Effect Composer Axes ──────────────────────────
+
+  it("should apply bloomRadiusMul to effects", async () => {
+    const scene = await generateSceneJson("test.png", mockLayers, [1080, 1080], 20, {
+      bloomRadiusMul: 2.0,
+    });
+    expect(scene.effects.bloom.radius).toBeCloseTo(0.8);
+  });
+
+  it("should clamp bloomRadiusMul at radius=1.0", async () => {
+    const scene = await generateSceneJson("test.png", mockLayers, [1080, 1080], 20, {
+      bloomRadiusMul: 3.0,
+    });
+    expect(scene.effects.bloom.radius).toBe(1.0);
+  });
+
+  it("should apply bloomThresholdMul to effects", async () => {
+    const scene = await generateSceneJson("test.png", mockLayers, [1080, 1080], 20, {
+      bloomThresholdMul: 0.5,
+    });
+    expect(scene.effects.bloom.threshold).toBeCloseTo(0.35);
+  });
+
+  it("should apply caModulationOffsetMul to effects", async () => {
+    const scene = await generateSceneJson("test.png", mockLayers, [1080, 1080], 20, {
+      caModulationOffsetMul: 2.0,
+    });
+    expect(scene.effects.chromaticAberration.modulationOffset).toBeCloseTo(0.6);
+  });
+
+  it("should produce identical effects with default effect axes", async () => {
+    const scene = await generateSceneJson("test.png", mockLayers, [1080, 1080], 20, {});
+    expect(scene.effects.bloom.radius).toBe(0.4);
+    expect(scene.effects.bloom.threshold).toBe(0.7);
+    expect(scene.effects.chromaticAberration.modulationOffset).toBe(0.3);
+  });
+
+  // ── T2: Shader Axes in scene.json ──────────────────
+
+  it("should include shader params in scene.json animation", async () => {
+    const scene = await generateSceneJson("test.png", mockLayers, [1080, 1080], 20, {
+      satBlendLow: 0.2,
+    });
+    expect(scene.layers[0].animation.satBlendLow).toBe(0.2);
+  });
+
+  it("should produce default shader params matching hardcoded values", async () => {
+    const scene = await generateSceneJson("test.png", mockLayers, [1080, 1080], 20, {});
+    const anim = scene.layers[0].animation;
+    expect(anim.satBlendLow).toBe(0.1);
+    expect(anim.satBlendHigh).toBe(0.4);
+    expect(anim.satInjectionMul).toBe(0.35);
+    expect(anim.glowPulseFloor).toBe(0.0);
+    expect(anim.lumExponent).toBe(1.0);
+  });
+
+  // ── T4: SceneGen Axes ──────────────────────────────
+
+  it("should apply tempoMul to color cycle speed", async () => {
+    const slow = await generateSceneJson("test.png", mockLayers, [1080, 1080], 20, { tempoMul: 0.5 });
+    const normal = await generateSceneJson("test.png", mockLayers, [1080, 1080], 20, { tempoMul: 1.0 });
+    const slowSpeed = slow.layers[0].animation.colorCycle!.speed;
+    const normalSpeed = normal.layers[0].animation.colorCycle!.speed;
+    expect(slowSpeed).toBeLessThan(normalSpeed);
+  });
+
+  it("should apply phaseSpreadMul to phase offsets", async () => {
+    const scene = await generateSceneJson("test.png", mockLayers, [1080, 1080], 20, { phaseSpreadMul: 2.0 });
+    const offset1 = scene.layers[1].animation.colorCycle!.phaseOffset;
+    const defaultScene = await generateSceneJson("test.png", mockLayers, [1080, 1080], 20, {});
+    const defaultOffset1 = defaultScene.layers[1].animation.colorCycle!.phaseOffset;
+    expect(offset1).not.toBe(defaultOffset1);
+  });
+
+  it("should filter periods by periodRangeLow/High", async () => {
+    const scene = await generateSceneJson("test.png", mockLayers, [1080, 1080], 20, {
+      periodRangeLow: 4.0, periodRangeHigh: 10.0,
+    });
+    for (const layer of scene.layers) {
+      const period = layer.animation.colorCycle!.period;
+      expect(period).toBeGreaterThanOrEqual(4);
+      expect(period).toBeLessThanOrEqual(10);
+    }
+  });
+
+  it("should fallback to all periods when range yields empty list", async () => {
+    const scene = await generateSceneJson("test.png", mockLayers, [1080, 1080], 20, {
+      periodRangeLow: 11.0, periodRangeHigh: 19.0,
+    });
+    expect(scene.layers[0].animation.colorCycle!.period).toBeDefined();
+  });
+
+  it("should produce identical scene with default scenegen axes", async () => {
+    const withAxes = await generateSceneJson("test.png", mockLayers, [1080, 1080], 20, {
+      tempoMul: 1.0, phaseSpreadMul: 1.0, periodRangeLow: 1.0, periodRangeHigh: 20.0,
+    });
+    const without = await generateSceneJson("test.png", mockLayers, [1080, 1080], 20, {});
+    expect(withAxes.layers[0].animation.colorCycle!.speed).toBe(without.layers[0].animation.colorCycle!.speed);
+    expect(withAxes.layers[0].animation.colorCycle!.phaseOffset).toBe(without.layers[0].animation.colorCycle!.phaseOffset);
+  });
+
+  // ── T5: Blend Mode ──────────────────────────────
+
+  it("should include blending field in scene.json layers", async () => {
+    const scene = await generateSceneJson("test.png", mockLayers, [1080, 1080], 20, { blendMode: "add" });
+    expect(scene.layers[0].blending).toBe("add");
+  });
+
+  it("should default blending to normal", async () => {
+    const scene = await generateSceneJson("test.png", mockLayers, [1080, 1080], 20, {});
+    expect(scene.layers[0].blending).toBe("normal");
+  });
 });

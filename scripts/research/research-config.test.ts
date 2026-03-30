@@ -34,6 +34,75 @@ describe("ResearchConfigSchema", () => {
     expect(config.chromaticAberrationOffsetMul).toBe(1.0);
   });
 
+  it("keeps effect axes at neutral defaults", () => {
+    const config = ResearchConfigSchema.parse({});
+    expect(config.bloomRadiusMul).toBe(1.0);
+    expect(config.bloomThresholdMul).toBe(1.0);
+    expect(config.caModulationOffsetMul).toBe(1.0);
+  });
+
+  it("rejects bloomRadiusMul out of range", () => {
+    expect(() => ResearchConfigSchema.parse({ bloomRadiusMul: 0.0 })).toThrow();
+    expect(() => ResearchConfigSchema.parse({ bloomRadiusMul: 4.0 })).toThrow();
+  });
+
+  it("rejects caModulationOffsetMul out of range", () => {
+    expect(() => ResearchConfigSchema.parse({ caModulationOffsetMul: 0.0 })).toThrow();
+    expect(() => ResearchConfigSchema.parse({ caModulationOffsetMul: 4.0 })).toThrow();
+  });
+
+  // ── T2: Shader Axes ──────────────────────────────────
+
+  it("keeps shader axes at correct defaults", () => {
+    const config = ResearchConfigSchema.parse({});
+    expect(config.satBlendLow).toBe(0.1);
+    expect(config.satBlendHigh).toBe(0.4);
+    expect(config.satInjectionMul).toBe(0.35);
+    expect(config.glowPulseFloor).toBe(0.0);
+    expect(config.lumExponent).toBe(1.0);
+  });
+
+  it("enforces satBlendLow < satBlendHigh", () => {
+    expect(() => ResearchConfigSchema.parse({ satBlendLow: 0.5, satBlendHigh: 0.3 })).toThrow();
+  });
+
+  it("rejects satBlendLow = satBlendHigh", () => {
+    expect(() => ResearchConfigSchema.parse({ satBlendLow: 0.3, satBlendHigh: 0.3 })).toThrow();
+  });
+
+  it("legacy config without shader fields parses with defaults", () => {
+    const config = ResearchConfigSchema.parse({});
+    expect(config.satBlendLow).toBe(0.1);
+    expect(config.glowPulseFloor).toBe(0.0);
+    expect(config.lumExponent).toBe(1.0);
+  });
+
+  // ── T4: SceneGen Axes ──────────────────────────────────
+
+  it("keeps scenegen axes at correct defaults", () => {
+    const config = ResearchConfigSchema.parse({});
+    expect(config.tempoMul).toBe(1.0);
+    expect(config.phaseSpreadMul).toBe(1.0);
+    expect(config.periodRangeLow).toBe(1.0);
+    expect(config.periodRangeHigh).toBe(20.0);
+    expect(config.glowPeriodMul).toBe(1.0);
+  });
+
+  it("enforces periodRangeLow < periodRangeHigh", () => {
+    expect(() => ResearchConfigSchema.parse({ periodRangeLow: 10.0, periodRangeHigh: 5.0 })).toThrow();
+  });
+
+  // ── T5: BlendMode ──────────────────────────────────
+
+  it("keeps blendMode at normal default", () => {
+    const config = ResearchConfigSchema.parse({});
+    expect(config.blendMode).toBe("normal");
+  });
+
+  it("rejects invalid blendMode", () => {
+    expect(() => ResearchConfigSchema.parse({ blendMode: "overlay" })).toThrow();
+  });
+
   it("allows partial override", () => {
     const config = ResearchConfigSchema.parse({ samMaskLimit: 8 });
     expect(config.samMaskLimit).toBe(8);

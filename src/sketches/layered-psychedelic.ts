@@ -52,11 +52,29 @@ export async function createLayeredPsychedelic(
         uGlowPeriod: { value: anim.glow?.period ?? loopDuration },
         uSaturationBoost: { value: anim.saturationBoost ?? 2.5 },
         uLuminanceKey: { value: anim.luminanceKey ?? 0.6 },
+        uSatBlendLow: { value: anim.satBlendLow ?? 0.1 },
+        uSatBlendHigh: { value: anim.satBlendHigh ?? 0.4 },
+        uSatInjectionMul: { value: anim.satInjectionMul ?? 0.35 },
+        uGlowPulseFloor: { value: anim.glowPulseFloor ?? 0.0 },
+        uLumExponent: { value: anim.lumExponent ?? 1.0 },
       },
       transparent: true,
       depthWrite: false,
       depthTest: true,
     });
+
+    // Apply blend mode from scene.json
+    const blending = layerConfig.blending ?? "normal";
+    if (blending === "screen") {
+      material.blending = THREE.CustomBlending;
+      material.blendEquation = THREE.AddEquation;
+      material.blendSrc = THREE.OneFactor;
+      material.blendDst = THREE.OneMinusSrcColorFactor;
+    } else if (blending === "add") {
+      material.blending = THREE.AdditiveBlending;
+    } else if (blending === "multiply") {
+      material.blending = THREE.MultiplyBlending;
+    }
 
     const geometry = new THREE.PlaneGeometry(2, 2);
     const mesh = new THREE.Mesh(geometry, material);

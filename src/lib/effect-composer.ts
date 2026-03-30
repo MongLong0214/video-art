@@ -35,7 +35,7 @@ export function createComposer(
       effects.chromaticAberration.offset * 0.001,
     ),
     radialModulation: true,
-    modulationOffset: 0.3,
+    modulationOffset: effects.chromaticAberration.modulationOffset,
   });
 
   const effectPass = new EffectPass(camera, bloomEffect, caEffect);

@@ -50,10 +50,40 @@ export const ResearchConfigSchema = z
     luminanceKeyMul: z.number().min(0.1).max(3.0).default(1.0),
     bloomStrengthMul: z.number().min(0.0).max(3.0).default(1.0),
     chromaticAberrationOffsetMul: z.number().min(0.0).max(3.0).default(1.0),
+
+    // ── Effect Composer Axes ─────────────────────────────────
+    bloomRadiusMul: z.number().min(0.1).max(3.0).default(1.0),
+    bloomThresholdMul: z.number().min(0.1).max(3.0).default(1.0),
+    caModulationOffsetMul: z.number().min(0.1).max(3.0).default(1.0),
+
+    // ── Shader Axes ──────────────────────────────────────────
+    satBlendLow: z.number().min(0.01).max(0.5).default(0.1),
+    satBlendHigh: z.number().min(0.1).max(0.8).default(0.4),
+    satInjectionMul: z.number().min(0.1).max(1.0).default(0.35),
+    glowPulseFloor: z.number().min(0.0).max(0.9).default(0.0),
+    lumExponent: z.number().min(0.5).max(3.0).default(1.0),
+
+    // ── Scene Generator Axes ─────────────────────────────────
+    tempoMul: z.number().min(0.3).max(3.0).default(1.0),
+    phaseSpreadMul: z.number().min(0.1).max(3.0).default(1.0),
+    periodRangeLow: z.number().min(1.0).max(10.0).default(1.0),
+    periodRangeHigh: z.number().min(5.0).max(30.0).default(20.0),
+    glowPeriodMul: z.number().min(0.3).max(3.0).default(1.0),
+
+    // ── Blend Mode ───────────────────────────────────────────
+    blendMode: z.enum(["normal", "add", "multiply", "screen"]).default("normal"),
   })
   .refine((c) => c.simpleEdgeMax < c.complexEdgeMin, {
     message: "simpleEdgeMax must be less than complexEdgeMin",
     path: ["simpleEdgeMax"],
+  })
+  .refine((c) => c.satBlendLow < c.satBlendHigh, {
+    message: "satBlendLow must be less than satBlendHigh",
+    path: ["satBlendLow"],
+  })
+  .refine((c) => c.periodRangeLow < c.periodRangeHigh, {
+    message: "periodRangeLow must be less than periodRangeHigh",
+    path: ["periodRangeLow"],
   });
 
 export type ResearchConfig = z.infer<typeof ResearchConfigSchema>;

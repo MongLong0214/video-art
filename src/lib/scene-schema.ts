@@ -49,15 +49,31 @@ const animationSchema = z.object({
     .optional(),
   saturationBoost: z.number().min(0).max(10).default(2.5),
   luminanceKey: z.number().min(0).max(1).default(0.6),
+  satBlendLow: z.number().default(0.1),
+  satBlendHigh: z.number().default(0.4),
+  satInjectionMul: z.number().default(0.35),
+  glowPulseFloor: z.number().default(0.0),
+  lumExponent: z.number().default(1.0),
 });
+
+const blendModeSchema = z.enum(["normal", "add", "multiply", "screen"]).default("normal");
 
 const layerSchema = z.object({
   id: z.string(),
   file: z.string().regex(/^[\w\-\/\.]+\.png$/, "Layer file must be a relative PNG path"),
   zIndex: z.number().int().min(0),
   opacity: z.number().min(0).max(1).default(1),
+  blending: blendModeSchema,
   role: layerRoleSchema.optional(),
-  animation: animationSchema.default({ saturationBoost: 2.5, luminanceKey: 0.6 }),
+  animation: animationSchema.default({
+    saturationBoost: 2.5,
+    luminanceKey: 0.6,
+    satBlendLow: 0.1,
+    satBlendHigh: 0.4,
+    satInjectionMul: 0.35,
+    glowPulseFloor: 0.0,
+    lumExponent: 1.0,
+  }),
 });
 
 const bloomSchema = z.object({
@@ -68,11 +84,12 @@ const bloomSchema = z.object({
 
 const chromaticAberrationSchema = z.object({
   offset: z.number().min(0).default(1.5),
+  modulationOffset: z.number().min(0).max(1).default(0.3),
 });
 
 const effectsSchema = z.object({
   bloom: bloomSchema.default({ strength: 0.6, radius: 0.4, threshold: 0.7 }),
-  chromaticAberration: chromaticAberrationSchema.default({ offset: 1.5 }),
+  chromaticAberration: chromaticAberrationSchema.default({ offset: 1.5, modulationOffset: 0.3 }),
 });
 
 const audioSchema = z.object({
@@ -105,7 +122,7 @@ export const sceneSchema = z
     layers: z.array(layerSchema).min(1),
     effects: effectsSchema.default({
       bloom: { strength: 0.6, radius: 0.4, threshold: 0.7 },
-      chromaticAberration: { offset: 1.5 },
+      chromaticAberration: { offset: 1.5, modulationOffset: 0.3 },
     }),
     audio: audioSchema.optional(),
   })
@@ -136,14 +153,13 @@ export type AudioConfig = z.infer<typeof audioSchema>;
 
 export interface LayerCandidate {
   id: string;
-  source: "qwen-base" | "qwen-recursive" | "luminance-split" | "sam2-segment";
+  source: "luminance-split" | "sam2-segment";
   filePath: string;
   width: number;
   height: number;
   coverage: number;
   uniqueCoverage?: number;
   meanDepth?: number;
-  depthStd?: number;
   bbox: { x: number; y: number; w: number; h: number };
   centroid: { x: number; y: number };
   edgeDensity: number;

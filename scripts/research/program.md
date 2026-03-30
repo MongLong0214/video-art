@@ -78,17 +78,36 @@ Each experiment runs the full pipeline once (~2 minutes). You launch it as: `npm
 | luminanceKeyMul | 0.1-3.0 | 1.0 | Animation: luminance key multiplier |
 | bloomStrengthMul | 0.0-3.0 | 1.0 | Post: bloom strength multiplier |
 | chromaticAberrationOffsetMul | 0.0-3.0 | 1.0 | Post: chromatic aberration offset multiplier |
+| bloomRadiusMul | 0.1-3.0 | 1.0 | Post: bloom radius multiplier (clamped at radius=1.0) |
+| bloomThresholdMul | 0.1-3.0 | 1.0 | Post: bloom luminance threshold multiplier |
+| caModulationOffsetMul | 0.1-3.0 | 1.0 | Post: chromatic aberration radial modulation offset multiplier |
+| satBlendLow | 0.01-0.5 | 0.1 | Shader: smoothstep lower bound for saturation blending |
+| satBlendHigh | 0.1-0.8 | 0.4 | Shader: smoothstep upper bound for saturation blending |
+| satInjectionMul | 0.1-1.0 | 0.35 | Shader: saturation injection scalar (replaces hardcoded 0.35) |
+| glowPulseFloor | 0.0-0.9 | 0.0 | Shader: glow pulse oscillation minimum. 0=full range [0,1], 0.5=half range [0.5,1] |
+| lumExponent | 0.5-3.0 | 1.0 | Shader: luminance phase exponent. Higher = stronger nonlinearity in dark regions |
+| tempoMul | 0.3-3.0 | 1.0 | Animation: global tempo multiplier (base tempo is 0.85) |
+| phaseSpreadMul | 0.1-3.0 | 1.0 | Animation: phase offset spread. >1 = wider spread between layers |
+| periodRangeLow | 1.0-10.0 | 1.0 | Animation: minimum allowed period (filters to valid divisors only) |
+| periodRangeHigh | 5.0-30.0 | 20.0 | Animation: maximum allowed period (filters to valid divisors only) |
+| glowPeriodMul | 0.3-3.0 | 1.0 | Animation: glow period scaling (snaps to nearest valid divisor) |
+| blendMode | normal/add/multiply/screen | normal | Renderer: layer blending mode. Non-normal modes change layer compositing |
 
 ### Constraints
 - `simpleEdgeMax` must be less than `complexEdgeMin`
+- `satBlendLow` must be less than `satBlendHigh` — always sweep these as a pair
+- `periodRangeLow` must be less than `periodRangeHigh` — always sweep these as a pair
 - `samMaskLimit = null` means the pipeline will choose 6/7/8 masks from complexity scoring
 - Higher `samPointsPerSide` and lower SAM thresholds usually increase candidate count and can trigger different luminance fallback behavior
 - `luminanceFallbackResidualOnly=true` is the main switch for escaping the old fixed 2-SAM + 6-luminance topology
 - Multipliers of `1.0` = no change from existing presets
+- `bloomRadiusMul` is clamped so radius never exceeds 1.0
+- `glowPeriodMul` result is snapped to nearest valid period divisor
 
 ### Live Knobs
 - Every parameter listed above is live on the default SAM2 experiment path.
 - There are no exploratory knobs in this table that only affect the deprecated Qwen or recursive pipeline.
+- The 14 new axes (bloomRadiusMul through blendMode) are all live and affect the rendered video output.
 
 ### Interdependencies
 - `samMaskLimit` + SAM quality thresholds + fallback knobs determine the topology before retention
@@ -98,6 +117,12 @@ Each experiment runs the full pipeline once (~2 minutes). You launch it as: `npm
 - `iouDedupeThreshold` + `uniqueCoverageThreshold` together control retention aggressiveness
 - `centralityThreshold` + `bgPlateMinBboxRatio` + `edgeTolerancePx` together steer role assignment
 - Animation multipliers are independent from decomposition, but they still affect the final evaluated video
+- `tempoMul` scales the base tempo (0.85) which is multiplied into `colorCycleSpeedMul` — both affect speed, so avoid sweeping simultaneously
+- `satBlendLow`/`satBlendHigh` control the saturation blending curve — interact with `saturationBoostMul`
+- `lumExponent` only takes effect when `luminanceKeyMul > 0` (guard: `uLuminanceKey > 0.001`)
+- `blendMode` non-normal modes can cause overexposure — when sweeping blendMode, lower `bloomStrengthMul` to 0.3-0.5
+- `periodRangeLow`/`periodRangeHigh` filter to duration divisors — if no divisors in range, falls back to all divisors
+- `glowPeriodMul` result snaps to nearest valid divisor — equidistant ties snap to larger divisor
 
 ## Strategy Guide
 
@@ -108,6 +133,9 @@ Each experiment runs the full pipeline once (~2 minutes). You launch it as: `npm
 5. **Combination exploration**: After identifying promising single changes, combine them.
 6. **Extreme testing**: Try boundary values to understand parameter sensitivity.
 7. **Random restart**: If stuck in local optimum, reset to baseline and try a different direction.
+8. **Category-sequential sweep for new axes**: Effect axes (bloomRadiusMul, bloomThresholdMul, caModulationOffsetMul) 50 runs → Shader axes (satBlendLow/High, satInjectionMul, glowPulseFloor, lumExponent) 50 runs → SceneGen axes (tempoMul, phaseSpreadMul, periodRangeLow/High, glowPeriodMul) 50 runs → Cross-category combinations 100 runs.
+9. **blendMode caution**: When changing blendMode to add/multiply/screen, simultaneously lower bloomStrengthMul to 0.3-0.5 to avoid gate failure from overexposure.
+10. **Paired constraints**: Always sweep satBlendLow/High together (never independently). Same for periodRangeLow/High.
 
 ## Output Format
 

@@ -18,6 +18,13 @@ uniform float uGlowPeriod;
 uniform float uSaturationBoost;
 uniform float uLuminanceKey;
 
+// Shader axes (research-tunable)
+uniform float uSatBlendLow;
+uniform float uSatBlendHigh;
+uniform float uSatInjectionMul;
+uniform float uGlowPulseFloor;
+uniform float uLumExponent;
+
 varying vec2 vUv;
 
 #define PI 3.14159265359
@@ -52,7 +59,7 @@ void main() {
   float originalSat = hsv.y;
   float originalVal = hsv.z;
 
-  float lumPhase = uLuminanceKey > 0.001 ? pow(1.0 - lum, 1.0 + uLuminanceKey) : 0.0;
+  float lumPhase = uLuminanceKey > 0.001 ? pow(1.0 - lum, uLumExponent + uLuminanceKey) : 0.0;
   float safePeriod = max(uColorCyclePeriod, 1e-4);
   // Seamless loop: speed is quantized by scene-generator.ts so that
   // (duration / period * speed) is always an integer → fract wraps cleanly
@@ -61,10 +68,10 @@ void main() {
   float shiftedHue = fract(hsv.x + hueShift);
   float injectedHue = fract(hueShift + lum * uLuminanceKey);
 
-  float blend = smoothstep(0.1, 0.4, originalSat);
+  float blend = smoothstep(uSatBlendLow, uSatBlendHigh, originalSat);
   hsv.x = mix(injectedHue, shiftedHue, blend);
 
-  float injectedSat = uSaturationBoost * 0.35;
+  float injectedSat = uSaturationBoost * uSatInjectionMul;
   float boostedSat = clamp(originalSat * uSaturationBoost, 0.0, 1.0);
   hsv.y = clamp(mix(injectedSat, boostedSat, blend), 0.0, 1.0);
 
@@ -76,7 +83,7 @@ void main() {
   // --- Glow (subtle) ---
   float safeGlowPeriod = max(uGlowPeriod, 1e-4);
   float glowT = time * TAU / safeGlowPeriod;
-  float glowPulse = mix(1.0, 0.5 + 0.5 * sin(glowT), uGlowPulse);
+  float glowPulse = mix(1.0, uGlowPulseFloor + (1.0 - uGlowPulseFloor) * 0.5 * (1.0 + sin(glowT)), uGlowPulse);
   float glowFactor = 1.0 + uGlowIntensity * glowPulse;
   rgb *= glowFactor;
 
