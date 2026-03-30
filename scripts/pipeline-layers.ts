@@ -384,8 +384,8 @@ async function main() {
   // --- Step 13: Generate + write manifest ---
   // Compute depthStats for manifest
   const manifestDepthStats = depthMapBuffer ? (() => {
-    const depths = retained.map((c) => c.meanDepth ?? 128);
-    return computeDepthStats(depths);
+    const depths = retained.map((c) => c.meanDepth).filter((d): d is number => d !== undefined);
+    return depths.length > 0 ? computeDepthStats(depths) : undefined;
   })() : undefined;
 
   const manifestInput: ManifestInput = {

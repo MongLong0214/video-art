@@ -102,6 +102,7 @@ export async function getDepthMap(
   replicate: Replicate,
   imagePath: string,
 ): Promise<Buffer | null> {
+  try {
   let imageData: Buffer = fs.readFileSync(imagePath);
 
   // AC-1.10: Downsample if input exceeds 20MB to keep base64 data URI safe
@@ -117,7 +118,6 @@ export async function getDepthMap(
   const dataUri = `data:${mime};base64,${imageData.toString("base64")}`;
 
   console.log("  Running Depth Anything V2...");
-  try {
     const output = await withRetry(async () => {
       return replicate.run(
         `${DAV2_MODEL}:${DAV2_VERSION}`,

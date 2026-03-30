@@ -352,7 +352,9 @@ export function assignRoles(
     // Depth boost: only high-depth (near) candidates become occluders
     if (isEdgeTouching && candidate.coverage < 0.5) {
       if (depthActive && pct < depthFgThreshold) {
-        // Far objects touching edge are NOT occluders — assign midground/background later
+        // Far objects touching edge are NOT occluders — promote to background
+        assigned.set(candidate.id, "background");
+        continue;
       } else if (!isCentralBbox || candidate.coverage < 0.2) {
         assigned.set(candidate.id, "foreground-occluder");
         continue;
