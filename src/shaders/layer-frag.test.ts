@@ -20,8 +20,8 @@ describe("layer.frag — haze uniforms & formula", () => {
     expect(fragSrc).toMatch(/uniform\s+float\s+uFeatherRadius/);
   });
 
-  it("haze formula: hsv.y *= 1.0 - uHazeIntensity * (1.0 - uDepthNorm)", () => {
-    expect(fragSrc).toMatch(/hsv\.y\s*\*=\s*1\.0\s*-\s*uHazeIntensity\s*\*\s*\(\s*1\.0\s*-\s*uDepthNorm\s*\)/);
+  it("haze formula: hsv.y *= max(0.0, 1.0 - uHazeIntensity * (1.0 - uDepthNorm))", () => {
+    expect(fragSrc).toMatch(/hsv\.y\s*\*=\s*max\(\s*0\.0\s*,\s*1\.0\s*-\s*uHazeIntensity\s*\*\s*\(\s*1\.0\s*-\s*uDepthNorm\s*\)\s*\)/);
   });
 
   it("haze applied after saturationBoost (uSaturationBoost appears before haze)", () => {

@@ -84,7 +84,7 @@ void main() {
   hsv.z = originalVal;
 
   // Atmospheric haze: far layers lose saturation
-  hsv.y *= 1.0 - uHazeIntensity * (1.0 - uDepthNorm);
+  hsv.y *= max(0.0, 1.0 - uHazeIntensity * (1.0 - uDepthNorm));
 
   vec3 rgb = hsv2rgb(hsv);
 
