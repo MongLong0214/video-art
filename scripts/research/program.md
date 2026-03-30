@@ -53,11 +53,6 @@ Each experiment runs the full pipeline once (~2 minutes). You launch it as: `npm
 | samPointsPerSide | 16-128 | 64 | SAM 2 sampling density |
 | samPredIouThresh | 0.1-0.99 | 0.70 | SAM 2 mask quality threshold |
 | samStabilityScoreThresh | 0.1-0.99 | 0.92 | SAM 2 mask stability threshold |
-| luminanceFallbackEnabled | `true/false` | `true` | Enable luminance fallback when SAM under-segments |
-| luminanceFallbackMinSamLayers | 0-12 | 3 | Trigger fallback when SAM retains fewer than this many seed layers |
-| luminanceFallbackZoneCount | 1-8 | 6 | Number of luminance fallback zones to generate |
-| luminanceFallbackResidualOnly | `true/false` | `false` | Split only the residual area not already claimed by SAM |
-| luminanceFallbackResidualCoverageMin | 0.0-1.0 | 0.0 | Skip fallback if unclaimed residual area is below this ratio |
 | alphaThreshold | 1-254 | 128 | RGBA alpha binarization |
 | minCoverage | 0.001-0.05 | 0.005 | Minimum component coverage |
 | simpleEdgeMax | 0.01-0.3 | 0.10 | Complexity: simple ceiling |
@@ -67,6 +62,9 @@ Each experiment runs the full pipeline once (~2 minutes). You launch it as: `npm
 | edgePixelThreshold | 10-100 | 30 | Sobel edge threshold |
 | iouDedupeThreshold | 0.3-0.98 | 0.92 | IoU for duplicate detection |
 | uniqueCoverageThreshold | 0.001-0.1 | 0.005 | Minimum exclusive pixel ratio |
+| depthRoleWeight | 0.0-1.0 | 0.5 | Depth vs heuristic blend for role assignment. 0=heuristic only, 1=max depth influence. Requires DA V2 depth map (stddev >= 5 to activate) |
+| depthForegroundThreshold | 0.1-0.4 | 0.3 | Depth percentile above which a candidate is considered foreground (near). 0.3 = top 30% |
+| depthBackgroundThreshold | 0.5-0.9 | 0.7 | Depth percentile below which (1-N) a candidate is considered background (far). 0.7 = bottom 30% |
 | centralityThreshold | 0.1-0.4 | 0.25 | Subject centrality |
 | bgPlateMinBboxRatio | 0.1-0.6 | 0.30 | Background plate bbox ratio |
 | edgeTolerancePx | 1-10 | 2 | Edge tolerance in pixels |
@@ -98,8 +96,7 @@ Each experiment runs the full pipeline once (~2 minutes). You launch it as: `npm
 - `satBlendLow` must be less than `satBlendHigh` — always sweep these as a pair
 - `periodRangeLow` must be less than `periodRangeHigh` — always sweep these as a pair
 - `samMaskLimit = null` means the pipeline will choose 6/7/8 masks from complexity scoring
-- Higher `samPointsPerSide` and lower SAM thresholds usually increase candidate count and can trigger different luminance fallback behavior
-- `luminanceFallbackResidualOnly=true` is the main switch for escaping the old fixed 2-SAM + 6-luminance topology
+- Higher `samPointsPerSide` and lower SAM thresholds usually increase candidate count
 - Multipliers of `1.0` = no change from existing presets
 - `bloomRadiusMul` is clamped so radius never exceeds 1.0
 - `glowPeriodMul` result is snapped to nearest valid period divisor
@@ -110,10 +107,9 @@ Each experiment runs the full pipeline once (~2 minutes). You launch it as: `npm
 - The 14 new axes (bloomRadiusMul through blendMode) are all live and affect the rendered video output.
 
 ### Interdependencies
-- `samMaskLimit` + SAM quality thresholds + fallback knobs determine the topology before retention
+- `samMaskLimit` + SAM quality thresholds determine the topology before retention
 - `samMaskLimit` + `maxLayers` + `minRetainedLayers` interact: more initial masks usually increase candidate overlap and make retention thresholds matter more
 - `alphaThreshold` + `minCoverage` interact: aggressive masking can shrink layers below the coverage floor
-- `luminanceFallbackZoneCount` + `luminanceFallbackResidualOnly` + `luminanceFallbackResidualCoverageMin` interact: they control whether hybrid runs behave like true residual completion or full-image repartition
 - `iouDedupeThreshold` + `uniqueCoverageThreshold` together control retention aggressiveness
 - `centralityThreshold` + `bgPlateMinBboxRatio` + `edgeTolerancePx` together steer role assignment
 - Animation multipliers are independent from decomposition, but they still affect the final evaluated video
@@ -128,7 +124,7 @@ Each experiment runs the full pipeline once (~2 minutes). You launch it as: `npm
 
 1. **First run**: Always establish baseline by running with default config.
 2. **Single parameter sweep**: Change one parameter at a time, observe effect.
-3. **Start with high-impact parameters**: `samMaskLimit`, `samPredIouThresh`, `samStabilityScoreThresh`, `luminanceFallbackResidualOnly`, `luminanceFallbackZoneCount`, `uniqueCoverageThreshold`
+3. **Start with high-impact parameters**: `samMaskLimit`, `samPredIouThresh`, `samStabilityScoreThresh`, `uniqueCoverageThreshold`
 4. **Animation tuning**: After layer structure stabilizes, tune multipliers.
 5. **Combination exploration**: After identifying promising single changes, combine them.
 6. **Extreme testing**: Try boundary values to understand parameter sensitivity.

@@ -8,6 +8,9 @@ import { withRetry, validateReplicateUrl, getToken } from "./replicate-utils.js"
 export const SAM2_MODEL = "lucataco/segment-anything-2";
 export const SAM2_VERSION = "be7cbde9fdf0eecdc8b20ffec9dd0d1cfeace0832d4d0b58a071d993182e1be0";
 
+export const DAV2_MODEL = "chenxwh/depth-anything-v2";
+export const DAV2_VERSION = "8a4b66f2b04f54c10265e44dcd88f30a01a3eb38a5cd84879dede6cd926cceb1";
+
 interface DecomposeOptions {
   maxLayers?: number;
   alphaThreshold?: number;
@@ -15,28 +18,19 @@ interface DecomposeOptions {
   pointsPerSide?: number;
   predIouThresh?: number;
   stabilityScoreThresh?: number;
-  luminanceFallbackEnabled?: boolean;
-  luminanceFallbackMinSamLayers?: number;
-  luminanceFallbackZoneCount?: number;
-  luminanceFallbackResidualOnly?: boolean;
-  luminanceFallbackResidualCoverageMin?: number;
 }
 
 interface FileSourceMeta {
-  source: "sam2-segment" | "luminance-split";
+  source: "sam2-segment";
   groupId?: string;
 }
 
-interface DecomposeResult {
+export interface DecomposeResult {
   files: string[];
   coverages: number[];
   method: string;
   fileMeta: FileSourceMeta[];
-}
-
-interface ResidualMaskResult {
-  residualMask: Uint8Array;
-  residualCoverage: number;
+  depthMap?: Buffer;
 }
 
 // --- SAM 2 Automatic Mask Generation ---
@@ -101,6 +95,71 @@ async function getSam2Masks(
   });
 }
 
+// --- Depth Anything V2: Monocular Depth Estimation ---
+const MAX_INPUT_BYTES = 20 * 1024 * 1024; // 20MB
+
+export async function getDepthMap(
+  replicate: Replicate,
+  imagePath: string,
+): Promise<Buffer | null> {
+  let imageData: Buffer = fs.readFileSync(imagePath);
+
+  // AC-1.10: Downsample if input exceeds 20MB to keep base64 data URI safe
+  if (imageData.length > MAX_INPUT_BYTES) {
+    console.warn(`  Input image ${(imageData.length / 1024 / 1024).toFixed(1)}MB exceeds 20MB — downsampling for DA V2`);
+    imageData = Buffer.from(await sharp(imageData).resize({ width: 1024, withoutEnlargement: true }).toBuffer());
+  }
+
+  const ext = path.extname(imagePath).toLowerCase().replace(".", "");
+  const mime =
+    { png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp" }[ext] ||
+    "image/png";
+  const dataUri = `data:${mime};base64,${imageData.toString("base64")}`;
+
+  console.log("  Running Depth Anything V2...");
+  try {
+    const output = await withRetry(async () => {
+      return replicate.run(
+        `${DAV2_MODEL}:${DAV2_VERSION}`,
+        { input: { image: dataUri } },
+      );
+    });
+
+    let url: string;
+    if (typeof output === "string") {
+      url = output;
+    } else if (output && typeof output === "object" && "url" in output) {
+      const urlVal = (output as Record<string, unknown>).url;
+      url = typeof urlVal === "function" ? (urlVal as () => string)() : String(urlVal);
+    } else {
+      url = String(output);
+    }
+
+    validateReplicateUrl(url);
+    const resp = await fetch(url);
+    if (!resp.ok) {
+      throw new Error(`Failed to fetch depth map: HTTP ${resp.status} ${resp.statusText}`);
+    }
+    const rawBuffer = Buffer.from(await resp.arrayBuffer());
+
+    // Ensure grayscale — metadata first to avoid non-null assertion
+    const meta = await sharp(rawBuffer).metadata();
+    if (!meta.width || !meta.height) {
+      throw new Error("DA V2 depth map has no valid dimensions");
+    }
+    const depthGray = await sharp(rawBuffer).grayscale().raw().toBuffer();
+    // Convention: 0=far, 255=near (DA V2 disparity map default — high value = near)
+    return await sharp(depthGray, {
+      raw: { width: meta.width, height: meta.height, channels: 1 },
+    }).png().toBuffer();
+  } catch (err) {
+    console.warn(
+      `  DA V2 failed, continuing without depth: ${err instanceof Error ? err.message : err}`,
+    );
+    return null;
+  }
+}
+
 // --- Apply binary mask to original image → RGBA layer ---
 async function applyMaskToImage(
   originalImage: Buffer,
@@ -143,114 +202,7 @@ async function applyMaskToImage(
   return { pixels: layerBuf, coverage: opaqueCount / total, width, height, binaryMask };
 }
 
-export function buildResidualMask(
-  masks: Uint8Array[],
-  width: number,
-  height: number,
-): ResidualMaskResult {
-  const total = width * height;
-  const claimed = new Uint8Array(total);
-
-  for (const mask of masks) {
-    for (let i = 0; i < total; i++) {
-      if (mask[i] === 1) {
-        claimed[i] = 1;
-      }
-    }
-  }
-
-  const residualMask = new Uint8Array(total);
-  let residualCount = 0;
-  for (let i = 0; i < total; i++) {
-    if (claimed[i] === 0) {
-      residualMask[i] = 1;
-      residualCount++;
-    }
-  }
-
-  return {
-    residualMask,
-    residualCoverage: total === 0 ? 0 : residualCount / total,
-  };
-}
-
-export function shouldRunLuminanceFallback(
-  samLayerCount: number,
-  residualCoverage: number,
-  options: {
-    enabled?: boolean;
-    minSamLayers?: number;
-    residualCoverageMin?: number;
-  } = {},
-): boolean {
-  const enabled = options.enabled ?? true;
-  const minSamLayers = options.minSamLayers ?? 3;
-  const residualCoverageMin = options.residualCoverageMin ?? 0;
-
-  if (!enabled) return false;
-  if (samLayerCount >= minSamLayers) return false;
-  return residualCoverage >= residualCoverageMin;
-}
-
-// --- Luminance-based splitting (for unclaimed regions) ---
-async function splitByLuminanceZones(
-  originalImage: Buffer,
-  numZones: number,
-  inclusionMask?: Uint8Array,
-): Promise<{ pixels: Buffer; coverage: number; width: number; height: number }[]> {
-  const origInfo = await sharp(originalImage).ensureAlpha().metadata();
-  const width = origInfo.width!;
-  const height = origInfo.height!;
-  const total = width * height;
-
-  const origRaw = await sharp(originalImage)
-    .resize(width, height)
-    .ensureAlpha()
-    .raw()
-    .toBuffer();
-
-  const luminanceValues: number[] = [];
-  const luminanceMap = new Float32Array(total);
-  for (let i = 0; i < total; i++) {
-    const offset = i * 4;
-    const lum = origRaw[offset] * 0.299 + origRaw[offset + 1] * 0.587 + origRaw[offset + 2] * 0.114;
-    luminanceMap[i] = lum;
-    const inMask = !inclusionMask || inclusionMask[i] === 1;
-    if (inMask) luminanceValues.push(lum);
-  }
-  luminanceValues.sort((a, b) => a - b);
-
-  const thresholds: number[] = [];
-  for (let t = 1; t < numZones; t++) {
-    thresholds.push(luminanceValues[Math.floor(luminanceValues.length * t / numZones)] ?? 255);
-  }
-
-  const zones: { pixels: Buffer; coverage: number; width: number; height: number }[] = [];
-  for (let z = 0; z < numZones; z++) {
-    const layerBuf = Buffer.alloc(width * height * 4);
-    let count = 0;
-    for (let i = 0; i < total; i++) {
-      const inMask = !inclusionMask || inclusionMask[i] === 1;
-      if (!inMask) continue;
-      let zone = numZones - 1;
-      for (let t = 0; t < thresholds.length; t++) {
-        if (luminanceMap[i] <= thresholds[t]) { zone = t; break; }
-      }
-      if (zone === z) {
-        const si = i * 4;
-        layerBuf[si] = origRaw[si];
-        layerBuf[si + 1] = origRaw[si + 1];
-        layerBuf[si + 2] = origRaw[si + 2];
-        layerBuf[si + 3] = 255;
-        count++;
-      }
-    }
-    zones.push({ pixels: layerBuf, coverage: count / total, width, height });
-  }
-  return zones;
-}
-
-// --- Main Decompose (SAM 2 + Luminance fallback) ---
+// --- Main Decompose (SAM 2) ---
 export async function decomposeImage(
   imagePath: string,
   outputDir: string,
@@ -263,11 +215,6 @@ export async function decomposeImage(
     pointsPerSide = 64,
     predIouThresh = 0.7,
     stabilityScoreThresh = 0.92,
-    luminanceFallbackEnabled = true,
-    luminanceFallbackMinSamLayers = 3,
-    luminanceFallbackZoneCount = 6,
-    luminanceFallbackResidualOnly = false,
-    luminanceFallbackResidualCoverageMin = 0,
   } = options;
   const replicate = new Replicate({ auth: getToken() });
   const originalImage = fs.readFileSync(imagePath);
@@ -289,17 +236,20 @@ export async function decomposeImage(
   }
 
   const allLayers: LayerEntry[] = [];
-  const samMasks: Uint8Array[] = [];
 
-  // Step 1: SAM 2 automatic mask generation
-  console.log("  [1/2] SAM 2 segmentation...");
-  const maskBuffers = await getSam2Masks(replicate, imagePath, {
-    maskLimit: maxLayers,
-    pointsPerSide,
-    predIouThresh,
-    stabilityScoreThresh,
-  });
-  console.log(`  ${maskBuffers.length} masks returned`);
+  // Step 1: SAM 2 + DA V2 parallel execution
+  console.log("  [1/2] SAM 2 segmentation + DA V2 depth...");
+  const [maskBuffers, depthMap] = await Promise.all([
+    getSam2Masks(replicate, imagePath, {
+      maskLimit: maxLayers,
+      pointsPerSide,
+      predIouThresh,
+      stabilityScoreThresh,
+    }),
+    getDepthMap(replicate, imagePath),
+  ]);
+  console.log(`  ${maskBuffers.length} masks returned${depthMap ? " + depth map" : " (no depth)"}`);
+
 
   // Step 2: Convert each mask to RGBA layer
   console.log("  [2/2] Applying masks to original image...");
@@ -316,35 +266,10 @@ export async function decomposeImage(
       continue;
     }
     console.log(`  mask[${i}]: ${(layer.coverage * 100).toFixed(1)}% — kept`);
-    samMasks.push(layer.binaryMask);
     allLayers.push({
       ...layer,
       meta: { source: "sam2-segment", groupId: `sam2-${i}` },
     });
-  }
-
-  const { residualMask, residualCoverage } = buildResidualMask(samMasks, width, height);
-
-  if (
-    shouldRunLuminanceFallback(allLayers.length, residualCoverage, {
-      enabled: luminanceFallbackEnabled,
-      minSamLayers: luminanceFallbackMinSamLayers,
-      residualCoverageMin: luminanceFallbackResidualCoverageMin,
-    })
-  ) {
-    const fallbackZones = luminanceFallbackZoneCount;
-    console.log(
-      `  SAM 2 produced ${allLayers.length} layers (residual ${(residualCoverage * 100).toFixed(1)}%)` +
-      ` — fallback: ${fallbackZones} luminance zones${luminanceFallbackResidualOnly ? " on residual only" : ""}`,
-    );
-    const fallbackLayers = await splitByLuminanceZones(
-      originalImage,
-      fallbackZones,
-      luminanceFallbackResidualOnly ? residualMask : undefined,
-    );
-    allLayers.push(...fallbackLayers.filter((z) => z.coverage >= minCoverage).map((z) => ({
-      ...z, meta: { source: "luminance-split" as const, groupId: "luminance-fallback" },
-    })));
   }
 
   // Sort by coverage descending
@@ -368,6 +293,6 @@ export async function decomposeImage(
   }
 
   console.log(`  Total: ${files.length} layers`);
-  return { files, coverages, method: "sam2", fileMeta };
+  return { files, coverages, method: "sam2", fileMeta, depthMap: depthMap ?? undefined };
 }
 

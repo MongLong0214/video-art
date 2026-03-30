@@ -209,12 +209,11 @@ describe("generateManifest", () => {
     const input = makeBaseInput({
       passes: [
         { type: "sam2-segment", candidateCount: 4 },
-        { type: "luminance-fallback", candidateCount: 2 },
       ],
     });
     const manifest = generateManifest(input);
-    expect(manifest.passes.length).toBe(2);
-    expect(manifest.passes[1].type).toBe("luminance-fallback");
+    expect(manifest.passes.length).toBe(1);
+    expect(manifest.passes[0].type).toBe("sam2-segment");
   });
 
   it("should include models data with SAM2 version", () => {
@@ -426,12 +425,11 @@ describe("ManifestInput combinations", () => {
     const input = makeBaseInput({
       passes: [
         { type: "sam2-segment", candidateCount: 4 },
-        { type: "luminance-fallback", candidateCount: 2 },
         { type: "manual-layers", candidateCount: 3 },
       ],
     });
     const manifest = generateManifest(input);
-    expect(manifest.passes.length).toBe(3);
+    expect(manifest.passes.length).toBe(2);
   });
 
   it("should handle large number of passes", () => {

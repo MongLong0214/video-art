@@ -8,6 +8,7 @@ export interface RetainedLayer {
   role: LayerRole;
   coverage: number;
   uniqueCoverage: number;
+  meanDepth?: number;
 }
 
 // Multiplier keys from ResearchConfig for scene animation scaling
@@ -248,6 +249,7 @@ export async function generateSceneJson(
       opacity: 1.0,
       blending: mul.blendMode,
       role,
+      ...(layer.meanDepth !== undefined ? { meanDepth: layer.meanDepth } : {}),
       animation: preset,
     });
   }

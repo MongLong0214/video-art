@@ -44,7 +44,6 @@ const baseInput: ManifestInput = {
   },
   passes: [
     { type: "sam2-segment", candidateCount: 4 },
-    { type: "luminance-fallback", candidateCount: 2 },
   ],
   retainedLayers: [
     makeCandidate({ id: "layer-0", role: "background-plate", coverage: 0.31 }),

@@ -12,11 +12,11 @@ export interface ManifestInput {
   preparedImage: string;
   models: {
     sam2?: { model: string; version: string; maskLimit: number };
+    depthAnything?: { model: string; version: string; depthConvention: "near-is-high" };
   };
   passes: Array<{
     type:
       | "sam2-segment"
-      | "luminance-fallback"
       | "manual-layers";
     candidateCount: number;
     parentId?: string;

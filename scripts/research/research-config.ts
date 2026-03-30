@@ -15,11 +15,6 @@ export const ResearchConfigSchema = z
     samPointsPerSide: z.number().int().min(16).max(128).default(64),
     samPredIouThresh: z.number().min(0.1).max(0.99).default(0.7),
     samStabilityScoreThresh: z.number().min(0.1).max(0.99).default(0.92),
-    luminanceFallbackEnabled: z.boolean().default(true),
-    luminanceFallbackMinSamLayers: z.number().int().min(0).max(12).default(3),
-    luminanceFallbackZoneCount: z.number().int().min(1).max(8).default(6),
-    luminanceFallbackResidualOnly: z.boolean().default(false),
-    luminanceFallbackResidualCoverageMin: z.number().min(0.0).max(1.0).default(0.0),
     maxLayers: z.number().int().min(3).max(16).default(12),
     minRetainedLayers: z.number().int().min(1).max(12).default(MIN_RETAINED_LAYERS),
 
@@ -42,6 +37,11 @@ export const ResearchConfigSchema = z
     centralityThreshold: z.number().min(0.1).max(0.4).default(0.25),
     bgPlateMinBboxRatio: z.number().min(0.1).max(0.6).default(0.3),
     edgeTolerancePx: z.number().int().min(1).max(10).default(2),
+
+    // ── Depth Role Assignment ───────────────────────────
+    depthRoleWeight: z.number().min(0.0).max(1.0).default(0.5),
+    depthForegroundThreshold: z.number().min(0.1).max(0.4).default(0.3),
+    depthBackgroundThreshold: z.number().min(0.5).max(0.9).default(0.7),
 
     // ── Scene Generator Multipliers ──────────────────────────
     colorCycleSpeedMul: z.number().min(0.1).max(3.0).default(1.0),
@@ -94,11 +94,6 @@ export function getDefaultConfig(): ResearchConfig {
     samPointsPerSide: 80,
     samPredIouThresh: 0.6,
     samStabilityScoreThresh: 0.9,
-    luminanceFallbackEnabled: true,
-    luminanceFallbackMinSamLayers: 4,
-    luminanceFallbackZoneCount: 3,
-    luminanceFallbackResidualOnly: true,
-    luminanceFallbackResidualCoverageMin: 0.03,
     maxLayers: 12,
     minRetainedLayers: 1,
     alphaThreshold: 96,
@@ -113,6 +108,9 @@ export function getDefaultConfig(): ResearchConfig {
     centralityThreshold: 0.25,
     bgPlateMinBboxRatio: 0.3,
     edgeTolerancePx: 2,
+    depthRoleWeight: 0.5,
+    depthForegroundThreshold: 0.3,
+    depthBackgroundThreshold: 0.7,
     colorCycleSpeedMul: 0.75,
     glowIntensityMul: 0,
     saturationBoostMul: 0.622,

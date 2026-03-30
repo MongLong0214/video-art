@@ -202,8 +202,6 @@ describe("ResearchConfig comprehensive", () => {
     const c = getDefaultConfig();
     expect(Object.keys(c).length).toBeGreaterThanOrEqual(29);
     expect(c.samMaskLimit === null || c.samMaskLimit >= 3).toBe(true);
-    expect(c.luminanceFallbackEnabled).toEqual(expect.any(Boolean));
-    expect(c.luminanceFallbackResidualOnly).toEqual(expect.any(Boolean));
     expect(c.minRetainedLayers).toBe(1);
     expect(c.alphaThreshold).toBeGreaterThanOrEqual(1);
     expect(c.uniqueCoverageThreshold).toBeGreaterThan(0);
@@ -214,9 +212,6 @@ describe("ResearchConfig comprehensive", () => {
     ["samPointsPerSide", 16, 128],
     ["samPredIouThresh", 0.1, 0.99],
     ["samStabilityScoreThresh", 0.1, 0.99],
-    ["luminanceFallbackMinSamLayers", 0, 12],
-    ["luminanceFallbackZoneCount", 1, 8],
-    ["luminanceFallbackResidualCoverageMin", 0.0, 1.0],
     ["alphaThreshold", 1, 254],
     ["minCoverage", 0.001, 0.05],
     ["maxLayers", 3, 16],
@@ -233,9 +228,6 @@ describe("ResearchConfig comprehensive", () => {
     ["samPointsPerSide", 129],
     ["samPredIouThresh", 0.09],
     ["samStabilityScoreThresh", 1.0],
-    ["luminanceFallbackMinSamLayers", -1],
-    ["luminanceFallbackZoneCount", 0],
-    ["luminanceFallbackResidualCoverageMin", 1.1],
     ["alphaThreshold", 0],
     ["alphaThreshold", 255],
     ["minCoverage", -0.01],

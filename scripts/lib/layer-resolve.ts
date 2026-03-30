@@ -299,29 +299,61 @@ export function assignRoles(
   const bgPlateMinBboxRatio = config?.bgPlateMinBboxRatio ?? DEFAULT_BG_PLATE_MIN_BBOX_RATIO;
   const edgeTolerancePx = config?.edgeTolerancePx ?? DEFAULT_EDGE_TOLERANCE_PX;
   const centralityThreshold = config?.centralityThreshold ?? DEFAULT_CENTRALITY_THRESHOLD;
+  const depthRoleWeight = config?.depthRoleWeight ?? 0;
+  const depthFgThreshold = config?.depthForegroundThreshold ?? 0.3;
+  const depthBgThreshold = config?.depthBackgroundThreshold ?? 0.7;
+
+  // Compute depth percentiles + check if depth data is usable
+  const depths = candidates.map((c) => c.meanDepth ?? 128);
+  const depthMean = depths.reduce((a, b) => a + b, 0) / depths.length;
+  const depthVariance = depths.reduce((a, d) => a + (d - depthMean) ** 2, 0) / depths.length;
+  const depthStddev = Math.sqrt(depthVariance);
+  const depthActive = depthRoleWeight > 0 && depthStddev >= 5;
+
+  // Average-rank percentile: 0.0 = lowest depth (farthest), 1.0 = highest (nearest)
+  const sortedDepths = [...depths].sort((a, b) => a - b);
+  const depthPercentile = new Map<string, number>();
+  for (let i = 0; i < candidates.length; i++) {
+    const d = depths[i];
+    let rankSum = 0;
+    let rankCount = 0;
+    for (let j = 0; j < sortedDepths.length; j++) {
+      if (sortedDepths[j] === d) { rankSum += j; rankCount++; }
+    }
+    const avgRank = rankSum / rankCount;
+    depthPercentile.set(candidates[i].id, candidates.length > 1 ? avgRank / (candidates.length - 1) : 1.0);
+  }
 
   // Sort by coverage descending to identify the widest candidate
   const sorted = [...candidates].sort((a, b) => b.coverage - a.coverage);
 
   const assigned = new Map<string, LayerRole>();
 
-  // Step 1: background-plate = widest candidate with large bbox coverage
+  // Step 1: background-plate = widest candidate with large bbox coverage (depth-unaffected)
   const bgPlateCandidate = sorted[0];
   if (bgPlateCandidate && bboxCoverageRatio(bgPlateCandidate.bbox, imageWidth, imageHeight) >= bgPlateMinBboxRatio) {
     assigned.set(bgPlateCandidate.id, "background-plate");
   }
 
-  // Step 2: Assign remaining candidates
+  // Step 2: Assign remaining candidates with depth-gated threshold relaxation
   for (const candidate of sorted) {
     if (assigned.has(candidate.id)) continue;
 
     const bboxRatio = bboxCoverageRatio(candidate.bbox, imageWidth, imageHeight);
     const isEdgeTouching = touchesEdge(candidate.bbox, imageWidth, imageHeight, edgeTolerancePx);
-    const isCentralBbox = isCentral(candidate.centroid, imageWidth, imageHeight, centralityThreshold);
+    const pct = depthPercentile.get(candidate.id) ?? 0.5;
 
-    // foreground-occluder: edge-touching + not the bg-plate + moderate coverage
+    // Depth-gated centrality relaxation
+    const relaxFactor = depthActive && pct >= depthFgThreshold ? depthRoleWeight : 0;
+    const effectiveCentrality = centralityThreshold * (1 + relaxFactor);
+    const isCentralBbox = isCentral(candidate.centroid, imageWidth, imageHeight, effectiveCentrality);
+
+    // foreground-occluder: edge-touching + moderate coverage
+    // Depth boost: only high-depth (near) candidates become occluders
     if (isEdgeTouching && candidate.coverage < 0.5) {
-      if (!isCentralBbox || candidate.coverage < 0.2) {
+      if (depthActive && pct < depthFgThreshold) {
+        // Far objects touching edge are NOT occluders — assign midground/background later
+      } else if (!isCentralBbox || candidate.coverage < 0.2) {
         assigned.set(candidate.id, "foreground-occluder");
         continue;
       }
@@ -333,8 +365,9 @@ export function assignRoles(
       continue;
     }
 
-    // background: second-widest with large bbox
-    if (bboxRatio >= 0.2 && candidate.coverage >= 0.15) {
+    // background: large bbox + depth-gated relaxation for far objects
+    const effectiveBboxMin = depthActive && pct <= (1 - depthBgThreshold) ? 0.2 * (1 - depthRoleWeight * 0.3) : 0.2;
+    if (bboxRatio >= effectiveBboxMin && candidate.coverage >= 0.15) {
       assigned.set(candidate.id, "background");
       continue;
     }

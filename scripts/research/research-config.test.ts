@@ -13,11 +13,6 @@ describe("ResearchConfigSchema", () => {
     expect(config.samPointsPerSide).toBe(64);
     expect(config.samPredIouThresh).toBe(0.7);
     expect(config.samStabilityScoreThresh).toBe(0.92);
-    expect(config.luminanceFallbackEnabled).toBe(true);
-    expect(config.luminanceFallbackMinSamLayers).toBe(3);
-    expect(config.luminanceFallbackZoneCount).toBe(6);
-    expect(config.luminanceFallbackResidualOnly).toBe(false);
-    expect(config.luminanceFallbackResidualCoverageMin).toBe(0);
     expect(config.maxLayers).toBe(12);
     expect(config.minRetainedLayers).toBe(6);
     expect(config.alphaThreshold).toBe(128);
@@ -141,8 +136,6 @@ describe("getDefaultConfig", () => {
     expect(config.samMaskLimit === null || config.samMaskLimit >= 3).toBe(true);
     expect(config.minRetainedLayers).toBeGreaterThanOrEqual(1);
     expect(config.alphaThreshold).toBeGreaterThanOrEqual(1);
-    expect(config.luminanceFallbackEnabled).toEqual(expect.any(Boolean));
-    expect(config.luminanceFallbackResidualOnly).toEqual(expect.any(Boolean));
   });
 });
 
