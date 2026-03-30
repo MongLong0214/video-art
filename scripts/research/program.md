@@ -90,6 +90,11 @@ Each experiment runs the full pipeline once (~2 minutes). You launch it as: `npm
 | periodRangeHigh | 5.0-30.0 | 20.0 | Animation: maximum allowed period (filters to valid divisors only) |
 | glowPeriodMul | 0.3-3.0 | 1.0 | Animation: glow period scaling (snaps to nearest valid divisor) |
 | blendMode | normal/add/multiply/screen | normal | Renderer: layer blending mode. Non-normal modes change layer compositing |
+| depthSpeedInfluence | 0.0-2.0 | 0.0 | Depth-proportional color cycle speed boost (near=faster) |
+| depthGlowInfluence | 0.0-2.0 | 0.0 | Depth-proportional glow intensity boost (near=brighter) |
+| depthParallaxScale | 0.0-0.1 | 0.0 | 2.5D parallax UV offset magnitude (near=more movement) |
+| hazeIntensity | 0.0-1.0 | 0.0 | Atmospheric desaturation for far layers |
+| featherRadius | 0.0-0.2 | 0.0 | UV edge alpha fade radius |
 
 ### Constraints
 - `simpleEdgeMax` must be less than `complexEdgeMin`
@@ -119,6 +124,10 @@ Each experiment runs the full pipeline once (~2 minutes). You launch it as: `npm
 - `blendMode` non-normal modes can cause overexposure — when sweeping blendMode, lower `bloomStrengthMul` to 0.3-0.5
 - `periodRangeLow`/`periodRangeHigh` filter to duration divisors — if no divisors in range, falls back to all divisors
 - `glowPeriodMul` result snaps to nearest valid divisor — equidistant ties snap to larger divisor
+- `hazeIntensity` + `saturationBoostMul` — haze desaturation is applied after saturationBoost in the shader pipeline. High saturationBoostMul amplifies the haze effect since there's more saturation to remove. When sweeping haze, keep saturationBoostMul stable
+- `featherRadius` + `depthParallaxScale` — parallax UV shift moves the feather boundary, which can cause micro-flickering at edges. When using feather, keep depthParallaxScale low (≤ 0.03)
+- `depthSpeedInfluence` + `depthGlowInfluence` — simultaneous activation makes near layers excessively active (fast cycling + bright glow). Sweep one at a time; combined use should keep each ≤ 0.5
+- Depth cinematic axes require depth variance (stddev ≥ 5) to activate. If all layers have similar meanDepth, the scene-generator forces all 5 cinematic axes to 0 regardless of config values
 
 ## Strategy Guide
 
@@ -132,6 +141,7 @@ Each experiment runs the full pipeline once (~2 minutes). You launch it as: `npm
 8. **Category-sequential sweep for new axes**: Effect axes (bloomRadiusMul, bloomThresholdMul, caModulationOffsetMul) 50 runs → Shader axes (satBlendLow/High, satInjectionMul, glowPulseFloor, lumExponent) 50 runs → SceneGen axes (tempoMul, phaseSpreadMul, periodRangeLow/High, glowPeriodMul) 50 runs → Cross-category combinations 100 runs.
 9. **blendMode caution**: When changing blendMode to add/multiply/screen, simultaneously lower bloomStrengthMul to 0.3-0.5 to avoid gate failure from overexposure.
 10. **Paired constraints**: Always sweep satBlendLow/High together (never independently). Same for periodRangeLow/High.
+11. **Depth cinematic sweep**: After animation tuning stabilizes, sweep depth axes sequentially: (1) depthSpeedInfluence 0.2-1.0 → (2) depthGlowInfluence 0.2-1.0 → (3) depthParallaxScale 0.01-0.05 → (4) hazeIntensity 0.1-0.5 → (5) featherRadius 0.02-0.1 → (6) top-2 combinations. Note: images with low depth variance (stddev < 5) auto-disable all cinematic axes.
 
 ## Output Format
 

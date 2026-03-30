@@ -25,6 +25,11 @@ uniform float uSatInjectionMul;
 uniform float uGlowPulseFloor;
 uniform float uLumExponent;
 
+// Depth cinematic
+uniform float uHazeIntensity;
+uniform float uDepthNorm;
+uniform float uFeatherRadius;
+
 varying vec2 vUv;
 
 #define PI 3.14159265359
@@ -78,6 +83,9 @@ void main() {
   // Luminance preservation
   hsv.z = originalVal;
 
+  // Atmospheric haze: far layers lose saturation
+  hsv.y *= 1.0 - uHazeIntensity * (1.0 - uDepthNorm);
+
   vec3 rgb = hsv2rgb(hsv);
 
   // --- Glow (subtle) ---
@@ -87,5 +95,9 @@ void main() {
   float glowFactor = 1.0 + uGlowIntensity * glowPulse;
   rgb *= glowFactor;
 
-  gl_FragColor = vec4(rgb, texColor.a * uOpacity);
+  // Edge vignette: alpha fade at UV boundaries
+  float d = min(min(vUv.x, 1.0 - vUv.x), min(vUv.y, 1.0 - vUv.y));
+  float feather = uFeatherRadius < 1e-4 ? 1.0 : smoothstep(0.0, uFeatherRadius, d);
+  float alpha = texColor.a * uOpacity * feather;
+  gl_FragColor = vec4(rgb, alpha);
 }

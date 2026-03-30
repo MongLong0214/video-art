@@ -33,6 +33,8 @@ export async function createLayeredPsychedelic(
     const layerConfig = config.layers[idx];
     const texture = textures[idx];
     texture.colorSpace = THREE.SRGBColorSpace;
+    texture.wrapS = THREE.ClampToEdgeWrapping;
+    texture.wrapT = THREE.ClampToEdgeWrapping;
 
     const anim = layerConfig.animation;
 
@@ -57,6 +59,10 @@ export async function createLayeredPsychedelic(
         uSatInjectionMul: { value: anim.satInjectionMul ?? 0.35 },
         uGlowPulseFloor: { value: anim.glowPulseFloor ?? 0.0 },
         uLumExponent: { value: anim.lumExponent ?? 1.0 },
+        uDepthNorm: { value: (layerConfig.meanDepth ?? 128) / 255 },
+        uParallaxScale: { value: config.effects?.parallax?.scale ?? 0 },
+        uHazeIntensity: { value: config.effects?.haze?.intensity ?? 0 },
+        uFeatherRadius: { value: config.effects?.feather?.radius ?? 0 },
       },
       transparent: true,
       depthWrite: false,

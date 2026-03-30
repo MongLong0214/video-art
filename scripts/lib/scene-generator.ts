@@ -33,6 +33,11 @@ interface SceneMultipliers {
   periodRangeHigh: number;
   glowPeriodMul: number;
   blendMode: "normal" | "add" | "multiply" | "screen";
+  depthSpeedInfluence: number;
+  depthGlowInfluence: number;
+  depthParallaxScale: number;
+  hazeIntensity: number;
+  featherRadius: number;
 }
 
 const DEFAULT_MULTIPLIERS: SceneMultipliers = {
@@ -56,6 +61,11 @@ const DEFAULT_MULTIPLIERS: SceneMultipliers = {
   periodRangeHigh: 20.0,
   glowPeriodMul: 1.0,
   blendMode: "normal" as const,
+  depthSpeedInfluence: 0,
+  depthGlowInfluence: 0,
+  depthParallaxScale: 0,
+  hazeIntensity: 0,
+  featherRadius: 0,
 };
 
 export function filterPeriods(
@@ -105,6 +115,7 @@ function getRolePreset(
   total: number,
   duration: number,
   mul: SceneMultipliers = DEFAULT_MULTIPLIERS,
+  depthNorm: number = 0,
 ): AnimationConfig {
   const periods = filterPeriods(duration, mul.periodRangeLow, mul.periodRangeHigh);
   const phaseOffset = Math.round((360 * index) / total * mul.phaseSpreadMul) % 360;
@@ -125,12 +136,9 @@ function getRolePreset(
   const tempo = 0.85 * mul.tempoMul;
   const colorCycle = (baseSpeed: number, tier: number) => {
     const period = pickPeriod(tier);
+    const depthModulatedSpeed = baseSpeed * mul.colorCycleSpeedMul * tempo * (1 + mul.depthSpeedInfluence * depthNorm);
     return {
-      speed: quantizeLoopSpeed(
-        baseSpeed * mul.colorCycleSpeedMul * tempo,
-        period,
-        duration,
-      ),
+      speed: quantizeLoopSpeed(depthModulatedSpeed, period, duration),
       period,
       phaseOffset,
     };
@@ -189,7 +197,11 @@ function getRolePreset(
     },
   };
 
-  return presets[role];
+  const preset = presets[role];
+  if (preset.glow) {
+    preset.glow.intensity *= 1 + mul.depthGlowInfluence * depthNorm;
+  }
+  return preset;
 }
 
 export async function generateSceneJson(
@@ -220,6 +232,11 @@ export async function generateSceneJson(
     periodRangeHigh: config?.periodRangeHigh ?? 20.0,
     glowPeriodMul: config?.glowPeriodMul ?? 1.0,
     blendMode: config?.blendMode ?? "normal",
+    depthSpeedInfluence: config?.depthSpeedInfluence ?? 0,
+    depthGlowInfluence: config?.depthGlowInfluence ?? 0,
+    depthParallaxScale: config?.depthParallaxScale ?? 0,
+    hazeIntensity: config?.hazeIntensity ?? 0,
+    featherRadius: config?.featherRadius ?? 0,
   };
   // Cap resolution while maintaining aspect ratio (Puppeteer + GPU limit)
   const MAX_OUTPUT_DIM = 1920;
@@ -235,12 +252,28 @@ export async function generateSceneJson(
     h % 2 === 0 ? h : h - 1,
   ];
 
+  // Depth stddev guard: if depth variance is too low, cinematic axes are meaningless
+  const depthValues = layers.map(l => l.meanDepth).filter((d): d is number => d != null);
+  const depthMean = depthValues.length > 0 ? depthValues.reduce((a, b) => a + b, 0) / depthValues.length : 0;
+  const stddev = depthValues.length >= 2
+    ? Math.sqrt(depthValues.reduce((s, v) => s + (v - depthMean) ** 2, 0) / depthValues.length)
+    : 0;
+  const cinematicActive = depthValues.length >= 2 && stddev >= 5;
+  if (!cinematicActive) {
+    mul.depthSpeedInfluence = 0;
+    mul.depthGlowInfluence = 0;
+    mul.depthParallaxScale = 0;
+    mul.hazeIntensity = 0;
+    mul.featherRadius = 0;
+  }
+
   const sceneLayers: SceneConfig["layers"] = [];
 
   for (let i = 0; i < layers.length; i++) {
     const layer = layers[i];
     const role: LayerRole = layer.role || "midground";
-    const preset = getRolePreset(role, i, layers.length, duration, mul);
+    const depthNorm = (layer.meanDepth ?? 128) / 255;
+    const preset = getRolePreset(role, i, layers.length, duration, mul, depthNorm);
 
     sceneLayers.push({
       id: `layer-${i}`,
@@ -271,6 +304,9 @@ export async function generateSceneJson(
         offset: 1.5 * mul.chromaticAberrationOffsetMul,
         modulationOffset: 0.3 * mul.caModulationOffsetMul,
       },
+      parallax: { scale: mul.depthParallaxScale },
+      haze: { intensity: mul.hazeIntensity },
+      feather: { radius: mul.featherRadius },
     },
   };
 }

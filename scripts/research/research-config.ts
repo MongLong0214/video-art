@@ -70,6 +70,13 @@ export const ResearchConfigSchema = z
     periodRangeHigh: z.number().min(5.0).max(30.0).default(20.0),
     glowPeriodMul: z.number().min(0.3).max(3.0).default(1.0),
 
+    // ── Depth Cinematic Axes ────────────────────────────────────
+    depthSpeedInfluence: z.number().min(0.0).max(2.0).default(0.0),
+    depthGlowInfluence: z.number().min(0.0).max(2.0).default(0.0),
+    depthParallaxScale: z.number().min(0.0).max(0.1).default(0.0),
+    hazeIntensity: z.number().min(0.0).max(1.0).default(0.0),
+    featherRadius: z.number().min(0.0).max(0.2).default(0.0),
+
     // ── Blend Mode ───────────────────────────────────────────
     blendMode: z.enum(["normal", "add", "multiply", "screen"]).default("normal"),
   })
@@ -117,6 +124,11 @@ export function getDefaultConfig(): ResearchConfig {
     luminanceKeyMul: 1.056,
     bloomStrengthMul: 0.799,
     chromaticAberrationOffsetMul: 0.907,
+    depthSpeedInfluence: 0,
+    depthGlowInfluence: 0,
+    depthParallaxScale: 0,
+    hazeIntensity: 0,
+    featherRadius: 0,
   });
 }
 

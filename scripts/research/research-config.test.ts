@@ -151,6 +151,56 @@ describe("ResearchConfigSchema", () => {
     expect(() => ResearchConfigSchema.parse({ depthBackgroundThreshold: 0.4 })).toThrow();
     expect(() => ResearchConfigSchema.parse({ depthBackgroundThreshold: 1.0 })).toThrow();
   });
+
+  // ── Depth Cinematic Axes ──────────────────────────────────
+
+  it("accepts 5 new depth cinematic axes with valid values", () => {
+    const config = ResearchConfigSchema.parse({
+      depthSpeedInfluence: 1.0,
+      depthGlowInfluence: 0.5,
+      depthParallaxScale: 0.05,
+      hazeIntensity: 0.3,
+      featherRadius: 0.1,
+    });
+    expect(config.depthSpeedInfluence).toBe(1.0);
+    expect(config.depthGlowInfluence).toBe(0.5);
+    expect(config.depthParallaxScale).toBe(0.05);
+    expect(config.hazeIntensity).toBe(0.3);
+    expect(config.featherRadius).toBe(0.1);
+  });
+
+  it("defaults all 5 depth cinematic axes to 0", () => {
+    const config = ResearchConfigSchema.parse({});
+    expect(config.depthSpeedInfluence).toBe(0.0);
+    expect(config.depthGlowInfluence).toBe(0.0);
+    expect(config.depthParallaxScale).toBe(0.0);
+    expect(config.hazeIntensity).toBe(0.0);
+    expect(config.featherRadius).toBe(0.0);
+  });
+
+  it("rejects depthSpeedInfluence > 2", () => {
+    expect(() => ResearchConfigSchema.parse({ depthSpeedInfluence: 3 })).toThrow();
+  });
+
+  it("rejects depthSpeedInfluence < 0", () => {
+    expect(() => ResearchConfigSchema.parse({ depthSpeedInfluence: -0.1 })).toThrow();
+  });
+
+  it("rejects depthGlowInfluence > 2", () => {
+    expect(() => ResearchConfigSchema.parse({ depthGlowInfluence: 3 })).toThrow();
+  });
+
+  it("rejects depthParallaxScale > 0.1", () => {
+    expect(() => ResearchConfigSchema.parse({ depthParallaxScale: 0.2 })).toThrow();
+  });
+
+  it("rejects hazeIntensity > 1", () => {
+    expect(() => ResearchConfigSchema.parse({ hazeIntensity: 1.5 })).toThrow();
+  });
+
+  it("rejects featherRadius > 0.2", () => {
+    expect(() => ResearchConfigSchema.parse({ featherRadius: 0.3 })).toThrow();
+  });
 });
 
 describe("getDefaultConfig", () => {
@@ -167,6 +217,15 @@ describe("getDefaultConfig", () => {
     expect(config.depthRoleWeight).toBe(0.5);
     expect(config.depthForegroundThreshold).toBe(0.3);
     expect(config.depthBackgroundThreshold).toBe(0.7);
+  });
+
+  it("includes 5 depth cinematic axes at 0", () => {
+    const config = getDefaultConfig();
+    expect(config.depthSpeedInfluence).toBe(0);
+    expect(config.depthGlowInfluence).toBe(0);
+    expect(config.depthParallaxScale).toBe(0);
+    expect(config.hazeIntensity).toBe(0);
+    expect(config.featherRadius).toBe(0);
   });
 });
 

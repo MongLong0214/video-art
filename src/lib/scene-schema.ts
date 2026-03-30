@@ -88,9 +88,24 @@ const chromaticAberrationSchema = z.object({
   modulationOffset: z.number().min(0).max(1).default(0.3),
 });
 
+const parallaxEffectSchema = z.object({
+  scale: z.number().min(0).max(0.1).default(0),
+});
+
+const hazeEffectSchema = z.object({
+  intensity: z.number().min(0).max(1).default(0),
+});
+
+const featherEffectSchema = z.object({
+  radius: z.number().min(0).max(0.2).default(0),
+});
+
 const effectsSchema = z.object({
   bloom: bloomSchema.default({ strength: 0.6, radius: 0.4, threshold: 0.7 }),
   chromaticAberration: chromaticAberrationSchema.default({ offset: 1.5, modulationOffset: 0.3 }),
+  parallax: parallaxEffectSchema.default({ scale: 0 }),
+  haze: hazeEffectSchema.default({ intensity: 0 }),
+  feather: featherEffectSchema.default({ radius: 0 }),
 });
 
 const audioSchema = z.object({
@@ -124,6 +139,9 @@ export const sceneSchema = z
     effects: effectsSchema.default({
       bloom: { strength: 0.6, radius: 0.4, threshold: 0.7 },
       chromaticAberration: { offset: 1.5, modulationOffset: 0.3 },
+      parallax: { scale: 0 },
+      haze: { intensity: 0 },
+      feather: { radius: 0 },
     }),
     audio: audioSchema.optional(),
   })
