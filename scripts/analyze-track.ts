@@ -17,7 +17,7 @@ const PROJECT_ROOT = path.resolve(import.meta.dirname, "..");
 const ANALYZER_SCRIPT = path.join(PROJECT_ROOT, "audio", "analyzer", "analyze_track.py");
 const LOCK_FILE = path.join(PROJECT_ROOT, "out", "analysis", ".analyze.lock");
 const AUDIO_EXTENSIONS = [".wav", ".flac", ".mp3", ".aiff"];
-const STALE_LOCK_MS = 10 * 60 * 1000; // 10 minutes
+const STALE_LOCK_MS = 20 * 60 * 1000; // 20 minutes (covers 15min demucs + margin)
 
 // === Lock management ===
 const acquireLock = (): void => {
@@ -85,7 +85,7 @@ const main = async () => {
 
     const { stdout, stderr } = await execFile(
       "python3", [ANALYZER_SCRIPT, resolvedInput, outputDir],
-      { timeout: 300_000, cwd: PROJECT_ROOT },
+      { timeout: 900_000, cwd: PROJECT_ROOT },
     ).catch((err: Error & { code?: string }) => {
       if (err.code === "ENOENT") {
         console.error("python3 not found. Install Python 3.9+:");

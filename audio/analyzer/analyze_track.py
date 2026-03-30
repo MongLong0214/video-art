@@ -347,24 +347,27 @@ def check_disk_space(output_dir, file_size):
 def separate_stems(file_path, output_dir):
     """Run demucs separation → 4 stem WAVs."""
     import subprocess
+    import shutil
     stems_dir = os.path.join(output_dir, "stems")
     result = subprocess.run(
         ["python3", "-m", "demucs", "--out", stems_dir, file_path],
-        capture_output=True, text=True, timeout=300,
+        capture_output=True, text=True, timeout=900,
     )
     if result.returncode != 0:
         raise RuntimeError(f"demucs failed: {result.stderr[:200]}")
 
-    # Find output directory (demucs creates a subdirectory)
-    for d in os.listdir(stems_dir):
-        subdir = os.path.join(stems_dir, d)
-        if os.path.isdir(subdir):
-            for f in os.listdir(subdir):
-                src = os.path.join(subdir, f)
+    # Find output directory (demucs creates nested subdirs: stems/htdemucs/trackname/*.wav)
+    # Walk all subdirectories to find the actual stem WAVs
+    for root, dirs, files in os.walk(stems_dir):
+        if root == stems_dir:
+            continue
+        for f in files:
+            if f.endswith(".wav"):
+                src = os.path.join(root, f)
                 dst = os.path.join(stems_dir, f)
-                if not os.path.exists(dst):
-                    os.rename(src, dst)
-            break
+                if os.path.exists(dst):
+                    raise RuntimeError(f"Stem collision: {dst} already exists; multiple model outputs?")
+                shutil.move(src, dst)
 
     return stems_dir
 
