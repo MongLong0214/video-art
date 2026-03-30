@@ -12,6 +12,14 @@ export const ResearchConfigSchema = z
   .object({
     // ── SAM 2 Decomposition ─────────────────────────────────
     samMaskLimit: z.number().int().min(3).max(12).nullable().default(null),
+    samPointsPerSide: z.number().int().min(16).max(128).default(64),
+    samPredIouThresh: z.number().min(0.1).max(0.99).default(0.7),
+    samStabilityScoreThresh: z.number().min(0.1).max(0.99).default(0.92),
+    luminanceFallbackEnabled: z.boolean().default(true),
+    luminanceFallbackMinSamLayers: z.number().int().min(0).max(12).default(3),
+    luminanceFallbackZoneCount: z.number().int().min(1).max(8).default(6),
+    luminanceFallbackResidualOnly: z.boolean().default(false),
+    luminanceFallbackResidualCoverageMin: z.number().min(0.0).max(1.0).default(0.0),
     maxLayers: z.number().int().min(3).max(16).default(12),
     minRetainedLayers: z.number().int().min(1).max(12).default(MIN_RETAINED_LAYERS),
 
@@ -40,6 +48,8 @@ export const ResearchConfigSchema = z
     glowIntensityMul: z.number().min(0.0).max(3.0).default(1.0),
     saturationBoostMul: z.number().min(0.1).max(3.0).default(1.0),
     luminanceKeyMul: z.number().min(0.1).max(3.0).default(1.0),
+    bloomStrengthMul: z.number().min(0.0).max(3.0).default(1.0),
+    chromaticAberrationOffsetMul: z.number().min(0.0).max(3.0).default(1.0),
   })
   .refine((c) => c.simpleEdgeMax < c.complexEdgeMin, {
     message: "simpleEdgeMax must be less than complexEdgeMin",
@@ -50,9 +60,35 @@ export type ResearchConfig = z.infer<typeof ResearchConfigSchema>;
 
 export function getDefaultConfig(): ResearchConfig {
   return ResearchConfigSchema.parse({
-    samMaskLimit: 8,
-    minRetainedLayers: 3,
+    samMaskLimit: 6,
+    samPointsPerSide: 80,
+    samPredIouThresh: 0.6,
+    samStabilityScoreThresh: 0.9,
+    luminanceFallbackEnabled: true,
+    luminanceFallbackMinSamLayers: 4,
+    luminanceFallbackZoneCount: 3,
+    luminanceFallbackResidualOnly: true,
+    luminanceFallbackResidualCoverageMin: 0.03,
+    maxLayers: 12,
+    minRetainedLayers: 1,
+    alphaThreshold: 96,
+    minCoverage: 0.005,
+    simpleEdgeMax: 0.1,
+    simpleEntropyMax: 5.5,
+    complexEdgeMin: 0.2,
+    complexEntropyMin: 7,
+    edgePixelThreshold: 30,
+    iouDedupeThreshold: 0.92,
     uniqueCoverageThreshold: 0.02,
+    centralityThreshold: 0.25,
+    bgPlateMinBboxRatio: 0.3,
+    edgeTolerancePx: 2,
+    colorCycleSpeedMul: 0.75,
+    glowIntensityMul: 0,
+    saturationBoostMul: 0.622,
+    luminanceKeyMul: 1.056,
+    bloomStrengthMul: 0.799,
+    chromaticAberrationOffsetMul: 0.907,
   });
 }
 

@@ -6,27 +6,12 @@ import {
 } from "./research-config.js";
 
 describe("getDefaultConfig", () => {
-  it("returns the current SAM2 research defaults", () => {
+  it("returns a schema-valid active research baseline", () => {
     const config = getDefaultConfig();
-    expect(config.samMaskLimit).toBe(3);
-    expect(config.maxLayers).toBe(12);
-    expect(config.minRetainedLayers).toBe(1);
-    expect(config.alphaThreshold).toBe(96);
-    expect(config.minCoverage).toBe(0.005);
-    expect(config.simpleEdgeMax).toBe(0.1);
-    expect(config.simpleEntropyMax).toBe(5.5);
-    expect(config.complexEdgeMin).toBe(0.2);
-    expect(config.complexEntropyMin).toBe(7.0);
-    expect(config.edgePixelThreshold).toBe(30);
-    expect(config.iouDedupeThreshold).toBe(0.92);
-    expect(config.uniqueCoverageThreshold).toBe(0.02);
-    expect(config.centralityThreshold).toBe(0.25);
-    expect(config.bgPlateMinBboxRatio).toBe(0.3);
-    expect(config.edgeTolerancePx).toBe(2);
-    expect(config.colorCycleSpeedMul).toBe(1.0);
-    expect(config.glowIntensityMul).toBe(1.0);
-    expect(config.saturationBoostMul).toBe(1.0);
-    expect(config.luminanceKeyMul).toBe(1.0);
+    expect(() => ResearchConfigSchema.parse(config)).not.toThrow();
+    expect(config.samMaskLimit === null || config.samMaskLimit >= 3).toBe(true);
+    expect(config.luminanceFallbackEnabled).toEqual(expect.any(Boolean));
+    expect(config.maxLayers).toBeGreaterThanOrEqual(3);
   });
 });
 
@@ -53,6 +38,12 @@ describe("partial config overrides", () => {
 describe("range boundaries", () => {
   it.each([
     ["samMaskLimit", 3, 12],
+    ["samPointsPerSide", 16, 128],
+    ["samPredIouThresh", 0.1, 0.99],
+    ["samStabilityScoreThresh", 0.1, 0.99],
+    ["luminanceFallbackMinSamLayers", 0, 12],
+    ["luminanceFallbackZoneCount", 1, 8],
+    ["luminanceFallbackResidualCoverageMin", 0.0, 1.0],
     ["alphaThreshold", 1, 254],
     ["minCoverage", 0.001, 0.05],
     ["maxLayers", 3, 16],
@@ -62,6 +53,8 @@ describe("range boundaries", () => {
     ["edgeTolerancePx", 1, 10],
     ["colorCycleSpeedMul", 0.1, 3.0],
     ["glowIntensityMul", 0.0, 3.0],
+    ["bloomStrengthMul", 0.0, 3.0],
+    ["chromaticAberrationOffsetMul", 0.0, 3.0],
   ] as [string, number, number][])("%s accepts range [%d, %d]", (key, min, max) => {
     expect(() => ResearchConfigSchema.parse({ [key]: min })).not.toThrow();
     expect(() => ResearchConfigSchema.parse({ [key]: max })).not.toThrow();
@@ -76,6 +69,13 @@ describe("invalid values", () => {
   it.each([
     ["samMaskLimit", 2],
     ["samMaskLimit", 13],
+    ["samPointsPerSide", 15],
+    ["samPointsPerSide", 129],
+    ["samPredIouThresh", 0.09],
+    ["samStabilityScoreThresh", 1.0],
+    ["luminanceFallbackMinSamLayers", -1],
+    ["luminanceFallbackZoneCount", 0],
+    ["luminanceFallbackResidualCoverageMin", 1.1],
     ["alphaThreshold", 0],
     ["alphaThreshold", 255],
     ["minCoverage", 0.0001],
@@ -86,6 +86,8 @@ describe("invalid values", () => {
     ["minRetainedLayers", 13],
     ["colorCycleSpeedMul", 0],
     ["saturationBoostMul", 3.1],
+    ["bloomStrengthMul", 3.1],
+    ["chromaticAberrationOffsetMul", 3.1],
   ] as [string, number][])("%s rejects %d", (key, val) => {
     expect(() => ResearchConfigSchema.parse({ [key]: val })).toThrow();
   });

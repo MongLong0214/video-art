@@ -48,6 +48,8 @@ describe("generateSceneJson (role-based)", () => {
     expect(roleScene.fps).toBe(30);
     expect(roleScene.layers.length).toBe(6);
     expect(roleScene.effects).toBeDefined();
+    expect(roleScene.effects.bloom.strength).toBe(0.6);
+    expect(roleScene.effects.chromaticAberration.offset).toBe(1.5);
   });
 
   it("should have required fields on each layer", () => {
@@ -199,5 +201,16 @@ describe("generateSceneJson (role-based)", () => {
     const scenePromise = generateSceneJson("test.png", [noRoleLayer], [1080, 1080], 20);
     expect(scenePromise).resolves.toBeDefined();
   });
-});
 
+  it("should apply research multipliers to post-processing effects", async () => {
+    const scene = await generateSceneJson("test.png", mockLayers, [1080, 1080], 20, {
+      bloomStrengthMul: 0.5,
+      chromaticAberrationOffsetMul: 0.25,
+    });
+
+    expect(scene.effects.bloom.strength).toBeCloseTo(0.3);
+    expect(scene.effects.bloom.radius).toBe(0.4);
+    expect(scene.effects.bloom.threshold).toBe(0.7);
+    expect(scene.effects.chromaticAberration.offset).toBeCloseTo(0.375);
+  });
+});

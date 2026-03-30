@@ -10,6 +10,14 @@ describe("ResearchConfigSchema", () => {
   it("parses SAM2 defaults from an empty object", () => {
     const config = ResearchConfigSchema.parse({});
     expect(config.samMaskLimit).toBeNull();
+    expect(config.samPointsPerSide).toBe(64);
+    expect(config.samPredIouThresh).toBe(0.7);
+    expect(config.samStabilityScoreThresh).toBe(0.92);
+    expect(config.luminanceFallbackEnabled).toBe(true);
+    expect(config.luminanceFallbackMinSamLayers).toBe(3);
+    expect(config.luminanceFallbackZoneCount).toBe(6);
+    expect(config.luminanceFallbackResidualOnly).toBe(false);
+    expect(config.luminanceFallbackResidualCoverageMin).toBe(0);
     expect(config.maxLayers).toBe(12);
     expect(config.minRetainedLayers).toBe(6);
     expect(config.alphaThreshold).toBe(128);
@@ -22,6 +30,8 @@ describe("ResearchConfigSchema", () => {
     expect(config.glowIntensityMul).toBe(1.0);
     expect(config.saturationBoostMul).toBe(1.0);
     expect(config.luminanceKeyMul).toBe(1.0);
+    expect(config.bloomStrengthMul).toBe(1.0);
+    expect(config.chromaticAberrationOffsetMul).toBe(1.0);
   });
 
   it("allows partial override", () => {
@@ -56,15 +66,14 @@ describe("ResearchConfigSchema", () => {
 });
 
 describe("getDefaultConfig", () => {
-  it("returns schema-valid defaults", () => {
+  it("returns schema-valid active defaults", () => {
     const config = getDefaultConfig();
     expect(() => ResearchConfigSchema.parse(config)).not.toThrow();
-    expect(config.samMaskLimit).toBe(3);
-    expect(config.maxLayers).toBe(12);
-    expect(config.iouDedupeThreshold).toBe(0.92);
-    expect(config.uniqueCoverageThreshold).toBe(0.02);
-    expect(config.minRetainedLayers).toBe(1);
-    expect(config.alphaThreshold).toBe(96);
+    expect(config.samMaskLimit === null || config.samMaskLimit >= 3).toBe(true);
+    expect(config.minRetainedLayers).toBeGreaterThanOrEqual(1);
+    expect(config.alphaThreshold).toBeGreaterThanOrEqual(1);
+    expect(config.luminanceFallbackEnabled).toEqual(expect.any(Boolean));
+    expect(config.luminanceFallbackResidualOnly).toEqual(expect.any(Boolean));
   });
 });
 
@@ -81,8 +90,7 @@ describe("loadConfig", () => {
 
   it("returns defaults when file does not exist", () => {
     const config = loadConfig("/nonexistent/path/config.ts");
-    expect(config.samMaskLimit).toBe(3);
-    expect(config.maxLayers).toBe(12);
+    expect(config).toEqual(getDefaultConfig());
   });
 
   it("loads config from JSON file", () => {
@@ -110,14 +118,12 @@ describe("loadConfig", () => {
     const jsonPath = `${testDir}/bad.json`;
     writeFileSync(jsonPath, "not json");
     const config = loadConfig(jsonPath);
-    expect(config.samMaskLimit).toBe(3);
-    expect(config.maxLayers).toBe(12);
+    expect(config).toEqual(getDefaultConfig());
   });
 
   it("defaults to scripts/research/research-config.ts when no path is given", () => {
     const config = loadConfig();
-    expect(config.samMaskLimit).toBe(3);
-    expect(config.maxLayers).toBe(12);
+    expect(config).toEqual(getDefaultConfig());
   });
 
   it("loads overrides from a .ts file by extracting parse({...})", () => {

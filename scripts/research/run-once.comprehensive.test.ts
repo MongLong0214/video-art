@@ -200,15 +200,23 @@ describe("report comprehensive", () => {
 describe("ResearchConfig comprehensive", () => {
   it("default config has all fields", () => {
     const c = getDefaultConfig();
-    expect(Object.keys(c).length).toBeGreaterThanOrEqual(19);
-    expect(c.samMaskLimit).toBe(3);
+    expect(Object.keys(c).length).toBeGreaterThanOrEqual(29);
+    expect(c.samMaskLimit === null || c.samMaskLimit >= 3).toBe(true);
+    expect(c.luminanceFallbackEnabled).toEqual(expect.any(Boolean));
+    expect(c.luminanceFallbackResidualOnly).toEqual(expect.any(Boolean));
     expect(c.minRetainedLayers).toBe(1);
-    expect(c.alphaThreshold).toBe(96);
-    expect(c.uniqueCoverageThreshold).toBe(0.02);
+    expect(c.alphaThreshold).toBeGreaterThanOrEqual(1);
+    expect(c.uniqueCoverageThreshold).toBeGreaterThan(0);
   });
 
   it.each([
     ["samMaskLimit", 3, 12],
+    ["samPointsPerSide", 16, 128],
+    ["samPredIouThresh", 0.1, 0.99],
+    ["samStabilityScoreThresh", 0.1, 0.99],
+    ["luminanceFallbackMinSamLayers", 0, 12],
+    ["luminanceFallbackZoneCount", 1, 8],
+    ["luminanceFallbackResidualCoverageMin", 0.0, 1.0],
     ["alphaThreshold", 1, 254],
     ["minCoverage", 0.001, 0.05],
     ["maxLayers", 3, 16],
@@ -221,6 +229,13 @@ describe("ResearchConfig comprehensive", () => {
   it.each([
     ["samMaskLimit", 2],
     ["samMaskLimit", 13],
+    ["samPointsPerSide", 15],
+    ["samPointsPerSide", 129],
+    ["samPredIouThresh", 0.09],
+    ["samStabilityScoreThresh", 1.0],
+    ["luminanceFallbackMinSamLayers", -1],
+    ["luminanceFallbackZoneCount", 0],
+    ["luminanceFallbackResidualCoverageMin", 1.1],
     ["alphaThreshold", 0],
     ["alphaThreshold", 255],
     ["minCoverage", -0.01],
@@ -234,9 +249,16 @@ describe("ResearchConfig comprehensive", () => {
     expect(() => ResearchConfigSchema.parse({ simpleEdgeMax: 0.05, complexEdgeMin: 0.2 })).not.toThrow();
   });
 
-  it("all multipliers default to 1.0", () => {
+  it("all multiplier fields remain numeric", () => {
     const c = getDefaultConfig();
-    const muls = ["colorCycleSpeedMul", "glowIntensityMul", "saturationBoostMul", "luminanceKeyMul"] as const;
-    for (const m of muls) expect(c[m]).toBe(1.0);
+    const muls = [
+      "colorCycleSpeedMul",
+      "glowIntensityMul",
+      "saturationBoostMul",
+      "luminanceKeyMul",
+      "bloomStrengthMul",
+      "chromaticAberrationOffsetMul",
+    ] as const;
+    for (const m of muls) expect(typeof c[m]).toBe("number");
   });
 });

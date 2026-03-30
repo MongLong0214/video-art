@@ -41,6 +41,7 @@ vi.mock("./promote.js", () => ({
     commit: "abc",
     calibratedAt: "2026-01-01",
   })),
+  promoteBaseline: vi.fn(),
 }));
 
 vi.mock("./research-config.js", () => ({
@@ -68,7 +69,7 @@ vi.mock("./git-automation.js", () => {
   return {
     checkDirty: vi.fn(() => false),
     ensureBranch: vi.fn(),
-    gitCommitConfig: vi.fn(() => "abc1234"),
+    gitCommitConfig: vi.fn(() => ({ hash: "abc1234", committed: true })),
     gitRestoreConfig: vi.fn(),
     registerSigintHandler: vi.fn(),
     CrashCounter: MockCrashCounter,

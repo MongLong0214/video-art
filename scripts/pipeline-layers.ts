@@ -172,6 +172,14 @@ async function main() {
       maxLayers: selectedLayerCount,
       alphaThreshold: pipelineConfig?.alphaThreshold,
       minCoverage: pipelineConfig?.minCoverage,
+      pointsPerSide: pipelineConfig?.samPointsPerSide,
+      predIouThresh: pipelineConfig?.samPredIouThresh,
+      stabilityScoreThresh: pipelineConfig?.samStabilityScoreThresh,
+      luminanceFallbackEnabled: pipelineConfig?.luminanceFallbackEnabled,
+      luminanceFallbackMinSamLayers: pipelineConfig?.luminanceFallbackMinSamLayers,
+      luminanceFallbackZoneCount: pipelineConfig?.luminanceFallbackZoneCount,
+      luminanceFallbackResidualOnly: pipelineConfig?.luminanceFallbackResidualOnly,
+      luminanceFallbackResidualCoverageMin: pipelineConfig?.luminanceFallbackResidualCoverageMin,
     });
 
     console.log(`  ${decomposeResult.files.length} raw layers generated (${decomposeResult.method})`);
@@ -280,7 +288,7 @@ async function main() {
   candidates = applyRetentionRules(
     candidates,
     maxLayers,
-    preparedPath,
+    path.resolve(cliArgs.inputPath),
     pipelineConfig,
   );
 

@@ -6,7 +6,7 @@ import type { MetricValues } from "./evaluate.js";
 import { evaluateVideo } from "./evaluate.js";
 import { loadConfig } from "./research-config.js";
 import type { CalibrationResult } from "./calibrate.js";
-import { loadBaseline, type BaselineRecord } from "./promote.js";
+import { loadBaseline, promoteBaseline, type BaselineRecord } from "./promote.js";
 import {
   gitCommitConfig,
   gitRestoreConfig,
@@ -271,8 +271,14 @@ export async function main(): Promise<void> {
     // Step 8: Git actions
     if (status === "keep") {
       const msg = `research: exp #${expNum} score=${qualityScore.toFixed(4)} (Δ+${delta.toFixed(4)})`;
-      commitHash = gitCommitConfig(msg, cwd);
-      console.log(`[exp #${expNum}] KEEP — committed ${commitHash}`);
+      const commitResult = gitCommitConfig(msg, cwd);
+      commitHash = commitResult.hash;
+      promoteBaseline(configPath, qualityScore, calibration.modelVersion, currentContract);
+      if (commitResult.committed) {
+        console.log(`[exp #${expNum}] KEEP — committed ${commitHash}`);
+      } else {
+        console.log(`[exp #${expNum}] KEEP — baseline advanced on existing commit ${commitHash}`);
+      }
     } else {
       gitRestoreConfig(cwd);
       console.log(`[exp #${expNum}] DISCARD — config restored`);

@@ -62,11 +62,30 @@ describe("gitCommitConfig", () => {
   it("adds config, commits, and returns hash", () => {
     vi.mocked(execFileSync)
       .mockReturnValueOnce("") // git add
+      .mockImplementationOnce(() => {
+        throw Object.assign(new Error("diff"), { status: 1 });
+      }) // git diff --cached --quiet
       .mockReturnValueOnce("") // git commit
-      .mockReturnValue("abc1234\n"); // git rev-parse
-    const hash = gitCommitConfig("test commit", "/repo");
-    expect(hash).toBe("abc1234");
+      .mockReturnValueOnce("abc1234\n"); // git rev-parse
+    const result = gitCommitConfig("test commit", "/repo");
+    expect(result).toEqual({ hash: "abc1234", committed: true });
+    expect(vi.mocked(execFileSync)).toHaveBeenCalledTimes(4);
+  });
+
+  it("returns existing HEAD when config is unchanged", () => {
+    vi.mocked(execFileSync)
+      .mockReturnValueOnce("") // git add
+      .mockReturnValueOnce("") // git diff --cached --quiet
+      .mockReturnValueOnce("def5678\n"); // git rev-parse
+    const result = gitCommitConfig("test commit", "/repo");
+    expect(result).toEqual({ hash: "def5678", committed: false });
     expect(vi.mocked(execFileSync)).toHaveBeenCalledTimes(3);
+    expect(vi.mocked(execFileSync)).toHaveBeenNthCalledWith(
+      2,
+      "git",
+      ["diff", "--cached", "--quiet", "--", "scripts/research/research-config.ts"],
+      expect.any(Object),
+    );
   });
 });
 
