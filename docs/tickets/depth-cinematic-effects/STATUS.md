@@ -2,23 +2,25 @@
 
 **PRD**: docs/prd/PRD-depth-cinematic-effects.md (v0.4, Approved)
 **Size**: XL
-**Current Phase**: 3 (티켓 상세화 — 다음 세션에서 시작)
+**Current Phase**: 4 완료 (Phase 5 개발 대기)
 
-## Context for Next Session
+## Tickets
 
-- PRD v0.4 Approved (4 rounds of review, all P0/P1 resolved)
-- Phase 2 of PRD-depth-anything-v2 (Phase 1 implemented + production-ready)
-- 5개 depth cinematic 효과: Depth Animation, Parallax, Haze, Edge Vignette + 5 autoresearch axes
-- DOF Blur는 NG1으로 분리 (별도 PRD)
-- 모든 default=0 (비활성) → 기존 출력 100% 동일 보장
+| Ticket | Title | Size | Status | Review | Depends | Notes |
+|--------|-------|------|--------|--------|---------|-------|
+| T1 | Schema + Config Foundation | M | Todo | - | None | scene-schema.ts + research-config.ts |
+| T2 | Depth Animation (scene-generator) | M | Todo | - | T1 | depthNorm, speed/glow modulation, stddev guard, effects pass-through |
+| T3 | Parallax (vertex shader + renderer) | M | Todo | - | T1, T2 | layer.vert + layered-psychedelic.ts |
+| T4 | Haze + Vignette (frag shader + renderer) | M | Todo | - | T1, T2, T3 | layer.frag + layered-psychedelic.ts |
+| T5 | Autoresearch Documentation | S | Todo | - | T1-T4 | program.md |
 
-## Next Steps
+## Dependency Graph
 
-1. Phase 3: 티켓 상세화 (TDD spec 포함)
-2. Phase 4: 티켓 리뷰 (팀)
-3. Phase 5: TDD 개발
-4. Phase 6: 최종 전수 리뷰
-5. Phase 7: 완료 보고
+```
+T1 (Schema+Config) → T2 (Depth Animation) → T3 (Parallax) → T4 (Haze+Vignette) → T5 (Docs)
+```
+
+> 순차 실행: T3→T4 (layered-psychedelic.ts 공유, T4는 T3의 uDepthNorm 바인딩 전제)
 
 ## Key Technical Decisions (from PRD §4.4)
 
@@ -31,15 +33,15 @@
 
 ## Files to Modify (from PRD §4.1)
 
-| File | Change |
-|------|--------|
-| `src/shaders/layer.vert` | parallax UV offset |
-| `src/shaders/layer.frag` | haze + vignette |
-| `src/sketches/layered-psychedelic.ts` | 6 new uniforms |
-| `scripts/lib/scene-generator.ts` | depth-modulated animation + stddev guard + effects |
-| `src/lib/scene-schema.ts` | effectsSchema parallax/haze/feather |
-| `scripts/research/research-config.ts` | 5 new axes |
-| `scripts/research/program.md` | docs |
+| File | Tickets | Change |
+|------|---------|--------|
+| `src/lib/scene-schema.ts` | T1 | effectsSchema parallax/haze/feather |
+| `scripts/research/research-config.ts` | T1 | 5 new axes |
+| `scripts/lib/scene-generator.ts` | T2 | depth animation + stddev guard + effects |
+| `src/shaders/layer.vert` | T3 | parallax UV offset |
+| `src/shaders/layer.frag` | T4 | haze + vignette |
+| `src/sketches/layered-psychedelic.ts` | T3, T4 | 6 new uniforms |
+| `scripts/research/program.md` | T5 | docs |
 
 ## Review History
 
@@ -49,6 +51,6 @@
 | 2 (PRD) | 2 | HAS ISSUE | 0 | 1 | 2 | v0.2→v0.3 |
 | 2 (PRD) | 3 | HAS ISSUE | 0 | 1 | 2 | v0.3→v0.4 |
 | 2 (PRD) | 4 | ALL PASS | 0 | 0 | 0 | v0.4 Approved |
-| 3 | - | - | - | - | - | |
-| 4 | - | - | - | - | - | |
+| 4 | 1 | HAS ISSUE | 0 | 7 | 9 | Round 1: P1×7 P2×9 → 수정 |
+| 4 | 2 | ALL PASS | 0 | 0 | 1 | Round 2: P2×1 잔여(ESM __dirname, 구현 시 확인) |
 | 6 | - | - | - | - | - | |
