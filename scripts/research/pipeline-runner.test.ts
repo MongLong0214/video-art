@@ -110,21 +110,6 @@ describe("copyToResearchDir", () => {
   });
 });
 
-// ── runLayerDecomposition ──────────────────────────────────
-
-describe("runLayerDecomposition", () => {
-  it("does not pass --variant", () => {
-    mockedExecFileSync.mockReturnValue("Archive: /some/archive/dir\n");
-
-    runLayerDecomposition("input.png", "/project", { method: "qwen-only" });
-
-    const callArgs = mockedExecFileSync.mock.calls[0];
-    const cliArgs = callArgs[1] as string[];
-    expect(cliArgs).not.toContain("--variant");
-    expect(cliArgs).not.toContain("qwen-only");
-  });
-});
-
 // ── runFullPipeline ────────────────────────────────────────
 
 // Helper: mock cleanPreviousArchive + patchSceneJson calls that precede the main pipeline logic

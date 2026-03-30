@@ -23,8 +23,6 @@ export function consecutiveSsim(
 export function flickerScore(
   frameA: Float64Array,
   frameB: Float64Array,
-  _w: number,
-  _h: number,
 ): number {
   // Isolate LOW-MOTION regions: pixels where |frameA - frameB| < threshold
   // Then compute pixel variance ONLY in those regions
@@ -78,7 +76,7 @@ export function computeTemporalCoherence(
 
   for (const [a, b] of framePairs) {
     ssimSum += consecutiveSsim(a, b, w, h);
-    flickerSum += flickerScore(a, b, w, h);
+    flickerSum += flickerScore(a, b);
   }
 
   const meanSsim = ssimSum / framePairs.length;

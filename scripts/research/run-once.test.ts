@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
   makeKeepDecision,
   formatTsvRow,
-  parseTsvHeader,
   formatConsoleOutput,
   countExperiments,
   parseRunOnceArgs,
@@ -51,18 +50,6 @@ describe("formatTsvRow", () => {
   });
 });
 
-describe("parseTsvHeader", () => {
-  it("returns correct header string", () => {
-    const header = parseTsvHeader();
-    expect(header).toContain("commit");
-    expect(header).toContain("quality_score");
-    expect(header).toContain("gate_pass");
-    expect(header).toContain("M1_palette");
-    expect(header).toContain("status");
-    expect(header).toContain("description");
-    expect(header.split("\t").length).toBe(17);
-  });
-});
 
 describe("formatConsoleOutput", () => {
   it("formats experiment result line", () => {

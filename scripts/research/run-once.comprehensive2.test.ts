@@ -3,7 +3,6 @@ import { describe, it, expect, vi } from "vitest";
 import {
   makeKeepDecision,
   formatTsvRow,
-  parseTsvHeader,
   formatConsoleOutput,
   countExperiments,
 } from "./run-once.js";
@@ -151,33 +150,6 @@ describe("formatTsvRow", () => {
   it("should format quality score with 4 decimal places", () => {
     const row = formatTsvRow(makeRowData({ qualityScore: 0.12345 }));
     expect(row).toContain("0.1235");
-  });
-});
-
-// ==========================================================================
-// parseTsvHeader
-// ==========================================================================
-
-describe("parseTsvHeader", () => {
-  it("should return non-empty header string", () => {
-    const header = parseTsvHeader();
-    expect(header.length).toBeGreaterThan(0);
-  });
-
-  it("should include all expected column names", () => {
-    const header = parseTsvHeader();
-    expect(header).toContain("commit");
-    expect(header).toContain("quality_score");
-    expect(header).toContain("gate_pass");
-    expect(header).toContain("M1_palette");
-    expect(header).toContain("M10_role_cohere");
-    expect(header).toContain("status");
-    expect(header).toContain("description");
-  });
-
-  it("should have 17 tab-separated columns", () => {
-    const header = parseTsvHeader();
-    expect(header.split("\t").length).toBe(17);
   });
 });
 

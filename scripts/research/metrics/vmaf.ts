@@ -34,15 +34,9 @@ export function normalizeVmafScore(score: number): number {
   return clamp01(score / 100);
 }
 
-export interface VmafOptions {
-  refWidth?: number;
-  refHeight?: number;
-}
-
 export function computeVmaf(
   refVideoPath: string,
   genVideoPath: string,
-  options?: VmafOptions,
 ): number {
   if (!checkVmafAvailable()) {
     throw new Error(
@@ -50,19 +44,7 @@ export function computeVmaf(
     );
   }
 
-  // ffmpeg compares videos frame-by-frame
-  // Scale gen to match ref resolution before VMAF comparison
   const logPath = `/tmp/vmaf_${Date.now()}.json`;
-
-  // Build scale filter: if reference dimensions provided, scale to those;
-  // otherwise probe reference and scale gen to match
-  let scaleFilter: string;
-  if (options?.refWidth && options?.refHeight) {
-    scaleFilter = `scale=${options.refWidth}:${options.refHeight}:flags=lanczos`;
-  } else {
-    // Scale gen to match ref dimensions using [0:v] stream dimensions
-    scaleFilter = "scale='iw0':'ih0':flags=lanczos";
-  }
 
   try {
     // Simple approach: libvmaf handles resolution matching internally

@@ -35,14 +35,14 @@ describe("consecutiveSsim", () => {
 describe("flickerScore", () => {
   it("returns ~1.0 for identical frames (all low-motion, zero variance)", () => {
     const frame = noisyChannel(64, 64, 128, 42);
-    expect(flickerScore(frame, frame, 64, 64)).toBeCloseTo(1.0, 2);
+    expect(flickerScore(frame, frame)).toBeCloseTo(1.0, 2);
   });
 
   it("returns 1.0 when no low-motion regions exist (all pixels differ significantly)", () => {
     // All pixels differ by > 0.05 threshold, so no low-motion regions -> 1.0
     const black = solidChannel(64, 64, 0);
     const white = solidChannel(64, 64, 1); // diff = 1.0, way above 0.05
-    const score = flickerScore(black, white, 64, 64);
+    const score = flickerScore(black, white);
     expect(score).toBe(1.0);
   });
 
@@ -50,14 +50,14 @@ describe("flickerScore", () => {
     // Frames that differ by tiny amounts (< 0.05) have low variance -> high score
     const a = solidChannel(64, 64, 0.5);
     const b = solidChannel(64, 64, 0.51); // diff = 0.01 < 0.05
-    const score = flickerScore(a, b, 64, 64);
+    const score = flickerScore(a, b);
     expect(score).toBeGreaterThan(0.99);
   });
 
   it("returns 0-1 range", () => {
     const a = noisyChannel(64, 64, 100, 1);
     const b = noisyChannel(64, 64, 150, 2);
-    const score = flickerScore(a, b, 64, 64);
+    const score = flickerScore(a, b);
     expect(score).toBeGreaterThanOrEqual(0);
     expect(score).toBeLessThanOrEqual(1);
   });

@@ -84,10 +84,6 @@ export function formatTsvRow(data: TsvRowData): string {
   ].join("\t");
 }
 
-export function parseTsvHeader(): string {
-  return TSV_HEADER;
-}
-
 export function formatConsoleOutput(
   expNum: number,
   score: number,
@@ -321,7 +317,7 @@ export async function main(): Promise<void> {
 
   // Write header if file doesn't exist
   if (!existsSync(RESULTS_TSV_PATH)) {
-    appendFileSync(RESULTS_TSV_PATH, parseTsvHeader() + "\n");
+    appendFileSync(RESULTS_TSV_PATH, TSV_HEADER + "\n");
   }
 
   const row = formatTsvRow({

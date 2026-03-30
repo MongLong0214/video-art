@@ -146,7 +146,7 @@ describe("temporal flicker stress (10 magnitudes)", () => {
     it(`diff=${diff} → valid range [0, 1]`, () => {
       const a = new Float64Array(32*32).fill(128);
       const b = new Float64Array(32*32).fill(128 + Math.min(diff, 127));
-      const s = flickerScore(a, b, 32, 32);
+      const s = flickerScore(a, b);
       expect(s).toBeGreaterThanOrEqual(0);
       expect(s).toBeLessThanOrEqual(1);
     });

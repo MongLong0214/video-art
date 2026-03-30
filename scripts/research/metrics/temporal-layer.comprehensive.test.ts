@@ -63,7 +63,7 @@ describe("flickerScore", () => {
   it("should return 1.0 for identical frames (all low-motion, zero variance)", () => {
     const W = 10, H = 10;
     const frame = createFlatArray(W, H, 128);
-    expect(flickerScore(frame, frame, W, H)).toBeCloseTo(1.0, 4);
+    expect(flickerScore(frame, frame)).toBeCloseTo(1.0, 4);
   });
 
   it("should return 1.0 when no low-motion regions exist (large difference)", () => {
@@ -71,21 +71,21 @@ describe("flickerScore", () => {
     const a = createFlatArray(W, H, 0);
     const b = createFlatArray(W, H, 128);
     // All pixels differ by 128, well above 0.05 threshold -> no low-motion regions -> 1.0
-    expect(flickerScore(a, b, W, H)).toBe(1.0);
+    expect(flickerScore(a, b)).toBe(1.0);
   });
 
   it("should return high score for very similar frames (tiny diff in low-motion)", () => {
     const W = 10, H = 10;
     const a = createFlatArray(W, H, 0.5);
     const b = createFlatArray(W, H, 0.51); // diff = 0.01, within low-motion threshold
-    expect(flickerScore(a, b, W, H)).toBeGreaterThan(0.99);
+    expect(flickerScore(a, b)).toBeGreaterThan(0.99);
   });
 
   it("should return value in [0, 1]", () => {
     const W = 10, H = 10;
     const a = createNoisyArray(W, H, 1);
     const b = createNoisyArray(W, H, 2);
-    const score = flickerScore(a, b, W, H);
+    const score = flickerScore(a, b);
     expect(score).toBeGreaterThanOrEqual(0);
     expect(score).toBeLessThanOrEqual(1);
   });

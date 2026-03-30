@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { makeKeepDecision, formatTsvRow, parseTsvHeader, formatConsoleOutput, countExperiments } from "./run-once.js";
+import { makeKeepDecision, formatTsvRow, formatConsoleOutput, countExperiments } from "./run-once.js";
 import { computeStats, computeDeltaMin, buildCalibrationResult } from "./calibrate.js";
 import { CrashCounter, BudgetTracker } from "./git-automation.js";
 import { parseTsvRows, computeReportStats } from "./report.js";

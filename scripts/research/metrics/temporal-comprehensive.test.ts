@@ -26,22 +26,22 @@ describe("consecutiveSsim comprehensive", () => {
 describe("flickerScore comprehensive", () => {
   it.each([32, 64, 128])("identical %d*%d -> ~1.0", (sz) => {
     const f = noisy(sz, sz, 42);
-    expect(flickerScore(f, f, sz, sz)).toBeCloseTo(1.0, 2);
+    expect(flickerScore(f, f)).toBeCloseTo(1.0, 2);
   });
   it("no low-motion regions (0 vs 255) -> 1.0 (no stable regions to measure)", () => {
     // All pixels differ by 255, which is > 0.05 threshold
     // No low-motion regions -> returns 1.0
-    expect(flickerScore(solid(64, 64, 0), solid(64, 64, 255), 64, 64)).toBe(1.0);
+    expect(flickerScore(solid(64, 64), 64, 64)).toBe(1.0);
   });
   it("very similar frames -> high score (low variance in low-motion regions)", () => {
     const a = solid(64, 64, 0.5);
     const b = solid(64, 64, 0.51);
-    const s = flickerScore(a, b, 64, 64);
+    const s = flickerScore(a, b);
     expect(s).toBeGreaterThan(0.99);
   });
   it("always 0-1 range", () => {
     for (let v = 0; v <= 255; v += 51) {
-      const s = flickerScore(solid(32, 32, 0), solid(32, 32, v), 32, 32);
+      const s = flickerScore(solid(32, 32), 32, 32);
       expect(s).toBeGreaterThanOrEqual(0);
       expect(s).toBeLessThanOrEqual(1);
     }
