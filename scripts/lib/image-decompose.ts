@@ -9,7 +9,7 @@ export const SAM2_MODEL = "lucataco/segment-anything-2";
 export const SAM2_VERSION = "be7cbde9fdf0eecdc8b20ffec9dd0d1cfeace0832d4d0b58a071d993182e1be0";
 
 export const DAV2_MODEL = "chenxwh/depth-anything-v2";
-export const DAV2_VERSION = "8a4b66f2b04f54c10265e44dcd88f30a01a3eb38a5cd84879dede6cd926cceb1";
+export const DAV2_VERSION = "b239ea33cff32bb7abb5db39ffe9a09c14cbc2894331d1ef66fe096eed88ebd4";
 
 interface DecomposeOptions {
   maxLayers?: number;
@@ -125,12 +125,21 @@ export async function getDepthMap(
       );
     });
 
+    // DA V2 returns { grey_depth: FileOutput, color_depth: FileOutput }
+    // FileOutput.toString() gives the URL
     let url: string;
     if (typeof output === "string") {
       url = output;
-    } else if (output && typeof output === "object" && "url" in output) {
-      const urlVal = (output as Record<string, unknown>).url;
-      url = typeof urlVal === "function" ? (urlVal as () => string)() : String(urlVal);
+    } else if (output && typeof output === "object") {
+      const obj = output as Record<string, unknown>;
+      if (obj.grey_depth) {
+        url = String(obj.grey_depth);
+      } else if ("url" in obj) {
+        const urlVal = obj.url;
+        url = typeof urlVal === "function" ? (urlVal as () => string)() : String(urlVal);
+      } else {
+        url = String(output);
+      }
     } else {
       url = String(output);
     }
