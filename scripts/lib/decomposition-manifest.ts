@@ -7,21 +7,17 @@ import type { LayerCandidate, LayerRole } from "../../src/lib/scene-schema.js";
 
 export interface ManifestInput {
   runId: string;
-  pipelineVariant: "sam2" | "qwen-only" | "qwen-zoedepth" | "qwen-luminance";
+  pipelineVariant: "sam2";
   sourceImage: string;
   preparedImage: string;
   models: {
     sam2?: { model: string; version: string; maskLimit: number };
-    qwenImageLayered?: { model: string; version: string; numLayersBase: number };
-    zoeDepth?: { model: string; version: string };
   };
   passes: Array<{
     type:
       | "sam2-segment"
       | "luminance-fallback"
-      | "manual-layers"
-      | "qwen-base"
-      | "qwen-recursive";
+      | "manual-layers";
     candidateCount: number;
     parentId?: string;
   }>;
@@ -74,17 +70,11 @@ export interface ManifestData {
  */
 export const generateManifest = (input: ManifestInput): ManifestData => {
   // Validate: reject "latest" as version
-  const allVersions = [
-    input.models.sam2,
-    input.models.qwenImageLayered,
-    input.models.zoeDepth,
-  ].filter((entry): entry is { model: string; version: string } => Boolean(entry));
-  for (const entry of allVersions) {
-    if (input.productionMode && entry.version.toLowerCase() === "latest") {
-      throw new Error(
-        `Model version must be an exact string, not "latest" in production mode: ${entry.model}`,
-      );
-    }
+  const sam2 = input.models.sam2;
+  if (sam2 && input.productionMode && sam2.version.toLowerCase() === "latest") {
+    throw new Error(
+      `Model version must be an exact string, not "latest" in production mode: ${sam2.model}`,
+    );
   }
 
   const finalLayers: ManifestFinalLayer[] = input.retainedLayers.map(

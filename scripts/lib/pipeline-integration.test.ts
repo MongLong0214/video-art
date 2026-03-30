@@ -21,7 +21,6 @@ describe("CLI arg parsing", () => {
   // Dynamically import to pick up the module once created
   let parseCliArgs: (argv: string[]) => {
     inputPath: string;
-    description?: string;
     layerOverride?: number;
     unsafe: boolean;
     duration?: number;
@@ -31,11 +30,6 @@ describe("CLI arg parsing", () => {
   beforeEach(async () => {
     const mod = await import("./pipeline-cli.js");
     parseCliArgs = mod.parseCliArgs;
-  });
-
-  it("should parse --description", () => {
-    const result = parseCliArgs(["input.png", "--description", "a sunset scene"]);
-    expect(result.description).toBe("a sunset scene");
   });
 
   it("should parse --layers 6", () => {
@@ -51,11 +45,6 @@ describe("CLI arg parsing", () => {
   it("should default to safety checker ON", () => {
     const result = parseCliArgs(["input.png"]);
     expect(result.unsafe).toBe(false);
-  });
-
-  it("should default description to undefined when not specified", () => {
-    const result = parseCliArgs(["input.png"]);
-    expect(result.description).toBeUndefined();
   });
 
   it("should activate production mode with --production", () => {
@@ -275,7 +264,7 @@ describe("Fallback on all candidates drop", () => {
     const candidates = [
       {
         id: "c0",
-        source: "qwen-base" as const,
+        source: "sam2-segment" as const,
         filePath: "/tmp/c0.png",
         width: 100,
         height: 100,
@@ -301,207 +290,3 @@ describe("Fallback on all candidates drop", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// T9: Selective Recursive Qwen
-// ---------------------------------------------------------------------------
-
-describe("Selective Recursive Qwen", () => {
-  let shouldRecurse: (candidate: {
-    coverage: number;
-    componentCount: number;
-    edgeDensity: number;
-  }) => boolean;
-
-  let recursiveDecompose: (
-    candidate: import("../../src/lib/scene-schema.js").LayerCandidate,
-    options: {
-      outputDir: string;
-      apiCallCount: { current: number };
-      maxRecursiveCalls: number;
-    },
-  ) => Promise<import("../../src/lib/scene-schema.js").LayerCandidate[]>;
-
-  beforeEach(async () => {
-    vi.resetModules();
-    const mod = await import("./image-decompose.js");
-    shouldRecurse = mod.shouldRecurse;
-    recursiveDecompose = mod.recursiveDecompose;
-  });
-
-  // Test 1: should trigger recursive on large complex candidate
-  it("should stay disabled on large complex candidate", () => {
-    expect(
-      shouldRecurse({ coverage: 0.5, componentCount: 5, edgeDensity: 0.1 }),
-    ).toBe(false);
-  });
-
-  // Test 2: should not trigger on small simple candidate
-  it("should not trigger on small simple candidate", () => {
-    // coverage < 0.30 → no trigger
-    expect(
-      shouldRecurse({ coverage: 0.1, componentCount: 1, edgeDensity: 0.05 }),
-    ).toBe(false);
-  });
-
-  // Test 3: should respect API call cap
-  it("should respect API call cap", async () => {
-    // Mock Replicate to avoid real API calls
-    vi.doMock("replicate", () => ({
-      default: class {
-        run = vi.fn();
-      },
-    }));
-
-    const candidate: import("../../src/lib/scene-schema.js").LayerCandidate = {
-      id: "c-large",
-      source: "qwen-base",
-      filePath: "/tmp/test-large.png",
-      width: 512,
-      height: 512,
-      coverage: 0.6,
-      bbox: { x: 0, y: 0, w: 512, h: 512 },
-      centroid: { x: 256, y: 256 },
-      edgeDensity: 0.2,
-      componentCount: 5,
-    };
-
-    // apiCallCount.current = 3, maxRecursiveCalls = 3 → cap reached
-    const result = await recursiveDecompose(candidate, {
-      outputDir: "/tmp/test-recursive",
-      apiCallCount: { current: 3 },
-      maxRecursiveCalls: 3,
-    });
-
-    // Cap reached: return empty array (parent is retained externally)
-    expect(result).toEqual([]);
-  });
-
-  // Test 4: should record recursive pass in manifest
-  it("should record recursive pass in manifest", async () => {
-    // Verify the pass type is correctly structured for manifest recording
-    // The passes array in ManifestInput accepts type: "qwen-recursive"
-    const pass: import("./decomposition-manifest.js").ManifestInput["passes"][number] = {
-      type: "qwen-recursive",
-      candidateCount: 3,
-      parentId: "parent-abc",
-    };
-    expect(pass.type).toBe("qwen-recursive");
-    expect(pass.parentId).toBe("parent-abc");
-    expect(pass.candidateCount).toBe(3);
-  });
-
-  // Test 5: should keep parent on recursive failure
-  it("should no-op recursive failure path while recursion is disabled", async () => {
-    // Mock Replicate to throw an error
-    vi.doMock("replicate", () => ({
-      default: class {
-        run = vi.fn().mockRejectedValue(new Error("API unavailable"));
-      },
-    }));
-
-    // Re-import after mock
-    const freshMod = await import("./image-decompose.js");
-
-    const parentCandidate: import("../../src/lib/scene-schema.js").LayerCandidate = {
-      id: "c-parent",
-      source: "qwen-base",
-      filePath: "/tmp/test-parent.png",
-      width: 512,
-      height: 512,
-      coverage: 0.5,
-      bbox: { x: 0, y: 0, w: 512, h: 512 },
-      centroid: { x: 256, y: 256 },
-      edgeDensity: 0.2,
-      componentCount: 5,
-    };
-
-    const apiCallCount = { current: 0 };
-
-    // On failure, recursiveDecompose returns empty → caller retains parent
-    const result = await freshMod.recursiveDecompose(parentCandidate, {
-      outputDir: "/tmp/test-recursive",
-      apiCallCount,
-      maxRecursiveCalls: 3,
-    });
-
-    expect(result).toEqual([]);
-    // Recursion is currently disabled, so no API attempt is made.
-    expect(apiCallCount.current).toBe(0);
-  });
-
-  // Test 6: should reintegrate recursive results
-  it("should reintegrate recursive results", () => {
-    // Integration test: recursive children replace parent in candidate pool
-    type LC = import("../../src/lib/scene-schema.js").LayerCandidate;
-
-    const baseCandidates: LC[] = [
-      {
-        id: "c-simple",
-        source: "qwen-base",
-        filePath: "/tmp/simple.png",
-        width: 1024,
-        height: 1024,
-        coverage: 0.15,
-        bbox: { x: 100, y: 100, w: 200, h: 200 },
-        centroid: { x: 200, y: 200 },
-        edgeDensity: 0.08,
-        componentCount: 1,
-      },
-      {
-        id: "c-parent",
-        source: "qwen-base",
-        filePath: "/tmp/parent.png",
-        width: 1024,
-        height: 1024,
-        coverage: 0.5,
-        bbox: { x: 0, y: 0, w: 1024, h: 1024 },
-        centroid: { x: 512, y: 512 },
-        edgeDensity: 0.2,
-        componentCount: 5,
-      },
-    ];
-
-    const recursiveChildren: LC[] = [
-      {
-        id: "c-child-1",
-        source: "qwen-recursive",
-        parentId: "c-parent",
-        filePath: "/tmp/child1.png",
-        width: 1024,
-        height: 1024,
-        coverage: 0.25,
-        bbox: { x: 0, y: 0, w: 600, h: 600 },
-        centroid: { x: 300, y: 300 },
-        edgeDensity: 0.15,
-        componentCount: 2,
-      },
-      {
-        id: "c-child-2",
-        source: "qwen-recursive",
-        parentId: "c-parent",
-        filePath: "/tmp/child2.png",
-        width: 1024,
-        height: 1024,
-        coverage: 0.2,
-        bbox: { x: 400, y: 400, w: 500, h: 500 },
-        centroid: { x: 650, y: 650 },
-        edgeDensity: 0.12,
-        componentCount: 1,
-      },
-    ];
-
-    // Reintegration logic: replace parent with children, keep non-recursive
-    const parentIds = new Set(recursiveChildren.map((c) => c.parentId));
-    const merged = [
-      ...baseCandidates.filter((c) => !parentIds.has(c.id)),
-      ...recursiveChildren,
-    ];
-
-    // Verify: parent removed, children added, non-recursive preserved
-    expect(merged.length).toBe(3); // 1 simple + 2 children
-    expect(merged.find((c) => c.id === "c-parent")).toBeUndefined();
-    expect(merged.find((c) => c.id === "c-simple")).toBeDefined();
-    expect(merged.filter((c) => c.source === "qwen-recursive").length).toBe(2);
-    expect(merged.filter((c) => c.parentId === "c-parent").length).toBe(2);
-  });
-});

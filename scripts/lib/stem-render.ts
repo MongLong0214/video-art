@@ -1,11 +1,7 @@
-import { execFile as execFileCb } from "node:child_process";
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { promisify } from "node:util";
-import type { NrtScore, NrtEvent } from "./osc-to-nrt";
+import type { NrtScore } from "./osc-to-nrt";
 import { SYNTH_STEM_MAP, FX_PARAMS } from "./synth-stem-map";
-
-const execFileAsync = promisify(execFileCb);
 
 export interface StemConfig {
   name: string;
@@ -200,7 +196,3 @@ export const removeRenderLock = (projectRoot: string): void => {
   try { fs.unlinkSync(path.join(projectRoot, RENDER_LOCK)); } catch { /* ignore */ }
 };
 
-export const checkDiskSpace = (
-  availableBytes: number,
-  estimatedBytes: number,
-): boolean => availableBytes >= estimatedBytes * 2;

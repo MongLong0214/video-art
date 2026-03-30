@@ -10,12 +10,3 @@ export function checkFfmpeg(): void {
   }
 }
 
-export function checkDeps(): void {
-  checkFfmpeg();
-
-  if (!process.env.REPLICATE_API_TOKEN) {
-    console.warn(
-      "WARNING: REPLICATE_API_TOKEN not set. Manual layer input required.",
-    );
-  }
-}

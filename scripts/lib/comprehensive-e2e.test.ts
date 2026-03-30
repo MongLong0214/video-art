@@ -59,7 +59,6 @@ import {
   checkRenderLock,
   writeRenderLock,
   removeRenderLock,
-  checkDiskSpace as stemCheckDiskSpace,
   DEFAULT_STEMS,
   SIDECHAIN_BUS,
 } from "./stem-render";
@@ -1433,22 +1432,6 @@ describe("5. Stem Render", () => {
       const dir = path.join(tmpDir, "lock-test-3");
       fs.mkdirSync(dir, { recursive: true });
       expect(() => removeRenderLock(dir)).not.toThrow();
-    });
-  });
-
-  // --- 5.9 Disk space check ---
-  describe("disk space check", () => {
-    it("true when available >= 2x estimated", () => {
-      expect(stemCheckDiskSpace(200, 100)).toBe(true);
-    });
-    it("false when available < 2x estimated", () => {
-      expect(stemCheckDiskSpace(199, 100)).toBe(false);
-    });
-    it("true when available = exactly 2x", () => {
-      expect(stemCheckDiskSpace(200, 100)).toBe(true);
-    });
-    it("true with zero estimated", () => {
-      expect(stemCheckDiskSpace(100, 0)).toBe(true);
     });
   });
 

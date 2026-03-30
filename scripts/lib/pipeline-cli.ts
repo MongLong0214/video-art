@@ -5,7 +5,6 @@
 
 export interface PipelineCliArgs {
   inputPath: string;
-  description?: string;
   layerOverride?: number;
   unsafe: boolean;
   duration?: number;
@@ -36,13 +35,6 @@ export function parseCliArgs(argv: string[]): PipelineCliArgs {
     layerOverride = val;
   }
 
-  // Compatibility: parsed but unused by the current pipeline.
-  let description: string | undefined;
-  const descriptionIdx = argv.indexOf("--description");
-  if (descriptionIdx !== -1 && descriptionIdx + 1 < argv.length) {
-    description = argv[descriptionIdx + 1];
-  }
-
   // --unsafe
   const unsafe = argv.includes("--unsafe");
 
@@ -62,7 +54,6 @@ export function parseCliArgs(argv: string[]): PipelineCliArgs {
 
   return {
     inputPath,
-    description,
     layerOverride,
     unsafe,
     duration,

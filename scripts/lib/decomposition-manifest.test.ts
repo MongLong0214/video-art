@@ -141,21 +141,6 @@ describe("decomposition-manifest", () => {
   it("should record pipeline variant", () => {
     const manifest = generateManifest(baseInput);
     expect(manifest.pipelineVariant).toBe("sam2");
-
-    const legacyInput: ManifestInput = {
-      ...baseInput,
-      pipelineVariant: "qwen-zoedepth",
-      models: {
-        qwenImageLayered: {
-          model: "qwen/qwen-image-layered",
-          version: "6375723dabc",
-          numLayersBase: 4,
-        },
-        zoeDepth: { model: "cjwbw/zoedepth", version: "6375723dabc" },
-      },
-    };
-    const manifest2 = generateManifest(legacyInput);
-    expect(manifest2.pipelineVariant).toBe("qwen-zoedepth");
   });
 
   it("should copy source and prepared images to archive", () => {

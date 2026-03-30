@@ -25,11 +25,9 @@
     "live:log": "tsx scripts/live-start.ts --log",
     "prod:convert": "tsx scripts/prod-convert.ts",
     "render:stems": "tsx scripts/render-stems.ts",
-    "render:prod": "tsx scripts/render-prod.ts",
     "preset:save": "tsx scripts/preset-save.ts",
     "preset:list": "tsx scripts/preset-list.ts",
     "analyze:track": "tsx scripts/analyze-track.ts",
-    "pipeline:compare": "tsx scripts/compare-variants.ts",
     "research:prepare": "tsx scripts/research/prepare.ts",
     "research:calibrate": "tsx scripts/research/calibrate.ts",
     "research:run": "tsx scripts/research/run-once.ts",
@@ -39,7 +37,6 @@
     "calibrate": "tsx scripts/calibrate.ts"
   },
   "dependencies": {
-    "@fal-ai/client": "^1.9.5",
     "dotenv": "^17.3.1",
     "postprocessing": "^6.39.0",
     "puppeteer": "^24.40.0",

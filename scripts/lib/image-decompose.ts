@@ -1,13 +1,9 @@
 import Replicate from "replicate";
 import sharp from "sharp";
-import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 
-import { extractCandidates } from "./candidate-extraction.js";
-import { withRetry, validateReplicateUrl, maskToken, getToken } from "./replicate-utils.js";
-import type { LayerCandidate } from "../../src/lib/scene-schema.js";
-import type { ResearchConfig } from "../research/research-config.js";
+import { withRetry, validateReplicateUrl, getToken } from "./replicate-utils.js";
 
 export const SAM2_MODEL = "lucataco/segment-anything-2";
 export const SAM2_VERSION = "be7cbde9fdf0eecdc8b20ffec9dd0d1cfeace0832d4d0b58a071d993182e1be0";
@@ -375,18 +371,3 @@ export async function decomposeImage(
   return { files, coverages, method: "sam2", fileMeta };
 }
 
-// --- Selective Recursive (disabled — SAM 2 doesn't benefit from recursive decomposition) ---
-
-export function shouldRecurse(
-  _candidate: { coverage: number; componentCount: number; edgeDensity: number },
-  _config?: Partial<ResearchConfig>,
-): boolean {
-  return false;
-}
-
-export async function recursiveDecompose(
-  _candidate: LayerCandidate,
-  _options: { outputDir: string; apiCallCount: { current: number }; maxRecursiveCalls: number },
-): Promise<LayerCandidate[]> {
-  return [];
-}

@@ -9,7 +9,6 @@ import type { LayerCandidate, LayerRole } from "../../src/lib/scene-schema.js";
 import {
   deduplicateCandidates,
   resolveExclusiveOwnership,
-  computePairwiseOverlap,
   buildExclusiveMasks,
   assignRoles,
   orderByRole,
@@ -74,7 +73,7 @@ function makeCandidate(
   overrides: Partial<LayerCandidate> & { id: string },
 ): LayerCandidate {
   return {
-    source: "qwen-base",
+    source: "sam2-segment",
     filePath: "",
     width: W,
     height: H,
@@ -236,46 +235,6 @@ describe("deduplicateCandidates", () => {
     ]);
     expect(result.length).toBe(1);
     expect(result[0].droppedReason).toBeUndefined();
-  });
-
-  it("should exempt depth-split siblings (same parentId)", async () => {
-    const buf = createRgbaBuffer(W, H);
-    fillBuffer(buf, OPAQUE);
-    const f1 = await savePng(buf, W, H, "dedup-sib-1.png");
-    const f2 = await savePng(buf, W, H, "dedup-sib-2.png");
-
-    const result = await deduplicateCandidates([
-      makeCandidate({ id: "a", filePath: f1, coverage: 1.0, parentId: "parent-1" }),
-      makeCandidate({ id: "b", filePath: f2, coverage: 0.9, parentId: "parent-1" }),
-    ]);
-    const dropped = result.filter((c) => c.droppedReason);
-    expect(dropped.length).toBe(0);
-  });
-
-  it("should NOT exempt when parentIds differ", async () => {
-    const buf = createRgbaBuffer(W, H);
-    fillBuffer(buf, OPAQUE);
-    const f1 = await savePng(buf, W, H, "dedup-diff-1.png");
-    const f2 = await savePng(buf, W, H, "dedup-diff-2.png");
-
-    const result = await deduplicateCandidates([
-      makeCandidate({ id: "a", filePath: f1, coverage: 1.0, parentId: "p1" }),
-      makeCandidate({ id: "b", filePath: f2, coverage: 0.9, parentId: "p2" }),
-    ]);
-    expect(result.filter((c) => c.droppedReason).length).toBe(1);
-  });
-
-  it("should NOT exempt when one has no parentId", async () => {
-    const buf = createRgbaBuffer(W, H);
-    fillBuffer(buf, OPAQUE);
-    const f1 = await savePng(buf, W, H, "dedup-nop-1.png");
-    const f2 = await savePng(buf, W, H, "dedup-nop-2.png");
-
-    const result = await deduplicateCandidates([
-      makeCandidate({ id: "a", filePath: f1, coverage: 1.0, parentId: "p1" }),
-      makeCandidate({ id: "b", filePath: f2, coverage: 0.9 }),
-    ]);
-    expect(result.filter((c) => c.droppedReason).length).toBe(1);
   });
 
   it("should drop the lower-coverage candidate when IoU high", async () => {

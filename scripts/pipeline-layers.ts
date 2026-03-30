@@ -156,9 +156,6 @@ async function main() {
     } else if (typeof pipelineConfig?.samMaskLimit === "number") {
       selectedLayerCount = pipelineConfig.samMaskLimit;
       console.log(`  Configured SAM 2 mask limit: ${selectedLayerCount}`);
-    } else if (typeof pipelineConfig?.numLayers === "number") {
-      selectedLayerCount = pipelineConfig.numLayers;
-      console.log(`  Legacy config layer count override: ${selectedLayerCount}`);
     } else {
       console.log("\nScoring image complexity...");
       const complexity = await scoreComplexity(preparedPath, pipelineConfig);

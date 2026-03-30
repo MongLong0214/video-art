@@ -157,7 +157,7 @@ export async function extractCandidates(
 
     candidates.push({
       id: crypto.randomUUID(),
-      source: "qwen-base",
+      source: "sam2-segment",
       filePath,
       width,
       height,

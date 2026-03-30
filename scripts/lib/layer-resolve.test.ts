@@ -10,7 +10,6 @@ import type { LayerCandidate } from "../../src/lib/scene-schema.js";
 import {
   deduplicateCandidates,
   resolveExclusiveOwnership,
-  computePairwiseOverlap,
   assignRoles,
   orderByRole,
   applyRetentionRules,
@@ -64,7 +63,7 @@ async function makeCandidate(
 
   return {
     id: overrides.id ?? `cand-${path.basename(filePath, ".png")}`,
-    source: "qwen-base",
+    source: "sam2-segment",
     filePath,
     width,
     height,
@@ -215,38 +214,6 @@ describe("deduplicateCandidates", () => {
     expect(retained).toHaveLength(2);
   });
 
-  it("should exempt depth-split siblings from IoU dedup", async () => {
-    // Two high-overlap candidates sharing the same parentId (depth-split siblings)
-    const candA = await makeCandidate(
-      (() => {
-        const b = createRgbaBuffer(W, H);
-        paintRect(b, W, { x: 0, y: 0, w: 190, h: 200 }, { r: 255, g: 0, b: 0, a: 255 });
-        return b;
-      })(),
-      W,
-      H,
-      highOverlapAPath,
-      { id: "depth-a", source: "depth-split", parentId: "qwen-0", bbox: { x: 0, y: 0, w: 190, h: 200 }, centroid: { x: 94.5, y: 99.5 } },
-    );
-    const candB = await makeCandidate(
-      (() => {
-        const b = createRgbaBuffer(W, H);
-        paintRect(b, W, { x: 5, y: 0, w: 190, h: 200 }, { r: 0, g: 0, b: 255, a: 255 });
-        return b;
-      })(),
-      W,
-      H,
-      highOverlapBPath,
-      { id: "depth-b", source: "depth-split", parentId: "qwen-0", bbox: { x: 5, y: 0, w: 190, h: 200 }, centroid: { x: 99.5, y: 99.5 } },
-    );
-
-    const result = await deduplicateCandidates([candA, candB]);
-    const retained = result.filter((c) => !c.droppedReason);
-
-    // Both kept despite high IoU because they share parentId
-    expect(retained).toHaveLength(2);
-  });
-
   it("should record drop reasons for dedupe", async () => {
     const candA = await makeCandidate(
       (() => {
@@ -354,44 +321,6 @@ describe("resolveExclusiveOwnership", () => {
     for (const c of result) {
       expect(c.uniqueCoverage).toBeDefined();
       expect(c.uniqueCoverage).toBeGreaterThan(0);
-    }
-  });
-});
-
-describe("computePairwiseOverlap", () => {
-  it("should compute pairwise overlap <= 5% after exclusive ownership", async () => {
-    const candA = await makeCandidate(
-      (() => {
-        const b = createRgbaBuffer(W, H);
-        paintRect(b, W, { x: 0, y: 0, w: 150, h: 200 }, { r: 255, g: 0, b: 0, a: 255 });
-        return b;
-      })(),
-      W,
-      H,
-      ownershipAPath,
-      { id: "pw-a" },
-    );
-    const candB = await makeCandidate(
-      (() => {
-        const b = createRgbaBuffer(W, H);
-        paintRect(b, W, { x: 50, y: 0, w: 150, h: 200 }, { r: 0, g: 0, b: 255, a: 255 });
-        return b;
-      })(),
-      W,
-      H,
-      ownershipBPath,
-      { id: "pw-b" },
-    );
-
-    // First resolve exclusive ownership
-    const resolved = await resolveExclusiveOwnership([candA, candB], W, H);
-
-    // Then compute pairwise overlap on the resolved masks
-    const overlaps = await computePairwiseOverlap(resolved, W, H);
-
-    // After exclusive ownership, pairwise overlap should be 0 (or at most <= 5%)
-    for (const entry of overlaps) {
-      expect(entry.overlap).toBeLessThanOrEqual(0.05);
     }
   });
 });
@@ -535,19 +464,19 @@ describe("orderByRole", () => {
   it("should place bg-plate at lowest zIndex", () => {
     const candidates: LayerCandidate[] = [
       {
-        id: "mid", source: "qwen-base", filePath: midgroundPath,
+        id: "mid", source: "sam2-segment", filePath: midgroundPath,
         width: W, height: H, coverage: 0.12, edgeDensity: 0.1, componentCount: 1,
         bbox: { x: 20, y: 30, w: 80, h: 60 }, centroid: { x: 60, y: 60 },
         role: "midground",
       },
       {
-        id: "bg", source: "qwen-base", filePath: bgPlatePath,
+        id: "bg", source: "sam2-segment", filePath: bgPlatePath,
         width: W, height: H, coverage: 0.81, edgeDensity: 0.05, componentCount: 1,
         bbox: { x: 10, y: 10, w: 180, h: 180 }, centroid: { x: 100, y: 100 },
         role: "background-plate",
       },
       {
-        id: "sub", source: "qwen-base", filePath: subjectPath,
+        id: "sub", source: "sam2-segment", filePath: subjectPath,
         width: W, height: H, coverage: 0.09, edgeDensity: 0.15, componentCount: 1,
         bbox: { x: 70, y: 70, w: 60, h: 60 }, centroid: { x: 100, y: 100 },
         role: "subject",
@@ -562,19 +491,19 @@ describe("orderByRole", () => {
   it("should place fg-occluder at highest zIndex", () => {
     const candidates: LayerCandidate[] = [
       {
-        id: "bg", source: "qwen-base", filePath: bgPlatePath,
+        id: "bg", source: "sam2-segment", filePath: bgPlatePath,
         width: W, height: H, coverage: 0.81, edgeDensity: 0.05, componentCount: 1,
         bbox: { x: 10, y: 10, w: 180, h: 180 }, centroid: { x: 100, y: 100 },
         role: "background-plate",
       },
       {
-        id: "fg", source: "qwen-base", filePath: fgOccluderPath,
+        id: "fg", source: "sam2-segment", filePath: fgOccluderPath,
         width: W, height: H, coverage: 0.135, edgeDensity: 0.2, componentCount: 1,
         bbox: { x: 10, y: 170, w: 180, h: 30 }, centroid: { x: 100, y: 185 },
         role: "foreground-occluder",
       },
       {
-        id: "sub", source: "qwen-base", filePath: subjectPath,
+        id: "sub", source: "sam2-segment", filePath: subjectPath,
         width: W, height: H, coverage: 0.09, edgeDensity: 0.15, componentCount: 1,
         bbox: { x: 70, y: 70, w: 60, h: 60 }, centroid: { x: 100, y: 100 },
         role: "subject",
@@ -591,13 +520,13 @@ describe("orderByRole", () => {
     // A small subject should appear above a large background in z-order
     const candidates: LayerCandidate[] = [
       {
-        id: "large-bg", source: "qwen-base", filePath: bgPlatePath,
+        id: "large-bg", source: "sam2-segment", filePath: bgPlatePath,
         width: W, height: H, coverage: 0.81, edgeDensity: 0.05, componentCount: 1,
         bbox: { x: 10, y: 10, w: 180, h: 180 }, centroid: { x: 100, y: 100 },
         role: "background-plate",
       },
       {
-        id: "small-sub", source: "qwen-base", filePath: subjectPath,
+        id: "small-sub", source: "sam2-segment", filePath: subjectPath,
         width: W, height: H, coverage: 0.09, edgeDensity: 0.15, componentCount: 1,
         bbox: { x: 70, y: 70, w: 60, h: 60 }, centroid: { x: 100, y: 100 },
         role: "subject",
@@ -629,7 +558,7 @@ describe("fillBackgroundPlate", () => {
     }
 
     const bgCandidate: LayerCandidate = {
-      id: "bg-partial", source: "qwen-base", filePath: partialBgPath,
+      id: "bg-partial", source: "sam2-segment", filePath: partialBgPath,
       width: W, height: H, coverage: 0.5, edgeDensity: 0.05, componentCount: 1,
       bbox: { x: 100, y: 0, w: 100, h: 200 }, centroid: { x: 150, y: 100 },
       role: "background-plate",
@@ -674,7 +603,7 @@ describe("fillBackgroundPlate", () => {
     }
 
     const bgCandidate: LayerCandidate = {
-      id: "bg-small", source: "qwen-base", filePath: smallBgPath,
+      id: "bg-small", source: "sam2-segment", filePath: smallBgPath,
       width: W, height: H, coverage: 0.4, edgeDensity: 0.05, componentCount: 1,
       bbox: { x: 120, y: 0, w: 80, h: 200 }, centroid: { x: 160, y: 100 },
       role: "background-plate",
@@ -696,49 +625,49 @@ describe("applyRetentionRules", () => {
   it("should drop uniqueCoverage < 0.5% non-critical when enough layers remain", () => {
     const candidates: LayerCandidate[] = [
       {
-        id: "bg", source: "qwen-base", filePath: bgPlatePath,
+        id: "bg", source: "sam2-segment", filePath: bgPlatePath,
         width: W, height: H, coverage: 0.81, uniqueCoverage: 0.5,
         edgeDensity: 0.05, componentCount: 1,
         bbox: { x: 10, y: 10, w: 180, h: 180 }, centroid: { x: 100, y: 100 },
         role: "background-plate",
       },
       {
-        id: "sub-1", source: "qwen-base", filePath: subjectPath,
+        id: "sub-1", source: "sam2-segment", filePath: subjectPath,
         width: W, height: H, coverage: 0.09, uniqueCoverage: 0.08,
         edgeDensity: 0.15, componentCount: 1,
         bbox: { x: 70, y: 70, w: 60, h: 60 }, centroid: { x: 100, y: 100 },
         role: "subject",
       },
       {
-        id: "mid-1", source: "qwen-base", filePath: midgroundPath,
+        id: "mid-1", source: "sam2-segment", filePath: midgroundPath,
         width: W, height: H, coverage: 0.12, uniqueCoverage: 0.06,
         edgeDensity: 0.1, componentCount: 1,
         bbox: { x: 20, y: 30, w: 80, h: 60 }, centroid: { x: 60, y: 60 },
         role: "midground",
       },
       {
-        id: "mid-2", source: "qwen-base", filePath: midgroundPath,
+        id: "mid-2", source: "sam2-segment", filePath: midgroundPath,
         width: W, height: H, coverage: 0.10, uniqueCoverage: 0.04,
         edgeDensity: 0.1, componentCount: 1,
         bbox: { x: 30, y: 40, w: 70, h: 50 }, centroid: { x: 65, y: 65 },
         role: "midground",
       },
       {
-        id: "mid-3", source: "qwen-base", filePath: midgroundPath,
+        id: "mid-3", source: "sam2-segment", filePath: midgroundPath,
         width: W, height: H, coverage: 0.08, uniqueCoverage: 0.03,
         edgeDensity: 0.1, componentCount: 1,
         bbox: { x: 40, y: 50, w: 60, h: 40 }, centroid: { x: 70, y: 70 },
         role: "midground",
       },
       {
-        id: "det-1", source: "qwen-base", filePath: detailPath,
+        id: "det-1", source: "sam2-segment", filePath: detailPath,
         width: W, height: H, coverage: 0.03, uniqueCoverage: 0.02,
         edgeDensity: 0.1, componentCount: 1,
         bbox: { x: 150, y: 30, w: 30, h: 30 }, centroid: { x: 165, y: 45 },
         role: "detail",
       },
       {
-        id: "tiny-detail", source: "qwen-base", filePath: detailPath,
+        id: "tiny-detail", source: "sam2-segment", filePath: detailPath,
         width: W, height: H, coverage: 0.01, uniqueCoverage: 0.003,
         edgeDensity: 0.1, componentCount: 1,
         bbox: { x: 160, y: 20, w: 20, h: 20 }, centroid: { x: 170, y: 30 },
@@ -761,14 +690,14 @@ describe("applyRetentionRules", () => {
   it("should relax threshold when retained < minRetainedLayers (progressive relaxation)", () => {
     const candidates: LayerCandidate[] = [
       {
-        id: "bg", source: "qwen-base", filePath: bgPlatePath,
+        id: "bg", source: "sam2-segment", filePath: bgPlatePath,
         width: W, height: H, coverage: 0.81, uniqueCoverage: 0.5,
         edgeDensity: 0.05, componentCount: 1,
         bbox: { x: 10, y: 10, w: 180, h: 180 }, centroid: { x: 100, y: 100 },
         role: "background-plate",
       },
       {
-        id: "tiny-detail", source: "qwen-base", filePath: detailPath,
+        id: "tiny-detail", source: "sam2-segment", filePath: detailPath,
         width: W, height: H, coverage: 0.01, uniqueCoverage: 0.003,
         edgeDensity: 0.1, componentCount: 1,
         bbox: { x: 160, y: 20, w: 20, h: 20 }, centroid: { x: 170, y: 30 },
@@ -787,14 +716,14 @@ describe("applyRetentionRules", () => {
   it("should keep role-critical despite low uniqueCoverage", () => {
     const candidates: LayerCandidate[] = [
       {
-        id: "bg", source: "qwen-base", filePath: bgPlatePath,
+        id: "bg", source: "sam2-segment", filePath: bgPlatePath,
         width: W, height: H, coverage: 0.81, uniqueCoverage: 0.5,
         edgeDensity: 0.05, componentCount: 1,
         bbox: { x: 10, y: 10, w: 180, h: 180 }, centroid: { x: 100, y: 100 },
         role: "background-plate",
       },
       {
-        id: "sub", source: "qwen-base", filePath: subjectPath,
+        id: "sub", source: "sam2-segment", filePath: subjectPath,
         width: W, height: H, coverage: 0.09, uniqueCoverage: 0.01,
         edgeDensity: 0.15, componentCount: 1,
         bbox: { x: 70, y: 70, w: 60, h: 60 }, centroid: { x: 100, y: 100 },
@@ -828,7 +757,7 @@ describe("applyRetentionRules", () => {
     ];
 
     const candidates: LayerCandidate[] = roles.map((r) => ({
-      id: r.id, source: "qwen-base" as const, filePath: bgPlatePath,
+      id: r.id, source: "sam2-segment" as const, filePath: bgPlatePath,
       width: W, height: H, coverage: r.coverage, uniqueCoverage: r.uniqueCoverage,
       edgeDensity: 0.1, componentCount: 1,
       bbox: { x: 0, y: 0, w: W, h: H }, centroid: { x: W / 2, y: H / 2 },
@@ -849,14 +778,14 @@ describe("applyRetentionRules", () => {
     // No candidate has role background-plate
     const candidates: LayerCandidate[] = [
       {
-        id: "det-a", source: "qwen-base", filePath: detailPath,
+        id: "det-a", source: "sam2-segment", filePath: detailPath,
         width: W, height: H, coverage: 0.01, uniqueCoverage: 0.005,
         edgeDensity: 0.1, componentCount: 1,
         bbox: { x: 160, y: 20, w: 20, h: 20 }, centroid: { x: 170, y: 30 },
         role: "detail",
       },
       {
-        id: "det-b", source: "qwen-base", filePath: detailPath,
+        id: "det-b", source: "sam2-segment", filePath: detailPath,
         width: W, height: H, coverage: 0.01, uniqueCoverage: 0.005,
         edgeDensity: 0.1, componentCount: 1,
         bbox: { x: 10, y: 10, w: 20, h: 20 }, centroid: { x: 20, y: 20 },

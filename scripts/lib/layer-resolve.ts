@@ -167,16 +167,11 @@ export async function deduplicateCandidates(
   // Track which indices are dropped
   const dropped = new Set<number>();
 
-  // Pairwise comparison (skip depth-split siblings sharing the same parentId)
+  // Pairwise comparison
   for (let i = 0; i < candidates.length; i++) {
     if (dropped.has(i)) continue;
     for (let j = i + 1; j < candidates.length; j++) {
       if (dropped.has(j)) continue;
-
-      // Depth-split siblings: exempt from IoU dedup
-      const pi = candidates[i].parentId;
-      const pj = candidates[j].parentId;
-      if (pi && pj && pi === pj) continue;
 
       const iou = computeIoU(masks[i], masks[j]);
       if (iou > iouDedupeThreshold) {
@@ -228,54 +223,6 @@ export async function resolveExclusiveOwnership(
     ...c,
     uniqueCoverage: exclusiveCounts[idx] / totalPixels,
   }));
-}
-
-/**
- * Compute pairwise overlap ratio between resolved candidates.
- *
- * After exclusive ownership, overlaps should be near zero.
- * The overlap ratio for a pair (i, j) is:
- *   intersection(exclusive_i, exclusive_j) / min(count_i, count_j)
- *
- * Returns array of { idA, idB, overlap } for each pair.
- */
-export async function computePairwiseOverlap(
-  candidates: LayerCandidate[],
-  width: number,
-  height: number,
-  config?: Partial<ResearchConfig>,
-): Promise<{ idA: string; idB: string; overlap: number }[]> {
-  const totalPixels = width * height;
-  const alphaThreshold = config?.alphaThreshold ?? ALPHA_THRESHOLD;
-  const { exclusiveMasks, exclusiveCounts } = await buildExclusiveMasks(
-    candidates,
-    width,
-    height,
-    alphaThreshold,
-  );
-
-  const overlaps: { idA: string; idB: string; overlap: number }[] = [];
-
-  for (let i = 0; i < candidates.length; i++) {
-    for (let j = i + 1; j < candidates.length; j++) {
-      // Single pass: count intersection using bitwise AND on typed arrays
-      let intersection = 0;
-      for (let p = 0; p < totalPixels; p++) {
-        intersection += exclusiveMasks[i][p] & exclusiveMasks[j][p];
-      }
-
-      const minCount = Math.min(exclusiveCounts[i], exclusiveCounts[j]);
-      const overlap = minCount === 0 ? 0 : intersection / minCount;
-
-      overlaps.push({
-        idA: candidates[i].id,
-        idB: candidates[j].id,
-        overlap,
-      });
-    }
-  }
-
-  return overlaps;
 }
 
 // ==========================================================================

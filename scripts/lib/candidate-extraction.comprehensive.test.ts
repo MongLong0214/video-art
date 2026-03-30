@@ -431,11 +431,11 @@ describe("edge case images", () => {
     expect(uniqueIds.size).toBe(ids.length);
   });
 
-  it("should set source to qwen-base", async () => {
+  it("should set source to sam2-segment", async () => {
     const buf = createRgbaBuffer(20, 20, OPAQUE);
     const f = await savePng(buf, 20, 20, "edge-source.png");
     const candidates = await extractCandidates(f, outDir);
-    expect(candidates[0].source).toBe("qwen-base");
+    expect(candidates[0].source).toBe("sam2-segment");
   });
 
   it("should save component PNGs to output directory", async () => {

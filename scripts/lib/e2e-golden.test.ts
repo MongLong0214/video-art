@@ -6,12 +6,11 @@
  *
  * Tests per image type:
  *   1. scoreComplexity -> verify tier + layerCount
- *   2. Synthetic candidates (simulated Qwen output)
+ *   2. Synthetic candidates (simulated SAM2 output)
  *   3. Dedupe + exclusive ownership (via assignRoles + orderByRole)
  *   4. Role assignment
  *   5. Retained <= 8, each has role, pairwise overlap <= 5%
  *   6. Generate manifest -> verify all fields
- *   7. Variant A vs B comparison metrics
  */
 import { describe, it, expect } from "vitest";
 import fs from "node:fs";
@@ -27,14 +26,8 @@ import {
   type ManifestData,
   type ManifestInput,
 } from "./decomposition-manifest.js";
-import {
-  computeComparisonMetrics,
-  generateComparisonReport,
-  type ComparisonMetrics,
-} from "./variant-comparison.js";
 import type {
   LayerCandidate,
-  LayerRole,
 } from "../../src/lib/scene-schema.js";
 
 // ---------------------------------------------------------------------------
@@ -60,7 +53,7 @@ const uid = () => `cand-${nextId++}`;
 function makeCandidate(overrides: Partial<LayerCandidate> = {}): LayerCandidate {
   return {
     id: uid(),
-    source: "qwen-base",
+    source: "sam2-segment",
     filePath: `/tmp/synthetic-${nextId}.png`,
     width: 1024,
     height: 1024,
@@ -76,29 +69,20 @@ function makeCandidate(overrides: Partial<LayerCandidate> = {}): LayerCandidate 
 function buildManifestInput(
   retained: LayerCandidate[],
   dropped: LayerCandidate[],
-  variant: "qwen-only" | "qwen-zoedepth" = "qwen-only",
 ): ManifestInput {
   return {
     runId: `run-golden-${Date.now()}`,
-    pipelineVariant: "qwen-luminance",
+    pipelineVariant: "sam2",
     sourceImage: "/tmp/source.png",
     preparedImage: "/tmp/prepared.png",
     models: {
-      qwenImageLayered: {
-        model: "qwen/qwen-image-layered",
+      sam2: {
+        model: "lucataco/segment-anything-2",
         version: "abc123def456",
-        numLayersBase: 4,
+        maskLimit: 8,
       },
-      ...(variant === "qwen-zoedepth"
-        ? {
-            zoeDepth: {
-              model: "cjwbw/zoedepth",
-              version: "6375723dabc",
-            },
-          }
-        : {}),
-    } as ManifestInput["models"],
-    passes: [{ type: "qwen-base", candidateCount: retained.length + dropped.length }],
+    },
+    passes: [{ type: "sam2-segment", candidateCount: retained.length + dropped.length }],
     retainedLayers: retained,
     droppedCandidates: dropped,
     unsafeFlag: false,
@@ -116,7 +100,6 @@ function runLocalPipeline(
   candidates: LayerCandidate[],
   imageWidth: number,
   imageHeight: number,
-  variant: "qwen-only" | "qwen-zoedepth" = "qwen-only",
 ) {
   // Step 1: assign roles
   const roled = assignRoles(candidates, imageWidth, imageHeight);
@@ -138,7 +121,7 @@ function runLocalPipeline(
   const dropped = afterRetention.filter((c) => !!c.droppedReason);
 
   // Step 5: generate manifest
-  const manifestInput = buildManifestInput(retained, dropped, variant);
+  const manifestInput = buildManifestInput(retained, dropped);
   const manifest = generateManifest(manifestInput);
 
   return { retained, dropped, manifest, ordered: withOwnership };
@@ -158,19 +141,6 @@ describe("Golden directory detection", () => {
     const imageFiles = files.filter((f) => /\.(png|jpe?g|webp)$/i.test(f));
     expect(typeof hasGolden).toBe("boolean");
     expect(hasGolden).toBe(imageFiles.length > 0);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Skip block for tests needing real golden images
-// ---------------------------------------------------------------------------
-
-describe.skipIf(!hasGolden)("Golden set with real images", () => {
-  it("placeholder -- requires real golden images to run", () => {
-    const images = fs
-      .readdirSync(GOLDEN_DIR)
-      .filter((f) => /\.(png|jpe?g|webp)$/i.test(f));
-    expect(images.length).toBeGreaterThan(0);
   });
 });
 
@@ -238,12 +208,6 @@ describe("simple portrait (few layers, clean bg)", () => {
   it("should generate a valid manifest with all fields", () => {
     const { manifest } = runLocalPipeline(candidates, W, H);
     verifyManifestFields(manifest);
-  });
-
-  it("should produce comparison metrics for variant A vs B", () => {
-    const resultA = runLocalPipeline(candidates, W, H, "qwen-only");
-    const resultB = runLocalPipeline(candidates, W, H, "qwen-zoedepth");
-    verifyComparisonMetrics(resultA.manifest, resultB.manifest);
   });
 });
 
@@ -330,12 +294,6 @@ describe("subject + busy bg (subject + complex background)", () => {
     const { manifest } = runLocalPipeline(candidates, W, H);
     verifyManifestFields(manifest);
   });
-
-  it("should produce comparison metrics for variant A vs B", () => {
-    const resultA = runLocalPipeline(candidates, W, H, "qwen-only");
-    const resultB = runLocalPipeline(candidates, W, H, "qwen-zoedepth");
-    verifyComparisonMetrics(resultA.manifest, resultB.manifest);
-  });
 });
 
 describe("high detail (many small elements)", () => {
@@ -399,12 +357,6 @@ describe("high detail (many small elements)", () => {
   it("should generate a valid manifest with all fields", () => {
     const { manifest } = runLocalPipeline(candidates, W, H);
     verifyManifestFields(manifest);
-  });
-
-  it("should produce comparison metrics for variant A vs B", () => {
-    const resultA = runLocalPipeline(candidates, W, H, "qwen-only");
-    const resultB = runLocalPipeline(candidates, W, H, "qwen-zoedepth");
-    verifyComparisonMetrics(resultA.manifest, resultB.manifest);
   });
 });
 
@@ -486,12 +438,6 @@ describe("cartoon character (clear subject, cosmic bg)", () => {
     const { manifest } = runLocalPipeline(candidates, W, H);
     verifyManifestFields(manifest);
   });
-
-  it("should produce comparison metrics for variant A vs B", () => {
-    const resultA = runLocalPipeline(candidates, W, H, "qwen-only");
-    const resultB = runLocalPipeline(candidates, W, H, "qwen-zoedepth");
-    verifyComparisonMetrics(resultA.manifest, resultB.manifest);
-  });
 });
 
 describe("silhouette + abstract (clear fg/bg separation)", () => {
@@ -571,12 +517,6 @@ describe("silhouette + abstract (clear fg/bg separation)", () => {
   it("should generate a valid manifest with all fields", () => {
     const { manifest } = runLocalPipeline(candidates, W, H);
     verifyManifestFields(manifest);
-  });
-
-  it("should produce comparison metrics for variant A vs B", () => {
-    const resultA = runLocalPipeline(candidates, W, H, "qwen-only");
-    const resultB = runLocalPipeline(candidates, W, H, "qwen-zoedepth");
-    verifyComparisonMetrics(resultA.manifest, resultB.manifest);
   });
 });
 
@@ -704,82 +644,22 @@ describe("all 5 golden image types -- pipeline stability", () => {
 });
 
 // ---------------------------------------------------------------------------
-// ComparisonMetrics field completeness
-// ---------------------------------------------------------------------------
-
-describe("ComparisonMetrics completeness", () => {
-  it("should have all required fields per PRD section 9.3", () => {
-    const requiredKeys: Array<keyof ComparisonMetrics> = [
-      "meanUniqueCoverage",
-      "retainedLayerCount",
-      "duplicateHeavyCount",
-      "meanPairwiseOverlap",
-      "runtimeMs",
-      "externalDependencyCount",
-    ];
-
-    const candidates: LayerCandidate[] = [
-      makeCandidate({
-        coverage: 0.65,
-        bbox: { x: 0, y: 0, w: 1024, h: 1024 },
-        centroid: { x: 512, y: 512 },
-      }),
-    ];
-    const { manifest } = runLocalPipeline(candidates, 1024, 1024);
-    const metrics = computeComparisonMetrics(manifest);
-
-    for (const key of requiredKeys) {
-      expect(metrics).toHaveProperty(key);
-      expect(typeof metrics[key]).toBe("number");
-      expect(Number.isFinite(metrics[key])).toBe(true);
-    }
-  });
-
-  it("should produce a valid ComparisonReport with recommendation", () => {
-    const metricsA: ComparisonMetrics = {
-      meanUniqueCoverage: 0.12,
-      retainedLayerCount: 3,
-      duplicateHeavyCount: 1,
-      meanPairwiseOverlap: 0.10,
-      runtimeMs: 5000,
-      externalDependencyCount: 1,
-    };
-    const metricsB: ComparisonMetrics = {
-      meanUniqueCoverage: 0.18,
-      retainedLayerCount: 4,
-      duplicateHeavyCount: 0,
-      meanPairwiseOverlap: 0.05,
-      runtimeMs: 8000,
-      externalDependencyCount: 2,
-    };
-
-    const report = generateComparisonReport(metricsA, metricsB);
-    expect(report).toHaveProperty("variantA");
-    expect(report).toHaveProperty("variantB");
-    expect(report).toHaveProperty("recommendation");
-    expect(report).toHaveProperty("reason");
-    expect(["qwen-only", "qwen-zoedepth"]).toContain(report.recommendation);
-    expect(report.reason.length).toBeGreaterThan(0);
-  });
-});
-
-// ---------------------------------------------------------------------------
 // Shared verification helpers
 // ---------------------------------------------------------------------------
 
 function verifyManifestFields(manifest: ManifestData): void {
   expect(manifest.runId).toBeTruthy();
-  expect(manifest.pipelineVariant).toBeTruthy();
+  expect(manifest.pipelineVariant).toBe("sam2");
   expect(manifest.createdAt).toBeTruthy();
   expect(manifest.sourceImage).toBeTruthy();
   expect(manifest.preparedImage).toBeTruthy();
 
   // Models
   expect(manifest.models).toBeDefined();
-  expect(manifest.models.qwenImageLayered).toBeDefined();
-  expect(manifest.models.qwenImageLayered.model).toBeTruthy();
-  expect(manifest.models.qwenImageLayered.version).toBeTruthy();
-  expect(manifest.models.qwenImageLayered.version.toLowerCase()).not.toBe("latest");
+  expect(manifest.models.sam2).toBeDefined();
+  expect(manifest.models.sam2!.model).toBeTruthy();
+  expect(manifest.models.sam2!.version).toBeTruthy();
+  expect(manifest.models.sam2!.version.toLowerCase()).not.toBe("latest");
 
   // Passes
   expect(manifest.passes).toBeDefined();
@@ -806,31 +686,4 @@ function verifyManifestFields(manifest: ManifestData): void {
   expect(typeof manifest.layerCounts.selected).toBe("number");
   expect(typeof manifest.layerCounts.retained).toBe("number");
   expect(typeof manifest.layerCounts.dropped).toBe("number");
-}
-
-function verifyComparisonMetrics(
-  manifestA: ManifestData,
-  manifestB: ManifestData,
-): void {
-  const metricsA = computeComparisonMetrics(manifestA);
-  const metricsB = computeComparisonMetrics(manifestB);
-
-  // Both must be valid numbers
-  for (const m of [metricsA, metricsB]) {
-    expect(Number.isFinite(m.meanUniqueCoverage)).toBe(true);
-    expect(Number.isFinite(m.retainedLayerCount)).toBe(true);
-    expect(Number.isFinite(m.duplicateHeavyCount)).toBe(true);
-    expect(Number.isFinite(m.meanPairwiseOverlap)).toBe(true);
-    expect(Number.isFinite(m.runtimeMs)).toBe(true);
-    expect(Number.isFinite(m.externalDependencyCount)).toBe(true);
-  }
-
-  // B should have 2 external deps (qwen + zoedepth)
-  expect(metricsB.externalDependencyCount).toBe(2);
-  // A should have 1 (qwen only)
-  expect(metricsA.externalDependencyCount).toBe(1);
-
-  // Report should be generable
-  const report = generateComparisonReport(metricsA, metricsB);
-  expect(["qwen-only", "qwen-zoedepth"]).toContain(report.recommendation);
 }

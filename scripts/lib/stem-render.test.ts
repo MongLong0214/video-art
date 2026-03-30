@@ -12,7 +12,6 @@ import {
   checkRenderLock,
   writeRenderLock,
   removeRenderLock,
-  checkDiskSpace,
   DEFAULT_STEMS,
   SIDECHAIN_BUS,
 } from "./stem-render";
@@ -196,12 +195,6 @@ describe("stem-render guards", () => {
     writeRenderLock(tmpDir);
     expect(() => checkRenderLock(tmpDir)).toThrow("Render already in progress");
     removeRenderLock(tmpDir);
-  });
-
-  // TC-16: disk space check
-  it("checks disk space with 2x safety margin", () => {
-    expect(checkDiskSpace(200_000_000, 80_000_000)).toBe(true);
-    expect(checkDiskSpace(100_000_000, 80_000_000)).toBe(false);
   });
 
   // TC-17: stem-router does not import live modules

@@ -604,7 +604,7 @@ describe("LayerCandidate type", () => {
   it("should satisfy the interface contract", () => {
     const candidate: LayerCandidate = {
       id: "layer-0-comp-0",
-      source: "qwen-base",
+      source: "sam2-segment",
       filePath: "/tmp/layers/layer-0.png",
       width: 1080,
       height: 1080,
@@ -615,7 +615,7 @@ describe("LayerCandidate type", () => {
       componentCount: 1,
     };
     expect(candidate.id).toBe("layer-0-comp-0");
-    expect(candidate.source).toBe("qwen-base");
+    expect(candidate.source).toBe("sam2-segment");
     expect(candidate.role).toBeUndefined();
   });
 
@@ -629,7 +629,6 @@ describe("LayerCandidate type", () => {
       coverage: 0.20,
       uniqueCoverage: 0.15,
       meanDepth: 0.6,
-      depthStd: 0.1,
       bbox: { x: 100, y: 200, w: 400, h: 300 },
       centroid: { x: 300, y: 350 },
       edgeDensity: 0.08,
