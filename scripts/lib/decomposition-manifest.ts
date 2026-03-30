@@ -5,6 +5,14 @@ import type { LayerCandidate, LayerRole } from "../../src/lib/scene-schema.js";
 
 // ---------- types ----------
 
+export interface DepthStats {
+  min: number;
+  max: number;
+  mean: number;
+  stddev: number;
+  count: number;
+}
+
 export interface ManifestInput {
   runId: string;
   pipelineVariant: "sam2";
@@ -12,7 +20,7 @@ export interface ManifestInput {
   preparedImage: string;
   models: {
     sam2?: { model: string; version: string; maskLimit: number };
-    depthAnything?: { model: string; version: string; depthConvention: "near-is-high" };
+    depthAnything?: { model: string; version: string; depthConvention: "near-is-high"; status?: "success" | "failed" };
   };
   passes: Array<{
     type:
@@ -27,6 +35,9 @@ export interface ManifestInput {
   productionMode: boolean;
   requestedLayerCount?: number;
   selectedLayerCount: number;
+  depthStats?: DepthStats;
+  depthRoleWeight?: number;
+  roleComparison?: Array<{ id: string; roleWithoutDepth: string; roleWithDepth: string }>;
 }
 
 interface ManifestFinalLayer {
@@ -60,6 +71,9 @@ export interface ManifestData {
     retained: number;
     dropped: number;
   };
+  depthStats?: DepthStats;
+  depthRoleWeight?: number;
+  roleComparison?: Array<{ id: string; roleWithoutDepth: string; roleWithDepth: string }>;
 }
 
 // ---------- core functions ----------
@@ -111,6 +125,9 @@ export const generateManifest = (input: ManifestInput): ManifestData => {
       retained: input.retainedLayers.length,
       dropped: input.droppedCandidates.length,
     },
+    depthStats: input.depthStats,
+    depthRoleWeight: input.depthRoleWeight,
+    roleComparison: input.roleComparison,
   };
 };
 

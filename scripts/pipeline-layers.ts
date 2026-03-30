@@ -254,28 +254,42 @@ async function main() {
       .toBuffer();
     const depthArray = new Uint8Array(depthRaw.buffer, depthRaw.byteOffset, depthRaw.byteLength);
 
-    const activeMasked = candidates.filter((c) => !c.droppedReason);
-    for (const c of activeMasked) {
+    const depthMap = new Map<string, number>();
+    for (const c of candidates.filter((c) => !c.droppedReason)) {
       const mask = maskCache.get(c.id);
       if (mask) {
-        c.meanDepth = computeMeanDepth(depthArray, mask, imageWidth, imageHeight);
+        depthMap.set(c.id, computeMeanDepth(depthArray, mask, imageWidth, imageHeight));
       }
     }
-    const depths = activeMasked.map((c) => c.meanDepth ?? 128);
+    candidates = candidates.map((c) =>
+      depthMap.has(c.id) ? { ...c, meanDepth: depthMap.get(c.id)! } : c,
+    );
+    const depths = candidates.filter((c) => !c.droppedReason).map((c) => c.meanDepth ?? 128);
     const depthStats = computeDepthStats(depths);
     console.log(`  Depth stats: min=${depthStats.min.toFixed(0)}, max=${depthStats.max.toFixed(0)}, mean=${depthStats.mean.toFixed(0)}, stddev=${depthStats.stddev.toFixed(1)}`);
   } else {
     console.log("  No depth map available — using default meanDepth=128");
   }
 
-  // --- Step 7: Assign roles ---
+  // --- Step 7: Assign roles (with depth comparison for Phase 2 validation) ---
   console.log("Assigning roles...");
   const forRoles = candidates.filter((c) => !c.droppedReason);
+
+  // Role comparison: heuristic-only baseline vs depth-boosted
+  const baselineRoles = assignRoles(forRoles, imageWidth, imageHeight, { ...pipelineConfig, depthRoleWeight: 0 });
+  const baselineRoleMap = new Map(baselineRoles.map((c) => [c.id, c.role ?? "midground"]));
+
   const withRoles = assignRoles(forRoles, imageWidth, imageHeight, pipelineConfig);
   const roleMap = new Map(withRoles.map((c) => [c.id, c]));
   candidates = candidates.map((c) =>
     roleMap.has(c.id) ? roleMap.get(c.id)! : c,
   );
+
+  const roleComparison = forRoles.map((c) => ({
+    id: c.id,
+    roleWithoutDepth: String(baselineRoleMap.get(c.id) ?? "midground"),
+    roleWithDepth: String(roleMap.get(c.id)?.role ?? "midground"),
+  }));
 
   // --- Step 8: Order by role z-ladder ---
   console.log("Ordering by role...");
@@ -368,6 +382,12 @@ async function main() {
   const manifestLayerCount = selectedLayerCount ?? retained.length;
 
   // --- Step 13: Generate + write manifest ---
+  // Compute depthStats for manifest
+  const manifestDepthStats = depthMapBuffer ? (() => {
+    const depths = retained.map((c) => c.meanDepth ?? 128);
+    return computeDepthStats(depths);
+  })() : undefined;
+
   const manifestInput: ManifestInput = {
     runId: ctx.runId,
     pipelineVariant: "sam2",
@@ -379,11 +399,12 @@ async function main() {
         version: SAM2_VERSION,
         maskLimit: manifestLayerCount,
       },
-      depthAnything: depthMapBuffer ? {
+      depthAnything: {
         model: DAV2_MODEL,
         version: DAV2_VERSION,
         depthConvention: "near-is-high" as const,
-      } : undefined,
+        status: depthMapBuffer ? "success" : "failed",
+      },
     },
     passes,
     retainedLayers: retained,
@@ -392,6 +413,9 @@ async function main() {
     productionMode: cliArgs.production,
     requestedLayerCount: cliArgs.layerOverride,
     selectedLayerCount: manifestLayerCount,
+    depthStats: manifestDepthStats,
+    depthRoleWeight: pipelineConfig?.depthRoleWeight,
+    roleComparison,
   };
 
   try {

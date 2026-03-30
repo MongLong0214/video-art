@@ -299,7 +299,7 @@ export function assignRoles(
   const bgPlateMinBboxRatio = config?.bgPlateMinBboxRatio ?? DEFAULT_BG_PLATE_MIN_BBOX_RATIO;
   const edgeTolerancePx = config?.edgeTolerancePx ?? DEFAULT_EDGE_TOLERANCE_PX;
   const centralityThreshold = config?.centralityThreshold ?? DEFAULT_CENTRALITY_THRESHOLD;
-  const depthRoleWeight = config?.depthRoleWeight ?? 0;
+  const depthRoleWeight = config?.depthRoleWeight ?? 0.5;
   const depthFgThreshold = config?.depthForegroundThreshold ?? 0.3;
   const depthBgThreshold = config?.depthBackgroundThreshold ?? 0.7;
 

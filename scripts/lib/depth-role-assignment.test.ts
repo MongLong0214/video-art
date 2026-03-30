@@ -33,7 +33,7 @@ describe("T4: Depth-Enhanced Role Assignment", () => {
         makeCandidate({ id: "det", coverage: 0.02, bbox: { x: 80, y: 80, w: 10, h: 10 }, centroid: { x: 85, y: 85 }, meanDepth: 180 }),
       ];
       const withoutDepth = assignRoles(candidates, W, H, { depthRoleWeight: 0 });
-      const heuristicOnly = assignRoles(candidates, W, H);
+      const heuristicOnly = assignRoles(candidates, W, H, { depthRoleWeight: 0 });
       expect(withoutDepth.map(c => c.role)).toEqual(heuristicOnly.map(c => c.role));
     });
   });

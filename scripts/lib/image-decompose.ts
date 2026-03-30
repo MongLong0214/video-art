@@ -105,15 +105,15 @@ export async function getDepthMap(
   let imageData: Buffer = fs.readFileSync(imagePath);
 
   // AC-1.10: Downsample if input exceeds 20MB to keep base64 data URI safe
+  let mime: string;
   if (imageData.length > MAX_INPUT_BYTES) {
     console.warn(`  Input image ${(imageData.length / 1024 / 1024).toFixed(1)}MB exceeds 20MB — downsampling for DA V2`);
-    imageData = Buffer.from(await sharp(imageData).resize({ width: 1024, withoutEnlargement: true }).toBuffer());
+    imageData = Buffer.from(await sharp(imageData).resize({ width: 1024, withoutEnlargement: true }).png().toBuffer());
+    mime = "image/png";
+  } else {
+    const ext = path.extname(imagePath).toLowerCase().replace(".", "");
+    mime = { png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp" }[ext] || "image/png";
   }
-
-  const ext = path.extname(imagePath).toLowerCase().replace(".", "");
-  const mime =
-    { png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp" }[ext] ||
-    "image/png";
   const dataUri = `data:${mime};base64,${imageData.toString("base64")}`;
 
   console.log("  Running Depth Anything V2...");
