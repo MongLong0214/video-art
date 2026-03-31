@@ -8,8 +8,8 @@ import {
   ensureRgba,
 } from "./lib/input-validator.js";
 import { parseCliArgs } from "./lib/pipeline-cli.js";
-import { scoreComplexity } from "./lib/complexity-scoring.js";
-import { decomposeImage, SAM2_MODEL, SAM2_VERSION, DAV2_MODEL, DAV2_VERSION, SAM3_MODEL, SAM3_VERSION, VLM_MODEL, VLM_VERSION, sortCandidatesForOverlap } from "./lib/image-decompose.js";
+// scoreComplexity no longer needed — SAM3 path doesn't use complexity scoring
+import { decomposeImage, DAV2_MODEL, DAV2_VERSION, SAM3_MODEL, SAM3_VERSION, VLM_MODEL, VLM_VERSION, sortCandidatesForOverlap } from "./lib/image-decompose.js";
 import { computeMeanDepth, computeDepthStats } from "./lib/depth-computation.js";
 import { extractCandidates } from "./lib/candidate-extraction.js";
 import {
@@ -21,11 +21,11 @@ import {
   fillBackgroundPlate,
   buildExclusiveMasks,
 } from "./lib/layer-resolve.js";
-import { SAM_OPACITY_THRESHOLD, SAM_MIN_COVERAGE } from "./lib/pipeline-constants.js";
+// SAM_OPACITY_THRESHOLD, SAM_MIN_COVERAGE no longer needed — SAM3 builds candidates directly
 import { validateFilePath, IMAGE_EXTENSIONS } from "./lib/validate-file-path.js";
-import { computeMaskStats } from "./lib/mask-stats.js";
+// computeMaskStats no longer needed — SAM3 computes stats internally
 import { buildMaskCache } from "./lib/mask-cache.js";
-import { batchProcess } from "./lib/batch-process.js";
+// batchProcess no longer needed — SAM3 builds candidates directly
 import { generateSceneJson } from "./lib/scene-generator.js";
 import type { RetainedLayer } from "./lib/scene-generator.js";
 import {
@@ -100,7 +100,6 @@ async function main() {
   let candidates: LayerCandidate[];
   let selectedLayerCount: number | null = null;
   let depthMapBuffer: Buffer | undefined;
-  let useSam3Pipeline = false;
   let vlmPromptsResult: string[] | undefined;
   const passes: ManifestInput["passes"] = [];
 
@@ -153,132 +152,34 @@ async function main() {
     preparedPath = prepared.filePath;
     console.log(`Input: ${prepared.width}x${prepared.height}${prepared.wasResized ? " (resized)" : ""}`);
 
-    const useSam3 = pipelineConfig?.useSam3 ?? true;
-    useSam3Pipeline = useSam3;
+    // SAM3 only — no SAM2 path
 
-    if (useSam3) {
-      // --- SAM3 Path: VLM + SAM3 text-prompted segmentation ---
-      console.log("\nDecomposing image (SAM3 semantic)...");
-      const decomposeResult = await decomposeImage(preparedPath, layersDir, {
-        useSam3: true,
-        sam3Threshold: pipelineConfig?.sam3Threshold,
-        vlmMaxPrompts: pipelineConfig?.vlmMaxPrompts,
-        secondPassEnabled: pipelineConfig?.secondPassEnabled,
-        secondPassThreshold: pipelineConfig?.secondPassThreshold,
-        alphaThreshold: pipelineConfig?.alphaThreshold,
-        minCoverage: pipelineConfig?.minCoverage,
-        manualPrompts: cliArgs.prompts,
-        // SAM2 fallback options (used if SAM3 fails)
-        maxLayers: pipelineConfig?.samMaskLimit ?? 12,
-        pointsPerSide: pipelineConfig?.samPointsPerSide,
-        predIouThresh: pipelineConfig?.samPredIouThresh,
-        stabilityScoreThresh: pipelineConfig?.samStabilityScoreThresh,
-      });
+    // --- SAM3 Path: VLM + SAM3 text-prompted segmentation ---
+    console.log("\nDecomposing image (SAM3 semantic)...");
+    const decomposeResult = await decomposeImage(preparedPath, layersDir, {
+      sam3Threshold: pipelineConfig?.sam3Threshold,
+      vlmMaxPrompts: pipelineConfig?.vlmMaxPrompts,
+      secondPassEnabled: pipelineConfig?.secondPassEnabled,
+      secondPassThreshold: pipelineConfig?.secondPassThreshold,
+      alphaThreshold: pipelineConfig?.alphaThreshold,
+      minCoverage: pipelineConfig?.minCoverage,
+      manualPrompts: cliArgs.prompts,
+    });
 
-      depthMapBuffer = decomposeResult.depthMap;
-      vlmPromptsResult = decomposeResult.vlmPrompts;
-      console.log(`  ${decomposeResult.files.length} layers generated (${decomposeResult.method})`);
-      const rawPassCounts = decomposeResult.fileMeta.reduce(
-        (acc, meta) => { acc[meta.source] = (acc[meta.source] ?? 0) + 1; return acc; },
-        {} as Record<string, number>,
-      );
-      if ((rawPassCounts["sam2-segment"] ?? 0) > 0) {
-        passes.push({ type: "sam2-segment", candidateCount: rawPassCounts["sam2-segment"] });
-      }
-      if ((rawPassCounts["sam3-semantic"] ?? 0) > 0) {
-        passes.push({ type: "sam3-semantic", candidateCount: rawPassCounts["sam3-semantic"] });
-      }
+    depthMapBuffer = decomposeResult.depthMap;
+    vlmPromptsResult = decomposeResult.vlmPrompts;
+    console.log(`  ${decomposeResult.files.length} layers generated (${decomposeResult.method})`);
+    passes.push({ type: "sam3-semantic", candidateCount: decomposeResult.files.length });
 
-      if (decomposeResult.candidates && decomposeResult.candidates.length > 0) {
-        // SAM3 path: use pre-built candidates directly (skip BFS extraction)
-        // Sort by depth (near-first) for proper overlap resolution (T4 AC-1)
-        const hasDepth = decomposeResult.candidates.some(c => c.meanDepth !== undefined);
-        candidates = sortCandidatesForOverlap(decomposeResult.candidates, hasDepth);
-        console.log(`  ${candidates.length} candidates from SAM3 (direct, ${hasDepth ? "depth" : "coverage"}-sorted)`);
-        candidates = await deduplicateCandidates(candidates, pipelineConfig);
-      } else {
-        // Fallback to SAM2-style candidate extraction
-        console.log("\nConverting SAM masks to candidates...");
-        const indices = Array.from({ length: decomposeResult.files.length }, (_, i) => i);
-        const batchResults = await batchProcess(indices, 4, async (fi) => {
-          const file = decomposeResult.files[fi];
-          const sourceMeta = decomposeResult.fileMeta[fi];
-          const meta = await sharp(file).metadata();
-          const { data } = await sharp(file).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
-          const w = meta.width!;
-          const h = meta.height!;
-          const rgba = new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
-          const stats = computeMaskStats(rgba, w, h, SAM_OPACITY_THRESHOLD);
-          if (stats.coverage < SAM_MIN_COVERAGE) return null;
-          return {
-            id: crypto.randomUUID(), source: sourceMeta?.source ?? "sam2-segment",
-            filePath: file, width: w, height: h, coverage: stats.coverage,
-            bbox: stats.bbox, centroid: stats.centroid, edgeDensity: 0, componentCount: 1,
-          } as LayerCandidate;
-        });
-        candidates = batchResults.filter((c): c is LayerCandidate => c !== null);
-        console.log(`  ${candidates.length} candidates from SAM masks`);
-        candidates = await deduplicateCandidates(candidates, pipelineConfig);
-      }
-      selectedLayerCount = candidates.length;
-    } else {
-      // --- SAM2 Path: existing complexity scoring + SAM2 AMG ---
-      if (cliArgs.layerOverride) {
-        selectedLayerCount = cliArgs.layerOverride;
-        console.log(`  Layer count override: ${selectedLayerCount}`);
-      } else if (typeof pipelineConfig?.samMaskLimit === "number") {
-        selectedLayerCount = pipelineConfig.samMaskLimit;
-        console.log(`  Configured SAM 2 mask limit: ${selectedLayerCount}`);
-      } else {
-        console.log("\nScoring image complexity...");
-        const complexity = await scoreComplexity(preparedPath, pipelineConfig);
-        selectedLayerCount = complexity.layerCount;
-        console.log(`  Complexity: tier=${complexity.tier}, edgeDensity=${complexity.edgeDensity.toFixed(3)}, colorEntropy=${complexity.colorEntropy.toFixed(3)} → ${selectedLayerCount} layers`);
-      }
-
-      console.log(`\nDecomposing image (SAM 2, max layers: ${selectedLayerCount})...`);
-      const decomposeResult = await decomposeImage(preparedPath, layersDir, {
-        useSam3: false,
-        maxLayers: selectedLayerCount,
-        alphaThreshold: pipelineConfig?.alphaThreshold,
-        minCoverage: pipelineConfig?.minCoverage,
-        pointsPerSide: pipelineConfig?.samPointsPerSide,
-        predIouThresh: pipelineConfig?.samPredIouThresh,
-        stabilityScoreThresh: pipelineConfig?.samStabilityScoreThresh,
-      });
-
-      depthMapBuffer = decomposeResult.depthMap;
-      console.log(`  ${decomposeResult.files.length} raw layers generated (${decomposeResult.method})`);
-      const rawPassCounts = decomposeResult.fileMeta.reduce(
-        (acc, meta) => { acc[meta.source] = (acc[meta.source] ?? 0) + 1; return acc; },
-        {} as Record<string, number>,
-      );
-      if ((rawPassCounts["sam2-segment"] ?? 0) > 0) {
-        passes.push({ type: "sam2-segment", candidateCount: rawPassCounts["sam2-segment"] });
-      }
-
-      console.log("\nConverting SAM masks to candidates...");
-      const indices = Array.from({ length: decomposeResult.files.length }, (_, i) => i);
-      const batchResults = await batchProcess(indices, 4, async (fi) => {
-        const file = decomposeResult.files[fi];
-        const sourceMeta = decomposeResult.fileMeta[fi];
-        const meta = await sharp(file).metadata();
-        const { data } = await sharp(file).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
-        const w = meta.width!;
-        const h = meta.height!;
-        const rgba = new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
-        const stats = computeMaskStats(rgba, w, h, SAM_OPACITY_THRESHOLD);
-        if (stats.coverage < SAM_MIN_COVERAGE) return null;
-        return {
-          id: crypto.randomUUID(), source: sourceMeta?.source ?? "sam2-segment",
-          filePath: file, width: w, height: h, coverage: stats.coverage,
-          bbox: stats.bbox, centroid: stats.centroid, edgeDensity: 0, componentCount: 1,
-        } as LayerCandidate;
-      });
-      candidates = batchResults.filter((c): c is LayerCandidate => c !== null);
-      console.log(`  ${candidates.length} candidates from SAM masks`);
+    if (decomposeResult.candidates && decomposeResult.candidates.length > 0) {
+      const hasDepth = decomposeResult.candidates.some(c => c.meanDepth !== undefined);
+      candidates = sortCandidatesForOverlap(decomposeResult.candidates, hasDepth);
+      console.log(`  ${candidates.length} candidates (${hasDepth ? "depth" : "coverage"}-sorted)`);
       candidates = await deduplicateCandidates(candidates, pipelineConfig);
+    } else {
+      throw new Error("SAM3 produced candidates but no valid layers. This should not happen.");
     }
+    selectedLayerCount = candidates.length;
   }
 
   // --- Step 5.5: Build per-candidate mask cache ---
@@ -446,19 +347,12 @@ async function main() {
 
   const manifestInput: ManifestInput = {
     runId: ctx.runId,
-    pipelineVariant: useSam3Pipeline ? "sam3" : "sam2",
+    pipelineVariant: "sam3",
     sourceImage: path.resolve(cliArgs.inputPath),
     preparedImage: preparedPath,
     models: {
-      sam2: {
-        model: SAM2_MODEL,
-        version: SAM2_VERSION,
-        maskLimit: manifestLayerCount,
-      },
-      ...(useSam3Pipeline ? {
-        sam3: { model: SAM3_MODEL, version: SAM3_VERSION },
-        vlm: { model: VLM_MODEL, version: VLM_VERSION },
-      } : {}),
+      sam3: { model: SAM3_MODEL, version: SAM3_VERSION },
+      vlm: { model: VLM_MODEL, version: VLM_VERSION },
       depthAnything: {
         model: DAV2_MODEL,
         version: DAV2_VERSION,

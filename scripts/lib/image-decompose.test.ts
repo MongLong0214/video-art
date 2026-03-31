@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  DAV2_MODEL, DAV2_VERSION, SAM2_MODEL, SAM2_VERSION,
+  DAV2_MODEL, DAV2_VERSION,
   SAM3_MODEL, SAM3_VERSION, VLM_MODEL, VLM_VERSION,
   parseVlmResponse, sanitizePrompts, ensureMinPrompts,
 } from "./image-decompose.js";
@@ -16,13 +16,7 @@ describe("image-decompose", () => {
       expect(DAV2_VERSION).toMatch(/^[a-f0-9]{64}$/);
     });
 
-    it("SAM2_MODEL is lucataco/segment-anything-2", () => {
-      expect(SAM2_MODEL).toBe("lucataco/segment-anything-2");
-    });
-
-    it("SAM2_VERSION is a 64-char hex string", () => {
-      expect(SAM2_VERSION).toMatch(/^[a-f0-9]{64}$/);
-    });
+    // SAM2 constants removed — SAM3 only
   });
 
   describe("getDepthMap", () => {

@@ -5,9 +5,6 @@ import path from "node:path";
 
 import { withRetry, validateReplicateUrl, getToken } from "./replicate-utils.js";
 
-export const SAM2_MODEL = "lucataco/segment-anything-2";
-export const SAM2_VERSION = "be7cbde9fdf0eecdc8b20ffec9dd0d1cfeace0832d4d0b58a071d993182e1be0";
-
 export const DAV2_MODEL = "chenxwh/depth-anything-v2";
 export const DAV2_VERSION = "b239ea33cff32bb7abb5db39ffe9a09c14cbc2894331d1ef66fe096eed88ebd4";
 
@@ -88,13 +85,8 @@ export function parseCliPrompts(input: string): string[] {
 }
 
 interface DecomposeOptions {
-  maxLayers?: number;
   alphaThreshold?: number;
   minCoverage?: number;
-  pointsPerSide?: number;
-  predIouThresh?: number;
-  stabilityScoreThresh?: number;
-  useSam3?: boolean;
   sam3Threshold?: number;
   vlmMaxPrompts?: number;
   secondPassEnabled?: boolean;
@@ -243,68 +235,6 @@ export async function buildSam3Candidate(
   };
 }
 
-// --- SAM 2 Automatic Mask Generation ---
-async function getSam2Masks(
-  replicate: Replicate,
-  imagePath: string,
-  options: {
-    maskLimit?: number;
-    pointsPerSide?: number;
-    predIouThresh?: number;
-    stabilityScoreThresh?: number;
-  } = {},
-): Promise<Buffer[]> {
-  const {
-    maskLimit = 12,
-    pointsPerSide = 64,
-    predIouThresh = 0.7,
-    stabilityScoreThresh = 0.92,
-  } = options;
-
-  const imageData = fs.readFileSync(imagePath);
-  const ext = path.extname(imagePath).toLowerCase().replace(".", "");
-  const mime =
-    { png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp" }[ext] ||
-    "image/png";
-  const dataUri = `data:${mime};base64,${imageData.toString("base64")}`;
-
-  console.log(`  Running SAM 2 (mask_limit=${maskLimit}, points_per_side=${pointsPerSide})...`);
-  return withRetry(async () => {
-    const output = (await replicate.run(
-      `${SAM2_MODEL}:${SAM2_VERSION}`,
-      {
-        input: {
-          image: dataUri,
-          mask_limit: maskLimit,
-          points_per_side: pointsPerSide,
-          pred_iou_thresh: predIouThresh,
-          stability_score_thresh: stabilityScoreThresh,
-          multimask_output: false,
-        },
-      },
-    )) as unknown[];
-
-    const buffers: Buffer[] = [];
-    for (const item of output) {
-      let url: string;
-      if (typeof item === "string") url = item;
-      else if (item && typeof item === "object" && "url" in item) {
-        const urlVal = (item as Record<string, unknown>).url;
-        url = typeof urlVal === "function" ? (urlVal as () => string)() : String(urlVal);
-      } else {
-        url = String(item);
-      }
-      validateReplicateUrl(url);
-      const resp = await fetch(url);
-      if (!resp.ok) {
-        throw new Error(`Failed to fetch SAM 2 mask: HTTP ${resp.status} ${resp.statusText}`);
-      }
-      buffers.push(Buffer.from(await resp.arrayBuffer()));
-    }
-    return buffers;
-  });
-}
-
 // --- Depth Anything V2: Monocular Depth Estimation ---
 const MAX_INPUT_BYTES = 20 * 1024 * 1024; // 20MB
 
@@ -421,78 +351,7 @@ async function applyMaskToImage(
   return { pixels: layerBuf, coverage: opaqueCount / total, width, height, binaryMask };
 }
 
-// --- Main Decompose (SAM 2 path) ---
-async function decomposeImageSam2(
-  replicate: Replicate,
-  imagePath: string,
-  originalImage: Buffer,
-  width: number,
-  height: number,
-  outputDir: string,
-  options: DecomposeOptions,
-): Promise<DecomposeResult> {
-  const {
-    maxLayers = 12,
-    alphaThreshold = 128,
-    minCoverage = 0.001,
-    pointsPerSide = 64,
-    predIouThresh = 0.7,
-    stabilityScoreThresh = 0.92,
-  } = options;
-
-  interface LayerEntry {
-    pixels: Buffer;
-    coverage: number;
-    width: number;
-    height: number;
-    meta: FileSourceMeta;
-  }
-
-  const allLayers: LayerEntry[] = [];
-
-  console.log("  [1/2] SAM 2 segmentation + DA V2 depth...");
-  const [maskBuffers, depthMap] = await Promise.all([
-    getSam2Masks(replicate, imagePath, {
-      maskLimit: maxLayers,
-      pointsPerSide,
-      predIouThresh,
-      stabilityScoreThresh,
-    }),
-    getDepthMap(replicate, imagePath),
-  ]);
-  console.log(`  ${maskBuffers.length} masks returned${depthMap ? " + depth map" : " (no depth)"}`);
-
-  console.log("  [2/2] Applying masks to original image...");
-  for (let i = 0; i < maskBuffers.length; i++) {
-    const layer = await applyMaskToImage(originalImage, maskBuffers[i], width, height, alphaThreshold);
-    if (layer.coverage < minCoverage) {
-      console.log(`  mask[${i}]: ${(layer.coverage * 100).toFixed(1)}% — skipped (empty)`);
-      continue;
-    }
-    console.log(`  mask[${i}]: ${(layer.coverage * 100).toFixed(1)}% — kept`);
-    allLayers.push({ ...layer, meta: { source: "sam2-segment", groupId: `sam2-${i}` } });
-  }
-
-  allLayers.sort((a, b) => b.coverage - a.coverage);
-
-  const files: string[] = [];
-  const coverages: number[] = [];
-  const fileMeta: FileSourceMeta[] = [];
-  for (let i = 0; i < allLayers.length; i++) {
-    const layer = allLayers[i];
-    const fp = path.join(outputDir, `layer-${i}.png`);
-    await sharp(Buffer.from(layer.pixels), { raw: { width: layer.width, height: layer.height, channels: 4 } })
-      .png().toFile(fp);
-    files.push(fp);
-    coverages.push(layer.coverage);
-    fileMeta.push(layer.meta);
-  }
-
-  console.log(`  Total: ${files.length} layers`);
-  return { files, coverages, method: "sam2", fileMeta, depthMap: depthMap ?? undefined };
-}
-
-// --- Main Decompose (SAM 3 path) ---
+// --- Main Decompose (SAM 3) ---
 async function decomposeImageSam3(
   replicate: Replicate,
   imagePath: string,
@@ -613,7 +472,7 @@ async function decomposeImageSam3(
   };
 }
 
-// --- Main Entry: Route SAM2 vs SAM3 ---
+// --- Main Entry ---
 export async function decomposeImage(
   imagePath: string,
   outputDir: string,
@@ -629,16 +488,9 @@ export async function decomposeImage(
   const height = origMeta.height;
   fs.mkdirSync(outputDir, { recursive: true });
 
-  const useSam3 = options.useSam3 ?? true;
-
-  if (!useSam3) {
-    return decomposeImageSam2(replicate, imagePath, originalImage, width, height, outputDir, options);
-  }
-
-  // SAM3 path — no fallback, failure must be visible
   const result = await decomposeImageSam3(replicate, imagePath, originalImage, width, height, outputDir, options);
   if (result.files.length === 0) {
-    throw new Error("SAM3 produced 0 valid masks. Check sam3Threshold or image complexity. Use --prompts to specify manual prompts, or set useSam3=false for SAM2.");
+    throw new Error("SAM3 produced 0 valid masks. Check sam3Threshold, image complexity, or use --prompts for manual prompts.");
   }
   return result;
 }
