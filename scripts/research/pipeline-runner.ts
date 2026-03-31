@@ -220,6 +220,7 @@ export async function runFullPipeline(
   // Step 1: Layer decomposition (Replicate API → scene.json + layers in public/)
   console.log("  [pipeline] Layer decomposition...");
   const archiveDir = runLayerDecomposition(inputPath, cwd, config);
+  console.log(`  [pipeline] Archive: ${archiveDir || "(empty)"}`);
 
   // Step 2: Pre-check Chrome + Patch scene.json + Video export
   if (!checkChromeAvailable()) {
@@ -248,6 +249,7 @@ export async function runFullPipeline(
 
   // Step 4: Locate manifest
   const manifestPath = findManifest(archiveDir);
+  console.log(`  [pipeline] Manifest: ${manifestPath || "(not found)"}`);
 
   const elapsedMs = Date.now() - startMs;
   console.log(`  [pipeline] Complete: ${path.relative(cwd, videoPath)} (${(elapsedMs / 1000).toFixed(1)}s)`);
