@@ -266,36 +266,114 @@ def analyze_bass(y_mono, sr):
 
 
 def detect_structure(y_mono, sr):
+    MIN_SECTION_SEC = 5.0
+    MIN_SECTION_SEC_SHORT = 2.0
+    OUTRO_MAX_RATIO = 0.5
+
     try:
-        rms = librosa.feature.rms(y=y_mono)[0]
-        cent = librosa.feature.spectral_centroid(y=y_mono, sr=sr)[0]
-        oenv = librosa.onset.onset_strength(y=y_mono, sr=sr)
-
-        min_len = min(len(rms), len(cent), len(oenv))
-        features = np.stack([
-            rms[:min_len] / max(np.max(rms), 1e-10),
-            cent[:min_len] / max(np.max(cent), 1e-10),
-            oenv[:min_len] / max(np.max(oenv), 1e-10),
-        ])
-
-        diff = np.sum(np.abs(np.diff(features, axis=1)), axis=0)
-        threshold = np.mean(diff) + 1.5 * np.std(diff)
-        boundaries = np.where(diff > threshold)[0]
-
-        hop_length = 512
         duration = librosa.get_duration(y=y_mono, sr=sr)
-        frame_times = librosa.frames_to_time(np.arange(min_len), sr=sr, hop_length=hop_length)
+        if duration < 1.0:
+            return {"segments": [{"start": 0.0, "end": round(duration, 2), "label": "drop"}]}
 
-        labels = ["intro", "build", "drop", "break", "outro"]
+        is_short = duration < 30.0
+        min_sec = MIN_SECTION_SEC_SHORT if is_short else MIN_SECTION_SEC
+
+        # Energy curve: 100-point normalized RMS
+        rms = librosa.feature.rms(y=y_mono)[0]
+        n_points = 100
+        chunk = max(1, len(rms) // n_points)
+        energy = np.array([np.mean(rms[i*chunk:(i+1)*chunk]) for i in range(n_points)])
+        peak = np.max(energy)
+
+        # Silence → single drop
+        if peak < 1e-6:
+            return {"segments": [{"start": 0.0, "end": round(duration, 2), "label": "drop"}]}
+
+        energy = energy / peak  # normalize 0-1
+
+        # Label each point by energy level
+        labels_map = []
+        avg = np.mean(energy)
+        for i, e in enumerate(energy):
+            pos = i / n_points
+            if e < avg * 0.5:
+                labels_map.append("intro" if pos < 0.3 else "break")
+            elif e > avg * 1.2:
+                labels_map.append("drop")
+            else:
+                if pos < 0.25:
+                    labels_map.append("build")
+                elif pos > 0.8:
+                    labels_map.append("outro")
+                else:
+                    labels_map.append("build" if pos < 0.5 else "drop")
+
+        # Merge consecutive same-label regions into segments
+        raw_segments = []
+        prev_label = labels_map[0]
+        seg_start = 0.0
+        for i in range(1, n_points):
+            if labels_map[i] != prev_label:
+                seg_end = round((i / n_points) * duration, 2)
+                raw_segments.append({"start": seg_start, "end": seg_end, "label": prev_label})
+                seg_start = seg_end
+                prev_label = labels_map[i]
+        raw_segments.append({"start": seg_start, "end": round(duration, 2), "label": prev_label})
+
+        # Merge short segments into neighbors
         segments = []
-        prev_time = 0.0
-        for i, b in enumerate(boundaries[:len(labels) - 1]):
-            t = float(frame_times[b]) if b < len(frame_times) else duration
-            segments.append({"start": round(prev_time, 2), "end": round(t, 2), "label": labels[min(i, len(labels) - 1)]})
-            prev_time = t
+        for seg in raw_segments:
+            seg_dur = seg["end"] - seg["start"]
+            if seg_dur < min_sec and segments:
+                segments[-1]["end"] = seg["end"]
+            else:
+                segments.append(dict(seg))
 
-        if prev_time < duration:
-            segments.append({"start": round(prev_time, 2), "end": round(duration, 2), "label": "outro"})
+        # If last segment is too short, merge into previous
+        if len(segments) > 1:
+            last_dur = segments[-1]["end"] - segments[-1]["start"]
+            if last_dur < min_sec:
+                segments[-2]["end"] = segments[-1]["end"]
+                segments.pop()
+
+        # Outro cap: if outro > 50%, split into break + outro
+        outro_segs = [s for s in segments if s["label"] == "outro"]
+        if outro_segs:
+            outro_dur = sum(s["end"] - s["start"] for s in outro_segs)
+            if outro_dur / duration > OUTRO_MAX_RATIO:
+                new_segments = []
+                for s in segments:
+                    if s["label"] == "outro":
+                        s_dur = s["end"] - s["start"]
+                        if s_dur > min_sec * 2:
+                            mid = round(s["start"] + s_dur * 0.5, 2)
+                            new_segments.append({"start": s["start"], "end": mid, "label": "break"})
+                            new_segments.append({"start": mid, "end": s["end"], "label": "outro"})
+                        else:
+                            new_segments.append(s)
+                    else:
+                        new_segments.append(s)
+                segments = new_segments
+
+        # Ensure minimum 4 segments for long tracks (>= 60s)
+        if not is_short and len(segments) < 4:
+            # Equal split with standard labels
+            labels_seq = ["intro", "build", "drop", "outro"]
+            seg_dur = duration / 4
+            segments = [
+                {"start": round(i * seg_dur, 2), "end": round((i + 1) * seg_dur, 2), "label": labels_seq[i]}
+                for i in range(4)
+            ]
+            segments[-1]["end"] = round(duration, 2)
+
+        # Ensure minimum 2 segments for short tracks
+        if is_short and len(segments) < 2:
+            mid = round(duration * 0.4, 2)
+            segments = [
+                {"start": 0.0, "end": mid, "label": "intro"},
+                {"start": mid, "end": round(duration, 2), "label": "drop"},
+            ]
+
         if not segments:
             segments = [{"start": 0.0, "end": round(duration, 2), "label": "drop"}]
 

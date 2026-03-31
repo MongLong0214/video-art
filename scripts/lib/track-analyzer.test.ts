@@ -530,3 +530,64 @@ describe("T4: CLI + E2E", () => {
     }
   });
 });
+
+// T2: detectSections() energy-based normalization
+describe("T2: detectSections normalization", () => {
+  const makeCurve = (pattern: string, len = 100): number[] => {
+    const curve = new Array(len).fill(0);
+    if (pattern === "normal") {
+      const seg = Math.floor(len / 5);
+      for (let i = 0; i < seg; i++) curve[i] = 0.1;
+      for (let i = seg; i < 2 * seg; i++) curve[i] = 0.1 + (0.7 * (i - seg)) / seg;
+      for (let i = 2 * seg; i < 3 * seg; i++) curve[i] = 0.9;
+      for (let i = 3 * seg; i < 4 * seg; i++) curve[i] = 0.15;
+      for (let i = 4 * seg; i < len; i++) curve[i] = 0.5 - (0.4 * (i - 4 * seg)) / (len - 4 * seg);
+    } else if (pattern === "uniform") {
+      curve.fill(0.5);
+    } else if (pattern === "silent") {
+      curve.fill(0);
+    }
+    return curve;
+  };
+
+  it("returns >= 4 sections for normal curve", async () => {
+    const { detectSections } = await import("./track-analyzer.js");
+    const sections = detectSections(makeCurve("normal"));
+    expect(sections.length).toBeGreaterThanOrEqual(4);
+  });
+
+  it("each section >= 5% of curve length", async () => {
+    const { detectSections } = await import("./track-analyzer.js");
+    const sections = detectSections(makeCurve("normal"));
+    for (const s of sections) {
+      const ratio = s.end - s.start;
+      expect(ratio).toBeGreaterThanOrEqual(0.05);
+    }
+  });
+
+  it("outro <= 50% of total", async () => {
+    const { detectSections } = await import("./track-analyzer.js");
+    const sections = detectSections(makeCurve("normal"));
+    const outroDur = sections
+      .filter((s: { label: string }) => s.label === "outro")
+      .reduce((sum: number, s: { start: number; end: number }) => sum + (s.end - s.start), 0);
+    expect(outroDur).toBeLessThanOrEqual(0.5);
+  });
+
+  it("all-zero curve → single drop", async () => {
+    const { detectSections } = await import("./track-analyzer.js");
+    const sections = detectSections(makeCurve("silent"));
+    expect(sections.length).toBe(1);
+    expect(sections[0].label).toBe("drop");
+  });
+
+  it("sections cover 0 to 1 without gaps", async () => {
+    const { detectSections } = await import("./track-analyzer.js");
+    const sections = detectSections(makeCurve("normal"));
+    expect(sections[0].start).toBeCloseTo(0, 2);
+    expect(sections[sections.length - 1].end).toBeCloseTo(1, 2);
+    for (let i = 0; i < sections.length - 1; i++) {
+      expect(sections[i].end).toBeCloseTo(sections[i + 1].start, 2);
+    }
+  });
+});

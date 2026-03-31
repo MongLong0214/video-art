@@ -105,31 +105,94 @@ export const mapGenre = (bpm: number): "techno" | "trance" | "house" | "dnb" | "
   return "ambient";
 };
 
-// === Section detection ===
+// === Section detection (energy-based, synced with Python detect_structure) ===
+const MIN_SECTION_RATIO = 0.05; // 5% of total
+const OUTRO_MAX_RATIO = 0.5;
+
 export const detectSections = (curve: number[]): { start: number; end: number; label: string }[] => {
   if (!curve || curve.length === 0) return [{ start: 0, end: 1, label: "drop" }];
 
-  const avg = curve.reduce((a, b) => a + b, 0) / curve.length;
-  const sections: { start: number; end: number; label: string }[] = [];
   const len = curve.length;
+  const peak = Math.max(...curve);
 
-  // Simple threshold-based segmentation
-  let prevLabel = curve[0] < avg * 0.6 ? "intro" : "drop";
+  // Silence → single drop
+  if (peak < 1e-6) return [{ start: 0, end: 1, label: "drop" }];
+
+  const normalized = curve.map((v) => v / peak);
+  const avg = normalized.reduce((a, b) => a + b, 0) / len;
+
+  // Label each point
+  const labels: string[] = normalized.map((e, i) => {
+    const pos = i / len;
+    if (e < avg * 0.5) return pos < 0.3 ? "intro" : "break";
+    if (e > avg * 1.2) return "drop";
+    if (pos < 0.25) return "build";
+    if (pos > 0.8) return "outro";
+    return pos < 0.5 ? "build" : "drop";
+  });
+
+  // Merge consecutive same-label regions
+  const raw: { start: number; end: number; label: string }[] = [];
+  let prevLabel = labels[0];
   let segStart = 0;
-
   for (let i = 1; i < len; i++) {
-    let label: string;
-    if (curve[i] < avg * 0.5) label = i < len * 0.3 ? "intro" : "break";
-    else if (curve[i] > avg * 1.2) label = "drop";
-    else label = i > len * 0.8 ? "outro" : "build";
-
-    if (label !== prevLabel) {
-      sections.push({ start: segStart / len, end: i / len, label: prevLabel });
+    if (labels[i] !== prevLabel) {
+      raw.push({ start: segStart / len, end: i / len, label: prevLabel });
       segStart = i;
-      prevLabel = label;
+      prevLabel = labels[i];
     }
   }
-  sections.push({ start: segStart / len, end: 1, label: prevLabel });
+  raw.push({ start: segStart / len, end: 1, label: prevLabel });
+
+  // Merge short segments into neighbors
+  const merged: { start: number; end: number; label: string }[] = [];
+  for (const seg of raw) {
+    const segDur = seg.end - seg.start;
+    if (segDur < MIN_SECTION_RATIO && merged.length > 0) {
+      merged[merged.length - 1].end = seg.end;
+    } else {
+      merged.push({ ...seg });
+    }
+  }
+
+  // Merge last segment if too short
+  if (merged.length > 1) {
+    const last = merged[merged.length - 1];
+    if (last.end - last.start < MIN_SECTION_RATIO) {
+      merged[merged.length - 2].end = last.end;
+      merged.pop();
+    }
+  }
+
+  // Outro cap: split if > 50%
+  let sections = merged;
+  const outroDur = sections
+    .filter((s) => s.label === "outro")
+    .reduce((sum, s) => sum + (s.end - s.start), 0);
+  if (outroDur > OUTRO_MAX_RATIO) {
+    const newSections: typeof sections = [];
+    for (const s of sections) {
+      if (s.label === "outro" && s.end - s.start > MIN_SECTION_RATIO * 2) {
+        const mid = s.start + (s.end - s.start) * 0.5;
+        newSections.push({ start: s.start, end: mid, label: "break" });
+        newSections.push({ start: mid, end: s.end, label: "outro" });
+      } else {
+        newSections.push(s);
+      }
+    }
+    sections = newSections;
+  }
+
+  // Ensure minimum 4 sections
+  if (sections.length < 4) {
+    const labelSeq = ["intro", "build", "drop", "outro"];
+    sections = labelSeq.map((label, i) => ({
+      start: i / 4,
+      end: (i + 1) / 4,
+      label,
+    }));
+    sections[sections.length - 1].end = 1;
+  }
 
   return sections;
 };

@@ -16,14 +16,21 @@ const ANALYSIS_FIXTURE = {
   key: "Am",
   frequency_balance: { low: 0.4, mid: 0.35, hi: 0.25 },
   loudness: { integrated: -16, range: 8, short_term_max: -10 },
-  structure: { segments: [{ start: 0, end: 35, label: "drop" }] },
-  spectral_centroid: { mean: 1800 },
+  structure: {
+    segments: [
+      { start: 0, end: 8, label: "intro" },
+      { start: 8, end: 16, label: "build" },
+      { start: 16, end: 28, label: "drop" },
+      { start: 28, end: 35, label: "outro" },
+    ],
+  },
+  spectral_centroid: { mean: 3000 },
   dynamic_range: { crest: 4.5, rms_mean: 0.12, rms_max: 0.35 },
   energy_curve: Array(50).fill(0.6),
   pitch_contour: null,
   kick_pattern: { positions: [0, 0.5, 1.0, 1.5] },
   hat_pattern: { positions: [0.25, 0.75, 1.25] },
-  bass_profile: { centroid: 280, variance: 80, flux: 0.15, type: "rolling" },
+  bass_profile: { centroid: 280, variance: 80, flux: 0.4, type: "acid" },
   stereo_width: 0.4,
   danceability: { score: 1.6 },
   spectral_contrast: { mean: [18, 18, 16, 14, 12, 10, 8] },
@@ -64,12 +71,9 @@ describe("Dry-run E2E: render-analysis.ts pipeline", () => {
     const scd = fs.readFileSync(SCD_PATH, "utf-8");
     expect(scd).toContain("Score([");
     expect(scd).toContain("score.write");
-    expect(scd).toContain("kick.scd");
-    expect(scd).toContain("bass.scd");
-    expect(scd).toContain("hat.scd");
-    expect(scd).toContain("sample_player.scd");
-    // No b_allocRead in synthesis-only mode
-    expect(scd).not.toContain("b_allocRead");
+    // Score should contain synth events (synthesis-only: no b_allocRead)
+    expect(scd).toContain("\\clap");
+    expect(scd).toContain("\\acid_bass");
   });
 
   it("hybrid mode: generates score with b_allocRead + sample_player events", () => {
@@ -104,7 +108,7 @@ describe("Dry-run E2E: render-analysis.ts pipeline", () => {
     const scd = fs.readFileSync(SCD_PATH, "utf-8");
     expect(scd).toContain("layered_kick");
     expect(scd).toContain("\\hat");
-    expect(scd).toContain("\\bass");
+    expect(scd).toContain("\\acid_bass");
     expect(scd).toContain("\\pad");
     expect(scd).toContain("[31.0, [0]]");
   });

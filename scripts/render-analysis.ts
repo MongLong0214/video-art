@@ -155,8 +155,9 @@ for (const seg of segments) {
 }
 // Section type → base amplitude multiplier (gentle dynamics to match ref envelope)
 const SECTION_AMP: Record<string, number> = {
-  drop: 1.0, build: 0.85, break: 0.6, intro: 0.5, outro: 0.5,
+  drop: 1.0, build: 0.85, break: 0.6, intro: 0.65, outro: 0.65,
 };
+const SUPERSAW_ENERGY_GATE = 0.15;
 const getSectionAmp = (time: number): number => {
   const section = getSectionAt(time);
   const baseAmp = SECTION_AMP[section] ?? 0.7;
@@ -181,16 +182,16 @@ console.log(`Mode: ${renderMode}, 909: ${has909Samples ? "yes" : "no"}`);
 console.log(`Energy mul: ${energyMul}, Brightness: ${brightnessScale.toFixed(2)}, Saturation: ${saturation}`);
 console.log(`Scale: [${scaleNotes.map(n => n.toFixed(1)).join(", ")}]`);
 
-// === 5-stem bus mapping (T1: kick=0, bass=2, hat=4, synth=6, fx=8) ===
+// === 6-stem bus mapping (drums=0, bass=2, hat=4, synth=6, pad=8, fx=10) ===
 const STEM_BUS: Record<string, number> = {
   kick: 0, layered_kick: 0, sample_player: 0,
   bass: 2, acid_bass: 2,
   hat: 4, clap: 4,
-  supersaw: 6, pad: 6, lead: 6, arp_pluck: 6, fm_lead: 6,
-  wavetable_pad: 6, granular_pad: 6, squelch: 6,
-  riser: 8,
+  supersaw: 6, lead: 6, arp_pluck: 6, fm_lead: 6, squelch: 6,
+  pad: 8, wavetable_pad: 8, granular_pad: 8,
+  riser: 10,
 };
-const OUTPUT_CHANNELS = 10; // 5 stems × 2ch
+const OUTPUT_CHANNELS = 12; // 6 stems × 2ch
 
 // === Event builder ===
 const events: string[] = [];
@@ -422,24 +423,24 @@ if (manifestPath) {
     }
     console.log(`Bass: ${pitchInWindow.length} pitch events from analysis`);
   } else {
-    // Sub drone on 8ths
+    // Root + 5th alternation on all 8th notes
     for (let step = 0; step < Math.floor(duration / (beatDur / 2)); step++) {
       const t = step * (beatDur / 2);
       if (t >= duration) continue;
       const section = getSectionAt(t);
       if (section === "intro") continue;
-      if (step % 2 === 0) continue;
       const energy = getEnergy(t) * energyMul;
+      const freq = step % 2 === 0 ? rootFreq : rootFreq * 1.5;
       addEvent(t, "acid_bass", {
-        freq: rootFreq, amp: 0.7 * energy,
+        freq, amp: 0.7 * energy,
         dur: beatDur * 0.4,
-        cutoff: 150, resonance: 1.8,
+        cutoff: 300, resonance: 1.8,
         envDepth: 600, envDecay: 0.12,
         accent: 0, slide: 0, slideTime: 0,
         wave: 0, dist: 0.2,
       });
     }
-    console.log(`Bass: sub drone ${rootFreq.toFixed(0)}Hz`);
+    console.log(`Bass: root+5th ${rootFreq.toFixed(0)}Hz`);
   }
 
   // === PAD — sustained texture ===
@@ -463,7 +464,7 @@ if (manifestPath) {
     const section = getSectionAt(t);
     if (section === "intro" || section === "break") continue;
     const energy = getEnergy(t) * energyMul;
-    if (energy < 0.4) continue; // only in high-energy sections
+    if (energy < SUPERSAW_ENERGY_GATE) continue; // only in high-energy sections
     addEvent(t, "supersaw", {
       freq: rootFreq * 4, amp: 0.35 * energy, dur: beatDur * 1.5,
       attack: 0.01, release: 0.5,
@@ -497,6 +498,198 @@ if (hybridMode) {
     }
   }
 }
+
+// =====================================================
+// SYNTHESIS-ONLY EVENTS — always generated regardless of manifest
+// These SynthDefs fire based on section type + analysis parameters
+// =====================================================
+const rootFreqSynth = scaleNotes[0];
+const fifthFreq = rootFreqSynth * 1.5;
+
+// --- CLAP — backbeat on beats 2,4 (drop/build) ---
+for (let beat = 1; beat < Math.floor(duration / beatDur); beat += 2) {
+  const t = beat * beatDur;
+  if (t >= duration) continue;
+  const section = getSectionAt(t);
+  if (section === "intro" || section === "break") continue;
+  const energy = getEnergy(t) * energyMul;
+  addEvent(t, "clap", {
+    freq: 0, amp: 0.35 * energy, dur: 0.15,
+    spread: 0.5, decay: 0.3,
+  });
+}
+
+// --- RISER — build sections, every 4 bars ---
+for (let bar = 0; bar < Math.ceil(duration / (beatDur * 16)); bar++) {
+  const t = bar * beatDur * 16;
+  if (t >= duration) continue;
+  const section = getSectionAt(t);
+  if (section !== "build") continue;
+  const energy = getEnergy(t) * energyMul;
+  addEvent(t, "riser", {
+    freq: rootFreqSynth * 4, amp: 0.5 * energy, dur: beatDur * 8,
+    sweepRange: 0.6, noiseAmount: 0.3,
+  });
+}
+
+// --- ARP_PLUCK — build sections, 16th notes ---
+for (let step = 0; step < Math.floor(duration / sixteenthDur); step++) {
+  const t = step * sixteenthDur;
+  if (t >= duration) continue;
+  const section = getSectionAt(t);
+  if (section !== "build") continue;
+  const energy = getEnergy(t) * energyMul;
+  const noteIdx = step % scaleNotes.length;
+  addEvent(t, "arp_pluck", {
+    freq: scaleNotes[noteIdx] * 4, amp: 0.25 * energy, dur: sixteenthDur * 0.8,
+    decay: 0.2, brightness: brightnessScale * 0.5,
+  });
+}
+
+// --- FM_LEAD — drop sections, centroid > 2500, every 2 bars ---
+if (centroid > 2500) {
+  for (let bar = 0; bar < Math.ceil(duration / (beatDur * 8)); bar++) {
+    const t = bar * beatDur * 8;
+    if (t >= duration) continue;
+    const section = getSectionAt(t);
+    if (section !== "drop") continue;
+    const energy = getEnergy(t) * energyMul;
+    const noteIdx = bar % 2 === 0 ? 2 : 4; // 3rd / 5th scale degree
+    const freq = (scaleNotes[noteIdx % scaleNotes.length] ?? rootFreqSynth) * 4;
+    addEvent(t, "fm_lead", {
+      freq, amp: 0.3 * energy, dur: beatDur * 2,
+      mRatio: 2, cRatio: 1, index: 3, iScale: 5,
+      vibrato: 0.3, drive: 0.15,
+    });
+  }
+}
+
+// --- LAYERED_KICK — drop sections, 4-on-the-floor reinforcement ---
+for (let beat = 0; beat < Math.floor(duration / beatDur); beat++) {
+  const t = beat * beatDur;
+  if (t >= duration) continue;
+  const section = getSectionAt(t);
+  if (section !== "drop") continue;
+  const energy = getEnergy(t) * energyMul;
+  addEvent(t, "layered_kick", {
+    freq: rootFreqSynth, amp: 0.3 * energy, dur: 0.3,
+    subDecay: 0.5, bodyDecay: 0.1, clickAmp: 0.4,
+    bodyFreq: 200, drive: 0.1, punch: 0.3,
+  });
+}
+
+// --- SQUELCH — drop sections, bass flux > 0.3, every 2 bars ---
+if (bassProfile.flux > 0.3) {
+  for (let bar = 0; bar < Math.ceil(duration / (beatDur * 8)); bar++) {
+    const t = bar * beatDur * 8 + beatDur * 4; // offset by half
+    if (t >= duration) continue;
+    const section = getSectionAt(t);
+    if (section !== "drop") continue;
+    const energy = getEnergy(t) * energyMul;
+    addEvent(t, "squelch", {
+      freq: rootFreqSynth, amp: 0.25 * energy, dur: beatDur,
+      sweepStart: 300, sweepEnd: 5000, sweepCurve: -4,
+      resonance: 0.85, source: 1, lfoRate: 0, lfoDepth: 0,
+    });
+  }
+}
+
+// --- BASS FALLBACK — synth-only mode (no manifest), always generate if no pitch events ---
+if (!manifestPath || !fs.existsSync(path.join(analysisDir, "samples", "manifest.json"))) {
+  const pitchEvts = analysis.pitch_contour?.note_events ?? [];
+  const pitchInWin = pitchEvts.filter(
+    (n: { time: number }) => (n.time - renderOffset) >= 0 && (n.time - renderOffset) < duration,
+  );
+
+  if (pitchInWin.length <= 5) {
+    // Root + 5th alternation pattern on 8th notes
+    for (let step = 0; step < Math.floor(duration / (beatDur / 2)); step++) {
+      const t = step * (beatDur / 2);
+      if (t >= duration) continue;
+      const section = getSectionAt(t);
+      if (section === "intro") continue;
+      const energy = getEnergy(t) * energyMul;
+      const freq = step % 2 === 0 ? rootFreqSynth : fifthFreq;
+      addEvent(t, "acid_bass", {
+        freq, amp: 0.7 * energy, dur: beatDur * 0.4,
+        cutoff: 300, resonance: 1.8,
+        envDepth: 600, envDecay: 0.12,
+        accent: 0, slide: 0, slideTime: 0,
+        wave: 0, dist: 0.2,
+      });
+    }
+    console.log(`Synth bass: root+5th alternation ${rootFreqSynth.toFixed(0)}Hz`);
+  }
+
+  // Synth kick — use analyzed positions if available, else 4-on-the-floor
+  const rawKickPos = analysis.kick_pattern?.positions ?? [];
+  if (rawKickPos.length > 0) {
+    for (const pos of rawKickPos) {
+      const t = pos - renderOffset;
+      if (t < 0 || t >= duration) continue;
+      const energy = getEnergy(t) * energyMul;
+      addEvent(t, "kick", {
+        freq: rootFreqSynth, amp: 0.6 * energy, dur: 0.3,
+        drive: punchFactor, click: 0.5, decay: 0.2,
+      });
+    }
+    console.log(`Synth kick: ${rawKickPos.length} analyzed positions`);
+  } else {
+    for (let beat = 0; beat < Math.floor(duration / beatDur); beat++) {
+      const t = beat * beatDur;
+      if (t >= duration) continue;
+      const energy = getEnergy(t) * energyMul;
+      addEvent(t, "kick", {
+        freq: rootFreqSynth, amp: 0.6 * energy, dur: 0.3,
+        drive: punchFactor, click: 0.5, decay: 0.2,
+      });
+    }
+    console.log("Synth kick: 4-on-the-floor grid");
+  }
+
+  // Synth hat — use analyzed positions if available, else 8th note grid
+  const rawHatPos = analysis.hat_pattern?.positions ?? [];
+  if (rawHatPos.length > 0) {
+    for (const pos of rawHatPos) {
+      const t = pos - renderOffset;
+      if (t < 0 || t >= duration) continue;
+      const energy = getEnergy(t) * energyMul;
+      addEvent(t, "hat", {
+        freq: 0, amp: 0.25 * energy, dur: 0.05,
+        openness: 0.15, tone: 0.4,
+      });
+    }
+    console.log(`Synth hat: ${rawHatPos.length} analyzed positions`);
+  } else {
+    for (let step = 0; step < Math.floor(duration / (beatDur / 2)); step++) {
+      const t = step * (beatDur / 2);
+      if (t >= duration) continue;
+      const section = getSectionAt(t);
+      if (section === "intro") continue;
+      const energy = getEnergy(t) * energyMul;
+      addEvent(t, "hat", {
+        freq: 0, amp: 0.2 * energy, dur: 0.05,
+        openness: 0.15, tone: 0.4,
+      });
+    }
+    console.log("Synth hat: 8th note grid");
+  }
+
+  // Synth-only pad for break/intro
+  for (let bar = 0; bar < Math.ceil(duration / (beatDur * 4)); bar++) {
+    const t = bar * beatDur * 4;
+    if (t >= duration) continue;
+    const section = getSectionAt(t);
+    if (section !== "break" && section !== "intro") continue;
+    const energy = getEnergy(t) * energyMul;
+    addEvent(t, "pad", {
+      freq: rootFreqSynth * 2, amp: 0.4 * energy, dur: beatDur * 4,
+      attack: 1.0, release: 1.5, filterEnv: 0.1,
+    });
+  }
+}
+
+console.log(`Total synth events before sort: ${events.length}`);
 
 // === Sort + end marker ===
 events.sort((a, b) => {
@@ -583,7 +776,7 @@ if (fs.existsSync(outputWav)) {
   const stat = fs.statSync(outputWav);
   console.log(`Output: ${outputWav} (${(stat.size / 1024 / 1024).toFixed(1)}MB)`);
 
-  // Split 10ch WAV into 5 stereo stems using soundfile (more reliable than ffmpeg)
+  // Split 12ch WAV into 6 stereo stems using soundfile (more reliable than ffmpeg)
   if (multiStem) {
     const stemsOutDir = path.join(analysisDir, "pro", "stems");
     fs.mkdirSync(stemsOutDir, { recursive: true });
@@ -592,14 +785,14 @@ if (fs.existsSync(outputWav)) {
 import sys, soundfile as sf, numpy as np, os
 wav_path, out_dir = sys.argv[1], sys.argv[2]
 audio, sr = sf.read(wav_path)
-for i, name in enumerate(["kick","bass","hat","synth","fx"]):
+for i, name in enumerate(["kick","bass","hat","synth","pad","fx"]):
     ch = i * 2
     stem = audio[:, ch:ch+2] if ch + 1 < audio.shape[1] else np.zeros((audio.shape[0], 2), dtype="float32")
     sf.write(os.path.join(out_dir, f"stem-{name}.wav"), stem, sr)
     rms = np.sqrt(np.mean(stem**2))
     print(f"  stem-{name}.wav: rms={20*np.log10(rms+1e-10):.1f}dB")
 `, outputWav, stemsOutDir], { encoding: "utf-8", timeout: 30000 });
-      console.log(`Stems split: 5 × stereo → ${stemsOutDir}`);
+      console.log(`Stems split: 6 × stereo → ${stemsOutDir}`);
     } catch (e) {
       console.warn(`[stem] Split failed: ${e instanceof Error ? e.message : e}`);
     }

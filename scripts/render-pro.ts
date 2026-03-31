@@ -78,7 +78,7 @@ try {
     analysisDir,
     "--mode", mode,
     "--no-master",     // skip old master.py — we use mix-pro.py
-    "--multi-stem",    // render 10ch for 5-stem splitting
+    "--multi-stem",    // render 12ch for 6-stem splitting
   ];
   const renderResult = execFileSync("npx", ["tsx", ...renderArgs], {
     encoding: "utf-8",
@@ -105,7 +105,7 @@ if (!fs.existsSync(sourceWav)) {
 // Step 2: Verify stems (split by render-analysis.ts --multi-stem)
 // ---------------------------------------------------------------------------
 console.log("[2/4] Checking stems...");
-const stemNames = ["kick", "bass", "hat", "synth", "fx"];
+const stemNames = ["kick", "bass", "hat", "synth", "pad", "fx"];
 const missingStems = stemNames.filter(
   (n) => !fs.existsSync(path.join(stemsDir, `stem-${n}.wav`)),
 );
@@ -125,7 +125,7 @@ sf.write(sys.argv[2], np.zeros((info.frames, 2), dtype="float32"), info.samplera
     }
   }
 } else {
-  console.log(`  [stems] All 5 stems found`);
+  console.log(`  [stems] All ${stemNames.length} stems found`);
 }
 
 if (stemsOnly) {
