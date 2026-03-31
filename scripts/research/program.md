@@ -12,6 +12,63 @@ This is an experiment to have the LLM autonomously optimize video layer decompos
 - research loop는 arbitrary root `input.png`를 쓰지 않는다. prepare가 `source.mp4` 첫 프레임에서 만든 `.cache/research/reference/input.png`가 calibration/run의 유일한 입력이다.
 - source fingerprint 또는 research input fingerprint가 바뀌면 prepare와 calibrate를 다시 해야 한다.
 
+## Prerequisites
+
+Autoresearch 루프를 가동하기 전에 아래 환경이 모두 갖춰져야 한다.
+
+### System Dependencies
+
+| Dependency | Version | Install | 용도 |
+|-----------|---------|---------|------|
+| Node.js | >= 22 | `brew install node` | 런타임 |
+| ffmpeg **with libvmaf** | >= 8.0 | `brew install homebrew-ffmpeg/ffmpeg/ffmpeg --with-libvmaf` | 영상 인코딩 + VMAF 평가 |
+| libvmaf | >= 3.0 | `brew install libvmaf` | VMAF 모델 파일 |
+| Chrome | latest | `/Applications/Google Chrome.app` 또는 Puppeteer 내장 | Headless 프레임 캡처 |
+
+**ffmpeg libvmaf 확인**: `ffmpeg -filters 2>/dev/null | grep libvmaf` → `libvmaf VV->V` 출력 필수.  
+기존 core ffmpeg에는 libvmaf 미포함. `brew uninstall ffmpeg && brew install homebrew-ffmpeg/ffmpeg/ffmpeg --with-libvmaf`로 교체.
+
+### npm Dependencies
+
+프로젝트 루트에서 `npm install` — sharp, replicate, puppeteer, vite 등 자동 설치.
+
+### Environment Variables
+
+| Variable | 필수 | 용도 |
+|----------|------|------|
+| `REPLICATE_API_TOKEN` | Yes | SAM2/SAM3/DA V2/VLM API 호출 |
+
+`.env` 파일 또는 shell export로 설정.
+
+### Reference Asset
+
+- `source.mp4`를 프로젝트 루트에 배치
+- 권장: 1080x1080, 30fps, 10s, ~16MB
+- 이 파일이 모든 실험의 유일한 기준. 변경 금지.
+
+### Quick Start
+
+```bash
+# 1. Prerequisites 확인
+ffmpeg -filters 2>/dev/null | grep libvmaf   # libvmaf 필터 존재 확인
+echo $REPLICATE_API_TOKEN                     # 토큰 설정 확인
+
+# 2. Reference 준비
+npm run research:prepare -- source.mp4
+
+# 3. Calibration (노이즈 측정, 3-10회)
+npm run research:calibrate -- --runs 3
+
+# 4. 자가개선 루프 실행
+npm run research:run                          # 1회 실험
+npm run research:run                          # 연속 실행 가능
+
+# 5. 결과 리포트
+npm run research:report
+```
+
+---
+
 ## Setup
 
 To set up a new experiment, work with the user to:
