@@ -10,8 +10,8 @@ export const CALIBRATION_PATH = `${CALIBRATION_DIR}/calibration.json`;
 export const BASELINE_PATH = `${CALIBRATION_DIR}/baseline-config.json`;
 export const RESULTS_TSV_PATH = `${CALIBRATION_DIR}/results.tsv`;
 
-export const EVAL_SCHEMA_VERSION = "2026-03-29-v2";
-export const GATE_THRESHOLD = 0.15;
+export const EVAL_SCHEMA_VERSION = "2026-03-31-v3";
+export const GATE_THRESHOLD = 0.01;
 
 export type VmafMode = "libvmaf" | "fallback";
 
