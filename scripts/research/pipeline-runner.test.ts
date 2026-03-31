@@ -288,12 +288,14 @@ describe("patchSceneJson", () => {
     mockedFs.existsSync.mockReturnValue(true);
     mockedFs.readFileSync.mockReturnValue(JSON.stringify(scene));
     mockedFs.writeFileSync.mockReturnValue(undefined);
+    mockedFs.mkdirSync.mockReturnValue(undefined);
 
     patchSceneJson("/project");
 
-    const writeCall = mockedFs.writeFileSync.mock.calls[0];
-    expect(writeCall[0]).toBe("/project/public/scene.json");
-    const written = JSON.parse(writeCall[1] as string);
+    // calls[0] = backup, calls[1] = patched scene.json
+    const sceneWrite = mockedFs.writeFileSync.mock.calls.find(c => String(c[0]).includes("scene.json") && !String(c[0]).includes("backup"));
+    expect(sceneWrite).toBeDefined();
+    const written = JSON.parse(sceneWrite![1] as string);
     expect(written.resolution).toEqual([1080, 1080]);
     expect(written.duration).toBe(5);
   });
@@ -303,11 +305,13 @@ describe("patchSceneJson", () => {
     mockedFs.existsSync.mockReturnValue(true);
     mockedFs.readFileSync.mockReturnValue(JSON.stringify(scene));
     mockedFs.writeFileSync.mockReturnValue(undefined);
+    mockedFs.mkdirSync.mockReturnValue(undefined);
 
     patchSceneJson("/project");
 
-    const writeCall = mockedFs.writeFileSync.mock.calls[0];
-    const written = JSON.parse(writeCall[1] as string);
+    const sceneWrite = mockedFs.writeFileSync.mock.calls.find(c => String(c[0]).includes("scene.json") && !String(c[0]).includes("backup"));
+    expect(sceneWrite).toBeDefined();
+    const written = JSON.parse(sceneWrite![1] as string);
     expect(written.duration).toBe(10);
     expect(written.resolution).toEqual([720, 720]);
   });
@@ -317,12 +321,13 @@ describe("patchSceneJson", () => {
     mockedFs.existsSync.mockReturnValue(true);
     mockedFs.readFileSync.mockReturnValue(JSON.stringify(scene));
     mockedFs.writeFileSync.mockReturnValue(undefined);
+    mockedFs.mkdirSync.mockReturnValue(undefined);
 
     patchSceneJson("/project");
 
-    const writeCall = mockedFs.writeFileSync.mock.calls[0];
-    const written = JSON.parse(writeCall[1] as string);
-    // 1920x1080 → longest edge 1920 → scale = 1080/1920 = 0.5625
+    const sceneWrite = mockedFs.writeFileSync.mock.calls.find(c => String(c[0]).includes("scene.json") && !String(c[0]).includes("backup"));
+    expect(sceneWrite).toBeDefined();
+    const written = JSON.parse(sceneWrite![1] as string);
     expect(written.resolution).toEqual([1080, 608]);
     expect(written.duration).toBe(5);
   });

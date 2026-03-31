@@ -2,8 +2,8 @@
 
 import { execSync } from "node:child_process";
 import { readFileSync, existsSync } from "node:fs";
-import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { RESULTS_TSV_PATH } from "./contract.js";
 
 export interface ExperimentRow {
   commit: string;
@@ -178,11 +178,8 @@ export function getTopConfigDiffs(rows: ExperimentRow[]): ConfigDiffEntry[] {
 
 // ── CLI entry point ────────────────────────────────────────
 
-const __reportFilename = fileURLToPath(import.meta.url);
-
 function main(): void {
-  const researchDir = dirname(__reportFilename);
-  const tsvPath = join(researchDir, "results.tsv");
+  const tsvPath = RESULTS_TSV_PATH;
 
   if (!existsSync(tsvPath)) {
     console.error("No results.tsv found at", tsvPath);
@@ -224,6 +221,7 @@ function main(): void {
 }
 
 // Only run CLI when executed directly (not imported by tests)
+const __reportFilename = fileURLToPath(import.meta.url);
 const isDirectRun = process.argv[1] &&
   __reportFilename.includes(process.argv[1].replace(/^\.\//, ""));
 if (isDirectRun) {

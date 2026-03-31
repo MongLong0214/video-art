@@ -11,7 +11,7 @@ import {
 } from "./lib/archive.js";
 
 import { sceneSchema } from "../src/lib/scene-schema.js";
-import { getBitrate } from "./lib/bitrate.js";
+
 import { waitForServer } from "./lib/browser-utils.js";
 
 const rawFps = parseInt(process.env.RESEARCH_FPS ?? "", 10);
@@ -86,14 +86,16 @@ async function captureFrames(outputDir: string, totalFrames: number, resolution:
 }
 
 function encodeVideo(inputFramesDir: string, outputPath: string, resolution: [number, number]): Promise<void> {
-  const bitrate = getBitrate(resolution);
+  const rawCrf = parseInt(process.env.RESEARCH_CRF ?? "", 10);
+  const CRF = Number.isFinite(rawCrf) && rawCrf >= 0 && rawCrf <= 51 ? rawCrf : 18;
+  const PIX_FMT = process.env.RESEARCH_PIX_FMT === "yuv420p" ? "yuv420p" : "yuv444p";
   const ffmpegArgs = [
     "-y",
     "-framerate", String(FPS),
     "-i", path.join(inputFramesDir, "frame_%05d.png"),
     "-c:v", "libx264",
-    "-pix_fmt", "yuv420p",
-    "-b:v", bitrate,
+    "-pix_fmt", PIX_FMT,
+    "-crf", String(CRF),
     "-preset", PRESET,
     "-movflags", "+faststart",
     outputPath,

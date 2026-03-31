@@ -12,6 +12,7 @@ const RESEARCH_VIDEO_PATH = `${RESEARCH_DIR}/video.mp4`;
 // ── Scene.json Patch/Restore (performance optimization) ────
 
 let sceneJsonBackup: string | null = null;
+const SCENE_BACKUP_PATH = ".cache/research/scene-json-backup.json";
 
 export function patchSceneJson(cwd: string): void {
   const scenePath = path.join(cwd, "public", "scene.json");
@@ -53,16 +54,25 @@ export function patchSceneJson(cwd: string): void {
   }
 
   if (patched) {
+    // Persist backup to disk for crash recovery before overwriting
+    const backupPath = path.join(cwd, SCENE_BACKUP_PATH);
+    fs.mkdirSync(path.join(cwd, ".cache", "research"), { recursive: true });
+    fs.writeFileSync(backupPath, original);
     fs.writeFileSync(scenePath, JSON.stringify(scene, null, 2));
     console.log("  [pipeline] scene.json patched for research (resolution/duration capped)");
   }
 }
 
 export function restoreSceneJson(cwd: string): void {
-  if (sceneJsonBackup === null) return;
+  const backupPath = path.join(cwd, SCENE_BACKUP_PATH);
+  // Try in-memory first, fall back to persisted backup
+  const backup = sceneJsonBackup ?? (fs.existsSync(backupPath) ? fs.readFileSync(backupPath, "utf-8") : null);
+  if (backup === null) return;
   const scenePath = path.join(cwd, "public", "scene.json");
-  fs.writeFileSync(scenePath, sceneJsonBackup);
+  fs.writeFileSync(scenePath, backup);
   sceneJsonBackup = null;
+  // Clean up persisted backup
+  try { fs.unlinkSync(backupPath); } catch { /* already cleaned */ }
   console.log("  [pipeline] scene.json restored to original");
 }
 
