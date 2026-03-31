@@ -734,7 +734,7 @@ const oscPath = "/tmp/render-analysis.osc";
 // SynthDefs loaded via d_load commands in the Score itself
 const scScript = `(
 var score = Score([
-${[...bufferCommands, ...events].join(",\n")}
+${[...synthDefLoadCmds, ...bufferCommands, ...events].join(",\n")}
 ]);
 score.write("${oscPath}");
 "WRITE_DONE".postln;
@@ -785,6 +785,9 @@ if (fs.existsSync(outputWav)) {
 import sys, soundfile as sf, numpy as np, os
 wav_path, out_dir = sys.argv[1], sys.argv[2]
 audio, sr = sf.read(wav_path)
+expected_ch = 12
+if audio.shape[1] != expected_ch:
+    print(f"WARNING: Expected {expected_ch}ch, got {audio.shape[1]}ch")
 for i, name in enumerate(["kick","bass","hat","synth","pad","fx"]):
     ch = i * 2
     stem = audio[:, ch:ch+2] if ch + 1 < audio.shape[1] else np.zeros((audio.shape[0], 2), dtype="float32")
