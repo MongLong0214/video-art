@@ -635,11 +635,10 @@ export async function decomposeImage(
     return decomposeImageSam2(replicate, imagePath, originalImage, width, height, outputDir, options);
   }
 
-  // SAM3 path with fallback
+  // SAM3 path — no fallback, failure must be visible
   const result = await decomposeImageSam3(replicate, imagePath, originalImage, width, height, outputDir, options);
   if (result.files.length === 0) {
-    console.warn("  SAM3 produced 0 valid masks — falling back to SAM2");
-    return decomposeImageSam2(replicate, imagePath, originalImage, width, height, outputDir, options);
+    throw new Error("SAM3 produced 0 valid masks. Check sam3Threshold or image complexity. Use --prompts to specify manual prompts, or set useSam3=false for SAM2.");
   }
   return result;
 }
