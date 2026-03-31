@@ -20,11 +20,15 @@ export interface ManifestInput {
   preparedImage: string;
   models: {
     sam2?: { model: string; version: string; maskLimit: number };
+    sam3?: { model: string; version: string };
+    vlm?: { model: string; version: string };
     depthAnything?: { model: string; version: string; depthConvention: "near-is-high"; status?: "success" | "failed" };
   };
+  vlmPrompts?: string[];
   passes: Array<{
     type:
       | "sam2-segment"
+      | "sam3-semantic"
       | "manual-layers";
     candidateCount: number;
     parentId?: string;

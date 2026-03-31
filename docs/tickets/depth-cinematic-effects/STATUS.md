@@ -2,7 +2,7 @@
 
 **PRD**: docs/prd/PRD-depth-cinematic-effects.md (v0.4, Approved)
 **Size**: XL
-**Current Phase**: 5 완료 (Phase 6 최종 리뷰 대기)
+**Current Phase**: 7 완료
 
 ## Tickets
 
@@ -64,4 +64,5 @@ T1 (Schema+Config) → T2 (Depth Animation) → T3 (Parallax) → T4 (Haze+Vigne
 | 4 | 1 | HAS ISSUE | 0 | 7 | 9 | Round 1: P1×7 P2×9 → 수정 |
 | 4 | 2 | ALL PASS | 0 | 0 | 1 | Round 2: P2×1 잔여(ESM __dirname, 구현 시 확인) |
 | 5 | - | PASS | 0 | 0 | 0 | All 5 tickets TDD complete |
-| 6 | - | - | - | - | - | Pending |
+| 6 | 1 | HAS ISSUE | 0 | 0 | 3 | P2×3 test gaps → T6-fix |
+| 6 | 2 | ALL PASS | 0 | 0 | 0 | P2 all resolved |

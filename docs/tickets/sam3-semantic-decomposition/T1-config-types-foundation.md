@@ -3,18 +3,18 @@
 **PRD Ref**: PRD-sam3-semantic-decomposition > US-7, US-8 (AC-7.1~7.6, AC-8.4~8.7)
 **Priority**: P0 (Blocker)
 **Size**: M (2-4h)
-**Status**: Todo
+**Status**: Done (depth-cinematic-effects에서 이미 구현됨)
 **Depends On**: None
 
 ---
 
 ## 1. Objective
 
-research-config에 6개 SAM3/VLM axis 추가 + LayerCandidate.source/ManifestInput 타입 확장 + pipeline-layers.ts rawPassCounts 호환. 이후 모든 티켓의 기반.
+research-config에 5개 SAM3/VLM axis 추가 + LayerCandidate.source/ManifestInput 타입 확장 + pipeline-layers.ts rawPassCounts 호환. 이후 모든 티켓의 기반.
 
 ## 2. Acceptance Criteria
 
-- [ ] AC-1: research-config.ts에 6개 axis 추가 — `sam3Threshold`(0.1-0.9, d=0.25), `vlmMaxPrompts`(3-10, d=6), `secondPassEnabled`(boolean, d=true), `secondPassThreshold`(0.5-0.95, d=0.8), `useSam3`(boolean, d=true)
+- [x] AC-1: research-config.ts에 5개 axis 추가 — `sam3Threshold`(0.1-0.9, d=0.25), `vlmMaxPrompts`(3-10, d=6), `secondPassEnabled`(boolean, d=true), `secondPassThreshold`(0.5-0.95, d=0.8), `useSam3`(boolean, d=true)
 - [ ] AC-2: getDefaultConfig()에 5개 기본값 추가
 - [ ] AC-3: scene-schema.ts `LayerCandidate.source` 타입을 `"sam2-segment" | "sam3-semantic"` 유니온으로 확장
 - [ ] AC-4: decomposition-manifest.ts `ManifestInput.pipelineVariant` 타입을 `"sam2" | "sam3"` 유니온으로 확장

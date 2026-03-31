@@ -42,4 +42,20 @@ describe("program.md — depth cinematic axes documentation", () => {
   it("strategy guide mentions depth sweep", () => {
     expect(programMd).toMatch(/depth.*sweep|sweep.*depth/i);
   });
+
+  it("documents stddev guard (stddev < 5 disables cinematic axes)", () => {
+    expect(programMd).toMatch(/stddev.*5|depth.*variance.*cinematic/i);
+  });
+
+  it("contains sam3Threshold parameter", () => {
+    expect(programMd).toMatch(/sam3Threshold/);
+  });
+
+  it("contains vlmMaxPrompts parameter", () => {
+    expect(programMd).toMatch(/vlmMaxPrompts/);
+  });
+
+  it("contains useSam3 parameter", () => {
+    expect(programMd).toMatch(/useSam3/);
+  });
 });

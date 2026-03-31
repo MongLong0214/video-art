@@ -9,6 +9,7 @@ export interface PipelineCliArgs {
   unsafe: boolean;
   duration?: number;
   production: boolean;
+  prompts?: string[];
 }
 
 /**
@@ -52,11 +53,23 @@ export function parseCliArgs(argv: string[]): PipelineCliArgs {
   // --production
   const production = argv.includes("--production");
 
+  // --prompts "a,b,c"
+  let prompts: string[] | undefined;
+  const promptsIdx = argv.indexOf("--prompts");
+  if (promptsIdx !== -1 && promptsIdx + 1 < argv.length) {
+    prompts = argv[promptsIdx + 1]
+      .split(",")
+      .map(s => s.trim())
+      .filter(s => s.length > 0);
+    if (prompts.length === 0) prompts = undefined;
+  }
+
   return {
     inputPath,
     layerOverride,
     unsafe,
     duration,
     production,
+    prompts,
   };
 }

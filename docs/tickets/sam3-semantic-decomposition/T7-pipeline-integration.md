@@ -20,7 +20,8 @@ pipeline-layers.ts에서 SAM3 경로 통합 + manifest 모델 정보 + program.m
 - [ ] AC-4: manifest.models에 qwen3vl + sam3 정보 추가
 - [ ] AC-5: manifest.passes에 vlmPrompts 기록
 - [ ] AC-6: manifest.pipelineVariant = "sam3" (SAM3 경로)
-- [ ] AC-7: program.md에 6개 SAM3 config 파라미터 문서화
+- [ ] AC-7: program.md에 5개 SAM3 config 파라미터 문서화
+- [ ] AC-9: SAM3 경로에서 DecomposeResult.candidates를 직접 사용 (extractCandidates 스킵)
 - [ ] AC-8: 기존 SAM2 파이프라인 경로 동작 유지 (useSam3=false)
 
 ## 3. TDD Spec (Red Phase)

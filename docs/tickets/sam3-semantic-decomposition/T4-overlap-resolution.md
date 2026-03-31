@@ -21,6 +21,8 @@ SAM3 마스크 간 겹침을 depth 순 정렬로 해소 + 미커버 잔여 영�
 - [ ] AC-5: 미커버 5%+ → bg plate 레이어 (role=background-plate, z-index 0)
 - [ ] AC-6: 미커버 <5% → bg plate를 원본 전체로 생성 (z-index 0)
 - [ ] AC-7: bg plate meanDepth = 미커버 영역 depth 평균
+- [ ] AC-8: SAM3 bg-plate에 `role='background-plate'` 선할당 → assignRoles/applyRetentionRules에서 중복 bg-plate 생성 방지
+- [ ] AC-9: `resolveExclusiveOwnership()` 함수 시그니처 변경 없음 (PRD AC-3.4)
 
 ## 3. TDD Spec (Red Phase)
 

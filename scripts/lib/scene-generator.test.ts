@@ -354,14 +354,19 @@ describe("generateSceneJson (role-based)", () => {
     expect(depthSpeed).toBeCloseTo(baseSpeed, 0);
   });
 
-  it("depth speed modulation: meanDepth undefined → speed as if depthNorm=0.502", async () => {
+  it("depth speed modulation: meanDepth undefined → depthNorm fallback 128/255 applied", async () => {
     const depthLayers: RetainedLayer[] = [
       { file: "layers/l0.png", role: "subject", coverage: 0.5, uniqueCoverage: 0.4 },
-      { file: "layers/l1.png", role: "background", coverage: 0.5, uniqueCoverage: 0.4, meanDepth: 0 },
+      { file: "layers/l1.png", role: "midground", coverage: 0.5, uniqueCoverage: 0.4, meanDepth: 100 },
+      { file: "layers/l2.png", role: "background", coverage: 0.5, uniqueCoverage: 0.4, meanDepth: 200 },
     ];
-    // With undefined meanDepth, should still produce some result (no error)
-    const scene = await generateSceneJson("test.png", depthLayers, [1080, 1080], 20, { depthSpeedInfluence: 1.0 });
-    expect(scene.layers[0].animation.colorCycle!.speed).toBeDefined();
+    // depthValues=[100,200] → stddev=50 → cinematicActive=true
+    // Layer 0: undefined meanDepth → depthNorm=128/255≈0.502 → speed should increase
+    const baseline = await generateSceneJson("test.png", depthLayers, [1080, 1080], 20, {});
+    const withDepth = await generateSceneJson("test.png", depthLayers, [1080, 1080], 20, { depthSpeedInfluence: 1.0 });
+    const baseSpeed = baseline.layers[0].animation.colorCycle!.speed;
+    const depthSpeed = withDepth.layers[0].animation.colorCycle!.speed;
+    expect(depthSpeed).toBeGreaterThan(baseSpeed);
   });
 
   it("depth speed modulation: depthSpeedInfluence=0 (default) → identical to baseline", async () => {
@@ -443,6 +448,19 @@ describe("generateSceneJson (role-based)", () => {
       depthParallaxScale: 0.05,
     });
     expect(scene.effects.parallax.scale).toBe(0);
+  });
+
+  it("stddev guard: mixed undefined/defined meanDepth → defined values used for stddev", async () => {
+    const mixedLayers: RetainedLayer[] = [
+      { file: "layers/l0.png", role: "subject", coverage: 0.5, uniqueCoverage: 0.4, meanDepth: 100 },
+      { file: "layers/l1.png", role: "midground", coverage: 0.5, uniqueCoverage: 0.4 },
+      { file: "layers/l2.png", role: "background", coverage: 0.5, uniqueCoverage: 0.4, meanDepth: 200 },
+    ];
+    // depthValues=[100,200] (undefined excluded), stddev=50 → cinematicActive=true
+    const scene = await generateSceneJson("test.png", mixedLayers, [1080, 1080], 20, {
+      depthParallaxScale: 0.05,
+    });
+    expect(scene.effects.parallax.scale).toBe(0.05);
   });
 
   it("effects pass-through: parallax/haze/feather in scene.json", async () => {

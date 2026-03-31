@@ -95,6 +95,11 @@ Each experiment runs the full pipeline once (~2 minutes). You launch it as: `npm
 | depthParallaxScale | 0.0-0.1 | 0.0 | 2.5D parallax UV offset magnitude (near=more movement) |
 | hazeIntensity | 0.0-1.0 | 0.0 | Atmospheric desaturation for far layers |
 | featherRadius | 0.0-0.2 | 0.0 | UV edge alpha fade radius |
+| sam3Threshold | 0.1-0.9 | 0.25 | SAM3 confidence threshold for mask generation |
+| vlmMaxPrompts | 3-10 | 6 | Maximum VLM-generated prompts for SAM3 segmentation |
+| secondPassEnabled | true/false | true | Enable 2nd pass VLM+SAM3 for low-coverage results |
+| secondPassThreshold | 0.5-0.95 | 0.8 | Union coverage below which 2nd pass triggers |
+| useSam3 | true/false | true | false → SAM2 AMG fallback (instant rollback) |
 
 ### Constraints
 - `simpleEdgeMax` must be less than `complexEdgeMin`

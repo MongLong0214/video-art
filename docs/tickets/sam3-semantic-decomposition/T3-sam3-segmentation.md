@@ -19,11 +19,13 @@ SAM3 per-prompt 호출로 원본 해상도 binary mask 생성 → RGBA 레이어
 - [ ] AC-3: 출력 URL `validateReplicateUrl()` 검증 후 fetch
 - [ ] AC-4: fetch 후 sharp 디코드 실패 시 → skip + warn (try/catch)
 - [ ] AC-5: `applyMaskToImage()` 재사용하여 RGBA 레이어 생성
-- [ ] AC-6: `computeMaskStats()` 로 bbox/centroid/coverage 계산 → LayerCandidate 필드 채움
+- [ ] AC-6: `computeMaskStats()` + depthGray에서 bbox/centroid/coverage/**meanDepth**(0-255) 계산 → LayerCandidate 필드 채움
 - [ ] AC-7: edgeDensity는 RGBA 레이어에서 sharp sobel로 계산, componentCount=1 고정
 - [ ] AC-8: 빈 마스크 (coverage < minCoverage) → skip + warn
 - [ ] AC-9: SAM3_MODEL + SAM3_VERSION 상수 관리
 - [ ] AC-10: FileSourceMeta `{ source: "sam3-semantic", prompt }` 기록
+- [ ] AC-11: `DecomposeResult`에 `candidates?: LayerCandidate[]` 필드 추가 → T7에서 extractCandidates 스킵 가능
+- [ ] AC-12: 빈 마스크 meanDepth는 undefined (128 fallback은 renderer에서 처리)
 
 ## 3. TDD Spec (Red Phase)
 

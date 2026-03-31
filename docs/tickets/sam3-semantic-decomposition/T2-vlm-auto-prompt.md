@@ -23,6 +23,7 @@ Qwen3-VL을 호출하여 이미지에서 시맨틱 프롬프트 리스트를 자
 - [ ] AC-7: `--prompts "a,b,c"` CLI → VLM 스킵, 직접 사용
 - [ ] AC-8: sanitization — 제어 문자 제거, 100자 truncate, printable만. VLM + CLI 모두 적용
 - [ ] AC-9: VLM_MODEL + VLM_VERSION 상수로 관리
+- [ ] AC-10: VLM system prompt가 3-10 단어의 시각적 설명 출력을 지시 (PRD AC-1.3)
 
 ## 3. TDD Spec (Red Phase)
 
