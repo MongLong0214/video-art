@@ -164,6 +164,10 @@ async function main() {
       alphaThreshold: pipelineConfig?.alphaThreshold,
       minCoverage: pipelineConfig?.minCoverage,
       manualPrompts: cliArgs.prompts,
+      morphCloseEnabled: pipelineConfig?.morphCloseEnabled,
+      morphCloseKernelScale: pipelineConfig?.morphCloseKernelScale,
+      alphaMatteEnabled: pipelineConfig?.alphaMatteEnabled,
+      alphaMatteRadiusScale: pipelineConfig?.alphaMatteRadiusScale,
     });
 
     depthMapBuffer = decomposeResult.depthMap;

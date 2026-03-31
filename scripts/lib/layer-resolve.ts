@@ -569,14 +569,13 @@ export async function fillBackgroundPlate(
       outputRgba[px + 1] = bgRgba[px + 1];
       outputRgba[px + 2] = bgRgba[px + 2];
       outputRgba[px + 3] = bgRgba[px + 3];
-    } else if (claimedMask[i] === 0) {
-      // Fill from original image (unclaimed pixel)
+    } else {
+      // Fill from original image (both unclaimed and claimed pixels)
       outputRgba[px] = origRgba[px];
       outputRgba[px + 1] = origRgba[px + 1];
       outputRgba[px + 2] = origRgba[px + 2];
       outputRgba[px + 3] = origRgba[px + 3];
     }
-    // else: claimed by another layer, leave transparent
   }
 
   // Write filled plate

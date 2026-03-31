@@ -339,3 +339,63 @@ export const config = ResearchConfigSchema.parse({ "samMaskLimit": 9, "maxLayers
     expect(config.maxLayers).toBe(10);
   });
 });
+
+// ==========================================================================
+// T2: Config schema ↔ getDefaultConfig full sync
+// ==========================================================================
+
+describe("Config schema sync (T2)", () => {
+  it("getDefaultConfig round-trips through schema", () => {
+    const config = getDefaultConfig();
+    const reparsed = ResearchConfigSchema.parse(config);
+    expect(reparsed).toEqual(config);
+  });
+
+  it("schema keys match getDefaultConfig keys", () => {
+    const config = getDefaultConfig();
+    const configKeys = new Set(Object.keys(config));
+
+    // Schema shape keys (before refinements)
+    const schemaShape = ResearchConfigSchema._def.schema
+      ? ResearchConfigSchema._def.schema.shape
+      : (ResearchConfigSchema as unknown as { shape: Record<string, unknown> }).shape;
+
+    // If we can't access shape directly, just verify round-trip works
+    if (!schemaShape) {
+      expect(configKeys.size).toBeGreaterThan(20);
+      return;
+    }
+
+    const schemaKeys = new Set(Object.keys(schemaShape));
+    const missingInConfig = [...schemaKeys].filter((k) => !configKeys.has(k));
+    const extraInConfig = [...configKeys].filter((k) => !schemaKeys.has(k));
+
+    expect(missingInConfig).toEqual([]);
+    expect(extraInConfig).toEqual([]);
+  });
+
+  it("new fields have correct defaults", () => {
+    const config = getDefaultConfig();
+
+    // Mask post-processing
+    expect(config.morphCloseEnabled).toBe(true);
+    expect(config.morphCloseKernelScale).toBe(0.01);
+    expect(config.alphaMatteEnabled).toBe(true);
+    expect(config.alphaMatteRadiusScale).toBe(0.003);
+
+    // Model selection
+    expect(config.segmentationModel).toBe("sam3");
+    expect(config.apiProvider).toBe("replicate");
+
+    // SAM3/VLM
+    expect(config.sam3Threshold).toBe(0.25);
+    expect(config.vlmMaxPrompts).toBe(6);
+    expect(config.useSam3).toBe(true);
+
+    // Depth cinematic
+    expect(config.depthSpeedInfluence).toBe(0);
+    expect(config.depthParallaxScale).toBe(0);
+    expect(config.hazeIntensity).toBe(0);
+    expect(config.featherRadius).toBe(0);
+  });
+});

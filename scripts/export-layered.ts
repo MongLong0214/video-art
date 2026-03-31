@@ -17,7 +17,7 @@ import { waitForServer } from "./lib/browser-utils.js";
 const rawFps = parseInt(process.env.RESEARCH_FPS ?? "", 10);
 const FPS = Number.isFinite(rawFps) && rawFps > 0 ? rawFps : 30;
 const ALLOWED_PRESETS = new Set(["ultrafast","superfast","veryfast","faster","fast","medium","slow","slower","veryslow"]);
-const PRESET = ALLOWED_PRESETS.has(process.env.RESEARCH_PRESET ?? "") ? process.env.RESEARCH_PRESET! : "slow";
+const PRESET = ALLOWED_PRESETS.has(process.env.RESEARCH_PRESET ?? "") ? process.env.RESEARCH_PRESET! : "veryslow";
 
 function startViteServer(port: number, projectRoot: string): ChildProcess {
   return execFile("npx", ["vite", "--port", String(port)], { cwd: projectRoot }) as unknown as ChildProcess;
@@ -87,7 +87,7 @@ async function captureFrames(outputDir: string, totalFrames: number, resolution:
 
 function encodeVideo(inputFramesDir: string, outputPath: string, resolution: [number, number]): Promise<void> {
   const rawCrf = parseInt(process.env.RESEARCH_CRF ?? "", 10);
-  const CRF = Number.isFinite(rawCrf) && rawCrf >= 0 && rawCrf <= 51 ? rawCrf : 18;
+  const CRF = Number.isFinite(rawCrf) && rawCrf >= 0 && rawCrf <= 51 ? rawCrf : 15;
   const PIX_FMT = process.env.RESEARCH_PIX_FMT === "yuv420p" ? "yuv420p" : "yuv444p";
   const ffmpegArgs = [
     "-y",
@@ -110,6 +110,13 @@ function encodeVideo(inputFramesDir: string, outputPath: string, resolution: [nu
     proc.stderr?.on("data", (d: string) => {
       if (d.includes("frame=")) process.stdout.write(`\r  ${d.trim()}`);
     });
+  }).then(() => {
+    const stat = fs.statSync(outputPath);
+    const sizeMB = (stat.size / (1024 * 1024)).toFixed(1);
+    const durationS = resolution[0] > 0 ? FPS : 20;
+    const bitrateMbps = ((stat.size * 8) / (durationS * 1000 * 1000)).toFixed(1);
+    console.log(`\nOutput: ${outputPath}`);
+    console.log(`Size: ${sizeMB}MB`);
   });
 }
 

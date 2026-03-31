@@ -84,6 +84,16 @@ export const ResearchConfigSchema = z
     secondPassThreshold: z.number().min(0.5).max(0.95).default(0.8),
     useSam3: z.boolean().default(true),
 
+    // ── Mask Post-Processing ───────────────────────────────────
+    morphCloseEnabled: z.boolean().default(true),
+    morphCloseKernelScale: z.number().min(0.001).max(0.05).default(0.01),
+    alphaMatteEnabled: z.boolean().default(true),
+    alphaMatteRadiusScale: z.number().min(0.001).max(0.02).default(0.003),
+
+    // ── Model Selection ────────────────────────────────────────
+    segmentationModel: z.enum(["sam3", "grounded-sam2", "evf-sam"]).default("sam3"),
+    apiProvider: z.enum(["replicate", "fal"]).default("replicate"),
+
     // ── Blend Mode ───────────────────────────────────────────
     blendMode: z.enum(["normal", "add", "multiply", "screen"]).default("normal"),
   })
@@ -142,6 +152,12 @@ export function getDefaultConfig(): ResearchConfig {
     secondPassEnabled: true,
     secondPassThreshold: 0.8,
     useSam3: true,
+    morphCloseEnabled: true,
+    morphCloseKernelScale: 0.01,
+    alphaMatteEnabled: true,
+    alphaMatteRadiusScale: 0.003,
+    segmentationModel: "sam3",
+    apiProvider: "replicate",
   });
 }
 

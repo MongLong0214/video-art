@@ -265,6 +265,14 @@ export async function generateSceneJson(
     mul.depthParallaxScale = 0;
     mul.hazeIntensity = 0;
     mul.featherRadius = 0;
+  } else {
+    // Auto-activate depth cinematic effects when depth data is usable
+    // Config multipliers override: 0 = use auto-calculated value, >0 = use config value
+    if (mul.depthParallaxScale === 0) mul.depthParallaxScale = 0.015;
+    if (mul.hazeIntensity === 0) mul.hazeIntensity = 0.25;
+    if (mul.featherRadius === 0) mul.featherRadius = 0.03;
+    if (mul.depthSpeedInfluence === 0) mul.depthSpeedInfluence = 0.3;
+    if (mul.depthGlowInfluence === 0) mul.depthGlowInfluence = 0.2;
   }
 
   const sceneLayers: SceneConfig["layers"] = [];

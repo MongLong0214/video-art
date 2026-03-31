@@ -3,7 +3,8 @@ import sharp from "sharp";
 import fs from "node:fs";
 import path from "node:path";
 
-import { withRetry, validateReplicateUrl, getToken } from "./replicate-utils.js";
+import { withRetry, validateReplicateUrl, validateProviderUrl, getToken, getProviderToken } from "./replicate-utils.js";
+import type { ApiProvider } from "./replicate-utils.js";
 
 export const DAV2_MODEL = "chenxwh/depth-anything-v2";
 export const DAV2_VERSION = "b239ea33cff32bb7abb5db39ffe9a09c14cbc2894331d1ef66fe096eed88ebd4";
@@ -13,6 +14,14 @@ export const SAM3_VERSION = "d73db077226443ba4fafd34e233b3626b552eac2a433f90c7c3
 
 export const VLM_MODEL = "lucataco/qwen3-vl-8b-instruct";
 export const VLM_VERSION = "39e893666996acf464cff75688ad49ac95ef54e9f1c688fbc677330acc478e11";
+
+// fal.ai model endpoints
+export const FAL_SAM3_ENDPOINT = "fal-ai/sam-3/image";
+export const FAL_EVF_SAM_ENDPOINT = "fal-ai/evf-sam";
+
+// GroundingDINO (Replicate)
+export const GROUNDING_DINO_MODEL = "adirik/grounding-dino";
+export const GROUNDING_DINO_VERSION = ""; // latest — no pinned version available
 
 const DEFAULT_PROMPTS = ["main subject", "background", "foreground details", "shadows and lighting"];
 
@@ -92,6 +101,10 @@ interface DecomposeOptions {
   secondPassEnabled?: boolean;
   secondPassThreshold?: number;
   manualPrompts?: string[];
+  morphCloseEnabled?: boolean;
+  morphCloseKernelScale?: number;
+  alphaMatteEnabled?: boolean;
+  alphaMatteRadiusScale?: number;
 }
 
 export interface FileSourceMeta {
@@ -143,7 +156,57 @@ export function buildSecondPassVlmPrompt(existingPrompts: string[], maxPrompts: 
 
 import { computeMaskStats } from "./mask-stats.js";
 import { computeMeanDepth } from "./depth-computation.js";
+import { fillMaskHoles, applyAlphaMatte } from "./mask-postprocess.js";
 import type { LayerCandidate } from "../../src/lib/scene-schema.js";
+
+/**
+ * Get SAM3 mask via fal.ai synchronous API.
+ * Uses fal.run (synchronous) instead of queue.fal.run (async queue).
+ * Falls back to null on failure (caller handles fallback to Replicate).
+ */
+export async function getFalSam3Mask(
+  imageUrl: string,
+  prompt: string,
+  threshold: number = 0.25,
+): Promise<Buffer | null> {
+  try {
+    const falKey = getProviderToken("fal");
+    // Use synchronous endpoint (fal.run) — returns result directly, no queue polling needed
+    const resp = await withRetry(async () => {
+      const r = await fetch(`https://fal.run/${FAL_SAM3_ENDPOINT}`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Key ${falKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          image_url: imageUrl,
+          prompts: prompt,
+          threshold,
+          mask_only: true,
+        }),
+      });
+      if (!r.ok) throw new Error(`fal.ai SAM3 failed: HTTP ${r.status}`);
+      return r.json() as Promise<Record<string, unknown>>;
+    });
+
+    // fal.ai response: { mask_url: "..." } or { output: { url: "..." } }
+    const result = resp as Record<string, unknown>;
+    const maskUrl = (result.mask_url as string)
+      ?? ((result.output as Record<string, unknown>)?.url as string)
+      ?? "";
+    if (!maskUrl) return null;
+    validateProviderUrl(maskUrl, "fal");
+    const maskResp = await fetch(maskUrl);
+    if (!maskResp.ok) return null;
+    const buf = Buffer.from(await maskResp.arrayBuffer());
+    await sharp(buf).metadata();
+    return buf;
+  } catch (err) {
+    console.warn(`  fal.ai SAM3 failed for "${prompt}": ${err instanceof Error ? err.message : err}`);
+    return null;
+  }
+}
 
 export async function getSam3Mask(
   replicate: Replicate,
@@ -189,8 +252,20 @@ export async function buildSam3Candidate(
   index: number,
   outputDir: string,
   minCoverage: number = 0.001,
+  postProcessConfig?: { morphCloseEnabled?: boolean; morphCloseKernelScale?: number; alphaMatteEnabled?: boolean; alphaMatteRadiusScale?: number },
 ): Promise<LayerCandidate | null> {
-  const applied = await applyMaskToImage(originalImage, maskBuffer, width, height);
+  // Post-process mask: fill interior holes + soft edges
+  let processedMask = maskBuffer;
+  processedMask = await fillMaskHoles(processedMask, width, height, {
+    enabled: postProcessConfig?.morphCloseEnabled,
+    kernelScale: postProcessConfig?.morphCloseKernelScale,
+  });
+  processedMask = await applyAlphaMatte(processedMask, width, height, {
+    enabled: postProcessConfig?.alphaMatteEnabled,
+    radiusScale: postProcessConfig?.alphaMatteRadiusScale,
+  });
+
+  const applied = await applyMaskToImage(originalImage, processedMask, width, height);
   if (applied.coverage < minCoverage) return null;
 
   const rgbaRaw = await sharp(applied.pixels, { raw: { width, height, channels: 4 } })
@@ -406,7 +481,7 @@ async function decomposeImageSam3(
     const maskBuf = await getSam3Mask(replicate, dataUri, prompt, sam3Threshold);
     if (!maskBuf) { console.log(`    → skipped (mask failed)`); continue; }
 
-    const candidate = await buildSam3Candidate(maskBuf, originalImage, depthGray, width, height, prompt, i, outputDir, minCoverage);
+    const candidate = await buildSam3Candidate(maskBuf, originalImage, depthGray, width, height, prompt, i, outputDir, minCoverage, { morphCloseEnabled: options.morphCloseEnabled, morphCloseKernelScale: options.morphCloseKernelScale, alphaMatteEnabled: options.alphaMatteEnabled, alphaMatteRadiusScale: options.alphaMatteRadiusScale });
     if (!candidate) { console.log(`    → skipped (empty mask)`); continue; }
 
     console.log(`    → ${(candidate.coverage * 100).toFixed(1)}% coverage, depth=${candidate.meanDepth?.toFixed(0) ?? "N/A"}`);
@@ -451,7 +526,7 @@ async function decomposeImageSam3(
           console.log(`  SAM3-2nd[${j}]: "${p}"...`);
           const maskBuf = await getSam3Mask(replicate, dataUri, p, sam3Threshold);
           if (!maskBuf) continue;
-          const candidate = await buildSam3Candidate(maskBuf, originalImage, depthGray, width, height, p, candidates.length + j, outputDir, minCoverage);
+          const candidate = await buildSam3Candidate(maskBuf, originalImage, depthGray, width, height, p, candidates.length + j, outputDir, minCoverage, { morphCloseEnabled: options.morphCloseEnabled, morphCloseKernelScale: options.morphCloseKernelScale, alphaMatteEnabled: options.alphaMatteEnabled, alphaMatteRadiusScale: options.alphaMatteRadiusScale });
           if (!candidate) continue;
           console.log(`    → ${(candidate.coverage * 100).toFixed(1)}% coverage`);
           candidates.push(candidate);

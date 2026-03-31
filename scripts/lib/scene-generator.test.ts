@@ -522,3 +522,59 @@ describe("generateSceneJson (role-based)", () => {
     expect(scene.layers[0].animation).toBeDefined();
   });
 });
+
+// ==========================================================================
+// T3: Depth cinematic effects auto-activation
+// ==========================================================================
+
+describe("depth cinematic auto-activation (T3)", () => {
+  it("auto-activates parallax when depth data has variance", async () => {
+    const layers: RetainedLayer[] = [
+      { file: "layers/bg.png", role: "background-plate", coverage: 1.0, uniqueCoverage: 0.7, meanDepth: 30 },
+      { file: "layers/fg.png", role: "subject", coverage: 0.3, uniqueCoverage: 0.2, meanDepth: 200 },
+    ];
+    const scene = await generateSceneJson("test.png", layers, [1080, 1080], 20);
+    expect(scene.effects.parallax?.scale).toBeGreaterThan(0);
+  });
+
+  it("auto-activates haze for layers with depth variance", async () => {
+    const layers: RetainedLayer[] = [
+      { file: "layers/bg.png", role: "background-plate", coverage: 1.0, uniqueCoverage: 0.7, meanDepth: 20 },
+      { file: "layers/fg.png", role: "subject", coverage: 0.3, uniqueCoverage: 0.2, meanDepth: 180 },
+    ];
+    const scene = await generateSceneJson("test.png", layers, [1080, 1080], 20);
+    expect(scene.effects.haze?.intensity).toBeGreaterThan(0);
+  });
+
+  it("does NOT activate cinematic when depth variance is low", async () => {
+    const layers: RetainedLayer[] = [
+      { file: "layers/a.png", role: "background-plate", coverage: 1.0, uniqueCoverage: 0.7, meanDepth: 128 },
+      { file: "layers/b.png", role: "subject", coverage: 0.3, uniqueCoverage: 0.2, meanDepth: 130 },
+    ];
+    const scene = await generateSceneJson("test.png", layers, [1080, 1080], 20);
+    expect(scene.effects.parallax?.scale).toBe(0);
+    expect(scene.effects.haze?.intensity).toBe(0);
+  });
+
+  it("respects explicit config override (non-zero) over auto-calculation", async () => {
+    const layers: RetainedLayer[] = [
+      { file: "layers/bg.png", role: "background-plate", coverage: 1.0, uniqueCoverage: 0.7, meanDepth: 30 },
+      { file: "layers/fg.png", role: "subject", coverage: 0.3, uniqueCoverage: 0.2, meanDepth: 200 },
+    ];
+    const scene = await generateSceneJson("test.png", layers, [1080, 1080], 20, {
+      depthParallaxScale: 0.05,
+      hazeIntensity: 0.8,
+    });
+    expect(scene.effects.parallax?.scale).toBe(0.05);
+    expect(scene.effects.haze?.intensity).toBe(0.8);
+  });
+
+  it("no effects without depth data", async () => {
+    const layers: RetainedLayer[] = [
+      { file: "layers/a.png", role: "background-plate", coverage: 1.0, uniqueCoverage: 0.7 },
+      { file: "layers/b.png", role: "subject", coverage: 0.3, uniqueCoverage: 0.2 },
+    ];
+    const scene = await generateSceneJson("test.png", layers, [1080, 1080], 20);
+    expect(scene.effects.parallax?.scale).toBe(0);
+  });
+});

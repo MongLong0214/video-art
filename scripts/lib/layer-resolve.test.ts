@@ -803,3 +803,98 @@ describe("applyRetentionRules", () => {
     expect(retained.length).toBeGreaterThanOrEqual(3);
   });
 });
+
+// ==========================================================================
+// T1: fillBackgroundPlate — fully opaque output (no holes)
+// ==========================================================================
+
+describe("fillBackgroundPlate — fully opaque (T1)", () => {
+  let tmpDir: string;
+
+  beforeAll(() => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "t1-bgplate-"));
+  });
+
+  afterAll(() => {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  it("produces fully opaque output (alpha === 255 for all pixels)", async () => {
+    const W = 5, H = 5;
+
+    // Original image: 5x5 red
+    const origBuf = createRgbaBuffer(W, H);
+    paintRect(origBuf, W, { x: 0, y: 0, w: W, h: H }, { r: 255, g: 0, b: 0, a: 255 });
+    const origPath = path.join(tmpDir, "original.png");
+    await sharp(origBuf, { raw: { width: W, height: H, channels: 4 } }).png().toFile(origPath);
+
+    // BG candidate: 5x5 blue (full coverage)
+    const bgBuf = createRgbaBuffer(W, H);
+    paintRect(bgBuf, W, { x: 0, y: 0, w: W, h: H }, { r: 0, g: 0, b: 255, a: 255 });
+    const bgPath = path.join(tmpDir, "bg.png");
+    const bgCandidate = await makeCandidate(bgBuf, W, H, bgPath, {
+      role: "background-plate",
+      coverage: 1.0,
+    });
+
+    // Claimed mask: 2x2 region at (1,1) claimed by another layer
+    const claimedMask = new Uint8Array(W * H);
+    for (let row = 1; row <= 2; row++) {
+      for (let col = 1; col <= 2; col++) {
+        claimedMask[row * W + col] = 1;
+      }
+    }
+
+    const result = await fillBackgroundPlate(
+      bgCandidate, origPath, claimedMask, W, H, tmpDir,
+    );
+
+    // Read the output and check every pixel alpha === 255
+    const { data } = await sharp(result.filePath)
+      .ensureAlpha()
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+    const rgba = new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+
+    for (let i = 0; i < W * H; i++) {
+      expect(rgba[i * 4 + 3]).toBe(255);
+    }
+  });
+
+  it("fills claimed pixels from original image", async () => {
+    const W = 5, H = 5;
+
+    // Original: green
+    const origBuf = createRgbaBuffer(W, H);
+    paintRect(origBuf, W, { x: 0, y: 0, w: W, h: H }, { r: 0, g: 200, b: 0, a: 255 });
+    const origPath = path.join(tmpDir, "orig2.png");
+    await sharp(origBuf, { raw: { width: W, height: H, channels: 4 } }).png().toFile(origPath);
+
+    // BG candidate: transparent everywhere (empty bg)
+    const bgBuf = createRgbaBuffer(W, H); // all transparent
+    const bgPath = path.join(tmpDir, "bg2.png");
+    const bgCandidate = await makeCandidate(bgBuf, W, H, bgPath, {
+      role: "background-plate",
+      coverage: 0,
+    });
+
+    // Entire image claimed
+    const claimedMask = new Uint8Array(W * H).fill(1);
+
+    const result = await fillBackgroundPlate(
+      bgCandidate, origPath, claimedMask, W, H, tmpDir,
+    );
+
+    const { data } = await sharp(result.filePath)
+      .ensureAlpha()
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+    const rgba = new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+
+    // All pixels should be green from original (claimed pixels filled)
+    for (let i = 0; i < W * H; i++) {
+      expect(rgba[i * 4 + 3]).toBe(255);
+      expect(rgba[i * 4 + 1]).toBeGreaterThan(150); // green channel
+    }
+  });
+});
