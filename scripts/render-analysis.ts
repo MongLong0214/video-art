@@ -395,7 +395,7 @@ if (manifestPath) {
     const energy = getEnergy(t) * energyMul;
     addEvent(t, "sample_player", {
       out: 4, // hat stem bus
-      buf, amp: Math.min(0.3 * energy, 0.4), dur: hat.duration,
+      buf, amp: Math.min(0.5 * energy, 0.6), dur: hat.duration,
       rate: 1.0, hpFreq: 2000, lpFreq: 18000,
     });
     hatCount++;
@@ -414,8 +414,8 @@ if (manifestPath) {
       addEvent(t, "acid_bass", {
         freq: note.freq, amp: Math.min(0.8 * energy, 1.0),
         dur: Math.min(note.duration, beatDur),
-        cutoff: 200, resonance: 1.5,
-        envDepth: 800, envDecay: 0.12,
+        cutoff: 500, resonance: 1.5,
+        envDepth: 1200, envDecay: 0.12,
         accent: note.velocity > 0.7 ? 1 : 0,
         slide: note.slide ? 1 : 0, slideTime: 0.08,
         wave: 0, dist: 0.2,
@@ -519,15 +519,15 @@ for (let beat = 1; beat < Math.floor(duration / beatDur); beat += 2) {
   });
 }
 
-// --- RISER — build sections, every 4 bars ---
-for (let bar = 0; bar < Math.ceil(duration / (beatDur * 16)); bar++) {
-  const t = bar * beatDur * 16;
+// --- RISER — build sections, every 2 bars ---
+for (let bar = 0; bar < Math.ceil(duration / (beatDur * 8)); bar++) {
+  const t = bar * beatDur * 8;
   if (t >= duration) continue;
   const section = getSectionAt(t);
   if (section !== "build") continue;
   const energy = getEnergy(t) * energyMul;
   addEvent(t, "riser", {
-    freq: rootFreqSynth * 4, amp: 0.5 * energy, dur: beatDur * 8,
+    freq: rootFreqSynth * 4, amp: 0.7 * energy, dur: beatDur * 8,
     sweepRange: 0.6, noiseAmount: 0.3,
   });
 }
@@ -611,9 +611,9 @@ if (!manifestPath || !fs.existsSync(path.join(analysisDir, "samples", "manifest.
       const energy = getEnergy(t) * energyMul;
       const freq = step % 2 === 0 ? rootFreqSynth : fifthFreq;
       addEvent(t, "acid_bass", {
-        freq, amp: 0.7 * energy, dur: beatDur * 0.4,
-        cutoff: 300, resonance: 1.8,
-        envDepth: 600, envDecay: 0.12,
+        freq, amp: 0.85 * energy, dur: beatDur * 0.4,
+        cutoff: 500, resonance: 1.8,
+        envDepth: 1200, envDecay: 0.12,
         accent: 0, slide: 0, slideTime: 0,
         wave: 0, dist: 0.2,
       });
