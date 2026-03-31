@@ -64,7 +64,7 @@ describe("makeEvalResult", () => {
   });
 
   it("creates result with score=0 when gate fails", () => {
-    const metrics = { M1: 0.05, M2: 0.8, M3: 0.8, M4: 0.6, M5: 0.6, M6: 0.6, M7: 0.5, M8: 0.5, M9: 0.7, M10: 0.7 };
+    const metrics = { M1: 0.005, M2: 0.8, M3: 0.8, M4: 0.6, M5: 0.6, M6: 0.6, M7: 0.5, M8: 0.5, M9: 0.7, M10: 0.7 };
     const result = makeEvalResult(metrics);
     expect(result.gatePassed).toBe(false);
     expect(result.qualityScore).toBe(0);

@@ -80,27 +80,27 @@ describe("hardGate", () => {
   });
 
   it("should fail when one metric is below threshold", () => {
-    const metrics = makeMetrics({ M1: 0.14 });
+    const metrics = makeMetrics({ M1: 0.005 });
     expect(hardGate(metrics)).toBe(false);
   });
 
   it("should fail when all metrics below threshold", () => {
-    const metrics = allAtValue(0.1);
+    const metrics = allAtValue(0.005);
     expect(hardGate(metrics)).toBe(false);
   });
 
-  it("should pass when all metrics exactly at threshold (0.15)", () => {
-    const metrics = allAtValue(0.15);
+  it("should pass when all metrics exactly at threshold (0.01)", () => {
+    const metrics = allAtValue(0.01);
     expect(hardGate(metrics)).toBe(true);
   });
 
-  it("should fail when one metric is 0.14999", () => {
-    const metrics = makeMetrics({ M5: 0.14999 });
+  it("should fail when one metric is 0.00999", () => {
+    const metrics = makeMetrics({ M5: 0.00999 });
     expect(hardGate(metrics)).toBe(false);
   });
 
-  it("should pass when one metric is 0.15001", () => {
-    const metrics = allAtValue(0.15001);
+  it("should pass when one metric is 0.01001", () => {
+    const metrics = allAtValue(0.01001);
     expect(hardGate(metrics)).toBe(true);
   });
 
@@ -121,7 +121,7 @@ describe("hardGate", () => {
   it("should check all 10 metrics", () => {
     for (let i = 1; i <= 10; i++) {
       const key = `M${i}` as keyof MetricValues;
-      const metrics = makeMetrics({ [key]: 0.01 });
+      const metrics = makeMetrics({ [key]: 0.009 });
       expect(hardGate(metrics)).toBe(false);
     }
   });
@@ -212,13 +212,13 @@ describe("makeEvalResult", () => {
   });
 
   it("should set gatePassed=false when one below threshold", () => {
-    const raw = makeMetrics({ M1: 0.1 });
+    const raw = makeMetrics({ M1: 0.005 });
     const result = makeEvalResult(raw);
     expect(result.gatePassed).toBe(false);
   });
 
   it("should set qualityScore=0 when gate fails", () => {
-    const raw = makeMetrics({ M1: 0.01 });
+    const raw = makeMetrics({ M1: 0.005 });
     const result = makeEvalResult(raw);
     expect(result.qualityScore).toBe(0);
   });

@@ -25,8 +25,8 @@ describe("clamp01 parametric", () => {
 
 describe("hardGate parametric", () => {
   it.each([
-    [0.0, false], [0.05, false], [0.10, false], [0.14, false],
-    [0.15, true], [0.16, true], [0.5, true], [1.0, true],
+    [0.0, false], [0.005, false],
+    [0.01, true], [0.05, true], [0.10, true], [0.5, true], [1.0, true],
   ] as [number, boolean][])("uniform value %d → %s", (v, expected) => {
     expect(hardGate(makeMetrics(v))).toBe(expected);
   });
@@ -35,7 +35,7 @@ describe("hardGate parametric", () => {
   const metricKeys: (keyof MetricValues)[] = ["M1", "M2", "M3", "M4", "M5", "M6", "M7", "M8", "M9", "M10"];
   for (const key of metricKeys) {
     it(`fails when only ${key} < threshold`, () => {
-      expect(hardGate(makeMetrics(0.5, { [key]: 0.10 }))).toBe(false);
+      expect(hardGate(makeMetrics(0.5, { [key]: 0.005 }))).toBe(false);
     });
   }
 
@@ -91,7 +91,7 @@ describe("makeEvalResult comprehensive", () => {
   });
 
   it("gate fail → score 0", () => {
-    const r = makeEvalResult(makeMetrics(0.7, { M5: 0.05 }));
+    const r = makeEvalResult(makeMetrics(0.7, { M5: 0.005 }));
     expect(r.gatePassed).toBe(false);
     expect(r.qualityScore).toBe(0);
   });
