@@ -15,7 +15,7 @@
 | T5 | 마스크 Hole-Filling | 2 | M | Done | PASS | T2 | iterative blur, integrated |
 | T6 | Alpha Matting | 2 | S | Done | PASS | T5 | Gaussian edge softening, integrated |
 | T7 | 멀티모델/Provider | 3 | L | Done | PASS | T2 | provider layer + fal.ai SAM3 |
-| T8 | E2E Smoke Test | 1 | S | Todo | - | T1, T2 | G10 커버 |
+| T8 | E2E Smoke Test | 1 | S | Done | PASS | T1, T2 | 실 API E2E 완료 (84.9MB mp4) |
 
 ## Wave 구조
 
