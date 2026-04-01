@@ -9,11 +9,12 @@ interface HoleFillConfig {
  * Fill interior holes in a binary mask using Gaussian blur approximation.
  *
  * Algorithm:
- * 1. Dilate: blur(sigma) + threshold(64) → slightly expanded boundary
- * 2. Fill: blur(sigma*2) + threshold(128) → fills interior holes
+ * 1. Dilate: blur(sigma*3) + threshold(32) → expanded boundary for clamping
+ * 2. Fill: iterative blur(sigma*N) + threshold(100) → fills interior holes (up to 3x)
  * 3. Clamp: result AND dilated → prevents expansion beyond dilated boundary
  *
- * For large holes (> sigma*4), iterates up to 3 times.
+ * Note: background-plate layers bypass this entirely — they go through
+ * fillBackgroundPlate() which forces alpha=255 on all pixels.
  */
 export async function fillMaskHoles(
   maskBuffer: Buffer,

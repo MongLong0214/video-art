@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import {
   DAV2_MODEL, DAV2_VERSION,
-  SAM3_MODEL, SAM3_VERSION, VLM_MODEL, VLM_VERSION,
-  parseVlmResponse, sanitizePrompts, ensureMinPrompts,
+  SAM3_MODEL, SAM3_VERSION,
+  sanitizePrompts, ensureMinPrompts,
 } from "./image-decompose.js";
 import type { DecomposeResult } from "./image-decompose.js";
 
@@ -42,30 +42,6 @@ describe("image-decompose", () => {
     });
     it("SAM3_VERSION is 64-char hex", () => {
       expect(SAM3_VERSION).toMatch(/^[a-f0-9]{64}$/);
-    });
-    it("VLM_MODEL is lucataco/qwen3-vl-8b-instruct", () => {
-      expect(VLM_MODEL).toBe("lucataco/qwen3-vl-8b-instruct");
-    });
-    it("VLM_VERSION is 64-char hex", () => {
-      expect(VLM_VERSION).toMatch(/^[a-f0-9]{64}$/);
-    });
-  });
-
-  describe("parseVlmResponse", () => {
-    it("parses valid JSON array", () => {
-      expect(parseVlmResponse('["a","b","c"]')).toEqual(["a", "b", "c"]);
-    });
-    it("extracts JSON array from prose", () => {
-      expect(parseVlmResponse('Here are the regions: ["a","b"]')).toEqual(["a", "b"]);
-    });
-    it("returns null for no JSON", () => {
-      expect(parseVlmResponse("no array here")).toBeNull();
-    });
-    it("returns null for malformed JSON", () => {
-      expect(parseVlmResponse('["a", b]')).toBeNull();
-    });
-    it("returns null for non-string array", () => {
-      expect(parseVlmResponse("[1, 2, 3]")).toBeNull();
     });
   });
 

@@ -897,4 +897,72 @@ describe("fillBackgroundPlate — fully opaque (T1)", () => {
       expect(rgba[i * 4 + 1]).toBeGreaterThan(150); // green channel
     }
   });
+
+  it("preserves bg candidate pixels where already opaque", async () => {
+    const W = 5, H = 5;
+
+    // Original: red
+    const origBuf = createRgbaBuffer(W, H);
+    paintRect(origBuf, W, { x: 0, y: 0, w: W, h: H }, { r: 255, g: 0, b: 0, a: 255 });
+    const origPath = path.join(tmpDir, "orig3.png");
+    await sharp(origBuf, { raw: { width: W, height: H, channels: 4 } }).png().toFile(origPath);
+
+    // BG candidate: blue, fully opaque
+    const bgBuf = createRgbaBuffer(W, H);
+    paintRect(bgBuf, W, { x: 0, y: 0, w: W, h: H }, { r: 0, g: 0, b: 200, a: 255 });
+    const bgPath = path.join(tmpDir, "bg3.png");
+    const bgCandidate = await makeCandidate(bgBuf, W, H, bgPath, {
+      role: "background-plate",
+      coverage: 1.0,
+    });
+
+    const claimedMask = new Uint8Array(W * H);
+    const result = await fillBackgroundPlate(
+      bgCandidate, origPath, claimedMask, W, H, tmpDir,
+    );
+
+    const { data } = await sharp(result.filePath)
+      .ensureAlpha()
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+    const rgba = new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+
+    // BG was opaque blue — should stay blue, not be replaced by red original
+    for (let i = 0; i < W * H; i++) {
+      expect(rgba[i * 4 + 2]).toBeGreaterThan(150); // blue channel preserved
+      expect(rgba[i * 4 + 3]).toBe(255);
+    }
+  });
+
+  it("uniqueCoverage unchanged by bg-plate fill", async () => {
+    const W = 5, H = 5;
+
+    // Two candidates with known exclusive ownership
+    const candA = createRgbaBuffer(W, H);
+    paintRect(candA, W, { x: 0, y: 0, w: 3, h: H }, { r: 255, g: 0, b: 0, a: 255 });
+    const pathA = path.join(tmpDir, "candA.png");
+    await sharp(candA, { raw: { width: W, height: H, channels: 4 } }).png().toFile(pathA);
+
+    const candB = createRgbaBuffer(W, H);
+    paintRect(candB, W, { x: 2, y: 0, w: 3, h: H }, { r: 0, g: 255, b: 0, a: 255 });
+    const pathB = path.join(tmpDir, "candB.png");
+    await sharp(candB, { raw: { width: W, height: H, channels: 4 } }).png().toFile(pathB);
+
+    const candidates: LayerCandidate[] = [
+      { id: "a", source: "sam2-segment", filePath: pathA, width: W, height: H, coverage: 0.6, uniqueCoverage: 0, edgeDensity: 0.1, componentCount: 1, bbox: { x: 0, y: 0, w: 3, h: H }, centroid: { x: 1, y: 2 }, role: "subject" },
+      { id: "b", source: "sam2-segment", filePath: pathB, width: W, height: H, coverage: 0.6, uniqueCoverage: 0, edgeDensity: 0.1, componentCount: 1, bbox: { x: 2, y: 0, w: 3, h: H }, centroid: { x: 3, y: 2 }, role: "midground" },
+    ];
+
+    // Compute exclusive ownership
+    const result = await resolveExclusiveOwnership(candidates, W, H);
+
+    // uniqueCoverage should be based on exclusive ownership, not affected by bg fill
+    const covA = result[0].uniqueCoverage ?? 0;
+    const covB = result[1].uniqueCoverage ?? 0;
+    expect(covA).toBeGreaterThan(0);
+    expect(covB).toBeGreaterThan(0);
+    // A claimed first 3 cols (15px), B gets cols 3-4 only (10px)
+    // A exclusive: 15/25, B exclusive: 10/25
+    expect(covA).toBeGreaterThan(covB);
+  });
 });

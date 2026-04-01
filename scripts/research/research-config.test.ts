@@ -15,7 +15,7 @@ describe("ResearchConfigSchema", () => {
     expect(config.samStabilityScoreThresh).toBe(0.92);
     expect(config.maxLayers).toBe(12);
     expect(config.minRetainedLayers).toBe(6);
-    expect(config.alphaThreshold).toBe(128);
+    expect(config.alphaThreshold).toBe(10);
     expect(config.minCoverage).toBe(0.005);
   });
 
@@ -101,7 +101,7 @@ describe("ResearchConfigSchema", () => {
   it("allows partial override", () => {
     const config = ResearchConfigSchema.parse({ samMaskLimit: 8 });
     expect(config.samMaskLimit).toBe(8);
-    expect(config.alphaThreshold).toBe(128);
+    expect(config.alphaThreshold).toBe(10);
   });
 
   it("maps legacy numLayers input to samMaskLimit when loading config files", () => {
@@ -169,13 +169,26 @@ describe("ResearchConfigSchema", () => {
     expect(config.featherRadius).toBe(0.1);
   });
 
-  it("defaults all 5 depth cinematic axes to 0", () => {
+  it("defaults all 5 depth cinematic axes to null (auto)", () => {
     const config = ResearchConfigSchema.parse({});
-    expect(config.depthSpeedInfluence).toBe(0.0);
-    expect(config.depthGlowInfluence).toBe(0.0);
-    expect(config.depthParallaxScale).toBe(0.0);
-    expect(config.hazeIntensity).toBe(0.0);
-    expect(config.featherRadius).toBe(0.0);
+    expect(config.depthSpeedInfluence).toBeNull();
+    expect(config.depthGlowInfluence).toBeNull();
+    expect(config.depthParallaxScale).toBeNull();
+    expect(config.hazeIntensity).toBeNull();
+    expect(config.featherRadius).toBeNull();
+  });
+
+  it("accepts explicit 0 (off) for depth cinematic axes", () => {
+    const config = ResearchConfigSchema.parse({
+      depthSpeedInfluence: 0,
+      depthGlowInfluence: 0,
+      depthParallaxScale: 0,
+      hazeIntensity: 0,
+      featherRadius: 0,
+    });
+    expect(config.depthSpeedInfluence).toBe(0);
+    expect(config.depthParallaxScale).toBe(0);
+    expect(config.hazeIntensity).toBe(0);
   });
 
   it("rejects depthSpeedInfluence > 2", () => {
@@ -207,7 +220,6 @@ describe("ResearchConfigSchema", () => {
   it("defaults SAM3 axes correctly", () => {
     const config = ResearchConfigSchema.parse({});
     expect(config.sam3Threshold).toBe(0.25);
-    expect(config.vlmMaxPrompts).toBe(6);
     expect(config.secondPassEnabled).toBe(true);
     expect(config.secondPassThreshold).toBe(0.8);
     expect(config.useSam3).toBe(true);
@@ -224,10 +236,6 @@ describe("ResearchConfigSchema", () => {
 
   it("rejects sam3Threshold < 0.1", () => {
     expect(() => ResearchConfigSchema.parse({ sam3Threshold: 0.05 })).toThrow();
-  });
-
-  it("rejects vlmMaxPrompts > 10", () => {
-    expect(() => ResearchConfigSchema.parse({ vlmMaxPrompts: 11 })).toThrow();
   });
 
   it("rejects secondPassThreshold > 0.95", () => {
@@ -256,19 +264,18 @@ describe("getDefaultConfig", () => {
     expect(config.depthBackgroundThreshold).toBe(0.7);
   });
 
-  it("includes 5 depth cinematic axes at 0", () => {
+  it("includes 5 depth cinematic axes at null (auto)", () => {
     const config = getDefaultConfig();
-    expect(config.depthSpeedInfluence).toBe(0);
-    expect(config.depthGlowInfluence).toBe(0);
-    expect(config.depthParallaxScale).toBe(0);
-    expect(config.hazeIntensity).toBe(0);
-    expect(config.featherRadius).toBe(0);
+    expect(config.depthSpeedInfluence).toBeNull();
+    expect(config.depthGlowInfluence).toBeNull();
+    expect(config.depthParallaxScale).toBeNull();
+    expect(config.hazeIntensity).toBeNull();
+    expect(config.featherRadius).toBeNull();
   });
 
   it("includes SAM3 axes with correct defaults", () => {
     const config = getDefaultConfig();
     expect(config.sam3Threshold).toBe(0.25);
-    expect(config.vlmMaxPrompts).toBe(6);
     expect(config.secondPassEnabled).toBe(true);
     expect(config.secondPassThreshold).toBe(0.8);
     expect(config.useSam3).toBe(true);
@@ -338,6 +345,28 @@ export const config = ResearchConfigSchema.parse({ "samMaskLimit": 9, "maxLayers
     expect(config.samMaskLimit).toBe(9);
     expect(config.maxLayers).toBe(10);
   });
+
+  it("loads overrides from .ts file with unquoted keys (real TS literal)", () => {
+    mkdirSync(testDir, { recursive: true });
+    const tsPath = `${testDir}/unquoted-config.ts`;
+    writeFileSync(
+      tsPath,
+      `
+import { ResearchConfigSchema } from "./research-config";
+export const config = ResearchConfigSchema.parse({
+  samMaskLimit: 8,
+  maxLayers: 10,
+  colorCycleSpeedMul: 1.5,
+  useSam3: true,
+});
+`,
+    );
+    const config = loadConfig(tsPath);
+    expect(config.samMaskLimit).toBe(8);
+    expect(config.maxLayers).toBe(10);
+    expect(config.colorCycleSpeedMul).toBe(1.5);
+    expect(config.useSam3).toBe(true);
+  });
 });
 
 // ==========================================================================
@@ -355,18 +384,18 @@ describe("Config schema sync (T2)", () => {
     const config = getDefaultConfig();
     const configKeys = new Set(Object.keys(config));
 
-    // Schema shape keys (before refinements)
-    const schemaShape = ResearchConfigSchema._def.schema
-      ? ResearchConfigSchema._def.schema.shape
-      : (ResearchConfigSchema as unknown as { shape: Record<string, unknown> }).shape;
-
-    // If we can't access shape directly, just verify round-trip works
-    if (!schemaShape) {
-      expect(configKeys.size).toBeGreaterThan(20);
-      return;
+    // Unwrap ZodEffects layers (.refine() wrapping) to reach the inner ZodObject.shape
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let inner: any = ResearchConfigSchema;
+    while (inner._def?.schema) {
+      inner = inner._def.schema;
     }
+    const schemaShape: Record<string, unknown> | undefined = inner.shape;
 
-    const schemaKeys = new Set(Object.keys(schemaShape));
+    // If we can't access shape, fail explicitly instead of silently skipping
+    expect(schemaShape).toBeDefined();
+
+    const schemaKeys = new Set(Object.keys(schemaShape!));
     const missingInConfig = [...schemaKeys].filter((k) => !configKeys.has(k));
     const extraInConfig = [...configKeys].filter((k) => !schemaKeys.has(k));
 
@@ -383,19 +412,14 @@ describe("Config schema sync (T2)", () => {
     expect(config.alphaMatteEnabled).toBe(true);
     expect(config.alphaMatteRadiusScale).toBe(0.003);
 
-    // Model selection
-    expect(config.segmentationModel).toBe("sam3");
-    expect(config.apiProvider).toBe("replicate");
-
-    // SAM3/VLM
+    // SAM3
     expect(config.sam3Threshold).toBe(0.25);
-    expect(config.vlmMaxPrompts).toBe(6);
     expect(config.useSam3).toBe(true);
 
-    // Depth cinematic
-    expect(config.depthSpeedInfluence).toBe(0);
-    expect(config.depthParallaxScale).toBe(0);
-    expect(config.hazeIntensity).toBe(0);
-    expect(config.featherRadius).toBe(0);
+    // Depth cinematic (null = auto)
+    expect(config.depthSpeedInfluence).toBeNull();
+    expect(config.depthParallaxScale).toBeNull();
+    expect(config.hazeIntensity).toBeNull();
+    expect(config.featherRadius).toBeNull();
   });
 });

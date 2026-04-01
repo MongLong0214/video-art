@@ -63,6 +63,8 @@ export async function createLayeredPsychedelic(
         uParallaxScale: { value: config.effects?.parallax?.scale ?? 0 },
         uHazeIntensity: { value: config.effects?.haze?.intensity ?? 0 },
         uFeatherRadius: { value: config.effects?.feather?.radius ?? 0 },
+        uHueKey: { value: (anim as Record<string, unknown>).hueKey as number ?? 0 },
+        uHueSpeed: { value: (anim as Record<string, unknown>).hueSpeed as number ?? 1 },
       },
       transparent: true,
       depthWrite: false,

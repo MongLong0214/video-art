@@ -26,39 +26,15 @@ export function getToken(): string {
 // ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
-// Multi-provider support
+// URL domain validation
 // ---------------------------------------------------------------------------
 
-export type ApiProvider = "replicate" | "fal";
-
-const PROVIDER_ENV_KEYS: Record<ApiProvider, string> = {
-  replicate: "REPLICATE_API_TOKEN",
-  fal: "FAL_KEY",
-};
-
-export const PROVIDER_DOMAINS: Record<ApiProvider, string[]> = {
-  replicate: [".replicate.delivery", ".replicate.com"],
-  fal: [".fal.run", ".fal.ai"],
-};
+const ALLOWED_DOMAINS = [".replicate.delivery", ".replicate.com"];
 
 /**
- * Get API token for a specific provider.
+ * Validate that a Replicate output URL comes from a trusted domain.
  */
-export function getProviderToken(provider: ApiProvider): string {
-  const envKey = PROVIDER_ENV_KEYS[provider];
-  const token = process.env[envKey];
-  if (!token) {
-    throw new Error(
-      `${envKey} is not set. Add it to .env file.`,
-    );
-  }
-  return token;
-}
-
-/**
- * Validate URL against a provider's trusted domain whitelist.
- */
-export function validateProviderUrl(url: string, provider: ApiProvider): void {
+export function validateReplicateUrl(url: string): void {
   let parsed: URL;
   try {
     parsed = new URL(url);
@@ -67,26 +43,15 @@ export function validateProviderUrl(url: string, provider: ApiProvider): void {
   }
 
   const hostname = parsed.hostname;
-  const domains = PROVIDER_DOMAINS[provider];
-  const trusted = domains.some(
+  const trusted = ALLOWED_DOMAINS.some(
     (domain) => hostname === domain.slice(1) || hostname.endsWith(domain),
   );
 
   if (!trusted) {
     throw new Error(
-      `Untrusted domain: ${hostname}. Expected ${domains.map(d => `*${d}`).join(" or ")}`,
+      `Untrusted domain: ${hostname}. Expected ${ALLOWED_DOMAINS.map(d => `*${d}`).join(" or ")}`,
     );
   }
-}
-
-// Backward-compatible alias
-const ALLOWED_DOMAINS = PROVIDER_DOMAINS.replicate;
-
-/**
- * Validate that a Replicate output URL comes from a trusted domain.
- */
-export function validateReplicateUrl(url: string): void {
-  validateProviderUrl(url, "replicate");
 }
 
 // ---------------------------------------------------------------------------

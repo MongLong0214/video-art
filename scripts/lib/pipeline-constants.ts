@@ -6,8 +6,9 @@
  * Ownership/retention (layer-resolve.ts): ALPHA_THRESHOLD + UNIQUE_COVERAGE_THRESHOLD + IOU_DEDUPE_THRESHOLD
  */
 
-// BFS / ownership alpha threshold (opaque if alpha > 128)
-export const ALPHA_THRESHOLD = 128;
+// Ownership alpha threshold: pixel is "present" if alpha > 10
+// Lowered from 128 to accommodate soft-edge alpha matte (blur creates gradient 0-255)
+export const ALPHA_THRESHOLD = 10;
 
 // SAM raw mask filter (opaque if alpha > 10 — more permissive for SAM masks)
 export const SAM_OPACITY_THRESHOLD = 10;

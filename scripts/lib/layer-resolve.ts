@@ -544,6 +544,7 @@ export async function fillBackgroundPlate(
 
   // Load the bg candidate and original image as raw RGBA
   const bgRaw = await sharp(bgCandidate.filePath)
+    .resize(width, height)
     .ensureAlpha()
     .raw()
     .toBuffer({ resolveWithObject: true });
@@ -568,14 +569,14 @@ export async function fillBackgroundPlate(
       outputRgba[px] = bgRgba[px];
       outputRgba[px + 1] = bgRgba[px + 1];
       outputRgba[px + 2] = bgRgba[px + 2];
-      outputRgba[px + 3] = bgRgba[px + 3];
     } else {
       // Fill from original image (both unclaimed and claimed pixels)
       outputRgba[px] = origRgba[px];
       outputRgba[px + 1] = origRgba[px + 1];
       outputRgba[px + 2] = origRgba[px + 2];
-      outputRgba[px + 3] = origRgba[px + 3];
     }
+    // Force full opacity — bg plate must be 100% opaque regardless of source alpha
+    outputRgba[px + 3] = 255;
   }
 
   // Write filled plate

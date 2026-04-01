@@ -11,7 +11,7 @@ const noPreview = args.includes("--no-preview");
 const title = parseTitle(args, inputPath);
 
 if (!inputPath) {
-  console.error("Usage: npm run pipeline <input.png> [--title <name>] [--keep-frames] [--no-preview]");
+  console.error("Usage: npm run pipeline <input.png> [--title <name>] [--keep-frames] [--no-preview] [--layers N] [--duration N] [--production] [--prompts \"a,b,c\"] [--unsafe]");
   process.exit(1);
 }
 
@@ -37,7 +37,18 @@ async function main() {
   console.log(`Input: ${path.resolve(inputPath!)}`);
   console.log(`Title: ${title}`);
 
-  run("npx", ["tsx", "scripts/pipeline-layers.ts", inputPath!]);
+  // Forward relevant flags to pipeline-layers.ts
+  const layerArgs = ["tsx", "scripts/pipeline-layers.ts", inputPath!];
+  const passthroughFlags = ["--layers", "--duration", "--prompts"] as const;
+  for (const flag of passthroughFlags) {
+    const idx = args.indexOf(flag);
+    if (idx !== -1 && idx + 1 < args.length) {
+      layerArgs.push(flag, args[idx + 1]);
+    }
+  }
+  if (args.includes("--production")) layerArgs.push("--production");
+  if (args.includes("--unsafe")) layerArgs.push("--unsafe");
+  run("npx", layerArgs);
 
   if (!noPreview) {
     console.log("\n--- Step 3: Preview ---");
@@ -48,6 +59,11 @@ async function main() {
 
   const exportArgs = ["tsx", "scripts/export-layered.ts", "--title", title];
   if (keepFrames) exportArgs.push("--keep-frames");
+  if (args.includes("--prores")) exportArgs.push("--prores");
+  const fpsArgIdx = args.indexOf("--fps");
+  if (fpsArgIdx !== -1 && fpsArgIdx + 1 < args.length) {
+    exportArgs.push("--fps", args[fpsArgIdx + 1]);
+  }
   run("npx", exportArgs);
 
   console.log("\n=== Pipeline Complete ===");

@@ -196,35 +196,26 @@ describe("BFS connected components", () => {
 // ==========================================================================
 
 describe("alpha threshold boundary", () => {
-  it("should include pixel at alpha=129 (default threshold 128)", async () => {
+  it("should include pixel at alpha=11 (default threshold 10)", async () => {
     const buf = createRgbaBuffer(20, 20);
-    // Fill enough pixels for coverage > 0.5%
-    for (let i = 0; i < 20; i++) {
-      const idx = (i * 20 + i) * 4;
-      buf[idx] = 255;
-      buf[idx + 3] = 129;
-    }
-    // Only diagonal pixels which are not 4-connected, each 1/400
-    // Let's fill a block instead
-    const buf2 = createRgbaBuffer(20, 20);
-    paintRect(buf2, 20, { x: 0, y: 0, w: 10, h: 10 }, { r: 255, g: 0, b: 0, a: 129 });
-    const f = await savePng(buf2, 20, 20, "alpha-129.png");
+    paintRect(buf, 20, { x: 0, y: 0, w: 10, h: 10 }, { r: 255, g: 0, b: 0, a: 11 });
+    const f = await savePng(buf, 20, 20, "alpha-11.png");
     const candidates = await extractCandidates(f, outDir);
     expect(candidates.length).toBe(1);
   });
 
-  it("should exclude pixel at alpha=128 (not strictly greater)", async () => {
+  it("should exclude pixel at alpha=10 (not strictly greater)", async () => {
     const buf = createRgbaBuffer(20, 20);
-    paintRect(buf, 20, { x: 0, y: 0, w: 10, h: 10 }, { r: 255, g: 0, b: 0, a: 128 });
-    const f = await savePng(buf, 20, 20, "alpha-128.png");
+    paintRect(buf, 20, { x: 0, y: 0, w: 10, h: 10 }, { r: 255, g: 0, b: 0, a: 10 });
+    const f = await savePng(buf, 20, 20, "alpha-10.png");
     const candidates = await extractCandidates(f, outDir);
     expect(candidates.length).toBe(0);
   });
 
-  it("should exclude pixel at alpha=127", async () => {
+  it("should exclude pixel at alpha=9", async () => {
     const buf = createRgbaBuffer(20, 20);
-    paintRect(buf, 20, { x: 0, y: 0, w: 10, h: 10 }, { r: 255, g: 0, b: 0, a: 127 });
-    const f = await savePng(buf, 20, 20, "alpha-127.png");
+    paintRect(buf, 20, { x: 0, y: 0, w: 10, h: 10 }, { r: 255, g: 0, b: 0, a: 9 });
+    const f = await savePng(buf, 20, 20, "alpha-9.png");
     const candidates = await extractCandidates(f, outDir);
     expect(candidates.length).toBe(0);
   });

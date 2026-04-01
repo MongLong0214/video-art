@@ -42,3 +42,4 @@ prepared-*.png
 # Reference tracks (copyright)
 audio/references/
 .cache/test-baseline.json
+experiment-output/

@@ -369,14 +369,20 @@ describe("generateSceneJson (role-based)", () => {
     expect(depthSpeed).toBeGreaterThan(baseSpeed);
   });
 
-  it("depth speed modulation: depthSpeedInfluence=0 (default) → identical to baseline", async () => {
+  it("depthSpeedInfluence=0 (explicit off) → no depth speed modulation", async () => {
     const depthLayers: RetainedLayer[] = [
       { file: "layers/l0.png", role: "subject", coverage: 0.5, uniqueCoverage: 0.4, meanDepth: 200 },
       { file: "layers/l1.png", role: "background", coverage: 0.5, uniqueCoverage: 0.4, meanDepth: 50 },
     ];
-    const baseline = await generateSceneJson("test.png", depthLayers, [1080, 1080], 20, {});
-    const withZero = await generateSceneJson("test.png", depthLayers, [1080, 1080], 20, { depthSpeedInfluence: 0 });
-    expect(withZero.layers[0].animation.colorCycle!.speed).toBe(baseline.layers[0].animation.colorCycle!.speed);
+    // explicit 0 = off: no depth modulation on speed
+    const withZero = await generateSceneJson("test.png", depthLayers, [1080, 1080], 20, { depthSpeedInfluence: 0, depthGlowInfluence: 0 });
+    // Compare against no-depth layers (cinematicActive=false → also no modulation)
+    const noDepthLayers: RetainedLayer[] = [
+      { file: "layers/l0.png", role: "subject", coverage: 0.5, uniqueCoverage: 0.4 },
+      { file: "layers/l1.png", role: "background", coverage: 0.5, uniqueCoverage: 0.4 },
+    ];
+    const noDepth = await generateSceneJson("test.png", noDepthLayers, [1080, 1080], 20, {});
+    expect(withZero.layers[0].animation.colorCycle!.speed).toBe(noDepth.layers[0].animation.colorCycle!.speed);
   });
 
   it("depth glow modulation: depthGlowInfluence=1 meanDepth=128 → glow > baseline", async () => {
@@ -389,14 +395,18 @@ describe("generateSceneJson (role-based)", () => {
     expect(withGlow.layers[0].animation.glow!.intensity).toBeGreaterThan(baseline.layers[0].animation.glow!.intensity);
   });
 
-  it("depth glow modulation: depthGlowInfluence=0 (default) → glow identical", async () => {
+  it("depthGlowInfluence=0 (explicit off) → no depth glow modulation", async () => {
     const depthLayers: RetainedLayer[] = [
       { file: "layers/l0.png", role: "subject", coverage: 0.5, uniqueCoverage: 0.4, meanDepth: 200 },
       { file: "layers/l1.png", role: "background", coverage: 0.5, uniqueCoverage: 0.4, meanDepth: 50 },
     ];
-    const baseline = await generateSceneJson("test.png", depthLayers, [1080, 1080], 20, {});
-    const withZero = await generateSceneJson("test.png", depthLayers, [1080, 1080], 20, { depthGlowInfluence: 0 });
-    expect(withZero.layers[0].animation.glow!.intensity).toBe(baseline.layers[0].animation.glow!.intensity);
+    const withZero = await generateSceneJson("test.png", depthLayers, [1080, 1080], 20, { depthSpeedInfluence: 0, depthGlowInfluence: 0 });
+    const noDepthLayers: RetainedLayer[] = [
+      { file: "layers/l0.png", role: "subject", coverage: 0.5, uniqueCoverage: 0.4 },
+      { file: "layers/l1.png", role: "background", coverage: 0.5, uniqueCoverage: 0.4 },
+    ];
+    const noDepth = await generateSceneJson("test.png", noDepthLayers, [1080, 1080], 20, {});
+    expect(withZero.layers[0].animation.glow!.intensity).toBe(noDepth.layers[0].animation.glow!.intensity);
   });
 
   it("stddev guard: all layers same depth → cinematic axes forced 0", async () => {
@@ -483,17 +493,30 @@ describe("generateSceneJson (role-based)", () => {
     expect(scene.effects.feather.radius).toBe(0);
   });
 
-  it("default config produces identical scene.json (depth axes all 0)", async () => {
+  it("explicit 0 depth axes disables modulation", async () => {
     const depthLayers: RetainedLayer[] = [
       { file: "layers/l0.png", role: "subject", coverage: 0.5, uniqueCoverage: 0.4, meanDepth: 200 },
       { file: "layers/l1.png", role: "background", coverage: 0.5, uniqueCoverage: 0.4, meanDepth: 50 },
     ];
-    const withDefaults = await generateSceneJson("test.png", depthLayers, [1080, 1080], 20, {
+    const off = await generateSceneJson("test.png", depthLayers, [1080, 1080], 20, {
       depthSpeedInfluence: 0, depthGlowInfluence: 0,
     });
-    const without = await generateSceneJson("test.png", depthLayers, [1080, 1080], 20, {});
-    expect(withDefaults.layers[0].animation.colorCycle!.speed).toBe(without.layers[0].animation.colorCycle!.speed);
-    expect(withDefaults.layers[0].animation.glow!.intensity).toBe(without.layers[0].animation.glow!.intensity);
+    // explicit 0 = off → same as no depth data (no modulation)
+    const noDepthLayers = depthLayers.map(l => ({ ...l, meanDepth: undefined }));
+    const noDepth = await generateSceneJson("test.png", noDepthLayers, [1080, 1080], 20, {});
+    expect(off.layers[0].animation.colorCycle!.speed).toBe(noDepth.layers[0].animation.colorCycle!.speed);
+    expect(off.layers[0].animation.glow!.intensity).toBe(noDepth.layers[0].animation.glow!.intensity);
+  });
+
+  it("depthParallaxScale=0 (explicit off) → parallax 0 even with depth data", async () => {
+    const depthLayers: RetainedLayer[] = [
+      { file: "layers/far.png", role: "background", coverage: 0.8, uniqueCoverage: 0.6, meanDepth: 30 },
+      { file: "layers/near.png", role: "subject", coverage: 0.3, uniqueCoverage: 0.2, meanDepth: 200 },
+    ];
+    const scene = await generateSceneJson("test.png", depthLayers, [1080, 1080], 20, {
+      depthParallaxScale: 0,
+    });
+    expect(scene.effects.parallax.scale).toBe(0);
   });
 
   it("depth modulation applied before quantizeLoopSpeed", async () => {
@@ -576,5 +599,63 @@ describe("depth cinematic auto-activation (T3)", () => {
     ];
     const scene = await generateSceneJson("test.png", layers, [1080, 1080], 20);
     expect(scene.effects.parallax?.scale).toBe(0);
+  });
+
+  it("AC-1: far-heavy scene → parallax ~0.02", async () => {
+    const layers: RetainedLayer[] = [
+      { file: "layers/far.png", role: "background", coverage: 0.8, uniqueCoverage: 0.6, meanDepth: 30 },
+      { file: "layers/mid.png", role: "subject", coverage: 0.3, uniqueCoverage: 0.2, meanDepth: 100 },
+    ];
+    const scene = await generateSceneJson("test.png", layers, [1080, 1080], 20);
+    // minDN = 30/255 ≈ 0.12 < 0.3 → parallax = 0.02
+    expect(scene.effects.parallax.scale).toBeCloseTo(0.02, 2);
+  });
+
+  it("AC-1: near-heavy scene → parallax ~0.005", async () => {
+    const layers: RetainedLayer[] = [
+      { file: "layers/near1.png", role: "subject", coverage: 0.5, uniqueCoverage: 0.4, meanDepth: 200 },
+      { file: "layers/near2.png", role: "detail", coverage: 0.3, uniqueCoverage: 0.2, meanDepth: 220 },
+    ];
+    const scene = await generateSceneJson("test.png", layers, [1080, 1080], 20);
+    // minDN = 200/255 ≈ 0.78 > 0.7 → parallax = 0.005
+    expect(scene.effects.parallax.scale).toBeCloseTo(0.005, 2);
+  });
+
+  it("AC-2: far layers → haze ~0.3", async () => {
+    const layers: RetainedLayer[] = [
+      { file: "layers/far.png", role: "background", coverage: 0.8, uniqueCoverage: 0.6, meanDepth: 20 },
+      { file: "layers/fg.png", role: "subject", coverage: 0.3, uniqueCoverage: 0.2, meanDepth: 200 },
+    ];
+    const scene = await generateSceneJson("test.png", layers, [1080, 1080], 20);
+    // minDN = 20/255 ≈ 0.08 < 0.3 → haze = 0.3
+    expect(scene.effects.haze.intensity).toBeCloseTo(0.3, 1);
+  });
+
+  it("AC-2: near layers → haze 0", async () => {
+    const layers: RetainedLayer[] = [
+      { file: "layers/near1.png", role: "subject", coverage: 0.5, uniqueCoverage: 0.4, meanDepth: 200 },
+      { file: "layers/near2.png", role: "detail", coverage: 0.3, uniqueCoverage: 0.2, meanDepth: 220 },
+    ];
+    const scene = await generateSceneJson("test.png", layers, [1080, 1080], 20);
+    // minDN = 200/255 ≈ 0.78 > 0.5 → haze = 0
+    expect(scene.effects.haze.intensity).toBe(0);
+  });
+
+  it("AC-3: foreground-occluder → feather ~0.05", async () => {
+    const layers: RetainedLayer[] = [
+      { file: "layers/bg.png", role: "background", coverage: 0.8, uniqueCoverage: 0.6, meanDepth: 30 },
+      { file: "layers/occ.png", role: "foreground-occluder", coverage: 0.2, uniqueCoverage: 0.15, meanDepth: 200 },
+    ];
+    const scene = await generateSceneJson("test.png", layers, [1080, 1080], 20);
+    expect(scene.effects.feather.radius).toBeCloseTo(0.05, 2);
+  });
+
+  it("AC-3: no occluder → feather 0", async () => {
+    const layers: RetainedLayer[] = [
+      { file: "layers/bg.png", role: "background", coverage: 0.8, uniqueCoverage: 0.6, meanDepth: 30 },
+      { file: "layers/fg.png", role: "subject", coverage: 0.3, uniqueCoverage: 0.2, meanDepth: 200 },
+    ];
+    const scene = await generateSceneJson("test.png", layers, [1080, 1080], 20);
+    expect(scene.effects.feather.radius).toBe(0);
   });
 });

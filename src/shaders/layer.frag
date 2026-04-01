@@ -30,6 +30,10 @@ uniform float uHazeIntensity;
 uniform float uDepthNorm;
 uniform float uFeatherRadius;
 
+// Hue-keying: color-region-based animation
+uniform float uHueKey;         // 0=off, >0=hue regions animate differently
+uniform float uHueSpeed;       // hue-region speed multiplier
+
 varying vec2 vUv;
 
 #define PI 3.14159265359
@@ -65,10 +69,14 @@ void main() {
   float originalVal = hsv.z;
 
   float lumPhase = uLuminanceKey > 0.001 ? pow(1.0 - lum, uLumExponent + uLuminanceKey) : 0.0;
+
+  // Hue-keying: original hue drives per-pixel phase offset (warm vs cool regions animate differently)
+  float huePhase = uHueKey > 0.001 ? hsv.x * uHueKey * uHueSpeed : 0.0;
+
   float safePeriod = max(uColorCyclePeriod, 1e-4);
   // Seamless loop: speed is quantized by scene-generator.ts so that
   // (duration / period * speed) is always an integer → fract wraps cleanly
-  float hueShift = fract(time / safePeriod * uColorCycleSpeed + lumPhase + uPhaseOffset / 360.0);
+  float hueShift = fract(time / safePeriod * uColorCycleSpeed + lumPhase + huePhase + uPhaseOffset / 360.0);
 
   float shiftedHue = fract(hsv.x + hueShift);
   float injectedHue = fract(hueShift + lum * uLuminanceKey);

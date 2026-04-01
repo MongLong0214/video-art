@@ -22,8 +22,8 @@ describe("pipeline-constants", () => {
     expect(MIN_RETAINED_LAYERS).toBeDefined();
   });
 
-  it("SAM vs BFS thresholds are distinct", () => {
-    expect(SAM_OPACITY_THRESHOLD).not.toBe(ALPHA_THRESHOLD);
+  it("SAM vs BFS thresholds are distinct where applicable", () => {
+    expect(SAM_OPACITY_THRESHOLD).toBe(ALPHA_THRESHOLD);
     expect(SAM_MIN_COVERAGE).not.toBe(MIN_COVERAGE);
   });
 
@@ -32,7 +32,7 @@ describe("pipeline-constants", () => {
   });
 
   it("has expected values", () => {
-    expect(ALPHA_THRESHOLD).toBe(128);
+    expect(ALPHA_THRESHOLD).toBe(10);
     expect(SAM_OPACITY_THRESHOLD).toBe(10);
     expect(MIN_COVERAGE).toBe(0.005);
     expect(SAM_MIN_COVERAGE).toBe(0.001);

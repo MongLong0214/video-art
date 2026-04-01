@@ -9,7 +9,7 @@ import {
 } from "./lib/input-validator.js";
 import { parseCliArgs } from "./lib/pipeline-cli.js";
 // scoreComplexity no longer needed — SAM3 path doesn't use complexity scoring
-import { decomposeImage, DAV2_MODEL, DAV2_VERSION, SAM3_MODEL, SAM3_VERSION, VLM_MODEL, VLM_VERSION, sortCandidatesForOverlap } from "./lib/image-decompose.js";
+import { decomposeImage, DAV2_MODEL, DAV2_VERSION, SAM3_MODEL, SAM3_VERSION, sortCandidatesForOverlap } from "./lib/image-decompose.js";
 import { computeMeanDepth, computeDepthStats } from "./lib/depth-computation.js";
 import { extractCandidates } from "./lib/candidate-extraction.js";
 import {
@@ -100,7 +100,6 @@ async function main() {
   let candidates: LayerCandidate[];
   let selectedLayerCount: number | null = null;
   let depthMapBuffer: Buffer | undefined;
-  let vlmPromptsResult: string[] | undefined;
   const passes: ManifestInput["passes"] = [];
 
   if (manualLayers) {
@@ -154,11 +153,10 @@ async function main() {
 
     // SAM3 only — no SAM2 path
 
-    // --- SAM3 Path: VLM + SAM3 text-prompted segmentation ---
+    // --- SAM3 Replicate + Depth Anything V2 ---
     console.log("\nDecomposing image (SAM3 semantic)...");
     const decomposeResult = await decomposeImage(preparedPath, layersDir, {
       sam3Threshold: pipelineConfig?.sam3Threshold,
-      vlmMaxPrompts: pipelineConfig?.vlmMaxPrompts,
       secondPassEnabled: pipelineConfig?.secondPassEnabled,
       secondPassThreshold: pipelineConfig?.secondPassThreshold,
       alphaThreshold: pipelineConfig?.alphaThreshold,
@@ -171,7 +169,6 @@ async function main() {
     });
 
     depthMapBuffer = decomposeResult.depthMap;
-    vlmPromptsResult = decomposeResult.vlmPrompts;
     console.log(`  ${decomposeResult.files.length} layers generated (${decomposeResult.method})`);
     passes.push({ type: "sam3-semantic", candidateCount: decomposeResult.files.length });
 
@@ -204,6 +201,10 @@ async function main() {
   candidates = candidates.map((c) =>
     ownershipMap.has(c.id) ? ownershipMap.get(c.id)! : c,
   );
+  // Debug: show uniqueCoverage per candidate
+  for (const c of withOwnership) {
+    console.log(`  ${(c.filePath ?? "").split("/").pop()}: coverage=${(c.coverage * 100).toFixed(1)}% unique=${((c.uniqueCoverage ?? 0) * 100).toFixed(1)}%`);
+  }
 
   // --- Step 6.5: Compute meanDepth from depth map ---
   if (depthMapBuffer) {
@@ -257,20 +258,14 @@ async function main() {
   const forOrder = candidates.filter((c) => !c.droppedReason);
   const ordered = orderByRole(forOrder);
 
-  // Re-resolve exclusive ownership in role order (T5) — reuse mask cache
-  const reordered = await resolveExclusiveOwnership(
-    ordered,
-    imageWidth,
-    imageHeight,
-    pipelineConfig,
-    maskCache,
-  );
-  const reorderMap = new Map(reordered.map((c) => [c.id, c]));
-  candidates = candidates.map((c) =>
-    reorderMap.has(c.id) ? reorderMap.get(c.id)! : c,
-  );
+  // Keep original uniqueCoverage from first ownership pass — no re-resolve
+  // (Re-resolving in role order causes background-plate to steal all pixels)
 
   // --- Step 9: Apply retention rules ---
+  // Debug: show post-reorder ownership
+  for (const c of candidates.filter(c => !c.droppedReason)) {
+    console.log(`  pre-retention: ${(c.filePath ?? "").split("/").pop()} role=${c.role} unique=${((c.uniqueCoverage ?? 0) * 100).toFixed(1)}%`);
+  }
   console.log("Applying retention rules...");
   const maxLayers = pipelineConfig?.maxLayers ?? 16;
   candidates = applyRetentionRules(
@@ -338,6 +333,7 @@ async function main() {
     [imageWidth, imageHeight],
     cliArgs.duration,
     pipelineConfig,
+    cliArgs.fps,
   );
 
   const manifestLayerCount = selectedLayerCount ?? retained.length;
@@ -356,7 +352,6 @@ async function main() {
     preparedImage: preparedPath,
     models: {
       sam3: { model: SAM3_MODEL, version: SAM3_VERSION },
-      vlm: { model: VLM_MODEL, version: VLM_VERSION },
       depthAnything: {
         model: DAV2_MODEL,
         version: DAV2_VERSION,
@@ -364,7 +359,6 @@ async function main() {
         status: depthMapBuffer ? "success" : "failed",
       },
     },
-    vlmPrompts: vlmPromptsResult,
     passes,
     retainedLayers: retained,
     droppedCandidates: dropped,

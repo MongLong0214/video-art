@@ -71,15 +71,15 @@ export const ResearchConfigSchema = z
     glowPeriodMul: z.number().min(0.3).max(3.0).default(1.0),
 
     // ── Depth Cinematic Axes ────────────────────────────────────
-    depthSpeedInfluence: z.number().min(0.0).max(2.0).default(0.0),
-    depthGlowInfluence: z.number().min(0.0).max(2.0).default(0.0),
-    depthParallaxScale: z.number().min(0.0).max(0.1).default(0.0),
-    hazeIntensity: z.number().min(0.0).max(1.0).default(0.0),
-    featherRadius: z.number().min(0.0).max(0.2).default(0.0),
+    // null = auto-calculate from depth distribution, 0 = off, >0 = explicit override
+    depthSpeedInfluence: z.number().min(0.0).max(2.0).nullable().default(null),
+    depthGlowInfluence: z.number().min(0.0).max(2.0).nullable().default(null),
+    depthParallaxScale: z.number().min(0.0).max(0.1).nullable().default(null),
+    hazeIntensity: z.number().min(0.0).max(1.0).nullable().default(null),
+    featherRadius: z.number().min(0.0).max(0.2).nullable().default(null),
 
-    // ── SAM3 / VLM Axes ────────────────────────────────────────
+    // ── SAM3 Axes ──────────────────────────────────────────────
     sam3Threshold: z.number().min(0.1).max(0.9).default(0.25),
-    vlmMaxPrompts: z.number().int().min(3).max(10).default(6),
     secondPassEnabled: z.boolean().default(true),
     secondPassThreshold: z.number().min(0.5).max(0.95).default(0.8),
     useSam3: z.boolean().default(true),
@@ -89,10 +89,6 @@ export const ResearchConfigSchema = z
     morphCloseKernelScale: z.number().min(0.001).max(0.05).default(0.01),
     alphaMatteEnabled: z.boolean().default(true),
     alphaMatteRadiusScale: z.number().min(0.001).max(0.02).default(0.003),
-
-    // ── Model Selection ────────────────────────────────────────
-    segmentationModel: z.enum(["sam3", "grounded-sam2", "evf-sam"]).default("sam3"),
-    apiProvider: z.enum(["replicate", "fal"]).default("replicate"),
 
     // ── Blend Mode ───────────────────────────────────────────
     blendMode: z.enum(["normal", "add", "multiply", "screen"]).default("normal"),
@@ -142,13 +138,7 @@ export function getDefaultConfig(): ResearchConfig {
     bloomStrengthMul: 0.3,
     chromaticAberrationOffsetMul: 0.5,
     lumExponent: 1.5,
-    depthSpeedInfluence: 0,
-    depthGlowInfluence: 0,
-    depthParallaxScale: 0,
-    hazeIntensity: 0,
-    featherRadius: 0,
     sam3Threshold: 0.25,
-    vlmMaxPrompts: 6,
     secondPassEnabled: true,
     secondPassThreshold: 0.8,
     useSam3: true,
@@ -156,8 +146,6 @@ export function getDefaultConfig(): ResearchConfig {
     morphCloseKernelScale: 0.01,
     alphaMatteEnabled: true,
     alphaMatteRadiusScale: 0.003,
-    segmentationModel: "sam3",
-    apiProvider: "replicate",
   });
 }
 
@@ -199,12 +187,20 @@ export function loadConfig(filePath?: string): ResearchConfig {
     const objMatch = raw.match(/\.parse\(\s*(\{[\s\S]*?\})\s*\)/);
     if (objMatch?.[1]) {
       try {
-        // The parse({}) call uses defaults, so an empty object is valid
-        const extracted = objMatch[1].replace(/\/\/.*$/gm, "").trim();
+        let extracted = objMatch[1];
+        // Strip line comments
+        extracted = extracted.replace(/\/\/.*$/gm, "");
+        // Remove trailing commas before } or ]
+        extracted = extracted.replace(/,(\s*[}\]])/g, "$1");
+        // Quote unquoted keys (TS object literal → valid JSON)
+        extracted = extracted.replace(/([{,]\s*)(\w+)\s*:/g, '$1"$2":');
+        extracted = extracted.trim();
         const parsed = normalizeLegacyConfigInput(JSON.parse(extracted));
         return ResearchConfigSchema.parse(parsed);
-      } catch {
-        // Empty {} or unparseable — use defaults
+      } catch (innerErr) {
+        console.warn(
+          `Config parse issue in ${targetPath}: ${innerErr instanceof Error ? innerErr.message : innerErr}. Using defaults.`,
+        );
         return getDefaultConfig();
       }
     }

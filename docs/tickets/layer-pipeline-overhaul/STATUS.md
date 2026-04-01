@@ -15,7 +15,7 @@
 | T5 | 마스크 Hole-Filling | 2 | M | Done | PASS | T2 | iterative blur, integrated |
 | T6 | Alpha Matting | 2 | S | Done | PASS | T5 | Gaussian edge softening, integrated |
 | T7 | 멀티모델/Provider | 3 | L | Done | PASS | T2 | provider layer + fal.ai SAM3 |
-| T8 | E2E Smoke Test | 1 | S | Done | PASS | T1, T2 | 실 API E2E 완료 (84.9MB mp4) |
+| T8 | E2E Smoke Test | 1 | S | Done | PASS | T1, T2 | CLI→Config→Scene→Schema 통합 테스트 |
 
 ## Wave 구조
 
@@ -35,16 +35,21 @@ Wave 3 (순차): T7
 | 4     | 2     | ALL PASS | 0 | 0 | 5 | T8 추가, T5 EC-3 추가 |
 | 6     | 1     | HAS ISSUE | 1 | 0 | 3 | fal.ai queue 폴링 누락 |
 | 6     | 2     | ALL PASS | 0 | 0 | 3 | fal.run 동기 endpoint로 수정 |
+| 7(보정)| 1    | HAS ISSUE | 2 | 5 | 7 | 전수 프로덕션 리뷰 14건 발견 |
+| 7(보정)| 2    | ALL PASS | 0 | 0 | 0 | 14건 전수 수정 + 2821 tests PASS |
 
 ## 주요 기술 결정
 
 - sharp Gaussian blur로 morphological closing 근사 (opencv-wasm 의존성 회피)
 - ZIM alpha matting은 hosted API 부재로 후속 PRD 분리
 - fal.ai 동기 endpoint 사용 (queue polling 불필요)
+- depth-based effects는 scene-level 스키마 유지, layer depth 분포로 가중 계산
+- bg plate alpha=255 강제 (원본 이미지 투명도 무관)
+- fal.ai ↔ Replicate 양방향 fallback 구현
 
 ## 후속 작업
 
 - [ ] ZIM alpha matting (Modal/로컬 배포) — 별도 PRD
 - [ ] `getFalSam3Mask` 통합 테스트 (mock API)
-- [ ] GroundingDINO+SAM2 경로 실제 연동
-- [ ] 실 이미지로 E2E 파이프라인 검증
+- [ ] GroundingDINO+SAM2 경로 실제 연동 (T7 모델 상수만 정의됨, 파이프라인 미연결)
+- [ ] EVF-SAM 경로 구현 (fal.ai endpoint 상수만 정의됨)

@@ -3,7 +3,7 @@
 **PRD Ref**: PRD-layer-pipeline-overhaul > US-6
 **Priority**: P2 (Medium)
 **Size**: M (2-4h)
-**Status**: Todo
+**Status**: Done
 **Depends On**: T2 (config 필드 필요)
 **Wave**: 1
 

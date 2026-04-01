@@ -3,7 +3,7 @@
 **PRD Ref**: PRD-layer-pipeline-overhaul > US-4
 **Priority**: P1 (High)
 **Size**: L (4-8h)
-**Status**: Todo
+**Status**: Done
 **Depends On**: T2 (config segmentationModel, apiProvider 필드)
 **Wave**: 3
 

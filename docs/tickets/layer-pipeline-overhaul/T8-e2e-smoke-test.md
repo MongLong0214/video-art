@@ -3,7 +3,7 @@
 **PRD Ref**: PRD-layer-pipeline-overhaul > G10
 **Priority**: P2 (Medium)
 **Size**: S (< 2h)
-**Status**: Todo
+**Status**: Done
 **Depends On**: T1, T2 (최소 Wave 1 완료 후)
 **Wave**: 1 (Wave 1 마지막)
 

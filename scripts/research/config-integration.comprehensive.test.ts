@@ -18,7 +18,7 @@ describe("partial config overrides", () => {
   it("accepts a SAM mask override without losing defaults", () => {
     const result = ResearchConfigSchema.parse({ samMaskLimit: 6 });
     expect(result.samMaskLimit).toBe(6);
-    expect(result.alphaThreshold).toBe(128);
+    expect(result.alphaThreshold).toBe(10);
     expect(result.maxLayers).toBe(12);
   });
 

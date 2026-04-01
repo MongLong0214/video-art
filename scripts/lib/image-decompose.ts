@@ -3,8 +3,7 @@ import sharp from "sharp";
 import fs from "node:fs";
 import path from "node:path";
 
-import { withRetry, validateReplicateUrl, validateProviderUrl, getToken, getProviderToken } from "./replicate-utils.js";
-import type { ApiProvider } from "./replicate-utils.js";
+import { withRetry, validateReplicateUrl, getToken } from "./replicate-utils.js";
 
 export const DAV2_MODEL = "chenxwh/depth-anything-v2";
 export const DAV2_VERSION = "b239ea33cff32bb7abb5db39ffe9a09c14cbc2894331d1ef66fe096eed88ebd4";
@@ -12,32 +11,9 @@ export const DAV2_VERSION = "b239ea33cff32bb7abb5db39ffe9a09c14cbc2894331d1ef66f
 export const SAM3_MODEL = "mattsays/sam3-image";
 export const SAM3_VERSION = "d73db077226443ba4fafd34e233b3626b552eac2a433f90c7c32a9ac89bd9e72";
 
-export const VLM_MODEL = "lucataco/qwen3-vl-8b-instruct";
-export const VLM_VERSION = "39e893666996acf464cff75688ad49ac95ef54e9f1c688fbc677330acc478e11";
-
-// fal.ai model endpoints
-export const FAL_SAM3_ENDPOINT = "fal-ai/sam-3/image";
-export const FAL_EVF_SAM_ENDPOINT = "fal-ai/evf-sam";
-
-// GroundingDINO (Replicate)
-export const GROUNDING_DINO_MODEL = "adirik/grounding-dino";
-export const GROUNDING_DINO_VERSION = ""; // latest — no pinned version available
-
 const DEFAULT_PROMPTS = ["main subject", "background", "foreground details", "shadows and lighting"];
 
-// --- VLM Prompt Utilities ---
-
-export function parseVlmResponse(text: string): string[] | null {
-  const match = text.match(/\[.*\]/s);
-  if (!match) return null;
-  try {
-    const parsed = JSON.parse(match[0]);
-    if (!Array.isArray(parsed) || !parsed.every((p: unknown) => typeof p === "string")) return null;
-    return parsed as string[];
-  } catch {
-    return null;
-  }
-}
+// --- Prompt Utilities ---
 
 export function sanitizePrompts(prompts: string[], maxCount: number): string[] {
   return prompts
@@ -52,43 +28,6 @@ export function ensureMinPrompts(prompts: string[], defaults: string[] = DEFAULT
   return [...prompts, ...needed].slice(0, Math.max(4, prompts.length));
 }
 
-export async function getVlmPrompts(
-  replicate: Replicate,
-  imagePath: string,
-  options: { vlmMaxPrompts?: number } = {},
-): Promise<string[]> {
-  const maxPrompts = options.vlmMaxPrompts ?? 6;
-  try {
-    const imageData = fs.readFileSync(imagePath);
-    const ext = path.extname(imagePath).toLowerCase().replace(".", "");
-    const mime = { png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp" }[ext] || "image/png";
-    const dataUri = `data:${mime};base64,${imageData.toString("base64")}`;
-
-    console.log("  Running VLM (Qwen3-VL) for auto-prompts...");
-    const output = await withRetry(async () => {
-      return replicate.run(`${VLM_MODEL}:${VLM_VERSION}`, {
-        input: {
-          media: dataUri,
-          prompt: `/no_think List the ${maxPrompts} distinct visual regions/objects in this image as a JSON array. Each item: short description (3-8 words) for segmentation. Output ONLY the JSON array.`,
-          max_new_tokens: 256,
-          temperature: 0.1,
-        },
-      });
-    });
-
-    const text = typeof output === "string" ? output : Array.isArray(output) ? output.join("") : String(output);
-    const parsed = parseVlmResponse(text);
-    if (!parsed) {
-      console.warn("  VLM response parsing failed, using defaults");
-      return ensureMinPrompts([]);
-    }
-    return ensureMinPrompts(sanitizePrompts(parsed, maxPrompts));
-  } catch (err) {
-    console.warn(`  VLM failed: ${err instanceof Error ? err.message : err}, using defaults`);
-    return ensureMinPrompts([]);
-  }
-}
-
 export function parseCliPrompts(input: string): string[] {
   return input.split(",").map(s => s.trim()).filter(s => s.length > 0);
 }
@@ -97,7 +36,6 @@ interface DecomposeOptions {
   alphaThreshold?: number;
   minCoverage?: number;
   sam3Threshold?: number;
-  vlmMaxPrompts?: number;
   secondPassEnabled?: boolean;
   secondPassThreshold?: number;
   manualPrompts?: string[];
@@ -120,7 +58,6 @@ export interface DecomposeResult {
   fileMeta: FileSourceMeta[];
   depthMap?: Buffer;
   candidates?: import("../../src/lib/scene-schema.js").LayerCandidate[];
-  vlmPrompts?: string[];
 }
 
 // --- SAM 3 Overlap + Second Pass Utilities ---
@@ -156,57 +93,8 @@ export function buildSecondPassVlmPrompt(existingPrompts: string[], maxPrompts: 
 
 import { computeMaskStats } from "./mask-stats.js";
 import { computeMeanDepth } from "./depth-computation.js";
-import { fillMaskHoles, applyAlphaMatte } from "./mask-postprocess.js";
+// fillMaskHoles/applyAlphaMatte removed — SAM3 binary masks used directly with inline soft-edge blur
 import type { LayerCandidate } from "../../src/lib/scene-schema.js";
-
-/**
- * Get SAM3 mask via fal.ai synchronous API.
- * Uses fal.run (synchronous) instead of queue.fal.run (async queue).
- * Falls back to null on failure (caller handles fallback to Replicate).
- */
-export async function getFalSam3Mask(
-  imageUrl: string,
-  prompt: string,
-  threshold: number = 0.25,
-): Promise<Buffer | null> {
-  try {
-    const falKey = getProviderToken("fal");
-    // Use synchronous endpoint (fal.run) — returns result directly, no queue polling needed
-    const resp = await withRetry(async () => {
-      const r = await fetch(`https://fal.run/${FAL_SAM3_ENDPOINT}`, {
-        method: "POST",
-        headers: {
-          "Authorization": `Key ${falKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          image_url: imageUrl,
-          prompts: prompt,
-          threshold,
-          mask_only: true,
-        }),
-      });
-      if (!r.ok) throw new Error(`fal.ai SAM3 failed: HTTP ${r.status}`);
-      return r.json() as Promise<Record<string, unknown>>;
-    });
-
-    // fal.ai response: { mask_url: "..." } or { output: { url: "..." } }
-    const result = resp as Record<string, unknown>;
-    const maskUrl = (result.mask_url as string)
-      ?? ((result.output as Record<string, unknown>)?.url as string)
-      ?? "";
-    if (!maskUrl) return null;
-    validateProviderUrl(maskUrl, "fal");
-    const maskResp = await fetch(maskUrl);
-    if (!maskResp.ok) return null;
-    const buf = Buffer.from(await maskResp.arrayBuffer());
-    await sharp(buf).metadata();
-    return buf;
-  } catch (err) {
-    console.warn(`  fal.ai SAM3 failed for "${prompt}": ${err instanceof Error ? err.message : err}`);
-    return null;
-  }
-}
 
 export async function getSam3Mask(
   replicate: Replicate,
@@ -254,18 +142,28 @@ export async function buildSam3Candidate(
   minCoverage: number = 0.001,
   postProcessConfig?: { morphCloseEnabled?: boolean; morphCloseKernelScale?: number; alphaMatteEnabled?: boolean; alphaMatteRadiusScale?: number },
 ): Promise<LayerCandidate | null> {
-  // Post-process mask: fill interior holes + soft edges
-  let processedMask = maskBuffer;
-  processedMask = await fillMaskHoles(processedMask, width, height, {
-    enabled: postProcessConfig?.morphCloseEnabled,
-    kernelScale: postProcessConfig?.morphCloseKernelScale,
-  });
-  processedMask = await applyAlphaMatte(processedMask, width, height, {
-    enabled: postProcessConfig?.alphaMatteEnabled,
-    radiusScale: postProcessConfig?.alphaMatteRadiusScale,
-  });
+  // Normalize SAM3's 3ch RGB mask to binary 1ch
+  const binaryMask = await sharp(maskBuffer)
+    .resize(width, height)
+    .grayscale()
+    .threshold(128)
+    .png()
+    .toBuffer();
 
-  const applied = await applyMaskToImage(originalImage, processedMask, width, height);
+  // Apply binary mask to image (coverage computed from clean binary mask)
+  const applied = await applyMaskToImage(originalImage, binaryMask, width, height);
+
+  // Soft edges: blur the RGBA layer's alpha channel AFTER coverage is locked in
+  if (postProcessConfig?.alphaMatteEnabled !== false) {
+    const radiusScale = postProcessConfig?.alphaMatteRadiusScale ?? 0.003;
+    const maxDim = Math.max(width, height);
+    const radius = Math.max(1, Math.min(8, Math.round(maxDim * radiusScale)));
+    // Blur the binary mask to create soft edges, apply as alpha
+    const softAlpha = await sharp(binaryMask).resize(width, height).grayscale().blur(radius).raw().toBuffer();
+    for (let i = 0; i < width * height; i++) {
+      applied.pixels[i * 4 + 3] = softAlpha[i];
+    }
+  }
   if (applied.coverage < minCoverage) return null;
 
   const rgbaRaw = await sharp(applied.pixels, { raw: { width, height, channels: 4 } })
@@ -438,11 +336,8 @@ async function decomposeImageSam3(
 ): Promise<DecomposeResult> {
   const {
     sam3Threshold = 0.25,
-    vlmMaxPrompts = 6,
     minCoverage = 0.001,
     manualPrompts,
-    secondPassEnabled = true,
-    secondPassThreshold = 0.8,
   } = options;
 
   // Build data URI for API calls
@@ -451,12 +346,13 @@ async function decomposeImageSam3(
   const mime = { png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp" }[ext] || "image/png";
   const dataUri = `data:${mime};base64,${imageData.toString("base64")}`;
 
-  // Step 1: VLM prompts + DA V2 depth (parallel)
-  console.log("  [1/3] VLM prompts + DA V2 depth...");
-  const [prompts, depthMap] = await Promise.all([
-    manualPrompts ? Promise.resolve(ensureMinPrompts(sanitizePrompts(manualPrompts, vlmMaxPrompts))) : getVlmPrompts(replicate, imagePath, { vlmMaxPrompts }),
-    getDepthMap(replicate, imagePath),
-  ]);
+  // Step 1: Prompts (manual required, fallback to defaults) + DA V2 depth (parallel)
+  const prompts = manualPrompts && manualPrompts.length > 0
+    ? ensureMinPrompts(sanitizePrompts(manualPrompts, 12))
+    : ensureMinPrompts([]);
+
+  console.log("  [1/2] DA V2 depth...");
+  const depthMap = await getDepthMap(replicate, imagePath);
   console.log(`  ${prompts.length} prompts: ${prompts.join(", ")}`);
 
   // Prepare depth gray for meanDepth computation
@@ -466,14 +362,12 @@ async function decomposeImageSam3(
     depthGray = new Uint8Array(depthRaw.buffer, depthRaw.byteOffset, depthRaw.byteLength);
   }
 
-  // Step 2: SAM3 per-prompt segmentation
-  console.log("  [2/3] SAM3 per-prompt segmentation...");
+  // Step 2: SAM3 per-prompt segmentation (Replicate only)
+  console.log("  [2/2] SAM3 per-prompt segmentation...");
   const candidates: LayerCandidate[] = [];
   const fileMeta: FileSourceMeta[] = [];
   const files: string[] = [];
   const coverages: number[] = [];
-  // Track pixel-level union for second pass trigger
-  const unionMask = new Uint8Array(width * height);
 
   for (let i = 0; i < prompts.length; i++) {
     const prompt = prompts[i];
@@ -489,61 +383,13 @@ async function decomposeImageSam3(
     files.push(candidate.filePath);
     coverages.push(candidate.coverage);
     fileMeta.push({ source: "sam3-semantic", prompt });
-    // Update pixel-level union mask
-    try {
-      const layerRgba = await sharp(candidate.filePath).ensureAlpha().raw().toBuffer();
-      for (let p = 0; p < width * height; p++) {
-        if (layerRgba[p * 4 + 3] > 0) unionMask[p] = 1;
-      }
-    } catch { /* non-critical */ }
   }
 
-  // Compute actual pixel union coverage
-  let unionPixels = 0;
-  for (let p = 0; p < unionMask.length; p++) { if (unionMask[p]) unionPixels++; }
-  const unionCoverage = unionPixels / (width * height);
-
-  // Step 2.5: Second pass if needed
-  if (candidates.length > 0 && shouldTriggerSecondPass(
-    unionCoverage,
-    { secondPassEnabled, secondPassThreshold },
-  )) {
-    console.log("  [2.5/3] Second pass — coverage below threshold...");
-    const secondPromptText = buildSecondPassVlmPrompt(prompts, vlmMaxPrompts);
-    const secondOutput = await withRetry(async () => {
-      return replicate.run(`${VLM_MODEL}:${VLM_VERSION}`, {
-        input: { media: dataUri, prompt: secondPromptText, max_new_tokens: 256, temperature: 0.1 },
-      });
-    }).catch(() => null);
-
-    if (secondOutput) {
-      const text = typeof secondOutput === "string" ? secondOutput : Array.isArray(secondOutput) ? secondOutput.join("") : String(secondOutput);
-      const newPrompts = parseVlmResponse(text);
-      if (newPrompts) {
-        const sanitized = sanitizePrompts(newPrompts, vlmMaxPrompts).filter(p => !prompts.includes(p));
-        for (let j = 0; j < sanitized.length; j++) {
-          const p = sanitized[j];
-          console.log(`  SAM3-2nd[${j}]: "${p}"...`);
-          const maskBuf = await getSam3Mask(replicate, dataUri, p, sam3Threshold);
-          if (!maskBuf) continue;
-          const candidate = await buildSam3Candidate(maskBuf, originalImage, depthGray, width, height, p, candidates.length + j, outputDir, minCoverage, { morphCloseEnabled: options.morphCloseEnabled, morphCloseKernelScale: options.morphCloseKernelScale, alphaMatteEnabled: options.alphaMatteEnabled, alphaMatteRadiusScale: options.alphaMatteRadiusScale });
-          if (!candidate) continue;
-          console.log(`    → ${(candidate.coverage * 100).toFixed(1)}% coverage`);
-          candidates.push(candidate);
-          files.push(candidate.filePath);
-          coverages.push(candidate.coverage);
-          fileMeta.push({ source: "sam3-semantic", prompt: p });
-        }
-      }
-    }
-  }
-
-  console.log(`  [3/3] ${candidates.length} SAM3 layers generated`);
+  console.log(`  Done: ${candidates.length} SAM3 layers generated`);
   return {
     files, coverages, method: "sam3", fileMeta,
     depthMap: depthMap ?? undefined,
     candidates,
-    vlmPrompts: prompts,
   };
 }
 
@@ -553,6 +399,7 @@ export async function decomposeImage(
   outputDir: string,
   options: DecomposeOptions = {},
 ): Promise<DecomposeResult> {
+  // Replicate client for SAM3 + Depth Anything V2
   const replicate = new Replicate({ auth: getToken() });
   const originalImage = fs.readFileSync(imagePath);
   const origMeta = await sharp(originalImage).metadata();
