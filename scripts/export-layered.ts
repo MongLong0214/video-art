@@ -162,7 +162,7 @@ async function main() {
   const config = sceneSchema.parse(sceneJson);
   const DURATION = config.duration;
 
-  // FPS priority: CLI --fps > scene.json fps (always present via Zod default 30)
+  // FPS priority: CLI --fps > scene.json fps (default 60)
   const FPS = cliFps ?? config.fps;
   const TOTAL_FRAMES = FPS * DURATION;
 

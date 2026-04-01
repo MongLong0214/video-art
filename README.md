@@ -1,7 +1,48 @@
 # video-art
 
 Three.js + GLSL + SuperCollider 기반 생성형 비디오 아트 시스템.
-이미지 1장을 AI(bria + flux-fill-pro)로 2레이어 분해하고, HSV hue rotation + hueKey 셰이더로 사이키델릭 무한 루프 영상을 생성한다.
+이미지 1장을 AI(bria + Real-ESRGAN + flux-fill-pro)로 2레이어 분해하고, HSV hue rotation + hueKey 셰이더로 사이키델릭 무한 루프 영상을 생성한다.
+
+---
+
+## Quick Start — 원커맨드 Instagram Reels 퍼블리시
+
+```bash
+npm install
+cp .env.example .env  # → REPLICATE_API_TOKEN=r8_... 입력
+
+# 이미지 1장 → Instagram Reels 완성본 (1080x1920, 30fps, H.264)
+npm run publish input.png -- --title my-art
+
+# 오디오 포함
+npm run publish input.png -- --title my-art --audio music.wav --audio-start 55
+```
+
+### 파이프라인 자동 처리 내용
+
+```
+input.png (원본 해상도 유지)
+  → bria/remove-background     전경 알파 매팅
+  → Real-ESRGAN 2x             전경 초해상화 (업스케일 아티팩트 제거)
+  → flux-fill-pro              배경 인페인팅
+  → depth-anything-v2          깊이맵
+  → 원본 해상도 레이어 조합     lanczos3 업스케일
+  → Puppeteer 60fps 렌더링     고해상도 supersampling
+  → 1080x1920 30fps 다운스케일  Instagram Reels 최적
+  → 오디오 합본 (선택)          AAC 256kbps
+```
+
+### 출력 스펙
+
+| 항목 | 값 |
+|------|-----|
+| 해상도 | 1080x1920 (9:16) |
+| 코덱 | H.264 High Profile, Level 4.2 |
+| 픽셀포맷 | yuv420p |
+| 프레임레이트 | 30fps |
+| CRF | 15 |
+| 오디오 | AAC 256kbps |
+| 호환 | Instagram Reels, QuickTime, 모든 플레이어 |
 
 ---
 
@@ -9,18 +50,15 @@ Three.js + GLSL + SuperCollider 기반 생성형 비디오 아트 시스템.
 
 ### 1. Layered 모드 — 이미지를 넣는다
 
-이미지 1장을 bria/remove-background로 전경/배경 분리, flux-fill-pro로 배경 인페인팅, depth-anything-v2로 깊이맵 생성한 뒤, hueKey 셰이더로 색상 영역별 독립 애니메이션을 적용하여 무한 루프 영상으로 변환한다.
+이미지 1장을 AI로 전경/배경 분리 + 초해상화 + 인페인팅한 뒤, hueKey 셰이더로 색상 영역별 독립 애니메이션을 적용하여 무한 루프 영상으로 변환한다.
 
 ```bash
-npm run pipeline input.png -- --title sunset
+# 원커맨드 (권장)
+npm run publish input.png -- --title sunset --audio music.wav --audio-start 55
 
-# 1. bria/remove-background → 전경 알파 매팅
-# 2. flux-fill-pro → 배경 인페인팅
-# 3. depth-anything-v2 → 깊이맵
-# 4. 2 레이어 조합 + scene.json 생성 → public/에 복사
-
+# 단계별 실행
+npm run pipeline input.png -- --title sunset --no-preview
 npm run export:layered -- --title sunset
-# → Puppeteer 프레임 캡처 → ffmpeg 인코딩 (해상도 기반 동적 bitrate)
 ```
 
 ### 2. Sketch 모드 — 코드로 만든다
@@ -46,23 +84,6 @@ npm run render:av               # 비디오 + 오디오 합성
 
 ---
 
-## Quick Start
-
-```bash
-npm install
-
-cp .env.example .env
-# → REPLICATE_API_TOKEN=r8_... 입력
-
-npm run dev
-# → http://localhost:5173                     sketch 모드
-# → http://localhost:5173/?mode=layered       layered 모드
-
-# 풀 파이프라인
-npm run pipeline input.png -- --title my-art
-npm run export:layered -- --title my-art
-```
-
 ## Prerequisites
 
 - **Node.js** 18+
@@ -74,30 +95,33 @@ npm run export:layered -- --title my-art
 ## Pipeline 흐름 (Layered 모드 — Pro Pipeline)
 
 ```
-input.png
-    │
-    ├─ pipeline-pro.ts
-    │  오케스트레이터: 아래 4 단계를 순차 실행
+input.png (원본 해상도 유지, e.g. 1632x2912)
     │
     ├─ Step 1: bria/remove-background (Replicate API)
-    │  → 전경 PNG (알파 매팅, 4ch RGBA)
+    │  → 전경 PNG (~573x1024, 알파 매팅)
+    │
+    ├─ Step 1b: Real-ESRGAN 2x (Replicate API)
+    │  → 전경 초해상화 (~1146x2048, 업스케일 아티팩트 제거)
     │
     ├─ Step 2: 인페인팅 마스크 생성
-    │  전경 알파 > 10 → white (인페인팅 대상)
+    │  전경 알파 > 10 → white
     │
     ├─ Step 3: flux-fill-pro (Replicate API)
-    │  원본 이미지 + 마스크 → 배경 인페인팅 (전경 영역을 배경으로 채움)
+    │  → 배경 인페인팅 (~807x1440)
     │
     ├─ Step 4: depth-anything-v2 (Replicate API)
     │  → 그레이스케일 깊이맵
     │
-    ├─ Step 5: 2-레이어 조합
-    │  layer-0: AI 인페인팅된 배경 (role: background-plate)
-    │  layer-1: AI 매팅된 전경 (role: subject)
+    ├─ Step 5: 원본 해상도로 레이어 조합 (lanczos3)
+    │  layer-0: 배경 → 원본 해상도 업스케일
+    │  layer-1: 전경 (ESRGAN) → 원본 해상도 업스케일
     │  → public/layers/ + public/scene.json
     │
-    └─ scene-generator.ts (Autoresearch 경유 시)
-       역할별 animation preset → scene.json
+    ├─ Export: Puppeteer 60fps 렌더링 (고해상도 supersampling)
+    │  → ffmpeg H.264 yuv420p 인코딩
+    │
+    └─ Publish: ffmpeg lanczos 다운스케일
+       → 1080x1920, 30fps, H.264 High 4.2 (Instagram 최적)
 ```
 
 ### 셰이더 — Luminance-preserving HSV Hue Rotation + HueKey
@@ -113,39 +137,37 @@ input.png
 7. subtle glow pulse (sin 기반)
 8. atmospheric haze (깊이 기반 채도 감쇄)
 
-### LayerRole
+---
 
-| Role | z-order | 설명 |
-|------|---------|------|
-| `background-plate` | 0 | 전체 캔버스, 가장 느린 hue cycle |
-| `background` | 1 | 배경 요소 |
-| `midground` | 2 | 중간 요소 |
-| `subject` | 3 | 중심 피사체 |
-| `detail` | 4 | 세부 요소, 빠른 hue cycle |
-| `foreground-occluder` | 5 | 전경 가리개 |
+## Production Defaults
 
-### 공유 상수 (`pipeline-constants.ts`)
-
-| 상수 | 값 | 용도 |
-|------|-----|------|
-| `ALPHA_THRESHOLD` | 10 | ownership alpha 판정 |
-
-### 동적 Bitrate (`bitrate.ts`)
-
-해상도(총 픽셀 수) 기반 자동 결정. 30fps scope.
-
-| 해상도 | 픽셀 수 | Bitrate |
-|--------|---------|---------|
-| 720p | 921,600 | 8M |
-| 1080p | 2,073,600 | 15M |
-| 1440p | 3,686,400 | 25M |
-| 4K | 8,294,400 | 40M |
-
-사이 해상도는 선형 보간 (floor). 720p 미만/4K 초과는 clamp.
+| 설정 | 기본값 | 위치 |
+|------|--------|------|
+| FPS (렌더링) | 60 | scene-schema.ts, pipeline-pro.ts |
+| FPS (출력) | 30 | publish.ts (Instagram 최적) |
+| 해상도 (렌더링) | 원본 유지 | pipeline-pro.ts |
+| 해상도 (출력) | 1080x1920 | publish.ts (Instagram 9:16) |
+| 픽셀포맷 | yuv420p | export-layered.ts |
+| CRF | 15 | export-layered.ts |
+| H.264 Profile | High, Level 4.2 | publish.ts |
+| 오디오 | AAC 256kbps | publish.ts |
+| 전경 초해상화 | Real-ESRGAN 2x | pipeline-pro.ts |
+| 레이어 리사이즈 | lanczos3 | pipeline-pro.ts |
+| 다운스케일 | lanczos (supersampling) | publish.ts |
 
 ---
 
 ## CLI Flags
+
+### publish.ts (원커맨드)
+
+| Flag | Description |
+|------|-------------|
+| `<input.png>` | 입력 이미지 (필수) |
+| `--title <name>` | 작품 타이틀 |
+| `--audio <path>` | 오디오 파일 경로 |
+| `--audio-start <sec>` | 오디오 시작 시점 (초, 기본 0) |
+| `--duration <N>` | scene duration 초 (기본 20) |
 
 ### pipeline-pro.ts
 
@@ -153,9 +175,8 @@ input.png
 |------|-------------|
 | `<input.png>` | 입력 이미지 (필수) |
 | `--duration <N>` | scene duration 초 (1-300, 기본 20) |
-| `--fps <N>` | 프레임 레이트 (1-120, 기본 30) |
+| `--fps <N>` | 프레임 레이트 (1-120, 기본 60) |
 | `--production` | model version pin 강제 |
-| `--prores` | ProRes 출력 |
 
 ### export:layered
 
@@ -170,29 +191,22 @@ input.png
 
 ## npm scripts
 
+### 핵심
+
+| Command | Description |
+|---------|-------------|
+| `npm run publish <img>` | **원커맨드** Instagram Reels 퍼블리시 |
+| `npm run pipeline <img>` | pro-pipeline (분해 + 프리뷰 + 익스포트) |
+| `npm run export:layered` | layered mp4 익스포트 |
+
 ### 개발
 
 | Command | Description |
 |---------|-------------|
 | `npm run dev` | Vite 개발서버 |
 | `npm run build` | TypeScript + Vite 프로덕션 빌드 |
-| `npm run test` | Vitest (2410 tests, 75 files) |
+| `npm run test` | Vitest |
 | `npm run test:watch` | Vitest watch 모드 |
-
-### Layered 모드
-
-| Command | Description |
-|---------|-------------|
-| `npm run pipeline <img>` | pro-pipeline 오케스트레이터 (분해 + 프리뷰 + 익스포트) |
-| `npm run pipeline:pro <img>` | pro-pipeline 단독 실행 (bria + flux-fill + depth) |
-| `npm run export:layered` | layered mp4 익스포트 (동적 bitrate) |
-| `npm run pipeline:validate` | 루프 이음새 검증 (RMSE) |
-
-### Sketch 모드
-
-| Command | Description |
-|---------|-------------|
-| `npm run export:sketch -- --sketch <name>` | sketch → mp4 |
 
 ### Audio
 
@@ -201,22 +215,8 @@ input.png
 | `npm run audio:setup` | 의존성 설치 + SC 검증 |
 | `npm run live:start` | SC + SuperDirt + Tidal 부팅 |
 | `npm run live:stop` | 전체 스택 종료 |
-| `npm run live:record` | 라이브 녹음 |
 | `npm run render:audio` | scene.json → master.wav (NRT) |
 | `npm run render:av` | 비디오 + 오디오 → final.mp4 |
-| `npm run render:stems` | SynthDef별 stem 렌더 |
-| `npm run render:prod` | 프로덕션 마스터 렌더 |
-
-### Autoresearch
-
-| Command | Description |
-|---------|-------------|
-| `npm run research:prepare` | 레퍼런스 keyframe + temporal pairs 추출 |
-| `npm run research:calibrate` | noise floor(delta_min) 측정 |
-| `npm run research:run` | 단일 실험 (config → pipeline → evaluate) |
-| `npm run research:eval` | 단일 영상 10 메트릭 평가 |
-| `npm run research:report` | 실험 이력 요약 |
-| `npm run research:promote` | best config → baseline 승격 |
 
 ---
 
@@ -225,10 +225,10 @@ input.png
 ```jsonc
 {
   "version": 1,
-  "source": "sunset.png",
-  "resolution": [1080, 1920],
+  "source": "input.png",
+  "resolution": [1632, 2912],  // 원본 해상도 유지
   "duration": 20,
-  "fps": 30,
+  "fps": 60,                    // 렌더링 60fps → 출력 30fps (supersampling)
   "layers": [
     {
       "id": "layer-0",
@@ -255,12 +255,8 @@ input.png
   ],
   "effects": {
     "bloom": { "strength": 0.7, "radius": 0.5, "threshold": 0.35 },
-    "chromaticAberration": { "offset": 3.0, "modulationOffset": 0.5 },
-    "parallax": { "scale": 0 },
-    "haze": { "intensity": 0 },
-    "feather": { "radius": 0 }
-  },
-  "audio": { "bpm": 120, "key": "Am", "genre": "techno" }
+    "chromaticAberration": { "offset": 3.0, "modulationOffset": 0.5 }
+  }
 }
 ```
 
@@ -277,10 +273,6 @@ URL: /?mode=layered
     ├── PlaneGeometry z=0.0  background-plate
     └── PlaneGeometry z=0.1  subject
     각 레이어: ShaderMaterial(layer.vert + layer.frag)
-      uniforms: uTexture, uTime, uColorCycleSpeed/Period/PhaseOffset,
-                uGlowIntensity/Pulse/Period, uSaturationBoost, uLuminanceKey,
-                uSatBlendLow/High, uSatInjectionMul, uGlowPulseFloor, uLumExponent,
-                uHueKey, uHueSpeed, uHazeIntensity, uDepthNorm, uFeatherRadius
   → EffectComposer (Bloom + ChromaticAberration)
   → Canvas
 ```
@@ -291,7 +283,8 @@ URL: /?mode=layered
 Puppeteer headless Chrome
   → Clock.startRecording() (deterministic: frame x 1/fps)
   → Loop N frames: __captureFrame() → PNG
-  → ffmpeg: libx264, yuv420p, getBitrate(resolution) (동적)
+  → ffmpeg: libx264, yuv420p, CRF 15
+  → (publish) lanczos downscale → 1080x1920 30fps Instagram
   → 아카이브: out/layered/{date}_{title}/
 ```
 
@@ -304,8 +297,9 @@ video-art/
 ├── src/
 │   ├── main.ts                       진입점: sketch/layered 라우팅
 │   ├── lib/
-│   │   ├── scene-schema.ts           Zod 스키마 (LayerRole, AnimationConfig)
-│   │   └── scene-loader.ts           scene.json fetch + 검증
+│   │   ├── scene-schema.ts           Zod 스키마 (fps default: 60)
+│   │   ├── scene-loader.ts           scene.json fetch + 검증
+│   │   └── effect-composer.ts        EffectComposer (Bloom + CA)
 │   ├── shaders/
 │   │   ├── layer.frag                HSV hue rotation + hueKey 셰이더
 │   │   ├── layer.vert                버텍스 셰이더
@@ -314,36 +308,18 @@ video-art/
 │       └── layered-psychedelic.ts    layered 모드 Three.js 셋업
 │
 ├── scripts/
-│   ├── pipeline.ts                   메인 파이프라인 (pipeline-pro 호출 + 프리뷰 + 익스포트)
-│   ├── pipeline-pro.ts               pro-pipeline (bria + flux-fill-pro + depth)
+│   ├── publish.ts                    ★ 원커맨드 Instagram Reels 퍼블리시
+│   ├── pipeline.ts                   메인 파이프라인 (pipeline-pro + 프리뷰 + 익스포트)
+│   ├── pipeline-pro.ts               pro-pipeline (bria + ESRGAN + flux-fill + depth)
 │   ├── export-layered.ts             mp4 익스포트 (Puppeteer + ffmpeg)
-│   ├── export-sketch.ts              sketch mp4 익스포트
-│   ├── lib/
-│   │   ├── pipeline-constants.ts     공유 상수 (ALPHA_THRESHOLD)
-│   │   ├── pipeline-cli.ts           CLI 인자 파싱
-│   │   ├── replicate-utils.ts        Replicate API 유틸 (retry, token, URL 검증)
-│   │   ├── scene-generator.ts        역할 기반 preset → scene.json
-│   │   ├── input-validator.ts        이미지 포맷/크기 검증
-│   │   ├── validate-file-path.ts     path traversal 검증
-│   │   ├── bitrate.ts                getBitrate (해상도 기반 동적)
-│   │   ├── batch-process.ts          batchProcess (concurrency limiter)
-│   │   └── ...                       audio/live 관련 모듈
-│   └── research/                     Autoresearch System
-│       ├── program.md                에이전트 연구 지시서
-│       ├── research-config.ts        튜닝 파라미터 (Zod, 25 axes)
-│       ├── evaluate.ts               평가 harness
-│       ├── pipeline-runner.ts        연구용 pipeline 실행기
-│       ├── prepare.ts / calibrate.ts / run-once.ts
-│       ├── report.ts / promote.ts
-│       └── metrics/                  M1-M10 메트릭 구현
+│   └── lib/
+│       ├── pipeline-cli.ts           CLI 인자 파싱
+│       ├── replicate-utils.ts        Replicate API 유틸
+│       └── scene-generator.ts        역할 기반 preset → scene.json
 │
 ├── audio/                            SuperCollider + TidalCycles
-│   ├── sc/synthdefs/                 SynthDef 9종
-│   └── setup.sh                      의존성 검증
-│
-├── docs/plans/                       설계 계획
-├── docs/tickets/                     개발 티켓
-└── out/layered/                      아카이브 (mp4 + layers + scene.json)
+├── out/layered/                      아카이브 (mp4 + layers + scene.json)
+└── docs/                             설계 문서 + 티켓
 ```
 
 ---
@@ -352,41 +328,18 @@ video-art/
 
 ### Runtime
 
-| 패키지 | 버전 | 역할 |
-|--------|------|------|
-| three | ^0.172.0 | 3D 렌더링 (ShaderMaterial) |
-| postprocessing | ^6.39.0 | Bloom, ChromaticAberration |
-| puppeteer | ^24.40.0 | headless Chrome 프레임 캡처 |
-| sharp | ^0.34.5 | 이미지 처리 (리사이즈, 마스크 생성) |
-| replicate | ^1.4.0 | bria/flux-fill-pro/depth API |
-| zod | ^4.3.6 | 스키마 검증 |
-| dotenv | ^17.3.1 | 환경변수 |
-
-### Dev
-
-| 패키지 | 버전 | 역할 |
-|--------|------|------|
-| vite | ^6.2.0 | 번들러 + HMR |
-| vite-plugin-glsl | ^1.3.1 | .frag/.vert import |
-| typescript | ^5.7.0 | strict 타입 체크 |
-| tsx | ^4.21.0 | TS 스크립트 실행 |
-| vitest | ^4.1.1 | 2410 tests (75 files) |
+| 패키지 | 역할 |
+|--------|------|
+| three | 3D 렌더링 (ShaderMaterial) |
+| postprocessing | Bloom, ChromaticAberration |
+| puppeteer | headless Chrome 프레임 캡처 |
+| sharp | 이미지 처리 (리사이즈, 마스크) |
+| replicate | bria/flux-fill/ESRGAN/depth API |
+| zod | 스키마 검증 |
 
 ### External
 
 | 도구 | 역할 |
 |------|------|
-| ffmpeg | MP4 인코딩 + VMAF 평가 |
-| SuperCollider | 오디오 합성 + NRT 렌더 |
-
----
-
-## Security
-
-| 위협 | 방어 |
-|------|------|
-| Path traversal | `validateFilePath()` — realpathSync + startsWith(root + sep) + symlink + dir 검증 |
-| Shell injection | `execFile` (array-form) 전용 |
-| SC code injection | Zod enum 검증 값만 보간 |
-| Replicate version drift | `enforceVersionPin()` — production 모드 64-char hex SHA 강제 |
-| Preset injection | `/^[a-zA-Z0-9_-]+$/` regex |
+| ffmpeg | MP4 인코딩 + 다운스케일 |
+| SuperCollider | 오디오 합성 (선택) |
