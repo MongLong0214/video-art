@@ -71,7 +71,6 @@ describe("Pipeline unit/integration tests (T8)", () => {
   it("pipeline CLI parses all flags correctly", () => {
     const args = parseCliArgs([
       "input.png",
-      "--layers", "6",
       "--duration", "20",
       "--production",
       "--fps", "60",
@@ -79,7 +78,6 @@ describe("Pipeline unit/integration tests (T8)", () => {
     ]);
 
     expect(args.inputPath).toBe("input.png");
-    expect(args.layerOverride).toBe(6);
     expect(args.duration).toBe(20);
     expect(args.production).toBe(true);
     expect(args.fps).toBe(60);
@@ -106,7 +104,6 @@ describe("Pipeline unit/integration tests (T8)", () => {
   it("integration: CLI flags + loadConfig + generateSceneJson → valid scene", async () => {
     const args = parseCliArgs([
       "input.png",
-      "--layers", "4",
       "--duration", "15",
       "--fps", "60",
     ]);

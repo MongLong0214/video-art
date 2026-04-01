@@ -103,39 +103,21 @@ function cleanPreviousArchive(cwd: string): void {
 
 export interface PipelineResult {
   videoPath: string;
-  manifestPath: string;
   elapsedMs: number;
 }
 
-// ── Step 1: Layer Decomposition ─────────────────────────────
+// ── Step 1: Layer Decomposition (pro-pipeline) ──────────────
 
 export function runLayerDecomposition(
   inputPath: string,
   cwd: string,
-  config?: Record<string, unknown>,
-): string {
-  const args = ["tsx", "scripts/pipeline-layers.ts", inputPath];
-
-  const samMaskLimit =
-    typeof config?.samMaskLimit === "number"
-      ? config.samMaskLimit
-      : typeof config?.numLayers === "number"
-        ? config.numLayers
-        : undefined;
-  if (samMaskLimit) {
-    args.push("--layers", String(samMaskLimit));
-  }
-
-  const output = execFileSync("npx", args, {
+  _config?: Record<string, unknown>,
+): void {
+  execFileSync("npx", ["tsx", "scripts/pipeline-pro.ts", inputPath], {
     cwd,
-    encoding: "utf-8",
     timeout: 300_000,
-    stdio: ["pipe", "pipe", "pipe"],
+    stdio: "inherit",
   });
-
-  // Extract archive dir from output for manifest lookup
-  const archiveMatch = output.match(/Archive:\s*(.+)/);
-  return archiveMatch?.[1]?.trim() ?? "";
 }
 
 // ── Chrome/Puppeteer Check ────────────────────────────────
@@ -197,14 +179,6 @@ export function copyToResearchDir(videoPath: string, cwd: string): string {
   return dest;
 }
 
-// ── Step 4: Find Manifest ───────────────────────────────────
-
-export function findManifest(archiveDir: string): string {
-  if (!archiveDir) return "";
-  const manifestPath = path.join(archiveDir, "decomposition-manifest.json");
-  return fs.existsSync(manifestPath) ? manifestPath : "";
-}
-
 // ── Public API ──────────────────────────────────────────────
 
 export async function runFullPipeline(
@@ -214,14 +188,11 @@ export async function runFullPipeline(
 ): Promise<PipelineResult> {
   const startMs = Date.now();
 
-  // Cleanup previous archive before starting
   cleanPreviousArchive(cwd);
 
-  // Step 1: Layer decomposition (Replicate API → scene.json + layers in public/)
   console.log("  [pipeline] Layer decomposition...");
-  const archiveDir = runLayerDecomposition(inputPath, cwd, config);
+  runLayerDecomposition(inputPath, cwd, config);
 
-  // Step 2: Pre-check Chrome + Patch scene.json + Video export
   if (!checkChromeAvailable()) {
     throw new Error(
       "Chrome/Chromium not found for Puppeteer. Install with:\n" +
@@ -243,16 +214,12 @@ export async function runFullPipeline(
     process.removeListener("exit", exitHandler);
   }
 
-  // Step 3: Copy video to stable research path
   const videoPath = copyToResearchDir(exportedVideoPath, cwd);
-
-  // Step 4: Locate manifest
-  const manifestPath = findManifest(archiveDir);
 
   const elapsedMs = Date.now() - startMs;
   console.log(`  [pipeline] Complete: ${path.relative(cwd, videoPath)} (${(elapsedMs / 1000).toFixed(1)}s)`);
 
-  return { videoPath, manifestPath, elapsedMs };
+  return { videoPath, elapsedMs };
 }
 
 // ── Input Image Resolution ──────────────────────────────────

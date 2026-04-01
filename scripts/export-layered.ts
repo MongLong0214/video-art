@@ -93,7 +93,7 @@ function encodeVideo(inputFramesDir: string, outputPath: string, options: Encode
   const { fps, duration, prores } = options;
   const rawCrf = parseInt(process.env.RESEARCH_CRF ?? "", 10);
   const CRF = Number.isFinite(rawCrf) && rawCrf >= 0 && rawCrf <= 51 ? rawCrf : 15;
-  const PIX_FMT = process.env.RESEARCH_PIX_FMT === "yuv420p" ? "yuv420p" : "yuv444p";
+  const PIX_FMT = process.env.RESEARCH_PIX_FMT === "yuv444p" ? "yuv444p" : "yuv420p";
 
   const ffmpegArgs = prores
     ? [

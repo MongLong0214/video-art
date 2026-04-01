@@ -18,11 +18,8 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // We import it once implemented. For now tests will fail (RED).
 
 describe("CLI arg parsing", () => {
-  // Dynamically import to pick up the module once created
   let parseCliArgs: (argv: string[]) => {
     inputPath: string;
-    layerOverride?: number;
-    unsafe: boolean;
     duration?: number;
     production: boolean;
   };
@@ -30,21 +27,6 @@ describe("CLI arg parsing", () => {
   beforeEach(async () => {
     const mod = await import("./pipeline-cli.js");
     parseCliArgs = mod.parseCliArgs;
-  });
-
-  it("should parse --layers 6", () => {
-    const result = parseCliArgs(["input.png", "--layers", "6"]);
-    expect(result.layerOverride).toBe(6);
-  });
-
-  it("should parse --unsafe", () => {
-    const result = parseCliArgs(["input.png", "--unsafe"]);
-    expect(result.unsafe).toBe(true);
-  });
-
-  it("should default to safety checker ON", () => {
-    const result = parseCliArgs(["input.png"]);
-    expect(result.unsafe).toBe(false);
   });
 
   it("should activate production mode with --production", () => {
@@ -251,42 +233,4 @@ describe("API token log suppression", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// Test 14: Fallback when all candidates drop
-// ---------------------------------------------------------------------------
-
-describe("Fallback on all candidates drop", () => {
-  it("should guarantee bg-plate even when tiny candidates survive via relaxation", async () => {
-    const { applyRetentionRules } = await import("./layer-resolve.js");
-
-    // Single tiny candidate (no bg-plate role): progressive relaxation keeps it,
-    // and bg-plate guarantee adds a synthetic plate from original
-    const candidates = [
-      {
-        id: "c0",
-        source: "sam2-segment" as const,
-        filePath: "/tmp/c0.png",
-        width: 100,
-        height: 100,
-        coverage: 0.001,
-        uniqueCoverage: 0,
-        bbox: { x: 0, y: 0, w: 10, h: 10 },
-        centroid: { x: 5, y: 5 },
-        edgeDensity: 0,
-        componentCount: 1,
-        role: "midground" as const,
-      },
-    ];
-
-    const result = applyRetentionRules(candidates, 6, "/tmp/original.png");
-    const retained = result.filter((c) => !c.droppedReason);
-
-    // bg-plate guaranteed from original
-    const bgPlate = retained.find((c) => c.role === "background-plate");
-    expect(bgPlate).toBeDefined();
-    expect(bgPlate!.id).toBe("fallback-bg-plate");
-    // c0 survives via progressive relaxation (only 1 candidate → can't reach MIN_RETAINED)
-    expect(retained.find((c) => c.id === "c0")).toBeDefined();
-  });
-});
 

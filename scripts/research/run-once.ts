@@ -252,7 +252,7 @@ export async function main(): Promise<void> {
     const evalResult = await evaluateVideo({
       videoPath: pipeline.videoPath,
       referenceCacheDir: REFERENCE_CACHE_DIR,
-      manifestPath: pipeline.manifestPath || undefined,
+      manifestPath: undefined,
       sourceVideoPath: referenceMeta.sourcePath,
     });
 

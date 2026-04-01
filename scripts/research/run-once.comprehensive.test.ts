@@ -200,45 +200,26 @@ describe("report comprehensive", () => {
 describe("ResearchConfig comprehensive", () => {
   it("default config has all fields", () => {
     const c = getDefaultConfig();
-    expect(Object.keys(c).length).toBeGreaterThanOrEqual(29);
-    expect(c.samMaskLimit === null || c.samMaskLimit >= 3).toBe(true);
-    expect(c.minRetainedLayers).toBe(1);
-    expect(c.alphaThreshold).toBeGreaterThanOrEqual(1);
-    expect(c.uniqueCoverageThreshold).toBeGreaterThan(0);
+    expect(Object.keys(c).length).toBeGreaterThanOrEqual(20);
   });
 
   it.each([
-    ["samMaskLimit", 3, 12],
-    ["samPointsPerSide", 16, 128],
-    ["samPredIouThresh", 0.1, 0.99],
-    ["samStabilityScoreThresh", 0.1, 0.99],
-    ["alphaThreshold", 1, 254],
-    ["minCoverage", 0.001, 0.05],
-    ["maxLayers", 3, 16],
-    ["iouDedupeThreshold", 0.3, 0.98],
+    ["colorCycleSpeedMul", 0.1, 3.0],
+    ["glowIntensityMul", 0.0, 3.0],
+    ["bloomStrengthMul", 0.0, 3.0],
+    ["satBlendLow", 0.01, 0.3],
+    ["lumExponent", 0.5, 3.0],
   ] as [string, number, number][])("%s accepts range [%d, %d]", (key, min, max) => {
     expect(() => ResearchConfigSchema.parse({ [key]: min })).not.toThrow();
     expect(() => ResearchConfigSchema.parse({ [key]: max })).not.toThrow();
   });
 
   it.each([
-    ["samMaskLimit", 2],
-    ["samMaskLimit", 13],
-    ["samPointsPerSide", 15],
-    ["samPointsPerSide", 129],
-    ["samPredIouThresh", 0.09],
-    ["samStabilityScoreThresh", 1.0],
-    ["alphaThreshold", 0],
-    ["alphaThreshold", 255],
-    ["minCoverage", -0.01],
-    ["minCoverage", 0.1],
+    ["colorCycleSpeedMul", 0],
+    ["saturationBoostMul", 3.1],
+    ["bloomStrengthMul", 3.1],
   ] as [string, number][])("%s rejects %d", (key, val) => {
     expect(() => ResearchConfigSchema.parse({ [key]: val })).toThrow();
-  });
-
-  it("constraint: simpleEdgeMax < complexEdgeMin", () => {
-    expect(() => ResearchConfigSchema.parse({ simpleEdgeMax: 0.3, complexEdgeMin: 0.1 })).toThrow();
-    expect(() => ResearchConfigSchema.parse({ simpleEdgeMax: 0.05, complexEdgeMin: 0.2 })).not.toThrow();
   });
 
   it("all multiplier fields remain numeric", () => {

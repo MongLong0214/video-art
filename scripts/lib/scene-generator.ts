@@ -38,6 +38,8 @@ interface SceneMultipliers {
   depthParallaxScale: number | null;
   hazeIntensity: number | null;
   featherRadius: number | null;
+  hueKey: number;
+  hueSpeed: number;
 }
 
 const DEFAULT_MULTIPLIERS: SceneMultipliers = {
@@ -66,6 +68,8 @@ const DEFAULT_MULTIPLIERS: SceneMultipliers = {
   depthParallaxScale: null,
   hazeIntensity: null,
   featherRadius: null,
+  hueKey: 1.5,
+  hueSpeed: 3.0,
 };
 
 export function filterPeriods(
@@ -150,6 +154,8 @@ function getRolePreset(
     satInjectionMul: mul.satInjectionMul,
     glowPulseFloor: mul.glowPulseFloor,
     lumExponent: mul.lumExponent,
+    hueKey: mul.hueKey,
+    hueSpeed: mul.hueSpeed,
   };
 
   const presets: Record<LayerRole, AnimationConfig> = {
@@ -238,6 +244,8 @@ export async function generateSceneJson(
     depthParallaxScale: config?.depthParallaxScale ?? null,
     hazeIntensity: config?.hazeIntensity ?? null,
     featherRadius: config?.featherRadius ?? null,
+    hueKey: 1.5,
+    hueSpeed: 3.0,
   };
   // Cap resolution while maintaining aspect ratio (Puppeteer + GPU limit)
   const MAX_OUTPUT_DIM = 1920;

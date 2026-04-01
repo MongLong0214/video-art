@@ -234,7 +234,7 @@ describe("runCalibrationLoop", () => {
     const deps: RunDeps = {
       runPipeline: vi.fn()
         .mockRejectedValueOnce(new Error("pipeline crash"))
-        .mockResolvedValueOnce({ videoPath: "/v.mp4", manifestPath: "" })
+        .mockResolvedValueOnce({ videoPath: "/v.mp4" })
         .mockRejectedValueOnce(new Error("pipeline crash 2")),
       evaluate: vi.fn().mockResolvedValue(goodResult),
     };
@@ -260,7 +260,7 @@ describe("runCalibrationLoop", () => {
 
   it("collects all results when all runs succeed", async () => {
     const deps: RunDeps = {
-      runPipeline: vi.fn().mockResolvedValue({ videoPath: "/v.mp4", manifestPath: "" }),
+      runPipeline: vi.fn().mockResolvedValue({ videoPath: "/v.mp4" }),
       evaluate: vi.fn().mockResolvedValue(goodResult),
     };
 
@@ -273,7 +273,7 @@ describe("runCalibrationLoop", () => {
 
   it("skips failed evaluate and continues", async () => {
     const deps: RunDeps = {
-      runPipeline: vi.fn().mockResolvedValue({ videoPath: "/v.mp4", manifestPath: "" }),
+      runPipeline: vi.fn().mockResolvedValue({ videoPath: "/v.mp4" }),
       evaluate: vi.fn()
         .mockResolvedValueOnce(goodResult)
         .mockRejectedValueOnce(new Error("evaluate crash"))

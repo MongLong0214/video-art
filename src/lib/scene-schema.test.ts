@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { sceneSchema, getValidPeriods, layerRoleSchema } from "./scene-schema";
-import type { LayerRole, LayerCandidate } from "./scene-schema";
+import type { LayerRole } from "./scene-schema";
 
 const validScene = {
   version: 1,
@@ -728,47 +728,3 @@ describe("LayerRole schema", () => {
   });
 });
 
-describe("LayerCandidate type", () => {
-  it("should satisfy the interface contract", () => {
-    const candidate: LayerCandidate = {
-      id: "layer-0-comp-0",
-      source: "sam2-segment",
-      filePath: "/tmp/layers/layer-0.png",
-      width: 1080,
-      height: 1080,
-      coverage: 0.45,
-      bbox: { x: 0, y: 0, w: 1080, h: 1080 },
-      centroid: { x: 540, y: 540 },
-      edgeDensity: 0.12,
-      componentCount: 1,
-    };
-    expect(candidate.id).toBe("layer-0-comp-0");
-    expect(candidate.source).toBe("sam2-segment");
-    expect(candidate.role).toBeUndefined();
-  });
-
-  it("should accept all optional fields", () => {
-    const candidate: LayerCandidate = {
-      id: "layer-1-comp-2",
-      source: "sam2-segment",
-      filePath: "/tmp/layers/layer-1-depth-2.png",
-      width: 1080,
-      height: 1080,
-      coverage: 0.20,
-      uniqueCoverage: 0.15,
-      meanDepth: 0.6,
-      bbox: { x: 100, y: 200, w: 400, h: 300 },
-      centroid: { x: 300, y: 350 },
-      edgeDensity: 0.08,
-      componentCount: 3,
-      role: "midground",
-      parentId: "layer-1",
-      droppedReason: "overlap > 80%",
-    };
-    expect(candidate.uniqueCoverage).toBe(0.15);
-    expect(candidate.meanDepth).toBe(0.6);
-    expect(candidate.role).toBe("midground");
-    expect(candidate.parentId).toBe("layer-1");
-    expect(candidate.droppedReason).toBe("overlap > 80%");
-  });
-});

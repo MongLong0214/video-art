@@ -11,7 +11,7 @@ const noPreview = args.includes("--no-preview");
 const title = parseTitle(args, inputPath);
 
 if (!inputPath) {
-  console.error("Usage: npm run pipeline <input.png> [--title <name>] [--keep-frames] [--no-preview] [--layers N] [--duration N] [--production] [--prompts \"a,b,c\"] [--unsafe]");
+  console.error("Usage: npm run pipeline <input.png> [--title <name>] [--keep-frames] [--no-preview] [--duration N] [--production]");
   process.exit(1);
 }
 
@@ -37,18 +37,8 @@ async function main() {
   console.log(`Input: ${path.resolve(inputPath!)}`);
   console.log(`Title: ${title}`);
 
-  // Forward relevant flags to pipeline-layers.ts
-  const layerArgs = ["tsx", "scripts/pipeline-layers.ts", inputPath!];
-  const passthroughFlags = ["--layers", "--duration", "--prompts"] as const;
-  for (const flag of passthroughFlags) {
-    const idx = args.indexOf(flag);
-    if (idx !== -1 && idx + 1 < args.length) {
-      layerArgs.push(flag, args[idx + 1]);
-    }
-  }
-  if (args.includes("--production")) layerArgs.push("--production");
-  if (args.includes("--unsafe")) layerArgs.push("--unsafe");
-  run("npx", layerArgs);
+  // Run pro-pipeline (bria + flux-fill-pro + depth)
+  run("npx", ["tsx", "scripts/pipeline-pro.ts", inputPath!]);
 
   if (!noPreview) {
     console.log("\n--- Step 3: Preview ---");

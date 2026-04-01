@@ -1,7 +1,7 @@
 # video-art
 
 Three.js + GLSL + SuperCollider 기반 생성형 비디오 아트 시스템.
-이미지 1장을 AI(SAM 2)로 레이어 분해하고, HSV hue rotation 셰이더로 사이키델릭 무한 루프 영상을 생성한다.
+이미지 1장을 AI(bria + flux-fill-pro)로 2레이어 분해하고, HSV hue rotation + hueKey 셰이더로 사이키델릭 무한 루프 영상을 생성한다.
 
 ---
 
@@ -9,18 +9,15 @@ Three.js + GLSL + SuperCollider 기반 생성형 비디오 아트 시스템.
 
 ### 1. Layered 모드 — 이미지를 넣는다
 
-이미지 1장을 SAM 2가 레이어로 분해하고, 각 레이어에 luminance-preserving HSV hue rotation을 적용하여 무한 루프 영상으로 변환한다.
+이미지 1장을 bria/remove-background로 전경/배경 분리, flux-fill-pro로 배경 인페인팅, depth-anything-v2로 깊이맵 생성한 뒤, hueKey 셰이더로 색상 영역별 독립 애니메이션을 적용하여 무한 루프 영상으로 변환한다.
 
 ```bash
-npm run pipeline:layers sunset.png -- --title sunset
+npm run pipeline input.png -- --title sunset
 
-# 1. Path traversal 검증 (프로젝트 루트 범위 제한)
-# 2. 이미지 복잡도 분석 → 적정 레이어 수 결정
-# 3. SAM 2 segmentation (Replicate API)
-# 4. Candidate 변환 (batched, concurrency=4)
-# 5. 배타적 소유권 해결 (per-candidate mask 캐싱)
-# 6. 역할 할당 + z-order 정렬
-# 7. scene.json 생성 → public/에 복사
+# 1. bria/remove-background → 전경 알파 매팅
+# 2. flux-fill-pro → 배경 인페인팅
+# 3. depth-anything-v2 → 깊이맵
+# 4. 2 레이어 조합 + scene.json 생성 → public/에 복사
 
 npm run export:layered -- --title sunset
 # → Puppeteer 프레임 캡처 → ffmpeg 인코딩 (해상도 기반 동적 bitrate)
@@ -62,7 +59,7 @@ npm run dev
 # → http://localhost:5173/?mode=layered       layered 모드
 
 # 풀 파이프라인
-npm run pipeline:layers input.png -- --title my-art
+npm run pipeline input.png -- --title my-art
 npm run export:layered -- --title my-art
 ```
 
@@ -74,59 +71,47 @@ npm run export:layered -- --title my-art
 
 ---
 
-## Pipeline 흐름 (Layered 모드)
+## Pipeline 흐름 (Layered 모드 — Pro Pipeline)
 
 ```
 input.png
     │
-    ├─ validate-file-path.ts
-    │  realpathSync + startsWith(projectRoot + sep) — path traversal 차단
+    ├─ pipeline-pro.ts
+    │  오케스트레이터: 아래 4 단계를 순차 실행
     │
-    ├─ input-validator.ts
-    │  포맷/크기 검증 + CMYK→sRGB + 4096px 리사이즈
+    ├─ Step 1: bria/remove-background (Replicate API)
+    │  → 전경 PNG (알파 매팅, 4ch RGBA)
     │
-    ├─ complexity-scoring.ts
-    │  Sobel edge density + color entropy → layer count 결정
+    ├─ Step 2: 인페인팅 마스크 생성
+    │  전경 알파 > 10 → white (인페인팅 대상)
     │
-    ├─ image-decompose.ts
-    │  SAM 2 segmentation (Replicate API) → per-object masks
-    │  fallback: luminance zone split (SAM 마스크 부족 시)
+    ├─ Step 3: flux-fill-pro (Replicate API)
+    │  원본 이미지 + 마스크 → 배경 인페인팅 (전경 영역을 배경으로 채움)
     │
-    ├─ mask-stats.ts (Step 4)
-    │  computeMaskStats(rgba, w, h, SAM_OPACITY_THRESHOLD)
-    │  → coverage, bbox, centroid, opaqueCount
-    │  batched processing (concurrency=4, batch-process.ts)
+    ├─ Step 4: depth-anything-v2 (Replicate API)
+    │  → 그레이스케일 깊이맵
     │
-    ├─ mask-cache.ts (Step 5.5)
-    │  buildMaskCache → Map<candidateId, Uint8Array>
-    │  Steps 6/8에서 재사용, Step 10은 미사용 (retention 이후)
+    ├─ Step 5: 2-레이어 조합
+    │  layer-0: AI 인페인팅된 배경 (role: background-plate)
+    │  layer-1: AI 매팅된 전경 (role: subject)
+    │  → public/layers/ + public/scene.json
     │
-    ├─ layer-resolve.ts
-    │  1. deduplicateCandidates (IoU > 0.92 → drop)
-    │  2. resolveExclusiveOwnership (pixel → 단일 레이어, predecodedMasks 캐시)
-    │  3. assignRoles (background-plate / subject / detail / foreground-occluder)
-    │  4. orderByRole (role z-order + coverage tie-break)
-    │  5. applyRetentionRules (uniqueCoverage >= 0.5%, cap 16)
-    │  6. fillBackgroundPlate (unclaimed pixel 채움)
-    │
-    ├─ scene-generator.ts
-    │  getRolePreset(role) → 역할별 animation 파라미터
-    │  → scene.json + layers/ → public/
-    │
-    └─ decomposition-manifest.ts
-        → decomposition-manifest.json (provenance)
+    └─ scene-generator.ts (Autoresearch 경유 시)
+       역할별 animation preset → scene.json
 ```
 
-### 셰이더 — Luminance-preserving HSV Hue Rotation
+### 셰이더 — Luminance-preserving HSV Hue Rotation + HueKey
 
 `layer.frag`는 wave/parallax 없이 **구조를 픽셀 단위로 유지**하면서 색상만 변조한다:
 
 1. RGB → HSV 변환
-2. luminance 기반 phase offset (`pow(1-lum, 1+luminanceKey)`)
-3. hue shift (시간 × speed / period + phase)
-4. saturation boost (원본 채도 기반 blend)
-5. luminance 보존 (`hsv.z = originalVal`)
-6. subtle glow pulse (sin 기반)
+2. luminance 기반 phase offset (`pow(1-lum, lumExponent + luminanceKey)`)
+3. **hueKey**: 원본 hue 값으로 per-pixel phase offset 생성 → 색상 영역별 독립 애니메이션
+4. hue shift (시간 x speed / period + lumPhase + huePhase + phaseOffset)
+5. saturation boost (원본 채도 기반 blend)
+6. luminance 보존 (`hsv.z = originalVal`)
+7. subtle glow pulse (sin 기반)
+8. atmospheric haze (깊이 기반 채도 감쇄)
 
 ### LayerRole
 
@@ -143,14 +128,7 @@ input.png
 
 | 상수 | 값 | 용도 |
 |------|-----|------|
-| `ALPHA_THRESHOLD` | 128 | BFS/ownership alpha 판정 |
-| `SAM_OPACITY_THRESHOLD` | 10 | SAM raw mask 필터 |
-| `MIN_COVERAGE` | 0.005 | BFS candidate 최소 커버리지 |
-| `SAM_MIN_COVERAGE` | 0.001 | SAM mask 최소 커버리지 |
-| `UNIQUE_COVERAGE_THRESHOLD` | 0.005 | retention 최소 고유 커버리지 |
-| `IOU_DEDUPE_THRESHOLD` | 0.92 | IoU 중복 제거 |
-| `MAX_LAYERS` | 16 | 최대 retained layers |
-| `MIN_RETAINED_LAYERS` | 6 | progressive relaxation 목표 |
+| `ALPHA_THRESHOLD` | 10 | ownership alpha 판정 |
 
 ### 동적 Bitrate (`bitrate.ts`)
 
@@ -167,16 +145,26 @@ input.png
 
 ---
 
-## CLI Flags (pipeline-layers)
+## CLI Flags
+
+### pipeline-pro.ts
+
+| Flag | Description |
+|------|-------------|
+| `<input.png>` | 입력 이미지 (필수) |
+| `--duration <N>` | scene duration 초 (1-300, 기본 20) |
+| `--fps <N>` | 프레임 레이트 (1-120, 기본 30) |
+| `--production` | model version pin 강제 |
+| `--prores` | ProRes 출력 |
+
+### export:layered
 
 | Flag | Description |
 |------|-------------|
 | `--title <name>` | 작품 타이틀 (아카이브 폴더명) |
-| `--layers <N>` | SAM 2 mask count override (1-12) |
-| `--duration <N>` | scene duration 초 (1-300, 기본 20) |
-| `--production` | model version pin 강제 |
-| `--unsafe` | manifest 기록 전용 (path validation과 무관) |
-| `--keep-frames` | 인코딩 후 PNG 프레임 보존 (export:layered) |
+| `--keep-frames` | 인코딩 후 PNG 프레임 보존 |
+| `--fps <N>` | 프레임 레이트 override |
+| `--prores` | ProRes 출력 |
 
 ---
 
@@ -188,14 +176,15 @@ input.png
 |---------|-------------|
 | `npm run dev` | Vite 개발서버 |
 | `npm run build` | TypeScript + Vite 프로덕션 빌드 |
-| `npm run test` | Vitest (2565 tests, 76 files) |
+| `npm run test` | Vitest (2410 tests, 75 files) |
 | `npm run test:watch` | Vitest watch 모드 |
 
 ### Layered 모드
 
 | Command | Description |
 |---------|-------------|
-| `npm run pipeline:layers <img>` | SAM 2 분해 + 역할 할당 + scene.json |
+| `npm run pipeline <img>` | pro-pipeline 오케스트레이터 (분해 + 프리뷰 + 익스포트) |
+| `npm run pipeline:pro <img>` | pro-pipeline 단독 실행 (bria + flux-fill + depth) |
 | `npm run export:layered` | layered mp4 익스포트 (동적 bitrate) |
 | `npm run pipeline:validate` | 루프 이음새 검증 (RMSE) |
 
@@ -223,7 +212,7 @@ input.png
 | Command | Description |
 |---------|-------------|
 | `npm run research:prepare` | 레퍼런스 keyframe + temporal pairs 추출 |
-| `npm run research:calibrate` | noise floor(δ_min) 측정 |
+| `npm run research:calibrate` | noise floor(delta_min) 측정 |
 | `npm run research:run` | 단일 실험 (config → pipeline → evaluate) |
 | `npm run research:eval` | 단일 영상 10 메트릭 평가 |
 | `npm run research:report` | 실험 이력 요약 |
@@ -242,22 +231,34 @@ input.png
   "fps": 30,
   "layers": [
     {
-      "id": "background",
+      "id": "layer-0",
       "file": "layers/layer-0.png",
       "zIndex": 0,
       "opacity": 1.0,
+      "blending": "normal",
       "role": "background-plate",
+      "meanDepth": 50,
       "animation": {
-        "colorCycle": { "speed": 0.5, "period": 20, "phaseOffset": 0 },
-        "glow": { "intensity": 0.3, "pulse": 1.0, "period": 20 },
-        "saturationBoost": 2.5,
-        "luminanceKey": 0.6
+        "colorCycle": { "speed": 5, "period": 20, "phaseOffset": 0 },
+        "glow": { "intensity": 0.12, "pulse": 0.6, "period": 10 },
+        "saturationBoost": 6.0,
+        "luminanceKey": 1.0,
+        "satBlendLow": 0.05,
+        "satBlendHigh": 0.3,
+        "satInjectionMul": 0.5,
+        "glowPulseFloor": 0.3,
+        "lumExponent": 1.8,
+        "hueKey": 1.5,
+        "hueSpeed": 3.0
       }
     }
   ],
   "effects": {
-    "bloom": { "strength": 0.6, "radius": 0.4, "threshold": 0.7 },
-    "chromaticAberration": { "offset": 1.5 }
+    "bloom": { "strength": 0.7, "radius": 0.5, "threshold": 0.35 },
+    "chromaticAberration": { "offset": 3.0, "modulationOffset": 0.5 },
+    "parallax": { "scale": 0 },
+    "haze": { "intensity": 0 },
+    "feather": { "radius": 0 }
   },
   "audio": { "bpm": 120, "key": "Am", "genre": "techno" }
 }
@@ -274,11 +275,12 @@ URL: /?mode=layered
   → loadScene("/scene.json")
   → Three.js Scene (role-ordered layers)
     ├── PlaneGeometry z=0.0  background-plate
-    ├── PlaneGeometry z=0.1  subject
-    └── PlaneGeometry z=0.2  foreground-occluder
+    └── PlaneGeometry z=0.1  subject
     각 레이어: ShaderMaterial(layer.vert + layer.frag)
       uniforms: uTexture, uTime, uColorCycleSpeed/Period/PhaseOffset,
-                uGlowIntensity/Pulse/Period, uSaturationBoost, uLuminanceKey
+                uGlowIntensity/Pulse/Period, uSaturationBoost, uLuminanceKey,
+                uSatBlendLow/High, uSatInjectionMul, uGlowPulseFloor, uLumExponent,
+                uHueKey, uHueSpeed, uHazeIntensity, uDepthNorm, uFeatherRadius
   → EffectComposer (Bloom + ChromaticAberration)
   → Canvas
 ```
@@ -287,7 +289,7 @@ URL: /?mode=layered
 
 ```
 Puppeteer headless Chrome
-  → Clock.startRecording() (deterministic: frame × 1/fps)
+  → Clock.startRecording() (deterministic: frame x 1/fps)
   → Loop N frames: __captureFrame() → PNG
   → ffmpeg: libx264, yuv420p, getBitrate(resolution) (동적)
   → 아카이브: out/layered/{date}_{title}/
@@ -302,38 +304,35 @@ video-art/
 ├── src/
 │   ├── main.ts                       진입점: sketch/layered 라우팅
 │   ├── lib/
-│   │   ├── scene-schema.ts           Zod 스키마 (LayerRole, LayerCandidate)
+│   │   ├── scene-schema.ts           Zod 스키마 (LayerRole, AnimationConfig)
 │   │   └── scene-loader.ts           scene.json fetch + 검증
 │   ├── shaders/
-│   │   ├── layer.frag                HSV hue rotation 셰이더
+│   │   ├── layer.frag                HSV hue rotation + hueKey 셰이더
 │   │   ├── layer.vert                버텍스 셰이더
 │   │   └── sketches/*.frag           sketch 작품 셰이더
 │   └── sketches/
 │       └── layered-psychedelic.ts    layered 모드 Three.js 셋업
 │
 ├── scripts/
-│   ├── pipeline-layers.ts            메인 파이프라인 오케스트레이터
+│   ├── pipeline.ts                   메인 파이프라인 (pipeline-pro 호출 + 프리뷰 + 익스포트)
+│   ├── pipeline-pro.ts               pro-pipeline (bria + flux-fill-pro + depth)
 │   ├── export-layered.ts             mp4 익스포트 (Puppeteer + ffmpeg)
 │   ├── export-sketch.ts              sketch mp4 익스포트
 │   ├── lib/
-│   │   ├── pipeline-constants.ts     8개 공유 상수 (SAM/BFS threshold)
-│   │   ├── mask-stats.ts             computeMaskStats (SAM path)
-│   │   ├── mask-cache.ts             buildMaskCache (per-candidate 캐싱)
-│   │   ├── batch-process.ts          batchProcess (concurrency limiter)
-│   │   ├── bitrate.ts                getBitrate (해상도 기반 동적)
-│   │   ├── validate-file-path.ts     path traversal 검증
-│   │   ├── candidate-extraction.ts   BFS 연결 성분 분석
-│   │   ├── layer-resolve.ts          dedupe + ownership + role + retention
-│   │   ├── complexity-scoring.ts     Sobel edge + color entropy
-│   │   ├── image-decompose.ts        SAM 2 API + luminance fallback
+│   │   ├── pipeline-constants.ts     공유 상수 (ALPHA_THRESHOLD)
+│   │   ├── pipeline-cli.ts           CLI 인자 파싱
+│   │   ├── replicate-utils.ts        Replicate API 유틸 (retry, token, URL 검증)
 │   │   ├── scene-generator.ts        역할 기반 preset → scene.json
 │   │   ├── input-validator.ts        이미지 포맷/크기 검증
-│   │   ├── pipeline-cli.ts           CLI 인자 파싱
-│   │   └── decomposition-manifest.ts provenance manifest
+│   │   ├── validate-file-path.ts     path traversal 검증
+│   │   ├── bitrate.ts                getBitrate (해상도 기반 동적)
+│   │   ├── batch-process.ts          batchProcess (concurrency limiter)
+│   │   └── ...                       audio/live 관련 모듈
 │   └── research/                     Autoresearch System
 │       ├── program.md                에이전트 연구 지시서
-│       ├── research-config.ts        튜닝 파라미터 (Zod)
-│       ├── evaluate.ts               평가 harness (수정 금지)
+│       ├── research-config.ts        튜닝 파라미터 (Zod, 25 axes)
+│       ├── evaluate.ts               평가 harness
+│       ├── pipeline-runner.ts        연구용 pipeline 실행기
 │       ├── prepare.ts / calibrate.ts / run-once.ts
 │       ├── report.ts / promote.ts
 │       └── metrics/                  M1-M10 메트릭 구현
@@ -342,7 +341,7 @@ video-art/
 │   ├── sc/synthdefs/                 SynthDef 9종
 │   └── setup.sh                      의존성 검증
 │
-├── docs/prd/                         PRD (설계 스펙)
+├── docs/plans/                       설계 계획
 ├── docs/tickets/                     개발 티켓
 └── out/layered/                      아카이브 (mp4 + layers + scene.json)
 ```
@@ -358,9 +357,8 @@ video-art/
 | three | ^0.172.0 | 3D 렌더링 (ShaderMaterial) |
 | postprocessing | ^6.39.0 | Bloom, ChromaticAberration |
 | puppeteer | ^24.40.0 | headless Chrome 프레임 캡처 |
-| sharp | ^0.34.5 | 이미지 처리 (mask, metric) |
-| replicate | ^1.4.0 | SAM 2 API |
-| @fal-ai/client | ^1.9.5 | fal.ai API |
+| sharp | ^0.34.5 | 이미지 처리 (리사이즈, 마스크 생성) |
+| replicate | ^1.4.0 | bria/flux-fill-pro/depth API |
 | zod | ^4.3.6 | 스키마 검증 |
 | dotenv | ^17.3.1 | 환경변수 |
 
@@ -372,7 +370,7 @@ video-art/
 | vite-plugin-glsl | ^1.3.1 | .frag/.vert import |
 | typescript | ^5.7.0 | strict 타입 체크 |
 | tsx | ^4.21.0 | TS 스크립트 실행 |
-| vitest | ^4.1.1 | 2565 tests (76 files) |
+| vitest | ^4.1.1 | 2410 tests (75 files) |
 
 ### External
 

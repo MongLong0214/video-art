@@ -10,9 +10,7 @@ vi.mock("node:path");
 // Re-import after mocks are hoisted
 import {
   runLayerDecomposition,
-  runExportLayered,
   copyToResearchDir,
-  findManifest,
   runFullPipeline,
   resolveInputImagePath,
   patchSceneJson,
@@ -71,25 +69,6 @@ describe("resolveInputImagePath", () => {
   });
 });
 
-// ── findManifest ───────────────────────────────────────────
-
-describe("findManifest", () => {
-  it("returns path when exists", () => {
-    mockedFs.existsSync.mockReturnValue(true);
-    const result = findManifest("/archive/dir");
-    expect(result).toBe("/archive/dir/decomposition-manifest.json");
-  });
-
-  it("returns empty when not exists", () => {
-    mockedFs.existsSync.mockReturnValue(false);
-    expect(findManifest("/archive/dir")).toBe("");
-  });
-
-  it("returns empty for empty archiveDir", () => {
-    expect(findManifest("")).toBe("");
-  });
-});
-
 // ── copyToResearchDir ──────────────────────────────────────
 
 describe("copyToResearchDir", () => {
@@ -121,37 +100,32 @@ function mockCleanAndPatch() {
 }
 
 describe("runFullPipeline", () => {
-  it("returns videoPath and manifestPath", async () => {
+  it("returns videoPath and elapsedMs", async () => {
     mockCleanAndPatch();
 
-    // cleanPreviousArchive + patchSceneJson + runExportLayered + findManifest existsSync
     mockedFs.existsSync
       .mockReturnValueOnce(false)  // out/layered (clean - no archive)
       .mockReturnValueOnce(false)  // .cache/research/current (clean)
       .mockReturnValueOnce(true)   // scene.json (patchSceneJson)
-      .mockReturnValueOnce(true)   // out/layered (runExportLayered)
-      .mockReturnValueOnce(true);  // manifest (findManifest)
+      .mockReturnValueOnce(true);  // out/layered (runExportLayered)
 
-    // Step 1: runLayerDecomposition
-    mockedExecFileSync.mockReturnValueOnce("Archive: /archive/001\n");
+    // Step 1: runLayerDecomposition (returns void, stdio: inherit)
+    mockedExecFileSync.mockReturnValueOnce(undefined as unknown as string);
     // checkChromeAvailable
     mockedExecFileSync.mockReturnValueOnce("");
-    // Step 2: runExportLayered — execFileSync for export-layered
+    // Step 2: runExportLayered
     mockedExecFileSync.mockReturnValueOnce("");
 
-    // runExportLayered readdirSync calls
     mockedFs.readdirSync
       .mockReturnValueOnce(["20260328_research"] as unknown as ReturnType<typeof fs.readdirSync>)
       .mockReturnValueOnce(["_research.mp4"] as unknown as ReturnType<typeof fs.readdirSync>);
 
-    // copyToResearchDir fs calls
     mockedFs.mkdirSync.mockReturnValue(undefined);
     mockedFs.copyFileSync.mockReturnValue(undefined);
 
     const result = await runFullPipeline("/project", "input.png", {});
 
     expect(result.videoPath).toContain("video.mp4");
-    expect(result.manifestPath).toContain("decomposition-manifest.json");
     expect(typeof result.elapsedMs).toBe("number");
   });
 
@@ -215,68 +189,15 @@ describe("runFullPipeline", () => {
     );
   });
 
-  it("returns empty manifestPath when no manifest", async () => {
-    mockCleanAndPatch();
+  it("calls pipeline-pro.ts", () => {
+    mockedExecFileSync.mockReturnValue(undefined as unknown as string);
 
-    mockedFs.existsSync
-      .mockReturnValueOnce(false)  // out/layered (clean)
-      .mockReturnValueOnce(false)  // .cache/research/current (clean)
-      .mockReturnValueOnce(true)   // scene.json (patchSceneJson)
-      .mockReturnValueOnce(true)   // out/layered (runExportLayered)
-      .mockReturnValueOnce(false); // manifest does not exist
-
-    mockedExecFileSync.mockReturnValueOnce("Archive: /archive/001\n");
-    mockedExecFileSync.mockReturnValueOnce(""); // checkChromeAvailable
-    mockedExecFileSync.mockReturnValueOnce("");
-
-    mockedFs.readdirSync
-      .mockReturnValueOnce(["20260328_research"] as unknown as ReturnType<typeof fs.readdirSync>)
-      .mockReturnValueOnce(["_research.mp4"] as unknown as ReturnType<typeof fs.readdirSync>);
-
-    mockedFs.mkdirSync.mockReturnValue(undefined);
-    mockedFs.copyFileSync.mockReturnValue(undefined);
-
-    const result = await runFullPipeline("/project", "input.png");
-    expect(result.manifestPath).toBe("");
-  });
-
-  it("passes --layers N from config", async () => {
-    mockCleanAndPatch();
-
-    mockedFs.existsSync
-      .mockReturnValueOnce(false)  // out/layered (clean)
-      .mockReturnValueOnce(false)  // .cache/research/current (clean)
-      .mockReturnValueOnce(true)   // scene.json (patchSceneJson)
-      .mockReturnValueOnce(true)   // out/layered (runExportLayered)
-      .mockReturnValueOnce(true);  // manifest
-
-    mockedExecFileSync.mockReturnValueOnce("Archive: /archive/001\n");
-    mockedExecFileSync.mockReturnValueOnce(""); // checkChromeAvailable
-    mockedExecFileSync.mockReturnValueOnce("");
-
-    mockedFs.readdirSync
-      .mockReturnValueOnce(["20260328_research"] as unknown as ReturnType<typeof fs.readdirSync>)
-      .mockReturnValueOnce(["_research.mp4"] as unknown as ReturnType<typeof fs.readdirSync>);
-    mockedFs.mkdirSync.mockReturnValue(undefined);
-    mockedFs.copyFileSync.mockReturnValue(undefined);
-
-    await runFullPipeline("/project", "input.png", { samMaskLimit: 6 });
-
-    // First call is runLayerDecomposition
-    const firstCallArgs = mockedExecFileSync.mock.calls[0][1] as string[];
-    expect(firstCallArgs).toContain("--layers");
-    expect(firstCallArgs).toContain("6");
-  });
-
-  it("keeps compatibility with legacy numLayers config", () => {
-    mockedExecFileSync.mockReturnValue("Archive: /some/archive/dir\n");
-
-    runLayerDecomposition("input.png", "/project", { numLayers: 7 });
+    runLayerDecomposition("input.png", "/project");
 
     const callArgs = mockedExecFileSync.mock.calls[0];
     const cliArgs = callArgs[1] as string[];
-    expect(cliArgs).toContain("--layers");
-    expect(cliArgs).toContain("7");
+    expect(cliArgs).toContain("scripts/pipeline-pro.ts");
+    expect(cliArgs).toContain("input.png");
   });
 });
 

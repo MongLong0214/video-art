@@ -126,7 +126,7 @@ export function parseRunsArg(argv: string[]): number {
 // ── Calibration Loop (testable) ──────────────────────────
 
 export interface RunDeps {
-  runPipeline: (cwd: string, inputPath: string) => Promise<{ videoPath: string; manifestPath: string }>;
+  runPipeline: (cwd: string, inputPath: string) => Promise<{ videoPath: string }>;
   evaluate: (opts: {
     videoPath: string;
     referenceCacheDir: string;
@@ -154,7 +154,7 @@ export async function runCalibrationLoop(
       const result = await deps.evaluate({
         videoPath: pipeline.videoPath,
         referenceCacheDir: REFERENCE_CACHE_DIR,
-        manifestPath: pipeline.manifestPath || undefined,
+        manifestPath: undefined,
         sourceVideoPath: refMeta.sourcePath,
       });
 

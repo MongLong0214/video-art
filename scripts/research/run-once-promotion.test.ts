@@ -91,7 +91,6 @@ vi.mock("./git-automation.js", () => {
 vi.mock("./pipeline-runner.js", () => ({
   runFullPipeline: vi.fn(async () => ({
     videoPath: ".cache/research/current/video.mp4",
-    manifestPath: "out/layered/fake/decomposition-manifest.json",
     elapsedMs: 1234,
   })),
 }));

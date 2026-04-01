@@ -10,7 +10,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "pipeline": "tsx scripts/pipeline.ts",
-    "pipeline:layers": "tsx scripts/pipeline-layers.ts",
+    "pipeline:pro": "tsx scripts/pipeline-pro.ts",
     "pipeline:preview": "vite",
     "pipeline:validate": "tsx scripts/validate-loop.ts",
     "export:sketch": "tsx scripts/export-sketch.ts",
