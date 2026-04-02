@@ -77,7 +77,7 @@ async function main() {
   const downscaleArgs = [
     "-y",
     "-i", hiresPath,
-    "-vf", "scale=1080:1920:force_original_aspect_ratio=increase:flags=lanczos,crop=1080:1920,fps=30",
+    "-vf", "scale=1080:1920:flags=lanczos,fps=30",
     "-c:v", "libx264", "-profile:v", "high", "-level:v", "4.2",
     "-pix_fmt", "yuv420p",
     "-crf", "15", "-preset", "veryslow",
