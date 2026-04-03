@@ -188,6 +188,16 @@ def main():
     else:
         print("  No riff events, skipping")
 
+    # Render 303 stab (optional layer)
+    stab_events = interpretation["tracks"].get("stab_303", {}).get("events", [])
+    if stab_events:
+        print("Rendering stab_303...")
+        stab_audio = render_303_track(stab_events, synth, duration)
+        stab_path = os.path.join(args.out_dir, "stab_303.wav")
+        with AudioFile(stab_path, "w", SR, 2) as f:
+            f.write(stab_audio)
+        print(f"  {len(stab_events)} events → {stab_path}")
+
     # Render 303 arp (optional layer)
     arp_events = interpretation["tracks"].get("arp_303", {}).get("events", [])
     if arp_events:
