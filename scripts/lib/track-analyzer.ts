@@ -109,6 +109,46 @@ export const mapGenre = (bpm: number): "techno" | "trance" | "house" | "dnb" | "
 const MIN_SECTION_RATIO = 0.05; // 5% of total
 const OUTRO_MAX_RATIO = 0.5;
 
+const coalesceAdjacentSections = (
+  sections: { start: number; end: number; label: string }[],
+): { start: number; end: number; label: string }[] => {
+  const merged: { start: number; end: number; label: string }[] = [];
+  for (const seg of sections) {
+    if (seg.end <= seg.start) continue;
+    const current = {
+      start: seg.start,
+      end: seg.end,
+      label: seg.label,
+    };
+    if (merged.length === 0) {
+      merged.push(current);
+      continue;
+    }
+    const prev = merged[merged.length - 1];
+    if (prev.label === current.label) {
+      prev.end = current.end;
+    } else {
+      if (Math.abs(prev.end - current.start) < 0.001) {
+        current.start = prev.end;
+      }
+      merged.push(current);
+    }
+  }
+  return merged;
+};
+
+const normalizeOutroPlacement = (
+  sections: { start: number; end: number; label: string }[],
+): { start: number; end: number; label: string }[] => {
+  if (sections.length < 2) return sections;
+  const normalized = sections.map((seg, idx) => ({
+    start: seg.start,
+    end: seg.end,
+    label: seg.label === "outro" && idx !== sections.length - 1 ? "break" : seg.label,
+  }));
+  return coalesceAdjacentSections(normalized);
+};
+
 export const detectSections = (curve: number[]): { start: number; end: number; label: string }[] => {
   if (!curve || curve.length === 0) return [{ start: 0, end: 1, label: "drop" }];
 
@@ -183,6 +223,9 @@ export const detectSections = (curve: number[]): { start: number; end: number; l
     sections = newSections;
   }
 
+  sections = coalesceAdjacentSections(sections);
+  sections = normalizeOutroPlacement(sections);
+
   // Ensure minimum 4 sections
   if (sections.length < 4) {
     const labelSeq = ["intro", "build", "drop", "outro"];
@@ -193,6 +236,9 @@ export const detectSections = (curve: number[]): { start: number; end: number; l
     }));
     sections[sections.length - 1].end = 1;
   }
+
+  sections = coalesceAdjacentSections(sections);
+  sections = normalizeOutroPlacement(sections);
 
   return sections;
 };

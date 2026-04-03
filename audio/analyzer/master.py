@@ -255,17 +255,21 @@ def master_audio(input_path, analysis_json_path, output_path=None):
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
-        print("Usage: python3 master.py <input.wav> <analysis.json> [--reference ref.wav]")
+        print("Usage: python3 master.py <input.wav> <analysis.json> [--output out.wav] [--reference ref.wav]")
         sys.exit(1)
 
     input_wav = sys.argv[1]
     analysis_json = sys.argv[2]
     ref_wav = None
+    out_override = None
+    if "--output" in sys.argv:
+        idx = sys.argv.index("--output")
+        out_override = sys.argv[idx + 1]
     if "--reference" in sys.argv:
         idx = sys.argv.index("--reference")
         ref_wav = sys.argv[idx + 1]
 
-    out = master_audio(input_wav, analysis_json)
+    out = master_audio(input_wav, analysis_json, output_path=out_override)
     print(f"Mastered: {out}")
 
     # Optional: run calibrate for before/after score
