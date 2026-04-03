@@ -28,6 +28,8 @@ out/
 # Audio render output
 out/audio/
 audio/render/test-output/
+audio/samples/303/*.wav
+audio/samples/303/manifest.json
 
 # Recordings (legacy)
 recordings/
@@ -43,3 +45,9 @@ prepared-*.png
 audio/references/
 .cache/test-baseline.json
 experiment-output/
+
+# Local OMX state
+.omx/
+
+# Local ad-hoc test inputs
+input/acperience1.wav
