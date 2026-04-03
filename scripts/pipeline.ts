@@ -37,8 +37,12 @@ async function main() {
   console.log(`Input: ${path.resolve(inputPath!)}`);
   console.log(`Title: ${title}`);
 
+  // Forward --work-dir if present
+  const wdIdx = args.indexOf("--work-dir");
+  const workDirArgs = wdIdx !== -1 && wdIdx + 1 < args.length ? ["--work-dir", args[wdIdx + 1]] : [];
+
   // Run pro-pipeline (bria + flux-fill-pro + depth)
-  run("npx", ["tsx", "scripts/pipeline-pro.ts", inputPath!]);
+  run("npx", ["tsx", "scripts/pipeline-pro.ts", inputPath!, ...workDirArgs]);
 
   if (!noPreview) {
     console.log("\n--- Step 3: Preview ---");
@@ -47,7 +51,7 @@ async function main() {
     await waitForEnter("\nPress Enter to continue to export, or Ctrl+C to cancel... ");
   }
 
-  const exportArgs = ["tsx", "scripts/export-layered.ts", "--title", title];
+  const exportArgs = ["tsx", "scripts/export-layered.ts", "--title", title, ...workDirArgs];
   if (keepFrames) exportArgs.push("--keep-frames");
   if (args.includes("--prores")) exportArgs.push("--prores");
   const fpsArgIdx = args.indexOf("--fps");

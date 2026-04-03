@@ -8,6 +8,7 @@ export interface PipelineCliArgs {
   production: boolean;
   prores?: boolean;
   fps?: number;
+  workDir?: string;
 }
 
 export function parseCliArgs(argv: string[]): PipelineCliArgs {
@@ -42,11 +43,19 @@ export function parseCliArgs(argv: string[]): PipelineCliArgs {
     fps = val;
   }
 
+  // --work-dir <path>
+  let workDir: string | undefined;
+  const wdIdx = argv.indexOf("--work-dir");
+  if (wdIdx !== -1 && wdIdx + 1 < argv.length) {
+    workDir = argv[wdIdx + 1];
+  }
+
   return {
     inputPath,
     duration,
     production,
     prores,
     fps,
+    workDir,
   };
 }

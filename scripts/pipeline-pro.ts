@@ -24,7 +24,9 @@ const DURATION = args.duration ?? 20;
 const FPS = args.fps ?? 60;
 const PRODUCTION = args.production;
 
-const OUTPUT_DIR = path.join(process.cwd(), "out", "pro-pipeline");
+const OUTPUT_DIR = args.workDir
+  ? path.join(args.workDir, "intermediate")
+  : path.join(process.cwd(), "out", "pro-pipeline");
 fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 
 function extractUrl(output: unknown): string {
@@ -158,7 +160,8 @@ async function main() {
   await sharp(fgLayer).toFile(path.join(OUTPUT_DIR, "layer-fg.png"));
   console.log(`  layer-fg.png — AI-matted foreground (ESRGAN ${(await sharp(fgBuf).metadata()).width}x${(await sharp(fgBuf).metadata()).height} → ${W}x${H})`);
 
-  const layersDir = path.join(process.cwd(), "public", "layers");
+  const serveDir = args.workDir || path.join(process.cwd(), "public");
+  const layersDir = path.join(serveDir, "layers");
   if (fs.existsSync(layersDir)) {
     for (const f of fs.readdirSync(layersDir)) fs.rmSync(path.join(layersDir, f), { force: true });
   }
@@ -234,7 +237,7 @@ async function main() {
     },
   };
 
-  fs.writeFileSync("public/scene.json", JSON.stringify(scene, null, 2));
+  fs.writeFileSync(path.join(serveDir, "scene.json"), JSON.stringify(scene, null, 2));
   console.log("\n  scene.json written (no parallax, no haze, pure shader)");
   console.log("\n═══ Ready to export ═══");
   console.log("Run: npx tsx scripts/export-layered.ts --title pro-pipeline --fps 60");

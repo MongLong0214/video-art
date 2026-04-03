@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -41,9 +42,7 @@ export interface RunContext {
 }
 
 function generateRunId(): string {
-  const ts = Date.now().toString(36);
-  const rand = Math.random().toString(36).slice(2, 6);
-  return `${ts}-${rand}`;
+  return crypto.randomUUID().substring(0, 8);
 }
 
 /**
@@ -63,9 +62,10 @@ export function createRunContext(
   projectRoot: string,
   title: string,
   pipeline: Pipeline,
+  existingArchiveDir?: string,
 ): RunContext {
   const runId = generateRunId();
-  const archiveDir = createArchiveDir(projectRoot, title, pipeline);
+  const archiveDir = existingArchiveDir || createArchiveDir(projectRoot, title, pipeline, runId);
   const workDir = path.join(archiveDir, WORK_DIR);
 
   fs.mkdirSync(workDir, { recursive: true });
@@ -146,19 +146,12 @@ export function parseTitle(argv: string[], inputPath?: string): string {
  * Create archive directory: out/{pipeline}/{YYYY-MM-DD}_{title}/
  * If already exists, appends -2, -3, etc. to avoid overwriting.
  */
-function createArchiveDir(projectRoot: string, title: string, pipeline: Pipeline): string {
+function createArchiveDir(projectRoot: string, title: string, pipeline: Pipeline, runId: string): string {
   const pipelineDir = path.join(projectRoot, OUT_DIR, pipeline);
   fs.mkdirSync(pipelineDir, { recursive: true });
 
   const date = new Date().toISOString().slice(0, 10);
-  const baseName = `${date}_${title}`;
-  let dirName = baseName;
-  let counter = 1;
-
-  while (fs.existsSync(path.join(pipelineDir, dirName))) {
-    counter++;
-    dirName = `${baseName}-${counter}`;
-  }
+  const dirName = `${date}_${title}-${runId}`;
 
   const archiveDir = path.join(pipelineDir, dirName);
   fs.mkdirSync(archiveDir, { recursive: true });
@@ -166,27 +159,28 @@ function createArchiveDir(projectRoot: string, title: string, pipeline: Pipeline
 }
 
 /**
- * Copy current public/layers + scene.json into the archive directory.
+ * Copy layers + scene.json from sourceDir into the archive directory.
+ * @param sourceDir  Directory containing layers/ and scene.json (workDir or public/)
  */
-export function snapshotLayers(projectRoot: string, archiveDir: string): void {
-  const publicLayers = path.join(projectRoot, "public", "layers");
-  const publicScene = path.join(projectRoot, "public", "scene.json");
+export function snapshotLayers(sourceDir: string, archiveDir: string): void {
+  const srcLayers = path.join(sourceDir, "layers");
+  const srcScene = path.join(sourceDir, "scene.json");
   const archiveLayers = path.join(archiveDir, "layers");
 
-  if (fs.existsSync(publicLayers)) {
+  if (fs.existsSync(srcLayers)) {
     fs.mkdirSync(archiveLayers, { recursive: true });
-    for (const file of fs.readdirSync(publicLayers)) {
+    for (const file of fs.readdirSync(srcLayers)) {
       if (file.endsWith(".png")) {
         fs.copyFileSync(
-          path.join(publicLayers, file),
+          path.join(srcLayers, file),
           path.join(archiveLayers, file),
         );
       }
     }
   }
 
-  if (fs.existsSync(publicScene)) {
-    fs.copyFileSync(publicScene, path.join(archiveDir, "scene.json"));
+  if (fs.existsSync(srcScene)) {
+    fs.copyFileSync(srcScene, path.join(archiveDir, "scene.json"));
   }
 }
 

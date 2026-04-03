@@ -9,6 +9,7 @@ import {
   createRunContext,
   snapshotLayers,
 } from "./lib/archive.js";
+import { findAvailablePort } from "./lib/work-dir.js";
 
 import { sceneSchema } from "../src/lib/scene-schema.js";
 
@@ -17,20 +18,34 @@ import { waitForServer } from "./lib/browser-utils.js";
 const ALLOWED_PRESETS = new Set(["ultrafast","superfast","veryfast","faster","fast","medium","slow","slower","veryslow"]);
 const PRESET = ALLOWED_PRESETS.has(process.env.RESEARCH_PRESET ?? "") ? process.env.RESEARCH_PRESET! : "veryslow";
 
-function startViteServer(port: number, projectRoot: string): ChildProcess {
-  return execFile("npx", ["vite", "--port", String(port)], { cwd: projectRoot }) as unknown as ChildProcess;
+function startViteServer(port: number, projectRoot: string, workDir?: string): ChildProcess {
+  const env = { ...process.env };
+  if (workDir) env.VITE_PUBLIC_DIR = workDir;
+  return execFile("npx", ["vite", "--port", String(port)], { cwd: projectRoot, env }) as unknown as ChildProcess;
 }
 
-async function captureFrames(outputDir: string, totalFrames: number, resolution: [number, number], fps: number): Promise<void> {
-  const TOTAL_FRAMES = totalFrames;
-  const port = 5299;
+async function killViteGracefully(proc: ChildProcess): Promise<void> {
+  await new Promise<void>((resolve) => {
+    const timeout = setTimeout(() => {
+      proc.kill("SIGKILL");
+      resolve();
+    }, 2000);
+    proc.once("exit", () => {
+      clearTimeout(timeout);
+      resolve();
+    });
+    proc.kill("SIGTERM");
+  });
+}
+
+async function captureFrames(outputDir: string, totalFrames: number, resolution: [number, number], fps: number, workDir?: string): Promise<void> {
+  const port = workDir ? await findAvailablePort() : 5299;
   fs.mkdirSync(outputDir, { recursive: true });
 
-  console.log("Starting Vite dev server...");
-  const viteProcess = startViteServer(port, process.cwd());
+  console.log(`Starting Vite dev server (port ${port})...`);
+  const viteProcess = startViteServer(port, process.cwd(), workDir);
   let browser: Browser | null = null;
 
-  // Ensure vite is killed on any exit (SIGINT → RunContext → process.exit → 'exit' event)
   const killVite = () => { viteProcess.kill(); };
   process.on("exit", killVite);
 
@@ -53,10 +68,10 @@ async function captureFrames(outputDir: string, totalFrames: number, resolution:
       timeout: 15000,
     });
 
-    console.log(`Starting capture: ${TOTAL_FRAMES} frames @ ${fps}fps...`);
+    console.log(`Starting capture: ${totalFrames} frames @ ${fps}fps...`);
     await page.evaluate(`window.__startCapture(${fps})`);
 
-    for (let i = 0; i < TOTAL_FRAMES; i++) {
+    for (let i = 0; i < totalFrames; i++) {
       const dataUrl = (await page.evaluate(
         "window.__captureFrame()",
       )) as string;
@@ -69,16 +84,16 @@ async function captureFrames(outputDir: string, totalFrames: number, resolution:
       );
       fs.writeFileSync(framePath, buf);
 
-      if ((i + 1) % 30 === 0 || i === TOTAL_FRAMES - 1) {
-        const pct = (((i + 1) / TOTAL_FRAMES) * 100).toFixed(0);
-        process.stdout.write(`\r  ${i + 1}/${TOTAL_FRAMES} frames (${pct}%)`);
+      if ((i + 1) % 30 === 0 || i === totalFrames - 1) {
+        const pct = (((i + 1) / totalFrames) * 100).toFixed(0);
+        process.stdout.write(`\r  ${i + 1}/${totalFrames} frames (${pct}%)`);
       }
     }
 
     console.log("\nCapture complete.");
   } finally {
     await browser?.close().catch(() => {});
-    viteProcess.kill();
+    await killViteGracefully(viteProcess);
     process.removeListener("exit", killVite);
   }
 }
@@ -148,15 +163,30 @@ async function main() {
     if (Number.isFinite(val) && val >= 1 && val <= 120) cliFps = val;
   }
 
+  // Parse --work-dir from CLI
+  let workDir: string | undefined;
+  const wdIdx = process.argv.indexOf("--work-dir");
+  if (wdIdx !== -1 && wdIdx + 1 < process.argv.length) {
+    workDir = process.argv[wdIdx + 1];
+  }
+
+  // Parse --archive-dir from CLI (reuse existing archive dir from publish.ts)
+  let archiveDirOverride: string | undefined;
+  const adIdx = process.argv.indexOf("--archive-dir");
+  if (adIdx !== -1 && adIdx + 1 < process.argv.length) {
+    archiveDirOverride = process.argv[adIdx + 1];
+  }
+
   checkFfmpeg();
 
   const projectRoot = process.cwd();
-  const ctx = createRunContext(projectRoot, title, "layered");
+  const ctx = createRunContext(projectRoot, title, "layered", archiveDirOverride);
 
-  // Load duration from scene.json
-  const scenePath = path.join(projectRoot, "public", "scene.json");
+  // Load duration from scene.json (from workDir or public/)
+  const sourceDir = workDir || path.join(projectRoot, "public");
+  const scenePath = path.join(sourceDir, "scene.json");
   if (!fs.existsSync(scenePath)) {
-    throw new Error("public/scene.json not found. Run pipeline:layers first.");
+    throw new Error(`scene.json not found at ${scenePath}. Run pipeline-pro first.`);
   }
   const sceneJson = JSON.parse(fs.readFileSync(scenePath, "utf-8"));
   const config = sceneSchema.parse(sceneJson);
@@ -164,7 +194,7 @@ async function main() {
 
   // FPS priority: CLI --fps > scene.json fps (default 60)
   const FPS = cliFps ?? config.fps;
-  const TOTAL_FRAMES = FPS * DURATION;
+  const totalFrames = FPS * DURATION;
 
   const ext = proresFlag ? ".mov" : ".mp4";
   const outputPath = path.join(ctx.archiveDir, `${title}${ext}`);
@@ -173,13 +203,13 @@ async function main() {
   console.log(`Title: ${title}`);
   console.log(`Archive: ${path.relative(projectRoot, ctx.archiveDir)}/`);
   console.log(`Resolution: ${resW}x${resH}`);
-  console.log(`Duration: ${DURATION}s, ${TOTAL_FRAMES} frames @ ${FPS}fps${proresFlag ? " (ProRes 4444)" : ""}`);
+  console.log(`Duration: ${DURATION}s, ${totalFrames} frames @ ${FPS}fps${proresFlag ? " (ProRes 4444)" : ""}`);
 
-  const estimatedMB = (TOTAL_FRAMES * 4.5).toFixed(0);
-  console.log(`Estimated disk usage: ~${estimatedMB}MB for ${TOTAL_FRAMES} frames`);
+  const estimatedMB = (totalFrames * 4.5).toFixed(0);
+  console.log(`Estimated disk usage: ~${estimatedMB}MB for ${totalFrames} frames`);
 
   try {
-    await captureFrames(ctx.paths.frames, TOTAL_FRAMES, config.resolution, FPS);
+    await captureFrames(ctx.paths.frames, totalFrames, config.resolution, FPS, workDir);
     await encodeVideo(ctx.paths.frames, outputPath, { fps: FPS, duration: DURATION, prores: proresFlag });
   } catch (err) {
     ctx.cleanup();
@@ -187,7 +217,7 @@ async function main() {
   }
 
   // Snapshot layers + scene.json into archive
-  snapshotLayers(projectRoot, ctx.archiveDir);
+  snapshotLayers(sourceDir, ctx.archiveDir);
 
   if (keepFrames) {
     ctx.skipCleanup();
