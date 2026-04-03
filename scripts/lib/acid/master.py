@@ -153,77 +153,112 @@ def mix_stems(drums, bass, riff, pad, sub, arp, stab=None) -> np.ndarray:
     return mixed
 
 
-def apply_fx(audio: np.ndarray, fx_params: dict) -> np.ndarray:
+def apply_fx_to_stems(stems_dict: dict, fx_params: dict, max_len: int) -> dict:
+    """Apply reverb/delay to 303 stems only, not drums/sub."""
     if not HAS_PEDALBOARD:
-        return audio
+        return stems_dict
 
     reverb_send = fx_params.get("reverb_send", 0.3)
     delay_send = fx_params.get("delay_send", 0.2)
     delay_time = fx_params.get("delay_time", 0.375)
 
-    dry = audio.copy()
-    wet = np.zeros_like(audio)
+    fx_targets = ["riff", "arp", "pad", "bass"]  # 303 layers only
+    rv = pedalboard.Pedalboard([
+        HighpassFilter(cutoff_frequency_hz=250),
+        Reverb(room_size=0.6, damping=0.45, wet_level=1.0, dry_level=0.0, width=1.0),
+        LowpassFilter(cutoff_frequency_hz=7000),
+    ])
+    dl = pedalboard.Pedalboard([
+        HighpassFilter(cutoff_frequency_hz=250),
+        Delay(delay_seconds=delay_time, feedback=0.35, mix=1.0),
+        LowpassFilter(cutoff_frequency_hz=5000),
+    ])
 
-    # Reverb: dark room, low-passed, for depth
-    if reverb_send > 0:
-        rv = pedalboard.Pedalboard([
-            HighpassFilter(cutoff_frequency_hz=200),
-            Reverb(room_size=0.65, damping=0.5, wet_level=1.0, dry_level=0.0, width=1.0),
-            LowpassFilter(cutoff_frequency_hz=6000),
-        ])
-        wet += rv(audio, SR) * reverb_send
+    for name in fx_targets:
+        if name not in stems_dict:
+            continue
+        audio = stems_dict[name]
+        wet = np.zeros_like(audio)
+        if reverb_send > 0:
+            wet += rv(audio, SR) * reverb_send
+        if delay_send > 0:
+            wet += dl(audio, SR) * delay_send
+        stems_dict[name] = audio + wet
 
-    # Delay: filtered, synced, trance echo
-    if delay_send > 0:
-        dl = pedalboard.Pedalboard([
-            HighpassFilter(cutoff_frequency_hz=200),
-            Delay(delay_seconds=delay_time, feedback=0.4, mix=1.0),
-            LowpassFilter(cutoff_frequency_hz=4000),
-        ])
-        wet += dl(audio, SR) * delay_send
-
-    return dry + wet
+    return stems_dict
 
 
-def master_chain(audio: np.ndarray) -> np.ndarray:
+def multiband_master(audio: np.ndarray) -> np.ndarray:
+    """3-band mastering: low / mid / high processed independently."""
     if not HAS_PEDALBOARD:
         return audio
 
-    # Stage 1: Surgical EQ
-    eq = pedalboard.Pedalboard([
-        HighpassFilter(cutoff_frequency_hz=25),
-        # Sub foundation
-        LowShelfFilter(cutoff_frequency_hz=55, gain_db=1.5),
-        # Clear mud
-        PeakFilter(cutoff_frequency_hz=250, gain_db=-2.0, q=1.5),
-        # 303 presence
-        PeakFilter(cutoff_frequency_hz=1200, gain_db=1.5, q=0.5),
-        # Definition
-        PeakFilter(cutoff_frequency_hz=3500, gain_db=1.0, q=0.6),
-        # Air
+    try:
+        from scipy.signal import butter, sosfilt
+    except ImportError:
+        return single_band_master(audio)
+
+    # Split into 3 bands
+    sos_low = butter(4, 200, btype='low', fs=SR, output='sos')
+    sos_mid_lo = butter(4, 200, btype='high', fs=SR, output='sos')
+    sos_mid_hi = butter(4, 4000, btype='low', fs=SR, output='sos')
+    sos_high = butter(4, 4000, btype='high', fs=SR, output='sos')
+
+    low = np.stack([sosfilt(sos_low, audio[ch]) for ch in range(2)]).astype(np.float32)
+    mid = np.stack([sosfilt(sos_mid_hi, sosfilt(sos_mid_lo, audio[ch])) for ch in range(2)]).astype(np.float32)
+    high = np.stack([sosfilt(sos_high, audio[ch]) for ch in range(2)]).astype(np.float32)
+
+    # Low band: tight comp, mono, subtle warmth
+    low_chain = pedalboard.Pedalboard([
+        Compressor(threshold_db=-10, ratio=4, attack_ms=5, release_ms=40),
+        LowShelfFilter(cutoff_frequency_hz=50, gain_db=1.0),
+    ])
+    low = low_chain(low, SR)
+    low_mono = (low[0] + low[1]) * 0.5
+    low = np.stack([low_mono, low_mono])
+
+    # Mid band: 303 presence, glue comp, warm saturation
+    mid_chain = pedalboard.Pedalboard([
+        PeakFilter(cutoff_frequency_hz=800, gain_db=1.5, q=0.5),
+        PeakFilter(cutoff_frequency_hz=1500, gain_db=1.0, q=0.6),
+        PeakFilter(cutoff_frequency_hz=250, gain_db=-1.5, q=1.5),
+        Compressor(threshold_db=-10, ratio=2.5, attack_ms=12, release_ms=80),
+        Distortion(drive_db=1.5),
+    ])
+    mid = mid_chain(mid, SR)
+
+    # High band: air, shimmer, gentle limit
+    high_chain = pedalboard.Pedalboard([
         HighShelfFilter(cutoff_frequency_hz=8000, gain_db=2.0),
+        PeakFilter(cutoff_frequency_hz=12000, gain_db=1.0, q=0.4),
+        Compressor(threshold_db=-12, ratio=2, attack_ms=5, release_ms=50),
     ])
-    audio = eq(audio, SR)
+    high = high_chain(high, SR)
+    high = stereo_widen(high, 0.25)
 
-    # Stage 2: Glue compression
-    glue = pedalboard.Pedalboard([
+    # Recombine
+    combined = low + mid + high
+
+    # Master bus: glue + limiter
+    master_bus = pedalboard.Pedalboard([
+        Compressor(threshold_db=-6, ratio=2, attack_ms=20, release_ms=120),
+        Limiter(threshold_db=-0.3),
+    ])
+    return master_bus(combined, SR)
+
+
+def single_band_master(audio: np.ndarray) -> np.ndarray:
+    """Fallback if scipy not available."""
+    board = pedalboard.Pedalboard([
+        HighpassFilter(cutoff_frequency_hz=25),
+        LowShelfFilter(cutoff_frequency_hz=55, gain_db=1.5),
+        PeakFilter(cutoff_frequency_hz=250, gain_db=-2.0, q=1.5),
+        PeakFilter(cutoff_frequency_hz=1200, gain_db=1.5, q=0.5),
+        HighShelfFilter(cutoff_frequency_hz=8000, gain_db=2.0),
         Compressor(threshold_db=-8, ratio=2.5, attack_ms=15, release_ms=100),
-    ])
-    audio = glue(audio, SR)
-
-    # Stage 3: Warmth — gentle saturation
-    warmth = pedalboard.Pedalboard([
-        Clipping(threshold_db=-3.0),
-    ])
-    audio = warmth(audio, SR)
-
-    # Stage 4: Final limiter
-    limit = pedalboard.Pedalboard([
         Limiter(threshold_db=-0.5),
     ])
-    audio = limit(audio, SR)
-
-    return audio
+    return board(audio, SR)
 
 
 def normalize_loudness(audio: np.ndarray) -> np.ndarray:
@@ -296,21 +331,74 @@ def main():
     stab = load_stem(args.stab) if args.stab else None
     drums = load_stem(args.drums)
 
-    print("Mixing...")
-    mixed = mix_stems(drums, bass, riff, pad, sub, arp, stab)
+    print("Mixing + per-stem FX...")
+    # Build stems dict for per-stem FX
+    stems_processed = {}
+    stem_pairs = [
+        ("drums", drums, [
+            HighpassFilter(cutoff_frequency_hz=28), LowpassFilter(cutoff_frequency_hz=10000),
+            PeakFilter(cutoff_frequency_hz=60, gain_db=2.0, q=1.5),
+            PeakFilter(cutoff_frequency_hz=3500, gain_db=1.0, q=0.8),
+            PeakFilter(cutoff_frequency_hz=7000, gain_db=-1.0, q=0.6),
+            Compressor(threshold_db=-12, ratio=3, attack_ms=5, release_ms=40),
+        ], -2.0),
+        ("sub", sub, [
+            HighpassFilter(cutoff_frequency_hz=20), LowpassFilter(cutoff_frequency_hz=100),
+        ], -2.0),
+        ("bass", bass, [
+            HighpassFilter(cutoff_frequency_hz=50), LowpassFilter(cutoff_frequency_hz=1500),
+            PeakFilter(cutoff_frequency_hz=180, gain_db=2.0, q=0.7),
+            PeakFilter(cutoff_frequency_hz=600, gain_db=1.0, q=0.5),
+            Distortion(drive_db=3.0),
+            Compressor(threshold_db=-15, ratio=3, attack_ms=8, release_ms=60),
+        ], -1.0),
+        ("pad", pad, [
+            HighpassFilter(cutoff_frequency_hz=80), LowpassFilter(cutoff_frequency_hz=1200),
+            Chorus(rate_hz=0.3, depth=0.15, mix=0.3),
+        ], -10.0),
+        ("riff", riff, [
+            HighpassFilter(cutoff_frequency_hz=90),
+            PeakFilter(cutoff_frequency_hz=800, gain_db=3.0, q=0.4),
+            PeakFilter(cutoff_frequency_hz=2000, gain_db=2.0, q=0.5),
+            PeakFilter(cutoff_frequency_hz=4000, gain_db=1.5, q=0.6),
+            Distortion(drive_db=4.0),
+            Compressor(threshold_db=-12, ratio=2.5, attack_ms=5, release_ms=50),
+        ], -2.5),
+        ("arp", arp, [
+            HighpassFilter(cutoff_frequency_hz=200),
+            PeakFilter(cutoff_frequency_hz=1500, gain_db=1.5, q=0.5),
+            PeakFilter(cutoff_frequency_hz=5000, gain_db=2.0, q=0.4),
+            PeakFilter(cutoff_frequency_hz=9000, gain_db=1.5, q=0.3),
+            Compressor(threshold_db=-15, ratio=2, attack_ms=10, release_ms=80),
+        ], -5.0),
+    ]
+
+    max_len = 0
+    for name, audio, chain, gain_db in stem_pairs:
+        if audio is None:
+            continue
+        processed = process_stem(audio, chain, gain_db)
+        if name in ("pad", "arp"):
+            processed = stereo_widen(processed, 0.3 if name == "arp" else 0.4)
+        stems_processed[name] = processed
+        max_len = max(max_len, processed.shape[1])
+
+    # Apply FX to 303 stems only (not drums/sub)
+    stems_processed = apply_fx_to_stems(stems_processed, interpretation.get("fx", {}), max_len)
+
+    # Sum all stems
+    mixed = np.zeros((2, max_len), dtype=np.float32)
+    for name, audio in stems_processed.items():
+        mixed[:, :audio.shape[1]] += audio
 
     # Mono below 120Hz
     try:
         mixed = mono_below(mixed, 120)
-        print("  Mono below 120Hz applied")
     except ImportError:
         pass
 
-    print("Applying FX...")
-    mixed = apply_fx(mixed, interpretation.get("fx", {}))
-
-    print("Mastering...")
-    mastered = master_chain(mixed)
+    print("Multiband mastering...")
+    mastered = multiband_master(mixed)
 
     print("Normalizing loudness...")
     mastered = normalize_loudness(mastered)
