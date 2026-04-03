@@ -27,6 +27,40 @@ const mockManifestWithBass = {
   ],
 };
 
+const mockBankManifestV2 = {
+  version: 2 as const,
+  samples: [
+    {
+      id: "C3_saw_normal_rr1",
+      file: "audio/samples/303/C3_saw_normal_rr1.wav",
+      root_note: "C3",
+      midi: 48,
+      waveform: "saw",
+      articulation: "normal",
+      role_tags: ["bass"],
+      duration_ms: 400,
+      lufs: -18.0,
+      centroid_hz: 1800,
+      slide: null,
+      round_robin: 1,
+    },
+    {
+      id: "C3_saw_accent_rr1",
+      file: "audio/samples/303/C3_saw_accent_rr1.wav",
+      root_note: "C3",
+      midi: 48,
+      waveform: "saw",
+      articulation: "accent",
+      role_tags: ["bass", "riff"],
+      duration_ms: 450,
+      lufs: -17.5,
+      centroid_hz: 2200,
+      slide: null,
+      round_robin: 1,
+    },
+  ],
+};
+
 describe("T16: Hybrid Sample Render", () => {
   // --- AC-1: manifest read / fallback ---
   describe("readManifest", () => {
@@ -51,6 +85,18 @@ describe("T16: Hybrid Sample Render", () => {
         expect.stringContaining("manifest"),
       );
       consoleSpy.mockRestore();
+    });
+
+    it("reads and parses v2 manifest for future adapter use", () => {
+      const tmpDir = fs.mkdtempSync("/tmp/hybrid-test-v2-");
+      const manifestPath = path.join(tmpDir, "manifest.json");
+      fs.writeFileSync(manifestPath, JSON.stringify(mockBankManifestV2));
+
+      const result = readManifest(manifestPath);
+      expect(result).not.toBeNull();
+      expect("version" in (result ?? {})).toBe(true);
+
+      fs.rmSync(tmpDir, { recursive: true });
     });
   });
 
@@ -106,6 +152,23 @@ describe("T16: Hybrid Sample Render", () => {
       expect(bufMap.size).toBe(3);
 
       fs.rmSync(tmpDir, { recursive: true });
+    });
+
+    it("generates buffer commands for v2 bank entries", () => {
+      const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const allocator = new BufferAllocator();
+      const { bufCmds, bufMap } = generateSampleBufferCommands(
+        mockBankManifestV2,
+        allocator,
+        "/fake",
+      );
+
+      expect(bufCmds).toHaveLength(0);
+      expect(bufMap.size).toBe(0);
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining("metadata-only"),
+      );
+      consoleSpy.mockRestore();
     });
   });
 
@@ -253,6 +316,28 @@ describe("T16: Hybrid Sample Render", () => {
       for (const ev of events) {
         expect(ev.params.buf).toBe(-1);
       }
+    });
+
+    it("does not schedule onset events from v2 metadata manifest", () => {
+      const events: Array<{
+        time: number;
+        synthDef: string;
+        params: Record<string, number>;
+      }> = [];
+
+      scheduleSampleEvents(
+        mockBankManifestV2,
+        new Map([
+          ["audio/samples/303/C3_saw_normal_rr1.wav", 100],
+          ["audio/samples/303/C3_saw_accent_rr1.wav", 101],
+        ]),
+        (time, synthDef, params) => {
+          events.push({ time, synthDef, params });
+        },
+        30,
+      );
+
+      expect(events).toHaveLength(0);
     });
   });
 });

@@ -31,6 +31,12 @@ ANALYSIS_FIELDS = [
     "pitch_contour",
 ]
 
+BPM_MIN = 60.0
+BPM_MAX = 200.0
+BPM_REL_MATCH_TOL = 0.08
+BPM_REL_SIGMA = 0.025
+BPM_CORRECTED_PENALTY = 0.72
+
 
 # === essentia-powered analyzers ===
 
@@ -96,40 +102,179 @@ def detect_bpm_librosa(y_perc, sr):
         return None, None
 
 
-def cross_validate_bpm(es_bpm, es_conf, lr_bt, lr_tg):
-    """2-way cross-validation: essentia + librosa. Half/double correction + genre range."""
+def _is_valid_bpm(value):
+    return value is not None and value > 0
+
+
+def _tempo_similarity(candidate, target):
+    rel_err = abs(candidate - target) / max(target, 1e-9)
+    if rel_err > BPM_REL_MATCH_TOL:
+        return 0.0
+    return float(np.exp(-0.5 * (rel_err / BPM_REL_SIGMA) ** 2))
+
+
+def _build_bpm_sources(es_bpm, es_conf, lr_bt, lr_tg):
+    sources = []
+    if _is_valid_bpm(es_bpm):
+        clipped_conf = float(np.clip(es_conf if es_conf is not None else 0.5, 0.0, 1.0))
+        sources.append({
+            "name": "essentia",
+            "tempo": float(es_bpm),
+            "weight": 0.8 + 0.4 * clipped_conf,
+        })
+    if _is_valid_bpm(lr_bt):
+        sources.append({
+            "name": "librosa_beat",
+            "tempo": float(lr_bt),
+            "weight": 0.9,
+        })
+    if _is_valid_bpm(lr_tg):
+        sources.append({
+            "name": "librosa_tempogram",
+            "tempo": float(lr_tg),
+            "weight": 0.65,
+        })
+    return sources
+
+
+def _iter_bpm_candidates(sources):
     candidates = set()
-    sources = [b for b in [es_bpm, lr_bt, lr_tg] if b is not None and b > 0]
-
-    for base in sources:
+    for source in sources:
         for mult in [0.5, 1.0, 2.0]:
-            c = base * mult
-            if 60 <= c <= 200:
-                candidates.add(round(c, 2))
+            candidate = source["tempo"] * mult
+            if BPM_MIN <= candidate <= BPM_MAX:
+                candidates.add(round(candidate, 2))
+    return sorted(candidates)
 
-    if not candidates:
-        candidates = {round(sources[0], 2)} if sources else {120.0}
 
-    # Prefer genre-typical ranges
-    genre_ranges = [(135, 150), (125, 140), (120, 135), (140, 170)]
-    best = None
-    for lo, hi in genre_ranges:
-        in_range = [c for c in candidates if lo <= c <= hi]
-        if in_range:
-            best = min(in_range, key=lambda x: abs(x - (lo + hi) / 2))
-            break
+def _score_bpm_candidate(candidate, sources, anchor):
+    score = 0.0
+    direct_support = 0.0
+    corrected_support = 0.0
+    matches = []
 
-    if best is None:
-        best = min(candidates, key=lambda x: abs(x - 130))
+    for source in sources:
+        best_match = None
+        for relation, mult, penalty in [
+            ("direct", 1.0, 1.0),
+            ("half", 0.5, BPM_CORRECTED_PENALTY),
+            ("double", 2.0, BPM_CORRECTED_PENALTY),
+        ]:
+            target = source["tempo"] * mult
+            if not (BPM_MIN <= target <= BPM_MAX):
+                continue
+            similarity = _tempo_similarity(candidate, target)
+            contribution = source["weight"] * penalty * similarity
+            if best_match is None or contribution > best_match["contribution"]:
+                best_match = {
+                    "source": source["name"],
+                    "observed": source["tempo"],
+                    "matched_tempo": round(target, 2),
+                    "relation": relation,
+                    "similarity": similarity,
+                    "contribution": contribution,
+                }
 
-    # Confidence: essentia confidence + agreement check
-    if es_bpm and lr_bt:
-        agreement = abs(es_bpm - lr_bt) / max(es_bpm, 1)
-        conf = min(1.0, (es_conf or 0.5) * (1.0 if agreement < 0.03 else 0.7))
-    else:
-        conf = es_conf or 0.5
+        if best_match and best_match["contribution"] > 0:
+            score += best_match["contribution"]
+            if best_match["relation"] == "direct":
+                direct_support += source["weight"] * best_match["similarity"]
+            else:
+                corrected_support += best_match["contribution"]
+            matches.append(best_match)
 
-    return {"value": round(best, 1), "confidence": round(conf, 2)}
+    return {
+        "value": candidate,
+        "score": score,
+        "direct_support": direct_support,
+        "corrected_support": corrected_support,
+        "matches": matches,
+        "anchor_distance": abs(candidate - anchor),
+    }
+
+
+def _estimate_bpm_confidence(best, sources):
+    total_weight = max(sum(source["weight"] for source in sources), 1e-9)
+    support_ratio = min(1.0, best["score"] / total_weight)
+    direct_ratio = min(1.0, best["direct_support"] / total_weight)
+    coverage_ratio = len(best["matches"]) / max(len(sources), 1)
+
+    agreement_ratio = 1.0
+    if len(best["matches"]) > 1:
+        spread = max(
+            abs(match["matched_tempo"] - best["value"]) / max(best["value"], 1e-9)
+            for match in best["matches"]
+        )
+        agreement_ratio = max(0.0, 1.0 - spread / 0.05)
+    elif best["matches"] and best["matches"][0]["relation"] != "direct":
+        agreement_ratio = 0.8
+
+    source_scale = 0.8 + 0.2 * min(len(sources), 3) / 3.0
+    confidence = (
+        0.45 * support_ratio
+        + 0.25 * direct_ratio
+        + 0.20 * coverage_ratio
+        + 0.10 * agreement_ratio
+    ) * source_scale
+    return round(float(np.clip(confidence, 0.0, 1.0)), 2)
+
+
+def cross_validate_bpm(es_bpm, es_conf, lr_bt, lr_tg):
+    """Ensemble BPM selection with direct-vs-corrected support and explicit provenance."""
+    sources = _build_bpm_sources(es_bpm, es_conf, lr_bt, lr_tg)
+    if not sources:
+        return {
+            "value": 120.0,
+            "confidence": 0.2,
+            "sources": [],
+            "warnings": ["No BPM detectors available — defaulted to 120 BPM"],
+        }
+
+    candidates = _iter_bpm_candidates(sources)
+    anchor = float(np.average(
+        [source["tempo"] for source in sources],
+        weights=[source["weight"] for source in sources],
+    ))
+    scored = [_score_bpm_candidate(candidate, sources, anchor) for candidate in candidates]
+    best = max(
+        scored,
+        key=lambda item: (
+            round(item["score"], 6),
+            round(item["direct_support"], 6),
+            len([match for match in item["matches"] if match["relation"] == "direct"]),
+            -item["anchor_distance"],
+        ),
+    )
+
+    warnings = []
+    if best["corrected_support"] > best["direct_support"]:
+        warnings.append("Selected BPM relies more on half/double correction than direct detector agreement")
+    if len(best["matches"]) < len(sources):
+        warnings.append("Some BPM detectors did not support the selected tempo")
+    if len(best["matches"]) > 1:
+        spread = max(
+            abs(match["matched_tempo"] - best["value"]) / max(best["value"], 1e-9)
+            for match in best["matches"]
+        )
+        if spread > 0.03:
+            warnings.append("Tempo detectors disagree materially after correction")
+
+    source_summary = []
+    for source in sources:
+        matched = next((match for match in best["matches"] if match["source"] == source["name"]), None)
+        source_summary.append({
+            "name": source["name"],
+            "observed": round(source["tempo"], 2),
+            "relation": matched["relation"] if matched else "unmatched",
+            "matched_bpm": matched["matched_tempo"] if matched else None,
+        })
+
+    return {
+        "value": round(best["value"], 1),
+        "confidence": _estimate_bpm_confidence(best, sources),
+        "sources": source_summary,
+        "warnings": warnings,
+    }
 
 
 def analyze_spectral(y_mono, sr):
@@ -265,6 +410,45 @@ def analyze_bass(y_mono, sr):
         return None
 
 
+def _coalesce_adjacent_segments(segments):
+    merged = []
+    for seg in segments:
+        if seg["end"] <= seg["start"]:
+            continue
+        current = {
+            "start": round(float(seg["start"]), 2),
+            "end": round(float(seg["end"]), 2),
+            "label": seg["label"],
+        }
+        if not merged:
+            merged.append(current)
+            continue
+        prev = merged[-1]
+        if current["label"] == prev["label"]:
+            prev["end"] = current["end"]
+        else:
+            if abs(prev["end"] - current["start"]) < 0.05:
+                current["start"] = prev["end"]
+            merged.append(current)
+    return merged
+
+
+def _normalize_outro_placement(segments):
+    if len(segments) < 2:
+        return segments
+    normalized = []
+    for idx, seg in enumerate(segments):
+        label = seg["label"]
+        if label == "outro" and idx != len(segments) - 1:
+            label = "break"
+        normalized.append({
+            "start": seg["start"],
+            "end": seg["end"],
+            "label": label,
+        })
+    return _coalesce_adjacent_segments(normalized)
+
+
 def detect_structure(y_mono, sr):
     MIN_SECTION_SEC = 5.0
     MIN_SECTION_SEC_SHORT = 2.0
@@ -355,6 +539,9 @@ def detect_structure(y_mono, sr):
                         new_segments.append(s)
                 segments = new_segments
 
+        segments = _coalesce_adjacent_segments(segments)
+        segments = _normalize_outro_placement(segments)
+
         # Ensure minimum 4 segments for long tracks (>= 60s)
         if not is_short and len(segments) < 4:
             # Equal split with standard labels
@@ -373,6 +560,9 @@ def detect_structure(y_mono, sr):
                 {"start": 0.0, "end": mid, "label": "intro"},
                 {"start": mid, "end": round(duration, 2), "label": "drop"},
             ]
+
+        segments = _coalesce_adjacent_segments(segments)
+        segments = _normalize_outro_placement(segments)
 
         if not segments:
             segments = [{"start": 0.0, "end": round(duration, 2), "label": "drop"}]
@@ -588,6 +778,16 @@ def pitch_to_note_events(pitch, confidence, sr=22050, hop_length=512,
             })
             current_note = None
             transition_frames = 0
+
+    if current_note is not None:
+        end_time = len(pitch) * hop_length / sr
+        events.append({
+            "time": round(note_start, 3),
+            "freq": round(float(current_note), 1),
+            "duration": round(end_time - note_start, 3),
+            "velocity": round(float(np.nanmean(confidence[max(0, len(confidence)-5):len(confidence)])), 2),
+            "slide": transition_frames >= min_slide_frames,
+        })
 
     return events
 

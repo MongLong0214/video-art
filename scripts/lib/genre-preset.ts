@@ -21,7 +21,10 @@ const SYNTHDEF_PARAMS: Record<string, string[]> = {
   granular_pad: ["buf", "density", "grainDur", "rate", "posRand", "panWidth"],
   layered_kick: ["subDecay", "bodyDecay", "clickAmp", "bodyFreq", "drive", "punch"],
   squelch: ["sweepStart", "sweepEnd", "sweepCurve", "resonance", "source", "lfoRate", "lfoDepth"],
-  sample_player: ["buf", "rate", "startPos", "attack", "release", "hpFreq", "lpFreq"],
+  sample_player: [
+    "buf", "rate", "startPos", "attack", "release", "hpFreq", "lpFreq",
+    "loopMode", "xfade", "sustainLevel", "rateLag", "legato", "slide", "slideTime",
+  ],
 };
 
 // Common params every SynthDef accepts

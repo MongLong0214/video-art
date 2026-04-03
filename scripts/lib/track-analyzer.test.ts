@@ -542,6 +542,14 @@ describe("T2: detectSections normalization", () => {
       for (let i = 2 * seg; i < 3 * seg; i++) curve[i] = 0.9;
       for (let i = 3 * seg; i < 4 * seg; i++) curve[i] = 0.15;
       for (let i = 4 * seg; i < len; i++) curve[i] = 0.5 - (0.4 * (i - 4 * seg)) / (len - 4 * seg);
+    } else if (pattern === "outro_then_drop") {
+      const a = Math.floor(len * 0.25);
+      const b = Math.floor(len * 0.8);
+      const c = Math.floor(len * 0.86);
+      for (let i = 0; i < a; i++) curve[i] = 0.55;
+      for (let i = a; i < b; i++) curve[i] = 0.55;
+      for (let i = b; i < c; i++) curve[i] = 0.55;
+      for (let i = c; i < len; i++) curve[i] = 1.0;
     } else if (pattern === "uniform") {
       curve.fill(0.5);
     } else if (pattern === "silent") {
@@ -588,6 +596,22 @@ describe("T2: detectSections normalization", () => {
     expect(sections[sections.length - 1].end).toBeCloseTo(1, 2);
     for (let i = 0; i < sections.length - 1; i++) {
       expect(sections[i].end).toBeCloseTo(sections[i + 1].start, 2);
+    }
+  });
+
+  it("outro only appears as final section after normalization", async () => {
+    const { detectSections } = await import("./track-analyzer.js");
+    const sections = detectSections(makeCurve("outro_then_drop"));
+    const labels = sections.map((s) => s.label);
+    expect(labels.slice(0, -1)).not.toContain("outro");
+  });
+
+  it("adjacent duplicate labels are coalesced", async () => {
+    const { detectSections } = await import("./track-analyzer.js");
+    const sections = detectSections(makeCurve("outro_then_drop"));
+    const labels = sections.map((s) => s.label);
+    for (let i = 0; i < labels.length - 1; i++) {
+      expect(labels[i]).not.toBe(labels[i + 1]);
     }
   });
 });

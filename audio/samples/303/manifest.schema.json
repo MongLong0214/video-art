@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://video-art.local/audio/samples/303/manifest.schema.json",
+  "title": "303 Sample Bank Manifest v2",
+  "type": "object",
+  "required": ["version", "samples"],
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "const": 2
+    },
+    "samples": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/sampleEntry"
+      }
+    }
+  },
+  "$defs": {
+    "slide": {
+      "type": "object",
+      "required": ["from", "to"],
+      "additionalProperties": false,
+      "properties": {
+        "from": { "type": "string" },
+        "to": { "type": "string" },
+        "type": { "type": "string" }
+      }
+    },
+    "sampleEntry": {
+      "type": "object",
+      "required": [
+        "id",
+        "file",
+        "root_note",
+        "midi",
+        "waveform",
+        "articulation",
+        "role_tags",
+        "duration_ms",
+        "lufs",
+        "centroid_hz",
+        "slide",
+        "round_robin"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "file": { "type": "string" },
+        "root_note": { "type": "string" },
+        "midi": { "type": "number" },
+        "waveform": { "type": "string" },
+        "articulation": { "type": "string" },
+        "role_tags": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "duration_ms": { "type": "number" },
+        "lufs": { "type": "number" },
+        "centroid_hz": { "type": "number" },
+        "transient_strength": { "type": "number" },
+        "recommended_rate_range": {
+          "type": "object",
+          "required": ["min", "max"],
+          "additionalProperties": false,
+          "properties": {
+            "min": { "type": "number" },
+            "max": { "type": "number" }
+          }
+        },
+        "slide": {
+          "anyOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/slide" }
+          ]
+        },
+        "round_robin": { "type": "number" },
+        "source_bank_version": { "type": "string" }
+      }
+    }
+  }
+}
