@@ -42,14 +42,14 @@ interface SectionConfig {
 }
 
 // === BPM ===
-export const mapBpmToPreset = (bpm: number): { min: number; max: number; default: number } => ({
+const mapBpmToPreset = (bpm: number): { min: number; max: number; default: number } => ({
   min: Math.max(60, Math.round(bpm) - 5),
   max: Math.min(200, Math.round(bpm) + 5),
   default: Math.round(bpm),
 });
 
 // === Kick drive (freq balance lookup) ===
-export const mapKickDrive = (low: number): number => {
+const mapKickDrive = (low: number): number => {
   if (low > 0.85) return 0.85;
   if (low > 0.70) return 0.6;
   return 0.35;
@@ -62,18 +62,18 @@ const BASS_PROFILES: Record<string, { cutoff: number; resonance: number; envAmou
   sub: { cutoff: 400, resonance: 0.20, envAmount: 0.30 },
 };
 
-export const mapBassType = (type: string): { cutoff: number; resonance: number; envAmount: number } =>
+const mapBassType = (type: string): { cutoff: number; resonance: number; envAmount: number } =>
   BASS_PROFILES[type] ?? BASS_PROFILES.rolling;
 
 // === Dynamics → compress ===
-export const mapCompress = (crest: number): number => {
+const mapCompress = (crest: number): number => {
   if (crest <= 3) return 0.8;
   if (crest <= 5) return 0.5;
   return 0.25;
 };
 
 // === Spectral contrast → saturate ===
-export const mapSaturate = (contrastMean: number[]): number => {
+const mapSaturate = (contrastMean: number[]): number => {
   if (contrastMean.length === 0) return 0.4;
   const avg = contrastMean.reduce((a, b) => a + b, 0) / contrastMean.length;
   if (avg > 20) return 0.2;  // high contrast = clean
@@ -82,7 +82,7 @@ export const mapSaturate = (contrastMean: number[]): number => {
 };
 
 // === Hat openness ===
-export const mapHatOpenness = (density: number): number => {
+const mapHatOpenness = (density: number): number => {
   if (density > 8) return 0.05;
   if (density > 6) return 0.15;
   if (density > 4) return 0.25;
@@ -90,14 +90,14 @@ export const mapHatOpenness = (density: number): number => {
 };
 
 // === Danceability → energy ===
-export const mapDanceabilityToEnergy = (score: number): number => {
+const mapDanceabilityToEnergy = (score: number): number => {
   if (score > 2) return 0.85;
   if (score > 1) return 0.65;
   return 0.35;
 };
 
 // === Genre from BPM ===
-export const mapGenre = (bpm: number): "techno" | "trance" | "house" | "dnb" | "ambient" => {
+const mapGenre = (bpm: number): "techno" | "trance" | "house" | "dnb" | "ambient" => {
   if (bpm >= 135 && bpm < 160) return "trance";
   if (bpm >= 120 && bpm < 135) return "techno";
   if (bpm >= 115 && bpm < 120) return "house";
@@ -149,7 +149,7 @@ const normalizeOutroPlacement = (
   return coalesceAdjacentSections(normalized);
 };
 
-export const detectSections = (curve: number[]): { start: number; end: number; label: string }[] => {
+const detectSections = (curve: number[]): { start: number; end: number; label: string }[] => {
   if (!curve || curve.length === 0) return [{ start: 0, end: 1, label: "drop" }];
 
   const len = curve.length;
@@ -244,7 +244,7 @@ export const detectSections = (curve: number[]): { start: number; end: number; l
 };
 
 // === Onset → 16-step Tidal pattern ===
-export const quantizeOnsets = (positions: number[], bpm: number): string => {
+const quantizeOnsets = (positions: number[], bpm: number): string => {
   if (!positions.length || !bpm) return "~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~";
 
   const barDuration = (4 * 60) / bpm; // 1 bar = 4 beats
@@ -339,7 +339,7 @@ export const generateSceneAudio = (
 };
 
 // === RMS envelope following (AC-8.3) ===
-export const mapRmsToOverrides = (energyCurve: number[], segStart: number, segEnd: number): { compress: number; drive: number } => {
+const mapRmsToOverrides = (energyCurve: number[], segStart: number, segEnd: number): { compress: number; drive: number } => {
   if (!energyCurve.length) return { compress: 0.5, drive: 0.3 };
   const len = energyCurve.length;
   const startIdx = Math.floor((segStart) * len);
@@ -355,7 +355,7 @@ export const mapRmsToOverrides = (energyCurve: number[], segStart: number, segEn
 };
 
 // === Accent extraction from pitch_contour velocity (AC-8.4) ===
-export const extractAccents = (
+const extractAccents = (
   noteEvents: { time: number; velocity: number }[],
   segStart: number,
   segEnd: number,
@@ -422,7 +422,7 @@ const buildSectionOverrides = (
 };
 
 // === Generate sections from analysis structure (AC-8.1, AC-8.2, AC-8.3) ===
-export const generateSections = (
+const generateSections = (
   analysis: AnalysisResult,
 ): SectionConfig[] => {
   const segments = analysis.structure?.segments;
@@ -447,7 +447,7 @@ export const generateSections = (
 };
 
 // === Phase 2 SynthDef mapping functions ===
-export const mapAcidBass = (bass: { centroid: number; variance: number; flux: number; type: string }) => ({
+const mapAcidBass = (bass: { centroid: number; variance: number; flux: number; type: string }) => ({
   cutoff: bass.flux > 0.5 ? 2200 : 1200,
   resonance: bass.flux > 0.3 ? 2.5 : 1.5,
   envDepth: bass.flux > 0.5 ? 5000 : 3000,
@@ -459,7 +459,7 @@ export const mapAcidBass = (bass: { centroid: number; variance: number; flux: nu
   dist: bass.flux > 0.5 ? 0.4 : 0.2,
 });
 
-export const mapFmLead = (centroid: number) => ({
+const mapFmLead = (centroid: number) => ({
   mRatio: centroid > 3000 ? 3 : 2,
   cRatio: 1,
   index: centroid > 3000 ? 5 : 3,
@@ -468,7 +468,7 @@ export const mapFmLead = (centroid: number) => ({
   drive: centroid > 3000 ? 0.3 : 0.15,
 });
 
-export const mapLayeredKick = (freq: { low: number }, dyn: { crest: number }) => ({
+const mapLayeredKick = (freq: { low: number }, dyn: { crest: number }) => ({
   subDecay: freq.low > 0.6 ? 0.5 : 0.3,
   bodyDecay: 0.1,
   clickAmp: dyn.crest > 4 ? 0.7 : 0.4,
@@ -477,7 +477,7 @@ export const mapLayeredKick = (freq: { low: number }, dyn: { crest: number }) =>
   punch: dyn.crest > 4 ? 0.7 : 0.3,
 });
 
-export const mapSquelch = () => ({
+const mapSquelch = () => ({
   sweepStart: 300,
   sweepEnd: 5000,
   sweepCurve: -4,
@@ -487,7 +487,7 @@ export const mapSquelch = () => ({
   lfoDepth: 0,
 });
 
-export const mapWavetable = () => ({
+const mapWavetable = () => ({
   morph: 0.5,
   attack: 1.0,
   release: 1.5,
@@ -497,7 +497,7 @@ export const mapWavetable = () => ({
   bufBase: 8,
 });
 
-export const mapGranular = () => ({
+const mapGranular = () => ({
   buf: 0,
   density: 8,
   grainDur: 0.1,

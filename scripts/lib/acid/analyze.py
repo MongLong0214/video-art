@@ -14,7 +14,6 @@ import warnings as _warnings
 
 import numpy as np
 import librosa
-import soundfile as sf
 
 _warnings.filterwarnings("ignore", category=FutureWarning)
 _warnings.filterwarnings("ignore", category=UserWarning)

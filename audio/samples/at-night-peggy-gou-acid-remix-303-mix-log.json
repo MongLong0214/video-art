@@ -1,0 +1,35 @@
+{
+  "stems": [
+    "kick",
+    "bass",
+    "hat",
+    "synth",
+    "fx"
+  ],
+  "style": "dark-techno",
+  "sidechain": true,
+  "sidechain_preset": {
+    "attack_ms": 0.5,
+    "release_ms": 80,
+    "depth": 0.85
+  },
+  "levels": {
+    "kick": 0.0,
+    "bass": -2.0,
+    "hat": -6.0,
+    "synth": -4.0,
+    "fx": -8.0
+  },
+  "adapted_params": {
+    "kick_gain_db": 5.228,
+    "bass_lpf_hz": 253.8,
+    "hat_hpf_hz": 3306.0,
+    "synth_hpf_hz": 126.9,
+    "synth_lpf_hz": 7388.0,
+    "comp_ratio": 4.0,
+    "comp_threshold": -6,
+    "limiter_db": -0.1
+  },
+  "peak_dbfs": -0.3000001311302185,
+  "sr": 44100
+}

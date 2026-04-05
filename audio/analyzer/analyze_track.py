@@ -12,7 +12,6 @@ if sys.version_info < (3, 9):
 
 import numpy as np
 import librosa
-import soundfile as sf
 
 try:
     import essentia.standard as es

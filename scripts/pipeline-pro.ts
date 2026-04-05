@@ -125,11 +125,26 @@ async function main() {
   );
   const bgUrl = extractUrl(inpainted);
   const bgResp = await fetch(bgUrl);
-  const bgBuf = Buffer.from(await bgResp.arrayBuffer());
-  const bgMeta = await sharp(bgBuf).metadata();
+  let bgBuf = Buffer.from(await bgResp.arrayBuffer());
+  let bgMeta = await sharp(bgBuf).metadata();
   console.log(`  Background: ${bgMeta.width}x${bgMeta.height}`);
   console.log(`  ${Date.now() - t3}ms`);
   await sharp(bgBuf).toFile(path.join(OUTPUT_DIR, "03-background-inpainted.png"));
+
+  // ═══ Step 3b: Upscale background (Real-ESRGAN 2x) ═══
+  console.log("═══ Step 3b: Real-ESRGAN 2x background upscale ═══");
+  const t3b = Date.now();
+  const bgDataUri = `data:image/png;base64,${bgBuf.toString("base64")}`;
+  const bgUpscaled = await withRetry(() =>
+    replicate.run(ESRGAN_MODEL, { input: { image: bgDataUri, scale: 2, face_enhance: false } }),
+  );
+  const bgUpUrl = extractUrl(bgUpscaled);
+  const bgUpResp = await fetch(bgUpUrl);
+  bgBuf = Buffer.from(await bgUpResp.arrayBuffer());
+  bgMeta = await sharp(bgBuf).metadata();
+  console.log(`  Upscaled: ${bgMeta.width}x${bgMeta.height}`);
+  console.log(`  ${Date.now() - t3b}ms`);
+  await sharp(bgBuf).toFile(path.join(OUTPUT_DIR, "03-background-upscaled.png"));
 
   // ═══ Step 4: depth-anything-v2 ═══
   console.log("\n═══ Step 4: depth-anything-v2 ═══");
@@ -167,10 +182,10 @@ async function main() {
   }
   fs.mkdirSync(layersDir, { recursive: true });
 
-  // Background: heavy blur to remove inpainting noise (preserves color, eliminates grain)
-  const bgSmoothed = await sharp(bgPlate).median(5).blur(4.0).png().toBuffer();
+  // Background: light blur only (ESRGAN already cleaned noise; heavy denoising destroys detail)
+  const bgSmoothed = await sharp(bgPlate).blur(1.2).png().toBuffer();
   await sharp(bgSmoothed).toFile(path.join(layersDir, "layer-0.png"));
-  console.log("  layer-0.png — background (median+blur denoised)");
+  console.log("  layer-0.png — background (ESRGAN upscaled, light blur)");
 
   fs.copyFileSync(path.join(OUTPUT_DIR, "layer-fg.png"), path.join(layersDir, "layer-1.png"));
   await sharp(depthBuf).resize(W, H, { kernel: "lanczos3" }).grayscale().toFile(path.join(layersDir, "depth.png"));

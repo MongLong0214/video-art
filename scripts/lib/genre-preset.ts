@@ -131,25 +131,6 @@ export const loadPreset = (
   return presetSchema.parse(parsed);
 };
 
-export const mergeWithDefaults = (
-  preset: Partial<Preset["synthParams"]>,
-  defaults: Preset["synthParams"],
-): Preset["synthParams"] => {
-  const result = { ...defaults };
-  for (const [synth, params] of Object.entries(preset)) {
-    if (synth in result) {
-      (result as Record<string, Record<string, number>>)[synth] = {
-        ...(result as Record<string, Record<string, number>>)[synth],
-        ...params,
-      };
-    } else if (synth in SYNTHDEF_PARAMS) {
-      // Phase 2 optional SynthDefs — preserve if valid
-      (result as Record<string, Record<string, number>>)[synth] = params as Record<string, number>;
-    }
-  }
-  return result;
-};
-
 export const listPresets = (
   genresDir: string,
   userDir: string,
@@ -175,8 +156,6 @@ export const listPresets = (
   return presets;
 };
 
-export const SYNTHDEF_PARAM_KEYS = SYNTHDEF_PARAMS;
-
 export const savePreset = (
   name: string,
   sourcePreset: Preset,
@@ -198,24 +177,3 @@ export const savePreset = (
   fs.writeFileSync(targetPath, JSON.stringify(preset, null, 2));
 };
 
-export const detectPresetFromOsclog = (events: { s: string; n?: number | string }[]): string | null => {
-  for (const event of events) {
-    if (event.s === "setpreset" && event.n != null) {
-      return String(event.n);
-    }
-  }
-  return null;
-};
-
-export const mergeFxDefaults = (
-  eventParams: Record<string, unknown>,
-  presetFxDefaults: Record<string, number>,
-): Record<string, unknown> => {
-  const merged = { ...presetFxDefaults };
-  for (const [key, val] of Object.entries(eventParams)) {
-    if (val != null) {
-      (merged as Record<string, unknown>)[key] = val;
-    }
-  }
-  return merged;
-};

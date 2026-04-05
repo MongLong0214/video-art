@@ -6,6 +6,7 @@
  * Usage: npx tsx scripts/acid-reinterpreter.ts <input.wav> [options]
  */
 
+import "dotenv/config";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { execFileSync } from "node:child_process";
