@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { sceneSchema, getValidPeriods, layerRoleSchema } from "./scene-schema";
-import type { LayerRole, LayerCandidate } from "./scene-schema";
+import type { LayerRole } from "./scene-schema";
 
 const validScene = {
   version: 1,
@@ -412,6 +412,134 @@ describe("sceneSchema", () => {
     expect(result.effects.bloom.strength).toBe(0.6);
     expect(result.effects.chromaticAberration.offset).toBe(1.5);
   });
+
+  // ── Depth Cinematic Effects: effectsSchema extensions ──
+
+  it("effectsSchema accepts parallax with valid scale", () => {
+    const result = sceneSchema.safeParse({
+      ...validScene,
+      effects: { parallax: { scale: 0.05 } },
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.effects.parallax.scale).toBe(0.05);
+    }
+  });
+
+  it("effectsSchema rejects parallax scale > 0.1", () => {
+    const result = sceneSchema.safeParse({
+      ...validScene,
+      effects: { parallax: { scale: 0.2 } },
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("effectsSchema rejects parallax scale < 0", () => {
+    const result = sceneSchema.safeParse({
+      ...validScene,
+      effects: { parallax: { scale: -0.01 } },
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("effectsSchema defaults parallax to { scale: 0 }", () => {
+    const result = sceneSchema.parse(validScene);
+    expect(result.effects.parallax.scale).toBe(0);
+  });
+
+  it("effectsSchema accepts haze with valid intensity", () => {
+    const result = sceneSchema.safeParse({
+      ...validScene,
+      effects: { haze: { intensity: 0.5 } },
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.effects.haze.intensity).toBe(0.5);
+    }
+  });
+
+  it("effectsSchema rejects haze intensity > 1", () => {
+    const result = sceneSchema.safeParse({
+      ...validScene,
+      effects: { haze: { intensity: 1.5 } },
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("effectsSchema rejects haze intensity < 0", () => {
+    const result = sceneSchema.safeParse({
+      ...validScene,
+      effects: { haze: { intensity: -0.01 } },
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("effectsSchema defaults haze to { intensity: 0 }", () => {
+    const result = sceneSchema.parse(validScene);
+    expect(result.effects.haze.intensity).toBe(0);
+  });
+
+  it("effectsSchema accepts feather with valid radius", () => {
+    const result = sceneSchema.safeParse({
+      ...validScene,
+      effects: { feather: { radius: 0.1 } },
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.effects.feather.radius).toBe(0.1);
+    }
+  });
+
+  it("effectsSchema rejects feather radius > 0.2", () => {
+    const result = sceneSchema.safeParse({
+      ...validScene,
+      effects: { feather: { radius: 0.3 } },
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("effectsSchema rejects feather radius < 0", () => {
+    const result = sceneSchema.safeParse({
+      ...validScene,
+      effects: { feather: { radius: -0.01 } },
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("effectsSchema defaults feather to { radius: 0 }", () => {
+    const result = sceneSchema.parse(validScene);
+    expect(result.effects.feather.radius).toBe(0);
+  });
+
+  it("existing effects schema defaults unchanged after additions", () => {
+    const result = sceneSchema.parse(validScene);
+    expect(result.effects.bloom.strength).toBe(0.6);
+    expect(result.effects.bloom.radius).toBe(0.4);
+    expect(result.effects.bloom.threshold).toBe(0.7);
+    expect(result.effects.chromaticAberration.offset).toBe(1.5);
+    expect(result.effects.chromaticAberration.modulationOffset).toBe(0.3);
+  });
+
+  it("sceneSchema parses with both effectsSchema.parallax and animationSchema.parallax coexisting", () => {
+    const result = sceneSchema.safeParse({
+      ...validScene,
+      effects: { parallax: { scale: 0.05 } },
+      layers: [
+        {
+          ...validScene.layers[0],
+          animation: {
+            ...validScene.layers[0].animation,
+            parallax: { depth: 0.5 },
+          },
+        },
+      ],
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.effects.parallax.scale).toBe(0.05);
+      expect(result.data.layers[0].animation.parallax?.depth).toBe(0.5);
+    }
+  });
 });
 
 describe("sceneSchema audio field", () => {
@@ -600,47 +728,3 @@ describe("LayerRole schema", () => {
   });
 });
 
-describe("LayerCandidate type", () => {
-  it("should satisfy the interface contract", () => {
-    const candidate: LayerCandidate = {
-      id: "layer-0-comp-0",
-      source: "sam2-segment",
-      filePath: "/tmp/layers/layer-0.png",
-      width: 1080,
-      height: 1080,
-      coverage: 0.45,
-      bbox: { x: 0, y: 0, w: 1080, h: 1080 },
-      centroid: { x: 540, y: 540 },
-      edgeDensity: 0.12,
-      componentCount: 1,
-    };
-    expect(candidate.id).toBe("layer-0-comp-0");
-    expect(candidate.source).toBe("sam2-segment");
-    expect(candidate.role).toBeUndefined();
-  });
-
-  it("should accept all optional fields", () => {
-    const candidate: LayerCandidate = {
-      id: "layer-1-comp-2",
-      source: "sam2-segment",
-      filePath: "/tmp/layers/layer-1-depth-2.png",
-      width: 1080,
-      height: 1080,
-      coverage: 0.20,
-      uniqueCoverage: 0.15,
-      meanDepth: 0.6,
-      bbox: { x: 100, y: 200, w: 400, h: 300 },
-      centroid: { x: 300, y: 350 },
-      edgeDensity: 0.08,
-      componentCount: 3,
-      role: "midground",
-      parentId: "layer-1",
-      droppedReason: "overlap > 80%",
-    };
-    expect(candidate.uniqueCoverage).toBe(0.15);
-    expect(candidate.meanDepth).toBe(0.6);
-    expect(candidate.role).toBe("midground");
-    expect(candidate.parentId).toBe("layer-1");
-    expect(candidate.droppedReason).toBe("overlap > 80%");
-  });
-});

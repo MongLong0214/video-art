@@ -54,6 +54,8 @@ const animationSchema = z.object({
   satInjectionMul: z.number().default(0.35),
   glowPulseFloor: z.number().default(0.0),
   lumExponent: z.number().default(1.0),
+  hueKey: z.number().min(0).default(0),
+  hueSpeed: z.number().default(1),
 });
 
 const blendModeSchema = z.enum(["normal", "add", "multiply", "screen"]).default("normal");
@@ -74,6 +76,8 @@ const layerSchema = z.object({
     satInjectionMul: 0.35,
     glowPulseFloor: 0.0,
     lumExponent: 1.0,
+    hueKey: 0,
+    hueSpeed: 1,
   }),
 });
 
@@ -88,9 +92,24 @@ const chromaticAberrationSchema = z.object({
   modulationOffset: z.number().min(0).max(1).default(0.3),
 });
 
+const parallaxEffectSchema = z.object({
+  scale: z.number().min(0).max(0.1).default(0),
+});
+
+const hazeEffectSchema = z.object({
+  intensity: z.number().min(0).max(1).default(0),
+});
+
+const featherEffectSchema = z.object({
+  radius: z.number().min(0).max(0.2).default(0),
+});
+
 const effectsSchema = z.object({
   bloom: bloomSchema.default({ strength: 0.6, radius: 0.4, threshold: 0.7 }),
   chromaticAberration: chromaticAberrationSchema.default({ offset: 1.5, modulationOffset: 0.3 }),
+  parallax: parallaxEffectSchema.default({ scale: 0 }),
+  haze: hazeEffectSchema.default({ intensity: 0 }),
+  feather: featherEffectSchema.default({ radius: 0 }),
 });
 
 const audioSchema = z.object({
@@ -119,11 +138,14 @@ export const sceneSchema = z
     source: z.string(),
     resolution: z.tuple([z.number().positive(), z.number().positive()]),
     duration: z.number().int().positive().max(300).default(20),
-    fps: z.number().positive().default(30),
+    fps: z.number().positive().default(60),
     layers: z.array(layerSchema).min(1),
     effects: effectsSchema.default({
       bloom: { strength: 0.6, radius: 0.4, threshold: 0.7 },
       chromaticAberration: { offset: 1.5, modulationOffset: 0.3 },
+      parallax: { scale: 0 },
+      haze: { intensity: 0 },
+      feather: { radius: 0 },
     }),
     audio: audioSchema.optional(),
   })
@@ -152,20 +174,3 @@ export type AnimationConfig = z.infer<typeof animationSchema>;
 export type EffectsConfig = z.infer<typeof effectsSchema>;
 export type AudioConfig = z.infer<typeof audioSchema>;
 
-export interface LayerCandidate {
-  id: string;
-  source: "sam2-segment";
-  filePath: string;
-  width: number;
-  height: number;
-  coverage: number;
-  uniqueCoverage?: number;
-  meanDepth?: number;
-  bbox: { x: number; y: number; w: number; h: number };
-  centroid: { x: number; y: number };
-  edgeDensity: number;
-  componentCount: number;
-  role?: LayerRole;
-  parentId?: string;
-  droppedReason?: string;
-}

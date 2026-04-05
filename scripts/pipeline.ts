@@ -11,7 +11,7 @@ const noPreview = args.includes("--no-preview");
 const title = parseTitle(args, inputPath);
 
 if (!inputPath) {
-  console.error("Usage: npm run pipeline <input.png> [--title <name>] [--keep-frames] [--no-preview]");
+  console.error("Usage: npm run pipeline <input.png> [--title <name>] [--keep-frames] [--no-preview] [--duration N] [--production]");
   process.exit(1);
 }
 
@@ -37,7 +37,12 @@ async function main() {
   console.log(`Input: ${path.resolve(inputPath!)}`);
   console.log(`Title: ${title}`);
 
-  run("npx", ["tsx", "scripts/pipeline-layers.ts", inputPath!]);
+  // Forward --work-dir if present
+  const wdIdx = args.indexOf("--work-dir");
+  const workDirArgs = wdIdx !== -1 && wdIdx + 1 < args.length ? ["--work-dir", args[wdIdx + 1]] : [];
+
+  // Run pro-pipeline (bria + flux-fill-pro + depth)
+  run("npx", ["tsx", "scripts/pipeline-pro.ts", inputPath!, ...workDirArgs]);
 
   if (!noPreview) {
     console.log("\n--- Step 3: Preview ---");
@@ -46,8 +51,13 @@ async function main() {
     await waitForEnter("\nPress Enter to continue to export, or Ctrl+C to cancel... ");
   }
 
-  const exportArgs = ["tsx", "scripts/export-layered.ts", "--title", title];
+  const exportArgs = ["tsx", "scripts/export-layered.ts", "--title", title, ...workDirArgs];
   if (keepFrames) exportArgs.push("--keep-frames");
+  if (args.includes("--prores")) exportArgs.push("--prores");
+  const fpsArgIdx = args.indexOf("--fps");
+  if (fpsArgIdx !== -1 && fpsArgIdx + 1 < args.length) {
+    exportArgs.push("--fps", args[fpsArgIdx + 1]);
+  }
   run("npx", exportArgs);
 
   console.log("\n=== Pipeline Complete ===");

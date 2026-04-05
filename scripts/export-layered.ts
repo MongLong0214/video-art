@@ -2,37 +2,50 @@ import "dotenv/config";
 import puppeteer, { type Browser } from "puppeteer";
 import fs from "node:fs";
 import path from "node:path";
-import { exec, execFile, type ChildProcess } from "node:child_process";
+import { execFile, type ChildProcess } from "node:child_process";
 import { checkFfmpeg } from "./lib/check-deps.js";
 import {
   parseTitle,
   createRunContext,
   snapshotLayers,
 } from "./lib/archive.js";
+import { findAvailablePort } from "./lib/work-dir.js";
 
 import { sceneSchema } from "../src/lib/scene-schema.js";
-import { getBitrate } from "./lib/bitrate.js";
+
 import { waitForServer } from "./lib/browser-utils.js";
 
-const rawFps = parseInt(process.env.RESEARCH_FPS ?? "", 10);
-const FPS = Number.isFinite(rawFps) && rawFps > 0 ? rawFps : 30;
 const ALLOWED_PRESETS = new Set(["ultrafast","superfast","veryfast","faster","fast","medium","slow","slower","veryslow"]);
-const PRESET = ALLOWED_PRESETS.has(process.env.RESEARCH_PRESET ?? "") ? process.env.RESEARCH_PRESET! : "slow";
+const PRESET = ALLOWED_PRESETS.has(process.env.RESEARCH_PRESET ?? "") ? process.env.RESEARCH_PRESET! : "veryslow";
 
-function startViteServer(port: number, projectRoot: string): ChildProcess {
-  return execFile("npx", ["vite", "--port", String(port)], { cwd: projectRoot }) as unknown as ChildProcess;
+function startViteServer(port: number, projectRoot: string, workDir?: string): ChildProcess {
+  const env = { ...process.env };
+  if (workDir) env.VITE_PUBLIC_DIR = workDir;
+  return execFile("npx", ["vite", "--port", String(port)], { cwd: projectRoot, env }) as unknown as ChildProcess;
 }
 
-async function captureFrames(outputDir: string, totalFrames: number, resolution: [number, number]): Promise<void> {
-  const TOTAL_FRAMES = totalFrames;
-  const port = 5299;
+async function killViteGracefully(proc: ChildProcess): Promise<void> {
+  await new Promise<void>((resolve) => {
+    const timeout = setTimeout(() => {
+      proc.kill("SIGKILL");
+      resolve();
+    }, 2000);
+    proc.once("exit", () => {
+      clearTimeout(timeout);
+      resolve();
+    });
+    proc.kill("SIGTERM");
+  });
+}
+
+async function captureFrames(outputDir: string, totalFrames: number, resolution: [number, number], fps: number, workDir?: string): Promise<void> {
+  const port = workDir ? await findAvailablePort() : 5299;
   fs.mkdirSync(outputDir, { recursive: true });
 
-  console.log("Starting Vite dev server...");
-  const viteProcess = startViteServer(port, process.cwd());
+  console.log(`Starting Vite dev server (port ${port})...`);
+  const viteProcess = startViteServer(port, process.cwd(), workDir);
   let browser: Browser | null = null;
 
-  // Ensure vite is killed on any exit (SIGINT → RunContext → process.exit → 'exit' event)
   const killVite = () => { viteProcess.kill(); };
   process.on("exit", killVite);
 
@@ -41,8 +54,14 @@ async function captureFrames(outputDir: string, totalFrames: number, resolution:
     console.log("Server ready.");
 
     browser = await puppeteer.launch({
-      headless: true,
-      args: ["--no-sandbox", "--use-gl=angle", "--disable-gpu-compositing"],
+      headless: "new",
+      args: [
+        "--no-sandbox",
+        "--use-gl=angle",
+        "--enable-gpu-rasterization",
+        "--enable-webgl",
+        "--ignore-gpu-blocklist",
+      ],
     });
 
     const page = await browser.newPage();
@@ -55,10 +74,10 @@ async function captureFrames(outputDir: string, totalFrames: number, resolution:
       timeout: 15000,
     });
 
-    console.log(`Starting capture: ${TOTAL_FRAMES} frames @ ${FPS}fps...`);
-    await page.evaluate(`window.__startCapture(${FPS})`);
+    console.log(`Starting capture: ${totalFrames} frames @ ${fps}fps...`);
+    await page.evaluate(`window.__startCapture(${fps})`);
 
-    for (let i = 0; i < TOTAL_FRAMES; i++) {
+    for (let i = 0; i < totalFrames; i++) {
       const dataUrl = (await page.evaluate(
         "window.__captureFrame()",
       )) as string;
@@ -71,36 +90,56 @@ async function captureFrames(outputDir: string, totalFrames: number, resolution:
       );
       fs.writeFileSync(framePath, buf);
 
-      if ((i + 1) % 30 === 0 || i === TOTAL_FRAMES - 1) {
-        const pct = (((i + 1) / TOTAL_FRAMES) * 100).toFixed(0);
-        process.stdout.write(`\r  ${i + 1}/${TOTAL_FRAMES} frames (${pct}%)`);
+      if ((i + 1) % 30 === 0 || i === totalFrames - 1) {
+        const pct = (((i + 1) / totalFrames) * 100).toFixed(0);
+        process.stdout.write(`\r  ${i + 1}/${totalFrames} frames (${pct}%)`);
       }
     }
 
     console.log("\nCapture complete.");
   } finally {
     await browser?.close().catch(() => {});
-    viteProcess.kill();
+    await killViteGracefully(viteProcess);
     process.removeListener("exit", killVite);
   }
 }
 
-function encodeVideo(inputFramesDir: string, outputPath: string, resolution: [number, number]): Promise<void> {
-  const bitrate = getBitrate(resolution);
-  const ffmpegArgs = [
-    "-y",
-    "-framerate", String(FPS),
-    "-i", path.join(inputFramesDir, "frame_%05d.png"),
-    "-c:v", "libx264",
-    "-pix_fmt", "yuv420p",
-    "-b:v", bitrate,
-    "-preset", PRESET,
-    "-movflags", "+faststart",
-    outputPath,
-  ];
+interface EncodeOptions {
+  fps: number;
+  duration: number;
+  prores: boolean;
+}
 
-  return new Promise((resolve, reject) => {
-    console.log(`Encoding: ${path.basename(outputPath)}`);
+function encodeVideo(inputFramesDir: string, outputPath: string, options: EncodeOptions): Promise<void> {
+  const { fps, duration, prores } = options;
+  const rawCrf = parseInt(process.env.RESEARCH_CRF ?? "", 10);
+  const CRF = Number.isFinite(rawCrf) && rawCrf >= 0 && rawCrf <= 51 ? rawCrf : 15;
+  const PIX_FMT = process.env.RESEARCH_PIX_FMT === "yuv444p" ? "yuv444p" : "yuv420p";
+
+  const ffmpegArgs = prores
+    ? [
+        "-y",
+        "-framerate", String(fps),
+        "-i", path.join(inputFramesDir, "frame_%05d.png"),
+        "-c:v", "prores_ks",
+        "-profile:v", "4",
+        "-pix_fmt", "yuva444p10le",
+        outputPath,
+      ]
+    : [
+        "-y",
+        "-framerate", String(fps),
+        "-i", path.join(inputFramesDir, "frame_%05d.png"),
+        "-c:v", "libx264",
+        "-pix_fmt", PIX_FMT,
+        "-crf", String(CRF),
+        "-preset", PRESET,
+        "-movflags", "+faststart",
+        outputPath,
+      ];
+
+  return new Promise<void>((resolve, reject) => {
+    console.log(`Encoding: ${path.basename(outputPath)}${prores ? " (ProRes 4444)" : ""}`);
     const proc = execFile("ffmpeg", ffmpegArgs, (err) => {
       if (err) reject(new Error(`ffmpeg failed: ${err.message}`));
       else resolve();
@@ -108,48 +147,111 @@ function encodeVideo(inputFramesDir: string, outputPath: string, resolution: [nu
     proc.stderr?.on("data", (d: string) => {
       if (d.includes("frame=")) process.stdout.write(`\r  ${d.trim()}`);
     });
+  }).then(() => {
+    const stat = fs.statSync(outputPath);
+    const sizeMB = (stat.size / (1024 * 1024)).toFixed(1);
+    const bitrateMbps = duration > 0 ? ((stat.size * 8) / (duration * 1_000_000)).toFixed(2) : "N/A";
+    console.log(`\nOutput: ${outputPath}`);
+    console.log(`Size: ${sizeMB}MB, Bitrate: ${bitrateMbps} Mbps`);
   });
 }
 
 async function main() {
   const keepFrames = process.argv.includes("--keep-frames");
+  const proresFlag = process.argv.includes("--prores");
   const title = parseTitle(process.argv.slice(2));
+
+  // Parse --fps from CLI
+  let cliFps: number | undefined;
+  const fpsIdx = process.argv.indexOf("--fps");
+  if (fpsIdx !== -1 && fpsIdx + 1 < process.argv.length) {
+    const val = parseInt(process.argv[fpsIdx + 1], 10);
+    if (Number.isFinite(val) && val >= 1 && val <= 120) cliFps = val;
+  }
+
+  // Parse --work-dir from CLI
+  let workDir: string | undefined;
+  const wdIdx = process.argv.indexOf("--work-dir");
+  if (wdIdx !== -1 && wdIdx + 1 < process.argv.length) {
+    workDir = process.argv[wdIdx + 1];
+  }
+
+  // Parse --archive-dir from CLI (reuse existing archive dir from publish.ts)
+  let archiveDirOverride: string | undefined;
+  const adIdx = process.argv.indexOf("--archive-dir");
+  if (adIdx !== -1 && adIdx + 1 < process.argv.length) {
+    archiveDirOverride = process.argv[adIdx + 1];
+  }
 
   checkFfmpeg();
 
   const projectRoot = process.cwd();
-  const ctx = createRunContext(projectRoot, title, "layered");
-  const outputPath = path.join(ctx.archiveDir, `${title}.mp4`);
+  const ctx = createRunContext(projectRoot, title, "layered", archiveDirOverride);
 
-  // Load duration from scene.json
-  const scenePath = path.join(projectRoot, "public", "scene.json");
+  // Load duration from scene.json (from workDir or public/)
+  const sourceDir = workDir || path.join(projectRoot, "public");
+  const scenePath = path.join(sourceDir, "scene.json");
   if (!fs.existsSync(scenePath)) {
-    throw new Error("public/scene.json not found. Run pipeline:layers first.");
+    throw new Error(`scene.json not found at ${scenePath}. Run pipeline-pro first.`);
   }
   const sceneJson = JSON.parse(fs.readFileSync(scenePath, "utf-8"));
   const config = sceneSchema.parse(sceneJson);
   const DURATION = config.duration;
-  const TOTAL_FRAMES = FPS * DURATION;
+
+  // FPS priority: CLI --fps > scene.json fps (default 60)
+  const FPS = cliFps ?? config.fps;
+  const totalFrames = FPS * DURATION;
+
+  const ext = proresFlag ? ".mov" : ".mp4";
+  const outputPath = path.join(ctx.archiveDir, `${title}${ext}`);
 
   const [resW, resH] = config.resolution;
   console.log(`Title: ${title}`);
   console.log(`Archive: ${path.relative(projectRoot, ctx.archiveDir)}/`);
   console.log(`Resolution: ${resW}x${resH}`);
-  console.log(`Duration: ${DURATION}s, ${TOTAL_FRAMES} frames @ ${FPS}fps`);
+  console.log(`Duration: ${DURATION}s, ${totalFrames} frames @ ${FPS}fps${proresFlag ? " (ProRes 4444)" : ""}`);
 
-  const estimatedMB = (TOTAL_FRAMES * 4.5).toFixed(0);
-  console.log(`Estimated disk usage: ~${estimatedMB}MB for ${TOTAL_FRAMES} frames`);
+  const estimatedMB = (totalFrames * 4.5).toFixed(0);
+  console.log(`Estimated disk usage: ~${estimatedMB}MB for ${totalFrames} frames`);
 
   try {
-    await captureFrames(ctx.paths.frames, TOTAL_FRAMES, config.resolution);
-    await encodeVideo(ctx.paths.frames, outputPath, config.resolution);
+    await captureFrames(ctx.paths.frames, totalFrames, config.resolution, FPS, workDir);
+    await encodeVideo(ctx.paths.frames, outputPath, { fps: FPS, duration: DURATION, prores: proresFlag });
   } catch (err) {
     ctx.cleanup();
     throw err;
   }
 
+  // HEVC VideoToolbox re-encode for smooth playback on macOS
+  if (!proresFlag) {
+    const hevcPath = outputPath.replace(/\.mp4$/, "-hevc.mp4");
+    console.log("\nRe-encoding with VideoToolbox HEVC...");
+    await new Promise<void>((resolve, reject) => {
+      const proc = execFile("ffmpeg", [
+        "-y", "-i", outputPath,
+        "-c:v", "hevc_videotoolbox", "-q:v", "45", "-pix_fmt", "yuv420p",
+        "-tag:v", "hvc1", "-movflags", "+faststart",
+        hevcPath,
+      ], (err) => {
+        if (err) reject(new Error(`HEVC encode failed: ${err.message}`));
+        else resolve();
+      });
+      proc.stderr?.on("data", (d: string) => {
+        if (d.includes("frame=")) process.stdout.write(`\r  ${d.trim()}`);
+      });
+    });
+    // Replace H.264 with HEVC as primary output
+    fs.unlinkSync(outputPath);
+    fs.renameSync(hevcPath, outputPath);
+    const hevcStat = fs.statSync(outputPath);
+    const hevcMB = (hevcStat.size / (1024 * 1024)).toFixed(1);
+    const hevcMbps = DURATION > 0 ? ((hevcStat.size * 8) / (DURATION * 1_000_000)).toFixed(2) : "N/A";
+    console.log(`\nHEVC Output: ${outputPath}`);
+    console.log(`Size: ${hevcMB}MB, Bitrate: ${hevcMbps} Mbps`);
+  }
+
   // Snapshot layers + scene.json into archive
-  snapshotLayers(projectRoot, ctx.archiveDir);
+  snapshotLayers(sourceDir, ctx.archiveDir);
 
   if (keepFrames) {
     ctx.skipCleanup();

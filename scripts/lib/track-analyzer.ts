@@ -42,14 +42,14 @@ interface SectionConfig {
 }
 
 // === BPM ===
-export const mapBpmToPreset = (bpm: number): { min: number; max: number; default: number } => ({
+const mapBpmToPreset = (bpm: number): { min: number; max: number; default: number } => ({
   min: Math.max(60, Math.round(bpm) - 5),
   max: Math.min(200, Math.round(bpm) + 5),
   default: Math.round(bpm),
 });
 
 // === Kick drive (freq balance lookup) ===
-export const mapKickDrive = (low: number): number => {
+const mapKickDrive = (low: number): number => {
   if (low > 0.85) return 0.85;
   if (low > 0.70) return 0.6;
   return 0.35;
@@ -62,18 +62,18 @@ const BASS_PROFILES: Record<string, { cutoff: number; resonance: number; envAmou
   sub: { cutoff: 400, resonance: 0.20, envAmount: 0.30 },
 };
 
-export const mapBassType = (type: string): { cutoff: number; resonance: number; envAmount: number } =>
+const mapBassType = (type: string): { cutoff: number; resonance: number; envAmount: number } =>
   BASS_PROFILES[type] ?? BASS_PROFILES.rolling;
 
 // === Dynamics → compress ===
-export const mapCompress = (crest: number): number => {
+const mapCompress = (crest: number): number => {
   if (crest <= 3) return 0.8;
   if (crest <= 5) return 0.5;
   return 0.25;
 };
 
 // === Spectral contrast → saturate ===
-export const mapSaturate = (contrastMean: number[]): number => {
+const mapSaturate = (contrastMean: number[]): number => {
   if (contrastMean.length === 0) return 0.4;
   const avg = contrastMean.reduce((a, b) => a + b, 0) / contrastMean.length;
   if (avg > 20) return 0.2;  // high contrast = clean
@@ -82,7 +82,7 @@ export const mapSaturate = (contrastMean: number[]): number => {
 };
 
 // === Hat openness ===
-export const mapHatOpenness = (density: number): number => {
+const mapHatOpenness = (density: number): number => {
   if (density > 8) return 0.05;
   if (density > 6) return 0.15;
   if (density > 4) return 0.25;
@@ -90,14 +90,14 @@ export const mapHatOpenness = (density: number): number => {
 };
 
 // === Danceability → energy ===
-export const mapDanceabilityToEnergy = (score: number): number => {
+const mapDanceabilityToEnergy = (score: number): number => {
   if (score > 2) return 0.85;
   if (score > 1) return 0.65;
   return 0.35;
 };
 
 // === Genre from BPM ===
-export const mapGenre = (bpm: number): "techno" | "trance" | "house" | "dnb" | "ambient" => {
+const mapGenre = (bpm: number): "techno" | "trance" | "house" | "dnb" | "ambient" => {
   if (bpm >= 135 && bpm < 160) return "trance";
   if (bpm >= 120 && bpm < 135) return "techno";
   if (bpm >= 115 && bpm < 120) return "house";
@@ -105,37 +105,146 @@ export const mapGenre = (bpm: number): "techno" | "trance" | "house" | "dnb" | "
   return "ambient";
 };
 
-// === Section detection ===
-export const detectSections = (curve: number[]): { start: number; end: number; label: string }[] => {
-  if (!curve || curve.length === 0) return [{ start: 0, end: 1, label: "drop" }];
+// === Section detection (energy-based, synced with Python detect_structure) ===
+const MIN_SECTION_RATIO = 0.05; // 5% of total
+const OUTRO_MAX_RATIO = 0.5;
 
-  const avg = curve.reduce((a, b) => a + b, 0) / curve.length;
-  const sections: { start: number; end: number; label: string }[] = [];
-  const len = curve.length;
-
-  // Simple threshold-based segmentation
-  let prevLabel = curve[0] < avg * 0.6 ? "intro" : "drop";
-  let segStart = 0;
-
-  for (let i = 1; i < len; i++) {
-    let label: string;
-    if (curve[i] < avg * 0.5) label = i < len * 0.3 ? "intro" : "break";
-    else if (curve[i] > avg * 1.2) label = "drop";
-    else label = i > len * 0.8 ? "outro" : "build";
-
-    if (label !== prevLabel) {
-      sections.push({ start: segStart / len, end: i / len, label: prevLabel });
-      segStart = i;
-      prevLabel = label;
+const coalesceAdjacentSections = (
+  sections: { start: number; end: number; label: string }[],
+): { start: number; end: number; label: string }[] => {
+  const merged: { start: number; end: number; label: string }[] = [];
+  for (const seg of sections) {
+    if (seg.end <= seg.start) continue;
+    const current = {
+      start: seg.start,
+      end: seg.end,
+      label: seg.label,
+    };
+    if (merged.length === 0) {
+      merged.push(current);
+      continue;
+    }
+    const prev = merged[merged.length - 1];
+    if (prev.label === current.label) {
+      prev.end = current.end;
+    } else {
+      if (Math.abs(prev.end - current.start) < 0.001) {
+        current.start = prev.end;
+      }
+      merged.push(current);
     }
   }
-  sections.push({ start: segStart / len, end: 1, label: prevLabel });
+  return merged;
+};
+
+const normalizeOutroPlacement = (
+  sections: { start: number; end: number; label: string }[],
+): { start: number; end: number; label: string }[] => {
+  if (sections.length < 2) return sections;
+  const normalized = sections.map((seg, idx) => ({
+    start: seg.start,
+    end: seg.end,
+    label: seg.label === "outro" && idx !== sections.length - 1 ? "break" : seg.label,
+  }));
+  return coalesceAdjacentSections(normalized);
+};
+
+const detectSections = (curve: number[]): { start: number; end: number; label: string }[] => {
+  if (!curve || curve.length === 0) return [{ start: 0, end: 1, label: "drop" }];
+
+  const len = curve.length;
+  const peak = Math.max(...curve);
+
+  // Silence → single drop
+  if (peak < 1e-6) return [{ start: 0, end: 1, label: "drop" }];
+
+  const normalized = curve.map((v) => v / peak);
+  const avg = normalized.reduce((a, b) => a + b, 0) / len;
+
+  // Label each point
+  const labels: string[] = normalized.map((e, i) => {
+    const pos = i / len;
+    if (e < avg * 0.5) return pos < 0.3 ? "intro" : "break";
+    if (e > avg * 1.2) return "drop";
+    if (pos < 0.25) return "build";
+    if (pos > 0.8) return "outro";
+    return pos < 0.5 ? "build" : "drop";
+  });
+
+  // Merge consecutive same-label regions
+  const raw: { start: number; end: number; label: string }[] = [];
+  let prevLabel = labels[0];
+  let segStart = 0;
+  for (let i = 1; i < len; i++) {
+    if (labels[i] !== prevLabel) {
+      raw.push({ start: segStart / len, end: i / len, label: prevLabel });
+      segStart = i;
+      prevLabel = labels[i];
+    }
+  }
+  raw.push({ start: segStart / len, end: 1, label: prevLabel });
+
+  // Merge short segments into neighbors
+  const merged: { start: number; end: number; label: string }[] = [];
+  for (const seg of raw) {
+    const segDur = seg.end - seg.start;
+    if (segDur < MIN_SECTION_RATIO && merged.length > 0) {
+      merged[merged.length - 1].end = seg.end;
+    } else {
+      merged.push({ ...seg });
+    }
+  }
+
+  // Merge last segment if too short
+  if (merged.length > 1) {
+    const last = merged[merged.length - 1];
+    if (last.end - last.start < MIN_SECTION_RATIO) {
+      merged[merged.length - 2].end = last.end;
+      merged.pop();
+    }
+  }
+
+  // Outro cap: split if > 50%
+  let sections = merged;
+  const outroDur = sections
+    .filter((s) => s.label === "outro")
+    .reduce((sum, s) => sum + (s.end - s.start), 0);
+  if (outroDur > OUTRO_MAX_RATIO) {
+    const newSections: typeof sections = [];
+    for (const s of sections) {
+      if (s.label === "outro" && s.end - s.start > MIN_SECTION_RATIO * 2) {
+        const mid = s.start + (s.end - s.start) * 0.5;
+        newSections.push({ start: s.start, end: mid, label: "break" });
+        newSections.push({ start: mid, end: s.end, label: "outro" });
+      } else {
+        newSections.push(s);
+      }
+    }
+    sections = newSections;
+  }
+
+  sections = coalesceAdjacentSections(sections);
+  sections = normalizeOutroPlacement(sections);
+
+  // Ensure minimum 4 sections
+  if (sections.length < 4) {
+    const labelSeq = ["intro", "build", "drop", "outro"];
+    sections = labelSeq.map((label, i) => ({
+      start: i / 4,
+      end: (i + 1) / 4,
+      label,
+    }));
+    sections[sections.length - 1].end = 1;
+  }
+
+  sections = coalesceAdjacentSections(sections);
+  sections = normalizeOutroPlacement(sections);
 
   return sections;
 };
 
 // === Onset → 16-step Tidal pattern ===
-export const quantizeOnsets = (positions: number[], bpm: number): string => {
+const quantizeOnsets = (positions: number[], bpm: number): string => {
   if (!positions.length || !bpm) return "~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~";
 
   const barDuration = (4 * 60) / bpm; // 1 bar = 4 beats
@@ -230,7 +339,7 @@ export const generateSceneAudio = (
 };
 
 // === RMS envelope following (AC-8.3) ===
-export const mapRmsToOverrides = (energyCurve: number[], segStart: number, segEnd: number): { compress: number; drive: number } => {
+const mapRmsToOverrides = (energyCurve: number[], segStart: number, segEnd: number): { compress: number; drive: number } => {
   if (!energyCurve.length) return { compress: 0.5, drive: 0.3 };
   const len = energyCurve.length;
   const startIdx = Math.floor((segStart) * len);
@@ -246,7 +355,7 @@ export const mapRmsToOverrides = (energyCurve: number[], segStart: number, segEn
 };
 
 // === Accent extraction from pitch_contour velocity (AC-8.4) ===
-export const extractAccents = (
+const extractAccents = (
   noteEvents: { time: number; velocity: number }[],
   segStart: number,
   segEnd: number,
@@ -313,7 +422,7 @@ const buildSectionOverrides = (
 };
 
 // === Generate sections from analysis structure (AC-8.1, AC-8.2, AC-8.3) ===
-export const generateSections = (
+const generateSections = (
   analysis: AnalysisResult,
 ): SectionConfig[] => {
   const segments = analysis.structure?.segments;
@@ -338,7 +447,7 @@ export const generateSections = (
 };
 
 // === Phase 2 SynthDef mapping functions ===
-export const mapAcidBass = (bass: { centroid: number; variance: number; flux: number; type: string }) => ({
+const mapAcidBass = (bass: { centroid: number; variance: number; flux: number; type: string }) => ({
   cutoff: bass.flux > 0.5 ? 2200 : 1200,
   resonance: bass.flux > 0.3 ? 2.5 : 1.5,
   envDepth: bass.flux > 0.5 ? 5000 : 3000,
@@ -350,7 +459,7 @@ export const mapAcidBass = (bass: { centroid: number; variance: number; flux: nu
   dist: bass.flux > 0.5 ? 0.4 : 0.2,
 });
 
-export const mapFmLead = (centroid: number) => ({
+const mapFmLead = (centroid: number) => ({
   mRatio: centroid > 3000 ? 3 : 2,
   cRatio: 1,
   index: centroid > 3000 ? 5 : 3,
@@ -359,7 +468,7 @@ export const mapFmLead = (centroid: number) => ({
   drive: centroid > 3000 ? 0.3 : 0.15,
 });
 
-export const mapLayeredKick = (freq: { low: number }, dyn: { crest: number }) => ({
+const mapLayeredKick = (freq: { low: number }, dyn: { crest: number }) => ({
   subDecay: freq.low > 0.6 ? 0.5 : 0.3,
   bodyDecay: 0.1,
   clickAmp: dyn.crest > 4 ? 0.7 : 0.4,
@@ -368,7 +477,7 @@ export const mapLayeredKick = (freq: { low: number }, dyn: { crest: number }) =>
   punch: dyn.crest > 4 ? 0.7 : 0.3,
 });
 
-export const mapSquelch = () => ({
+const mapSquelch = () => ({
   sweepStart: 300,
   sweepEnd: 5000,
   sweepCurve: -4,
@@ -378,7 +487,7 @@ export const mapSquelch = () => ({
   lfoDepth: 0,
 });
 
-export const mapWavetable = () => ({
+const mapWavetable = () => ({
   morph: 0.5,
   attack: 1.0,
   release: 1.5,
@@ -388,7 +497,7 @@ export const mapWavetable = () => ({
   bufBase: 8,
 });
 
-export const mapGranular = () => ({
+const mapGranular = () => ({
   buf: 0,
   density: 8,
   grainDur: 0.1,

@@ -27,7 +27,19 @@ out/
 
 # Audio render output
 out/audio/
+out/acid/
+out/analysis/
 audio/render/test-output/
+audio/samples/303/*.wav
+audio/samples/303/manifest.json
+
+# Audio samples & stems (large binaries + copyright)
+# 909 원샷은 프로젝트 에셋이므로 제외
+audio/samples/*.wav
+audio/samples/*.json
+audio/samples/at-night-peggy-gou-acid-remix*/
+audio/samples/auto-machine/
+
 
 # Recordings (legacy)
 recordings/
@@ -42,3 +54,10 @@ prepared-*.png
 # Reference tracks (copyright)
 audio/references/
 .cache/test-baseline.json
+experiment-output/
+
+# Local OMX state
+.omx/
+
+# Local ad-hoc test inputs
+input/acperience1.wav

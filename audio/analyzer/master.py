@@ -6,8 +6,6 @@ Usage: python3 master.py <input.wav> <analysis.json> [--reference ref.wav] [--no
 """
 
 import sys
-import os
-import json
 import shutil
 import numpy as np
 import soundfile as sf
@@ -159,6 +157,20 @@ def non_regression_gate(before_score, after_score, threshold=3.0):
     return {"action": "accept", "delta": float(delta)}
 
 
+def measure_frequency_balance(y_mono, sr):
+    """Measure actual frequency balance of audio using 3-band crossover."""
+    low, mid, hi = _crossover_filter(y_mono, sr, CROSSOVER_LOW, CROSSOVER_HIGH)
+    rms_low = np.sqrt(np.mean(low ** 2) + 1e-10)
+    rms_mid = np.sqrt(np.mean(mid ** 2) + 1e-10)
+    rms_hi = np.sqrt(np.mean(hi ** 2) + 1e-10)
+    total = rms_low + rms_mid + rms_hi
+    return {
+        "low": float(rms_low / total),
+        "mid": float(rms_mid / total),
+        "hi": float(rms_hi / total),
+    }
+
+
 def master_audio(input_path, analysis_json_path, output_path=None):
     """Full mastering chain: 3-band EQ → multiband comp → LUFS → peak limit.
 
@@ -166,7 +178,19 @@ def master_audio(input_path, analysis_json_path, output_path=None):
     """
     y, sr = sf.read(input_path)
 
-    # Preserve original channel count (SC renders stereo)
+    # Downmix to stereo if multi-channel (SC NRT renders N-channel stem buses)
+    if y.ndim > 1 and y.shape[1] > 2:
+        n_ch = y.shape[1]
+        left = np.zeros(y.shape[0])
+        right = np.zeros(y.shape[0])
+        for i in range(0, n_ch - 1, 2):
+            left += y[:, i]
+            right += y[:, i + 1]
+        if n_ch % 2 == 1:
+            left += y[:, -1] * 0.5
+            right += y[:, -1] * 0.5
+        y = np.column_stack([left, right])
+
     is_stereo = y.ndim > 1 and y.shape[1] >= 2
     if is_stereo:
         channels = [y[:, ch] for ch in range(y.shape[1])]
@@ -180,17 +204,11 @@ def master_audio(input_path, analysis_json_path, output_path=None):
         sf.write(out_path, y, sr)
         return out_path
 
-    # Load analysis
-    freq_balance = None
-    if os.path.exists(analysis_json_path):
-        try:
-            with open(analysis_json_path) as f:
-                analysis = json.load(f)
-            freq_balance = analysis.get("frequency_balance")
-        except (json.JSONDecodeError, OSError):
-            pass
+    # Measure actual frequency balance of synthesis output (not from analysis.json)
+    mono_for_measure = np.mean(y, axis=1) if is_stereo else channels[0]
+    freq_balance = measure_frequency_balance(mono_for_measure, sr)
 
-    # AC-2/3: EQ gains
+    # EQ gains from measured balance
     gains = compute_eq_gains(freq_balance)
 
     # Process each channel independently
@@ -211,6 +229,19 @@ def master_audio(input_path, analysis_json_path, output_path=None):
     # LUFS normalization (AC-4)
     y_norm = _lufs_normalize(y_comp, sr)
 
+    # LUFS range validation (-16 to -12) — max 1 re-normalization attempt
+    if HAS_PYLOUDNORM:
+        meter = pyln.Meter(sr)
+        actual_lufs = meter.integrated_loudness(y_norm)
+        if actual_lufs > -70:  # not silence
+            if actual_lufs < -16 or actual_lufs > -12:
+                print(f"WARNING: LUFS {actual_lufs:.1f} out of [-16, -12], re-normalizing to -14")
+                y_norm = _lufs_normalize(y_norm, sr, target_lufs=-14.0)
+                # Verify after re-normalization (no further retry)
+                final_lufs = meter.integrated_loudness(y_norm)
+                if final_lufs < -16 or final_lufs > -12:
+                    print(f"WARNING: LUFS still {final_lufs:.1f} after re-normalization")
+
     # Peak limiter (AC-7)
     y_final = _peak_limit(y_norm)
 
@@ -222,17 +253,21 @@ def master_audio(input_path, analysis_json_path, output_path=None):
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
-        print("Usage: python3 master.py <input.wav> <analysis.json> [--reference ref.wav]")
+        print("Usage: python3 master.py <input.wav> <analysis.json> [--output out.wav] [--reference ref.wav]")
         sys.exit(1)
 
     input_wav = sys.argv[1]
     analysis_json = sys.argv[2]
     ref_wav = None
+    out_override = None
+    if "--output" in sys.argv:
+        idx = sys.argv.index("--output")
+        out_override = sys.argv[idx + 1]
     if "--reference" in sys.argv:
         idx = sys.argv.index("--reference")
         ref_wav = sys.argv[idx + 1]
 
-    out = master_audio(input_wav, analysis_json)
+    out = master_audio(input_wav, analysis_json, output_path=out_override)
     print(f"Mastered: {out}")
 
     # Optional: run calibrate for before/after score

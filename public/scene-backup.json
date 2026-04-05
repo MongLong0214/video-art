@@ -1,0 +1,172 @@
+{
+  "version": 1,
+  "source": "input.png",
+  "resolution": [
+    1076,
+    1920
+  ],
+  "duration": 20,
+  "fps": 30,
+  "layers": [
+    {
+      "id": "layer-0",
+      "file": "layers/layer-0.png",
+      "zIndex": 0,
+      "opacity": 1,
+      "blending": "normal",
+      "role": "background-plate",
+      "meanDepth": 83.44310641648119,
+      "animation": {
+        "colorCycle": {
+          "speed": 7,
+          "period": 20,
+          "phaseOffset": 0
+        },
+        "glow": {
+          "intensity": 0.02130891147319971,
+          "pulse": 0.17,
+          "period": 20
+        },
+        "saturationBoost": 5,
+        "luminanceKey": 0.48,
+        "satBlendLow": 0.1,
+        "satBlendHigh": 0.4,
+        "satInjectionMul": 0.35,
+        "glowPulseFloor": 0,
+        "lumExponent": 1.5
+      }
+    },
+    {
+      "id": "layer-1",
+      "file": "layers/layer-1.png",
+      "zIndex": 1,
+      "opacity": 1,
+      "blending": "normal",
+      "role": "background",
+      "meanDepth": 102.52520632645395,
+      "animation": {
+        "colorCycle": {
+          "speed": 11.5,
+          "period": 10,
+          "phaseOffset": 72
+        },
+        "glow": {
+          "intensity": 0.03241235779591656,
+          "pulse": 0.255,
+          "period": 10
+        },
+        "saturationBoost": 4.6,
+        "luminanceKey": 0.54,
+        "satBlendLow": 0.1,
+        "satBlendHigh": 0.4,
+        "satInjectionMul": 0.35,
+        "glowPulseFloor": 0,
+        "lumExponent": 1.5
+      }
+    },
+    {
+      "id": "layer-2",
+      "file": "layers/layer-2.png",
+      "zIndex": 2,
+      "opacity": 1,
+      "blending": "normal",
+      "role": "background",
+      "meanDepth": 148.42525633521927,
+      "animation": {
+        "colorCycle": {
+          "speed": 12,
+          "period": 10,
+          "phaseOffset": 144
+        },
+        "glow": {
+          "intensity": 0.033492358972593395,
+          "pulse": 0.255,
+          "period": 10
+        },
+        "saturationBoost": 4.6,
+        "luminanceKey": 0.54,
+        "satBlendLow": 0.1,
+        "satBlendHigh": 0.4,
+        "satInjectionMul": 0.35,
+        "glowPulseFloor": 0,
+        "lumExponent": 1.5
+      }
+    },
+    {
+      "id": "layer-3",
+      "file": "layers/layer-3.png",
+      "zIndex": 3,
+      "opacity": 1,
+      "blending": "normal",
+      "role": "midground",
+      "meanDepth": 9.69889382561103,
+      "animation": {
+        "colorCycle": {
+          "speed": 13,
+          "period": 5,
+          "phaseOffset": 216
+        },
+        "glow": {
+          "intensity": 0.04030427902197996,
+          "pulse": 0.34,
+          "period": 5
+        },
+        "saturationBoost": 5,
+        "luminanceKey": 0.66,
+        "satBlendLow": 0.1,
+        "satBlendHigh": 0.4,
+        "satInjectionMul": 0.35,
+        "glowPulseFloor": 0,
+        "lumExponent": 1.5
+      }
+    },
+    {
+      "id": "layer-4",
+      "file": "layers/layer-4.png",
+      "zIndex": 4,
+      "opacity": 1,
+      "blending": "normal",
+      "role": "subject",
+      "meanDepth": 122.3101155124859,
+      "animation": {
+        "colorCycle": {
+          "speed": 14.5,
+          "period": 5,
+          "phaseOffset": 288
+        },
+        "glow": {
+          "intensity": 0.054796475118136706,
+          "pulse": 0.3825,
+          "period": 4
+        },
+        "saturationBoost": 5.6,
+        "luminanceKey": 0.72,
+        "satBlendLow": 0.1,
+        "satBlendHigh": 0.4,
+        "satInjectionMul": 0.35,
+        "glowPulseFloor": 0,
+        "lumExponent": 1.5
+      }
+    }
+  ],
+  "effects": {
+    "bloom": {
+      "strength": 0.18,
+      "radius": 0.4,
+      "threshold": 0.7
+    },
+    "chromaticAberration": {
+      "offset": 0.75,
+      "modulationOffset": 0.3
+    },
+    "parallax": {
+      "scale": 0.02
+    },
+    "haze": {
+      "intensity": 0.3
+    },
+    "feather": {
+      "radius": 0
+    }
+  }
+}

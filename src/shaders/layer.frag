@@ -25,6 +25,15 @@ uniform float uSatInjectionMul;
 uniform float uGlowPulseFloor;
 uniform float uLumExponent;
 
+// Depth cinematic
+uniform float uHazeIntensity;
+uniform float uDepthNorm;
+uniform float uFeatherRadius;
+
+// Hue-keying: color-region-based animation
+uniform float uHueKey;         // 0=off, >0=hue regions animate differently
+uniform float uHueSpeed;       // hue-region speed multiplier
+
 varying vec2 vUv;
 
 #define PI 3.14159265359
@@ -60,10 +69,14 @@ void main() {
   float originalVal = hsv.z;
 
   float lumPhase = uLuminanceKey > 0.001 ? pow(1.0 - lum, uLumExponent + uLuminanceKey) : 0.0;
+
+  // Hue-keying: original hue drives per-pixel phase offset (warm vs cool regions animate differently)
+  float huePhase = uHueKey > 0.001 ? hsv.x * uHueKey * uHueSpeed : 0.0;
+
   float safePeriod = max(uColorCyclePeriod, 1e-4);
   // Seamless loop: speed is quantized by scene-generator.ts so that
   // (duration / period * speed) is always an integer → fract wraps cleanly
-  float hueShift = fract(time / safePeriod * uColorCycleSpeed + lumPhase + uPhaseOffset / 360.0);
+  float hueShift = fract(time / safePeriod * uColorCycleSpeed + lumPhase + huePhase + uPhaseOffset / 360.0);
 
   float shiftedHue = fract(hsv.x + hueShift);
   float injectedHue = fract(hueShift + lum * uLuminanceKey);
@@ -78,6 +91,9 @@ void main() {
   // Luminance preservation
   hsv.z = originalVal;
 
+  // Atmospheric haze: far layers lose saturation
+  hsv.y *= max(0.0, 1.0 - uHazeIntensity * (1.0 - uDepthNorm));
+
   vec3 rgb = hsv2rgb(hsv);
 
   // --- Glow (subtle) ---
@@ -87,5 +103,9 @@ void main() {
   float glowFactor = 1.0 + uGlowIntensity * glowPulse;
   rgb *= glowFactor;
 
-  gl_FragColor = vec4(rgb, texColor.a * uOpacity);
+  // Edge vignette: alpha fade at UV boundaries
+  float d = min(min(vUv.x, 1.0 - vUv.x), min(vUv.y, 1.0 - vUv.y));
+  float feather = uFeatherRadius < 1e-4 ? 1.0 : smoothstep(0.0, uFeatherRadius, d);
+  float alpha = texColor.a * uOpacity * feather;
+  gl_FragColor = vec4(rgb, alpha);
 }

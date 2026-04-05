@@ -1,11 +1,11 @@
 {
   "version": 1,
-  "active": false,
+  "active": true,
   "skill": "ultrawork",
   "keyword": "parallel",
-  "phase": "completing",
+  "phase": "reviewing",
   "activated_at": "2026-03-30T03:27:36.179Z",
-  "updated_at": "2026-03-30T03:27:36.180Z",
+  "updated_at": "2026-04-03T04:29:05.042Z",
   "source": "keyword-detector",
   "input_lock": null
 }

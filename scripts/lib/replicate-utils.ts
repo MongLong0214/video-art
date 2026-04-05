@@ -25,11 +25,14 @@ export function getToken(): string {
 // URL domain validation
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// URL domain validation
+// ---------------------------------------------------------------------------
+
 const ALLOWED_DOMAINS = [".replicate.delivery", ".replicate.com"];
 
 /**
  * Validate that a Replicate output URL comes from a trusted domain.
- * Rejects URLs from untrusted domains to prevent SSRF/exfiltration.
  */
 export function validateReplicateUrl(url: string): void {
   let parsed: URL;
@@ -46,7 +49,7 @@ export function validateReplicateUrl(url: string): void {
 
   if (!trusted) {
     throw new Error(
-      `Untrusted domain: ${hostname}. Expected *.replicate.delivery or *.replicate.com`,
+      `Untrusted domain: ${hostname}. Expected ${ALLOWED_DOMAINS.map(d => `*${d}`).join(" or ")}`,
     );
   }
 }

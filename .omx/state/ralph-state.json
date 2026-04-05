@@ -1,9 +1,11 @@
 {
-  "active": true,
-  "iteration": 38,
-  "current_phase": "verifying",
+  "active": false,
+  "iteration": 50,
+  "current_phase": "complete",
   "task_description": "Review calibrate.ts --output fix and identify new defects without re-raising rejected issues",
   "max_iterations": 50,
   "started_at": "2026-03-29T07:43:43.620Z",
-  "last_turn_at": "2026-03-30T03:27:36.134Z"
+  "last_turn_at": "2026-04-03T00:47:27.015Z",
+  "completed_at": "2026-04-03T00:47:27.015Z",
+  "stop_reason": "max_iterations_reached"
 }

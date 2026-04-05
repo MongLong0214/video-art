@@ -1,29 +1,71 @@
 # video-art
 
-Three.js + GLSL + SuperCollider 기반 생성형 비디오 아트 시스템.
-이미지 1장을 AI(SAM 2)로 레이어 분해하고, HSV hue rotation 셰이더로 사이키델릭 무한 루프 영상을 생성한다.
+Three.js + GLSL 기반 생성형 비디오 아트 시스템.
+이미지 1장을 AI(bria + Real-ESRGAN + flux-fill-pro)로 2레이어 분해하고, HSV hue rotation + hueKey 셰이더로 사이키델릭 무한 루프 영상을 생성한다.
 
 ---
 
-## 3가지 제작 방식
+## Quick Start
+
+```bash
+npm install
+cp .env.example .env  # → REPLICATE_API_TOKEN=r8_... 입력
+
+# 이미지 1장 → Instagram Reels 완성본 (1080x1920, 30fps, H.264)
+npm run publish input.png -- --title my-art
+
+# 오디오 포함
+npm run publish input.png -- --title my-art --audio music.wav --audio-start 55
+
+# 커스텀 duration (기본 20초)
+npm run publish input.png -- --title my-art --duration 30
+```
+
+### 파이프라인 자동 처리 내용
+
+```
+input.png (원본 해상도 유지)
+  → bria/remove-background     전경 알파 매팅
+  → Real-ESRGAN 2x             전경 초해상화
+  → flux-fill-pro              배경 인페인팅
+  → Real-ESRGAN 2x             배경 초해상화 (보간 아티팩트 제거)
+  → depth-anything-v2          깊이맵
+  → 원본 해상도 레이어 조합     lanczos3 미세 리사이즈
+  → Puppeteer 60fps 렌더링     고해상도 supersampling
+  → 1080x1920 30fps 다운스케일  Instagram Reels 최적
+```
+
+### 출력 스펙
+
+| 항목 | 값 |
+|------|-----|
+| 해상도 | 1080x1920 (9:16) |
+| 코덱 | H.264 High Profile, Level 4.2 |
+| 픽셀포맷 | yuv420p |
+| 프레임레이트 | 30fps |
+| CRF | 15 |
+| 호환 | Instagram Reels, QuickTime, 모든 플레이어 |
+
+---
+
+## 2가지 제작 방식
 
 ### 1. Layered 모드 — 이미지를 넣는다
 
-이미지 1장을 SAM 2가 레이어로 분해하고, 각 레이어에 luminance-preserving HSV hue rotation을 적용하여 무한 루프 영상으로 변환한다.
+이미지 1장을 AI로 전경/배경 분리 + 초해상화 + 인페인팅한 뒤, hueKey 셰이더로 색상 영역별 독립 애니메이션을 적용하여 무한 루프 영상으로 변환한다.
 
 ```bash
-npm run pipeline:layers sunset.png -- --title sunset
+# 원커맨드 (권장)
+npm run publish input.png -- --title sunset
 
-# 1. Path traversal 검증 (프로젝트 루트 범위 제한)
-# 2. 이미지 복잡도 분석 → 적정 레이어 수 결정
-# 3. SAM 2 segmentation (Replicate API)
-# 4. Candidate 변환 (batched, concurrency=4)
-# 5. 배타적 소유권 해결 (per-candidate mask 캐싱)
-# 6. 역할 할당 + z-order 정렬
-# 7. scene.json 생성 → public/에 복사
+# 단계별 실행 (프리뷰 포함)
+npm run pipeline input.png -- --title sunset
 
+# 단계별 실행 (프리뷰 건너뛰기)
+npm run pipeline input.png -- --title sunset --no-preview
+
+# 익스포트만 (이미 pipeline-pro 실행 완료 시)
 npm run export:layered -- --title sunset
-# → Puppeteer 프레임 캡처 → ffmpeg 인코딩 (해상도 기반 동적 bitrate)
 ```
 
 ### 2. Sketch 모드 — 코드로 만든다
@@ -37,34 +79,7 @@ npm run dev
 npm run export:sketch -- --sketch ocean-wave --title ocean-wave
 ```
 
-### 3. Audio 모드 — 소리를 입힌다
-
-SuperCollider + TidalCycles 기반 전자음악 시스템.
-
-```bash
-npm run live:start              # SC + SuperDirt + Tidal 부팅
-npm run render:audio            # scene.json → master.wav (NRT)
-npm run render:av               # 비디오 + 오디오 합성
-```
-
 ---
-
-## Quick Start
-
-```bash
-npm install
-
-cp .env.example .env
-# → REPLICATE_API_TOKEN=r8_... 입력
-
-npm run dev
-# → http://localhost:5173                     sketch 모드
-# → http://localhost:5173/?mode=layered       layered 모드
-
-# 풀 파이프라인
-npm run pipeline:layers input.png -- --title my-art
-npm run export:layered -- --title my-art
-```
 
 ## Prerequisites
 
@@ -74,160 +89,151 @@ npm run export:layered -- --title my-art
 
 ---
 
-## Pipeline 흐름 (Layered 모드)
+## Pipeline 흐름 (Layered 모드 — Pro Pipeline)
 
 ```
-input.png
+input.png (원본 해상도 유지, e.g. 1632x2912)
     │
-    ├─ validate-file-path.ts
-    │  realpathSync + startsWith(projectRoot + sep) — path traversal 차단
+    ├─ Step 1: bria/remove-background (Replicate API)
+    │  → 전경 PNG (~573x1024, 알파 매팅)
     │
-    ├─ input-validator.ts
-    │  포맷/크기 검증 + CMYK→sRGB + 4096px 리사이즈
+    ├─ Step 1b: Real-ESRGAN 2x (Replicate API)
+    │  → 전경 초해상화 (~1146x2048)
     │
-    ├─ complexity-scoring.ts
-    │  Sobel edge density + color entropy → layer count 결정
+    ├─ Step 2: 인페인팅 마스크 생성
+    │  전경 알파 > 10 → white
     │
-    ├─ image-decompose.ts
-    │  SAM 2 segmentation (Replicate API) → per-object masks
-    │  fallback: luminance zone split (SAM 마스크 부족 시)
+    ├─ Step 3: flux-fill-pro (Replicate API)
+    │  → 배경 인페인팅 (~807x1440)
     │
-    ├─ mask-stats.ts (Step 4)
-    │  computeMaskStats(rgba, w, h, SAM_OPACITY_THRESHOLD)
-    │  → coverage, bbox, centroid, opaqueCount
-    │  batched processing (concurrency=4, batch-process.ts)
+    ├─ Step 3b: Real-ESRGAN 2x (Replicate API)
+    │  → 배경 초해상화 (~1614x2880, 보간 노이즈 근본 제거)
     │
-    ├─ mask-cache.ts (Step 5.5)
-    │  buildMaskCache → Map<candidateId, Uint8Array>
-    │  Steps 6/8에서 재사용, Step 10은 미사용 (retention 이후)
+    ├─ Step 4: depth-anything-v2 (Replicate API)
+    │  → 그레이스케일 깊이맵
     │
-    ├─ layer-resolve.ts
-    │  1. deduplicateCandidates (IoU > 0.92 → drop)
-    │  2. resolveExclusiveOwnership (pixel → 단일 레이어, predecodedMasks 캐시)
-    │  3. assignRoles (background-plate / subject / detail / foreground-occluder)
-    │  4. orderByRole (role z-order + coverage tie-break)
-    │  5. applyRetentionRules (uniqueCoverage >= 0.5%, cap 16)
-    │  6. fillBackgroundPlate (unclaimed pixel 채움)
+    ├─ Step 5: 원본 해상도로 레이어 조합 (lanczos3)
+    │  layer-0: 배경 (ESRGAN) → 원본 해상도 미세 리사이즈 + light blur
+    │  layer-1: 전경 (ESRGAN) → 원본 해상도 미세 리사이즈
+    │  → _work/layers/ + _work/scene.json
     │
-    ├─ scene-generator.ts
-    │  getRolePreset(role) → 역할별 animation 파라미터
-    │  → scene.json + layers/ → public/
+    ├─ Export: Puppeteer 60fps 렌더링 (고해상도 supersampling)
+    │  → ffmpeg HEVC VideoToolbox → H.264 인코딩
     │
-    └─ decomposition-manifest.ts
-        → decomposition-manifest.json (provenance)
+    └─ Publish: ffmpeg lanczos 다운스케일
+       → 1080x1920, 30fps, H.264 High 4.2 (Instagram 최적)
 ```
 
-### 셰이더 — Luminance-preserving HSV Hue Rotation
+### 셰이더 — Luminance-preserving HSV Hue Rotation + HueKey
 
 `layer.frag`는 wave/parallax 없이 **구조를 픽셀 단위로 유지**하면서 색상만 변조한다:
 
 1. RGB → HSV 변환
-2. luminance 기반 phase offset (`pow(1-lum, 1+luminanceKey)`)
-3. hue shift (시간 × speed / period + phase)
-4. saturation boost (원본 채도 기반 blend)
-5. luminance 보존 (`hsv.z = originalVal`)
-6. subtle glow pulse (sin 기반)
-
-### LayerRole
-
-| Role | z-order | 설명 |
-|------|---------|------|
-| `background-plate` | 0 | 전체 캔버스, 가장 느린 hue cycle |
-| `background` | 1 | 배경 요소 |
-| `midground` | 2 | 중간 요소 |
-| `subject` | 3 | 중심 피사체 |
-| `detail` | 4 | 세부 요소, 빠른 hue cycle |
-| `foreground-occluder` | 5 | 전경 가리개 |
-
-### 공유 상수 (`pipeline-constants.ts`)
-
-| 상수 | 값 | 용도 |
-|------|-----|------|
-| `ALPHA_THRESHOLD` | 128 | BFS/ownership alpha 판정 |
-| `SAM_OPACITY_THRESHOLD` | 10 | SAM raw mask 필터 |
-| `MIN_COVERAGE` | 0.005 | BFS candidate 최소 커버리지 |
-| `SAM_MIN_COVERAGE` | 0.001 | SAM mask 최소 커버리지 |
-| `UNIQUE_COVERAGE_THRESHOLD` | 0.005 | retention 최소 고유 커버리지 |
-| `IOU_DEDUPE_THRESHOLD` | 0.92 | IoU 중복 제거 |
-| `MAX_LAYERS` | 16 | 최대 retained layers |
-| `MIN_RETAINED_LAYERS` | 6 | progressive relaxation 목표 |
-
-### 동적 Bitrate (`bitrate.ts`)
-
-해상도(총 픽셀 수) 기반 자동 결정. 30fps scope.
-
-| 해상도 | 픽셀 수 | Bitrate |
-|--------|---------|---------|
-| 720p | 921,600 | 8M |
-| 1080p | 2,073,600 | 15M |
-| 1440p | 3,686,400 | 25M |
-| 4K | 8,294,400 | 40M |
-
-사이 해상도는 선형 보간 (floor). 720p 미만/4K 초과는 clamp.
+2. luminance 기반 phase offset (`pow(1-lum, lumExponent + luminanceKey)`)
+3. **hueKey**: 원본 hue 값으로 per-pixel phase offset 생성 → 색상 영역별 독립 애니메이션
+4. hue shift (시간 x speed / period + lumPhase + huePhase + phaseOffset)
+5. saturation boost (원본 채도 기반 blend)
+6. luminance 보존 (`hsv.z = originalVal`)
+7. subtle glow pulse (sin 기반)
+8. atmospheric haze (깊이 기반 채도 감쇄)
 
 ---
 
-## CLI Flags (pipeline-layers)
+## Production Defaults
 
-| Flag | Description |
-|------|-------------|
-| `--title <name>` | 작품 타이틀 (아카이브 폴더명) |
-| `--layers <N>` | SAM 2 mask count override (1-12) |
-| `--duration <N>` | scene duration 초 (1-300, 기본 20) |
-| `--production` | model version pin 강제 |
-| `--unsafe` | manifest 기록 전용 (path validation과 무관) |
-| `--keep-frames` | 인코딩 후 PNG 프레임 보존 (export:layered) |
+| 설정 | 기본값 | 위치 |
+|------|--------|------|
+| FPS (렌더링) | 60 | scene-schema.ts, pipeline-pro.ts |
+| FPS (출력) | 30 | publish.ts (Instagram 최적) |
+| 해상도 (렌더링) | 원본 유지 | pipeline-pro.ts |
+| 해상도 (출력) | 1080x1920 | publish.ts (Instagram 9:16) |
+| 픽셀포맷 | yuv420p | export-layered.ts |
+| CRF | 15 | export-layered.ts |
+| H.264 Profile | High, Level 4.2 | publish.ts |
+| 전경 초해상화 | Real-ESRGAN 2x | pipeline-pro.ts |
+| 배경 초해상화 | Real-ESRGAN 2x | pipeline-pro.ts |
+| 레이어 리사이즈 | lanczos3 | pipeline-pro.ts |
+| 다운스케일 | lanczos (supersampling) | publish.ts |
+
+---
+
+## CLI Reference
+
+### `npm run publish` — 원커맨드 Instagram Reels 퍼블리시
+
+```bash
+npm run publish <input.png> -- [options]
+```
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `<input.png>` | 입력 이미지 (필수) | — |
+| `--title <name>` | 작품 타이틀 (아카이브 폴더명에 사용) | 파일명에서 추출 |
+| `--audio <path>` | 오디오 파일 경로 (.wav, .mp3 등) | 없음 |
+| `--audio-start <sec>` | 오디오 시작 시점 (초) | 0 |
+| `--duration <N>` | 영상 길이 (초) | 20 |
+
+### `npm run pipeline` — 단계별 실행 (프리뷰 포함)
+
+```bash
+npm run pipeline <input.png> -- [options]
+```
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `<input.png>` | 입력 이미지 (필수) | — |
+| `--title <name>` | 작품 타이틀 | 파일명에서 추출 |
+| `--no-preview` | 브라우저 프리뷰 건너뛰기 | false |
+| `--duration <N>` | 영상 길이 (초) | 20 |
+| `--fps <N>` | 프레임 레이트 | 30 |
+| `--keep-frames` | 인코딩 후 PNG 프레임 보존 | false |
+| `--prores` | ProRes 4444 출력 | false |
+
+### `npm run export:layered` — mp4 익스포트만
+
+```bash
+npm run export:layered -- [options]
+```
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--title <name>` | 작품 타이틀 (필수) | — |
+| `--fps <N>` | 프레임 레이트 override | scene.json 값 |
+| `--keep-frames` | 인코딩 후 PNG 프레임 보존 | false |
+| `--prores` | ProRes 4444 출력 | false |
+| `--work-dir <path>` | _work/ 디렉토리 경로 | public/ |
+| `--archive-dir <path>` | 출력 아카이브 경로 | out/layered/ |
+
+### `npm run pipeline:pro` — AI 분해만
+
+```bash
+npx tsx scripts/pipeline-pro.ts <input.png> [options]
+```
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `<input.png>` | 입력 이미지 (필수) | — |
+| `--duration <N>` | scene duration (1-300초) | 20 |
+| `--fps <N>` | 프레임 레이트 (1-120) | 60 |
+| `--production` | model version pin 강제 | false |
+| `--work-dir <path>` | 출력 디렉토리 | out/pro-pipeline/ |
 
 ---
 
 ## npm scripts
 
-### 개발
-
 | Command | Description |
 |---------|-------------|
+| `npm run publish <img>` | **원커맨드** Instagram Reels 퍼블리시 |
+| `npm run pipeline <img>` | pro-pipeline → 프리뷰 → 익스포트 |
+| `npm run pipeline:pro <img>` | AI 레이어 분해만 |
+| `npm run export:layered` | layered mp4 익스포트 |
+| `npm run analyze:track <wav>` | 트랙 분석 → preset + Tidal + 샘플 추출 |
+| `npx tsx scripts/acid-reinterpreter.ts <wav>` | Acid Reinterpreter (LLM 303/909 리크리에이션) |
 | `npm run dev` | Vite 개발서버 |
 | `npm run build` | TypeScript + Vite 프로덕션 빌드 |
-| `npm run test` | Vitest (2565 tests, 76 files) |
+| `npm run test` | Vitest |
 | `npm run test:watch` | Vitest watch 모드 |
-
-### Layered 모드
-
-| Command | Description |
-|---------|-------------|
-| `npm run pipeline:layers <img>` | SAM 2 분해 + 역할 할당 + scene.json |
-| `npm run export:layered` | layered mp4 익스포트 (동적 bitrate) |
-| `npm run pipeline:validate` | 루프 이음새 검증 (RMSE) |
-
-### Sketch 모드
-
-| Command | Description |
-|---------|-------------|
-| `npm run export:sketch -- --sketch <name>` | sketch → mp4 |
-
-### Audio
-
-| Command | Description |
-|---------|-------------|
-| `npm run audio:setup` | 의존성 설치 + SC 검증 |
-| `npm run live:start` | SC + SuperDirt + Tidal 부팅 |
-| `npm run live:stop` | 전체 스택 종료 |
-| `npm run live:record` | 라이브 녹음 |
-| `npm run render:audio` | scene.json → master.wav (NRT) |
-| `npm run render:av` | 비디오 + 오디오 → final.mp4 |
-| `npm run render:stems` | SynthDef별 stem 렌더 |
-| `npm run render:prod` | 프로덕션 마스터 렌더 |
-
-### Autoresearch
-
-| Command | Description |
-|---------|-------------|
-| `npm run research:prepare` | 레퍼런스 keyframe + temporal pairs 추출 |
-| `npm run research:calibrate` | noise floor(δ_min) 측정 |
-| `npm run research:run` | 단일 실험 (config → pipeline → evaluate) |
-| `npm run research:eval` | 단일 영상 10 메트릭 평가 |
-| `npm run research:report` | 실험 이력 요약 |
-| `npm run research:promote` | best config → baseline 승격 |
 
 ---
 
@@ -236,30 +242,40 @@ input.png
 ```jsonc
 {
   "version": 1,
-  "source": "sunset.png",
-  "resolution": [1080, 1920],
+  "source": "input.png",
+  "resolution": [1632, 2912],  // 원본 해상도 유지
   "duration": 20,
-  "fps": 30,
+  "fps": 60,                    // 렌더링 60fps → 출력 30fps (supersampling)
   "layers": [
     {
-      "id": "background",
+      "id": "layer-0",
       "file": "layers/layer-0.png",
       "zIndex": 0,
       "opacity": 1.0,
+      "blending": "normal",
       "role": "background-plate",
+      "meanDepth": 50,
       "animation": {
-        "colorCycle": { "speed": 0.5, "period": 20, "phaseOffset": 0 },
-        "glow": { "intensity": 0.3, "pulse": 1.0, "period": 20 },
-        "saturationBoost": 2.5,
-        "luminanceKey": 0.6
+        "colorCycle": { "speed": 5, "period": 20, "phaseOffset": 0 },
+        "glow": { "intensity": 0.12, "pulse": 0.6, "period": 10 },
+        "saturationBoost": 6.0,
+        "luminanceKey": 1.0,
+        "satBlendLow": 0.05,
+        "satBlendHigh": 0.3,
+        "satInjectionMul": 0.5,
+        "glowPulseFloor": 0.3,
+        "lumExponent": 1.8,
+        "hueKey": 1.5,
+        "hueSpeed": 3.0
       }
     }
   ],
   "effects": {
-    "bloom": { "strength": 0.6, "radius": 0.4, "threshold": 0.7 },
-    "chromaticAberration": { "offset": 1.5 }
-  },
-  "audio": { "bpm": 120, "key": "Am", "genre": "techno" }
+    "bloom": { "strength": 0.5, "radius": 0.4, "threshold": 0.45 },
+    "chromaticAberration": { "offset": 2.0, "modulationOffset": 0.4 },
+    "parallax": { "scale": 0 },
+    "haze": { "intensity": 0 }
+  }
 }
 ```
 
@@ -274,11 +290,8 @@ URL: /?mode=layered
   → loadScene("/scene.json")
   → Three.js Scene (role-ordered layers)
     ├── PlaneGeometry z=0.0  background-plate
-    ├── PlaneGeometry z=0.1  subject
-    └── PlaneGeometry z=0.2  foreground-occluder
+    └── PlaneGeometry z=0.1  subject
     각 레이어: ShaderMaterial(layer.vert + layer.frag)
-      uniforms: uTexture, uTime, uColorCycleSpeed/Period/PhaseOffset,
-                uGlowIntensity/Pulse/Period, uSaturationBoost, uLuminanceKey
   → EffectComposer (Bloom + ChromaticAberration)
   → Canvas
 ```
@@ -287,10 +300,25 @@ URL: /?mode=layered
 
 ```
 Puppeteer headless Chrome
-  → Clock.startRecording() (deterministic: frame × 1/fps)
+  → Clock.startRecording() (deterministic: frame x 1/fps)
   → Loop N frames: __captureFrame() → PNG
-  → ffmpeg: libx264, yuv420p, getBitrate(resolution) (동적)
+  → ffmpeg: HEVC VideoToolbox → H.264 libx264 (CRF 15)
+  → (publish) lanczos downscale → 1080x1920 30fps Instagram
   → 아카이브: out/layered/{date}_{title}/
+```
+
+### 병렬 실행
+
+각 파이프라인 실행은 독립 `_work/` 디렉토리와 동적 Vite 포트(5300-5399)를 사용하여 동시 실행이 안전하다.
+
+```
+out/layered/{date}_{title}-{hash}/
+├── _work/                    ← Vite 서빙용 (완료 후 자동 삭제)
+│   ├── scene.json
+│   └── layers/
+├── {title}.mp4              ← 고해상도 원본
+├── {title}-instagram.mp4    ← 1080x1920 다운스케일
+└── frames/ (optional)       ← --keep-frames 시 보존
 ```
 
 ---
@@ -302,49 +330,361 @@ video-art/
 ├── src/
 │   ├── main.ts                       진입점: sketch/layered 라우팅
 │   ├── lib/
-│   │   ├── scene-schema.ts           Zod 스키마 (LayerRole, LayerCandidate)
-│   │   └── scene-loader.ts           scene.json fetch + 검증
+│   │   ├── scene-schema.ts           Zod 스키마 (fps default: 60)
+│   │   ├── scene-loader.ts           scene.json fetch + 검증
+│   │   └── effect-composer.ts        EffectComposer (Bloom + CA)
 │   ├── shaders/
-│   │   ├── layer.frag                HSV hue rotation 셰이더
+│   │   ├── layer.frag                HSV hue rotation + hueKey 셰이더
 │   │   ├── layer.vert                버텍스 셰이더
 │   │   └── sketches/*.frag           sketch 작품 셰이더
 │   └── sketches/
 │       └── layered-psychedelic.ts    layered 모드 Three.js 셋업
 │
 ├── scripts/
-│   ├── pipeline-layers.ts            메인 파이프라인 오케스트레이터
+│   ├── publish.ts                    ★ 원커맨드 Instagram Reels 퍼블리시
+│   ├── pipeline.ts                   메인 파이프라인 (pipeline-pro + 프리뷰 + 익스포트)
+│   ├── pipeline-pro.ts               pro-pipeline (bria + ESRGAN + flux-fill + depth)
 │   ├── export-layered.ts             mp4 익스포트 (Puppeteer + ffmpeg)
-│   ├── export-sketch.ts              sketch mp4 익스포트
-│   ├── lib/
-│   │   ├── pipeline-constants.ts     8개 공유 상수 (SAM/BFS threshold)
-│   │   ├── mask-stats.ts             computeMaskStats (SAM path)
-│   │   ├── mask-cache.ts             buildMaskCache (per-candidate 캐싱)
-│   │   ├── batch-process.ts          batchProcess (concurrency limiter)
-│   │   ├── bitrate.ts                getBitrate (해상도 기반 동적)
-│   │   ├── validate-file-path.ts     path traversal 검증
-│   │   ├── candidate-extraction.ts   BFS 연결 성분 분석
-│   │   ├── layer-resolve.ts          dedupe + ownership + role + retention
-│   │   ├── complexity-scoring.ts     Sobel edge + color entropy
-│   │   ├── image-decompose.ts        SAM 2 API + luminance fallback
-│   │   ├── scene-generator.ts        역할 기반 preset → scene.json
-│   │   ├── input-validator.ts        이미지 포맷/크기 검증
-│   │   ├── pipeline-cli.ts           CLI 인자 파싱
-│   │   └── decomposition-manifest.ts provenance manifest
-│   └── research/                     Autoresearch System
-│       ├── program.md                에이전트 연구 지시서
-│       ├── research-config.ts        튜닝 파라미터 (Zod)
-│       ├── evaluate.ts               평가 harness (수정 금지)
-│       ├── prepare.ts / calibrate.ts / run-once.ts
-│       ├── report.ts / promote.ts
-│       └── metrics/                  M1-M10 메트릭 구현
+│   ├── analyze-track.ts              ★ TS 오케스트레이터 (analyze → preset → Tidal → 샘플)
+│   ├── acid-reinterpreter.ts         ★ Acid E2E 파이프라인 (5-step)
+│   └── lib/
+│       ├── pipeline-cli.ts           CLI 인자 파싱
+│       ├── replicate-utils.ts        Replicate API 유틸
+│       ├── archive.ts               아카이브 디렉토리 + RunContext
+│       └── acid/                     Acid Reinterpreter 모듈
+│           ├── separate.ts           Step 1: Demucs via Replicate
+│           ├── analyze.py            Step 2: 멀티스템 분석
+│           ├── interpret.ts          Step 3: Claude Sonnet LLM 해석
+│           ├── prompt.ts             Step 3: 시스템/유저 프롬프트
+│           ├── normalizer.ts         Step 3: 그리드 퀀타이즈 + 스케일 스냅
+│           ├── schemas.ts            Zod 스키마 (analysis/interpretation/QC)
+│           ├── render.py             Step 4: 303 합성 + 909 샘플 트리거
+│           └── master.py             Step 5: 프로 믹싱 + 마스터링
 │
-├── audio/                            SuperCollider + TidalCycles
-│   ├── sc/synthdefs/                 SynthDef 9종
-│   └── setup.sh                      의존성 검증
+├── audio/
+│   ├── analyzer/                     범용 오디오 분석기
+│   │   ├── analyze_track.py          하이브리드 분석 (librosa + essentia)
+│   │   ├── sample_extract.py         히트 추출 (onset → 분류 → WAV)
+│   │   ├── master.py                 간단 마스터링 (3-band EQ + LUFS)
+│   │   ├── mix-pro.py                5-stem 프로 믹싱 (사이드체인)
+│   │   ├── calibrate.py              레퍼런스 유사도 평가 (0-100)
+│   │   └── requirements.txt          Python 의존성
+│   └── samples/
+│       ├── 909/                      909 드럼 원샷 (6개)
+│       └── 303/                      303 크로매틱 뱅크 (~550+ 샘플)
 │
-├── docs/prd/                         PRD (설계 스펙)
-├── docs/tickets/                     개발 티켓
-└── out/layered/                      아카이브 (mp4 + layers + scene.json)
+├── out/
+│   ├── layered/                      비디오 아카이브
+│   ├── acid/                         Acid Reinterpreter 출력
+│   └── analysis/                     Track Analyzer 출력
+└── docs/                             설계 문서 + 티켓
+```
+
+---
+
+## Audio Pipeline
+
+2개의 독립 오디오 파이프라인이 존재한다.
+
+### A. Track Analyzer — 범용 오디오 분석
+
+트랙을 분석해서 analysis.json + preset.json + Tidal 패턴 + 샘플 추출까지 수행한다.
+
+```bash
+# 기본 사용법
+npm run analyze:track audio/samples/auto-machine.wav
+
+# Python 직접 실행 (분석만)
+python3 audio/analyzer/analyze_track.py <input.wav> <output_dir>
+```
+
+#### 분석 항목
+
+| 분석 | 엔진 | 설명 |
+|------|------|------|
+| BPM | essentia + librosa (3소스 앙상블) | beat_track + tempogram + RhythmExtractor2013 교차 검증 |
+| Key | essentia KeyExtractor | 조성 + confidence |
+| Loudness | essentia EBU R128 | integrated / range / short_term_max |
+| Danceability | essentia DZC | 0-2 스코어 |
+| Spectral | librosa | centroid, bandwidth, rolloff, contrast, MFCC |
+| Energy | librosa RMS | 100포인트 에너지 커브 |
+| Structure | 에너지 기반 | intro / build / drop / break / outro 자동 분할 |
+| Kick/Hat | HPSS + freq-band onset | 주파수 대역별 분리 후 onset 감지 |
+| Bass Profile | STFT | centroid, flux → sub / rolling / acid 분류 |
+| Pitch | torchcrepe → PESTO → pyin (3-tier) | 프레임 연속성 슬라이드 감지 |
+| Stereo Width | L/R correlation | mid-side 비율 |
+| Stems | demucs T3 | drums / bass / vocals / other 4-stem 분리 + 퍼-스템 분석 |
+
+#### TS 오케스트레이터 (`npm run analyze:track`)
+
+Python 분석 후 추가 생성:
+1. **preset.json** — 장르 프리셋 (셰이더 파라미터 자동 매핑)
+2. **patterns.tidal** — Tidal Cycles 패턴 (킥/햇 onset → 16스텝 변환)
+3. **samples/** — demucs stems → 개별 히트 추출 (kick/snare/hat/bass/fx, 타입당 max 32개)
+4. **scene-audio.json** — 비디오 셰이더 연동용 오디오 메타
+
+```
+out/analysis/{filename}/
+├── analysis.json          # 전체 분석 결과
+├── preset.json            # 장르 프리셋
+├── patterns.tidal         # Tidal Cycles 패턴
+├── scene-audio.json       # 셰이더 연동 메타
+├── stems/                 # demucs 4-stem 분리
+│   ├── drums.wav
+│   ├── bass.wav
+│   ├── vocals.wav
+│   └── other.wav
+└── samples/               # 개별 히트 추출
+    ├── kick_001.wav
+    ├── snare_001.wav
+    ├── hat_001.wav
+    └── manifest.json
+```
+
+---
+
+### B. Acid Reinterpreter — LLM 기반 303/909 리크리에이션
+
+레퍼런스 트랙을 분석하고, **Claude Sonnet**이 303/909 acid techno 배치를 생성한 뒤, 렌더링 + 마스터링까지 자동 수행하는 E2E 파이프라인.
+
+```bash
+# 기본 사용법
+npx tsx scripts/acid-reinterpreter.ts <input.wav>
+
+# 전체 옵션
+npx tsx scripts/acid-reinterpreter.ts <input.wav> \
+  --duration 20 \
+  --start 30 \
+  --out-dir out/acid/my-track \
+  --dry-run \
+  --resume \
+  --jc303-path ~/Library/Audio/Plug-Ins/VST3/JC303.vst3
+```
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `<input.wav>` | 입력 오디오 (WAV/FLAC/MP3) | 필수 |
+| `--start <sec>` | 분석 시작 시점 | 에너지 피크 자동 감지 |
+| `--duration <sec>` | 분석/렌더 길이 | 20 |
+| `--out-dir <path>` | 출력 디렉토리 | `out/acid/{timestamp}/` |
+| `--dry-run` | 분석 + LLM 해석만 (렌더 생략) | false |
+| `--resume` | 기존 아티팩트 재활용 | false |
+| `--jc303-path <path>` | JC-303 VST3 경로 | `~/Library/Audio/Plug-Ins/VST3/JC303.vst3` |
+
+#### 5-Step Pipeline
+
+```
+Input WAV/FLAC/MP3
+    │
+    ├─ [1/5] SEPARATE — Demucs (Replicate API)
+    │  → stems/drums.wav, bass.wav, other.wav
+    │
+    ├─ [2/5] ANALYZE — Python 멀티스템 분석
+    │  → analysis.json
+    │  ├─ BPM (essentia + librosa)
+    │  ├─ Key (essentia KeyExtractor, confidence ≥ 0.6)
+    │  ├─ Drums: onset → spectral 분류 → 16th note 퀀타이즈
+    │  │  (3단계: Madmom RNN onset → STFT 주파수 분류 → 그리드 스냅)
+    │  ├─ Bass/Other: basic-pitch 뉴럴 피치 → MIDI 노트 이벤트
+    │  ├─ Energy: 초당 RMS 커브
+    │  ├─ Structure: build / drop / break 자동 감지
+    │  └─ QC Gate: drums RMS, bass coverage, BPM confidence 검증
+    │
+    ├─ [3/5] INTERPRET — 🤖 Claude Sonnet LLM
+    │  analysis.json 요약 → Claude Sonnet-4 (8192 tokens)
+    │  → interpretation.json
+    │  ├─ bass_303: 이벤트 (note, slide, cutoff, resonance, envMod, decay)
+    │  ├─ riff_303: 이벤트 (높은 레지스터)
+    │  ├─ kick/hat/snare_909: 16-step 패턴 + 벨로시티
+    │  ├─ FX: reverb_send, delay_send, delay_time
+    │  └─ energy_curve: build→drop 다이나믹
+    │
+    │  후처리:
+    │  ├─ 싱글바 패턴 → 전체 duration 확장 (자동 반복)
+    │  ├─ 값 클램핑 (envMod/decay/cutoff 범위 보정)
+    │  └─ Normalizer: 16th 그리드 퀀타이즈 + 스케일 스냅 + 패턴 패딩
+    │
+    ├─ [4/5] RENDER — Python 303/909 합성
+    │  → render/bass_303.wav, riff_303.wav, drums_909.wav
+    │  ├─ 303: JC-303 VST3 (없으면 SoftSynth303 폴백)
+    │  │  MIDI 이벤트 → 슬라이드(1ms 오버랩) + 악센트(vel>100)
+    │  └─ 909: 원샷 샘플 트리거 (kick/snare/hat-closed/hat-open)
+    │     + 드럼 체인 (HPF → LowShelf → Reverb → Comp → Gain)
+    │
+    └─ [5/5] MASTER — Python 프로 믹싱 + 마스터링
+       → master.wav + qc.json
+       ├─ Per-stem FX 체인 (EQ, Comp, Distortion, Reverb, Delay)
+       ├─ FX 센드 (303 stems → Reverb/Delay 버스)
+       ├─ Sidechain: kick envelope → bass/synth 더킹
+       ├─ 3-band 멀티밴드 마스터링 (200Hz / 4kHz 크로스오버)
+       │  Low: Comp + LowShelf + 모노 콜랩스
+       │  Mid: EQ + Comp + Distortion
+       │  High: HighShelf + Comp + 스테레오 와이드닝
+       ├─ Master bus: Comp (글루) + Limiter (-0.3dB)
+       ├─ LUFS 정규화: -14 LUFS 타겟 (Spotify 기준)
+       └─ QC: LUFS [-16,-12], peak ≤-0.3dB, 클리핑 체크
+```
+
+#### 출력 구조
+
+```
+out/acid/{name}/
+├── input.wav                  # 입력 사본
+├── stems/                     # Demucs 분리 스템
+│   ├── drums.wav
+│   ├── bass.wav
+│   └── other.wav
+├── analysis.json              # Step 2: 분석 결과
+├── raw_interpretation.json    # Step 3: LLM 원본 출력
+├── interpretation.json        # Step 3: 정규화된 303/909 배치
+├── render/                    # Step 4: 렌더 스템
+│   ├── drums_909.wav
+│   ├── bass_303.wav
+│   └── riff_303.wav
+├── master.wav                 # Step 5: 최종 마스터
+└── qc.json                    # Step 5: QC 리포트
+```
+
+#### LLM이 생성하는 것
+
+Claude Sonnet은 analysis.json 요약을 받아서 다음 JSON을 생성한다:
+
+| 트랙 | 내용 | 예시 |
+|------|------|------|
+| bass_303 | 원바 노트 이벤트 (자동 반복) | `{time, note_midi, duration, velocity, accent, slide, cutoff, resonance, envMod, decay, waveform}` |
+| riff_303 | 높은 레지스터 노트 이벤트 | 위와 동일 구조 |
+| kick_909 | 16-step 패턴 + 벨로시티 | `{pattern: [1,0,0,0,...], velocity: [1.0,0,...]}` |
+| hat_909 | 16-step 패턴 + open_pattern | closed/open 하이햇 분리 |
+| snare_909 | 16-step 패턴 | backbeat 또는 고스트 노트 |
+| fx | 리버브/딜레이 센드량 | `{reverb_send: 0.3, delay_send: 0.2, delay_time: 0.375}` |
+
+---
+
+### C. 보조 스크립트
+
+#### `audio/analyzer/master.py` — 간단 마스터링
+
+analysis.json의 frequency_balance를 읽어 3-band EQ + multiband comp + LUFS 정규화.
+
+```bash
+python3 audio/analyzer/master.py <input.wav> <analysis.json> \
+  [--output out.wav] [--reference ref.wav]
+```
+
+| 처리 | 상세 |
+|------|------|
+| 3-band EQ | Butterworth 크로스오버 (250Hz / 4kHz), freq_balance 기반 자동 게인 |
+| Multiband Comp | 대역별 RMS 엔벨로프 압축 (attack/release smoothing) |
+| LUFS | -14 LUFS 타겟 (pyloudnorm EBU R128) |
+| Peak Limiter | -0.3 dBFS 하드 시링 |
+| Non-regression | 레퍼런스 대비 점수 3pt+ 하락 → reject + 원본 복원 |
+
+#### `audio/analyzer/mix-pro.py` — 5-stem 프로 믹싱
+
+pedalboard 기반 per-stem 이펙트 체인 + 사이드체인 더킹.
+
+```bash
+python3 audio/analyzer/mix-pro.py \
+  --stems-dir <dir> --analysis <json> --output <wav> \
+  [--style hard-techno] [--no-sidechain] [--reference ref.wav]
+```
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--stems-dir` | stem WAV 디렉토리 (kick/bass/hat/synth/fx) | 필수 |
+| `--analysis` | analysis.json 경로 | 없음 |
+| `--output` | 출력 WAV | 필수 |
+| `--style` | 사이드체인 프리셋 | hard-techno |
+| `--no-sidechain` | 사이드체인 비활성화 | false |
+| `--reference` | 레퍼런스 WAV (envelope matching + 스코어링) | 없음 |
+
+**사이드체인 프리셋:**
+
+| 스타일 | Attack | Release | Depth |
+|--------|--------|---------|-------|
+| dark-techno | 0.5ms | 80ms | 0.85 |
+| hard-techno | 1.0ms | 100ms | 0.80 |
+| melodic | 2.0ms | 150ms | 0.60 |
+| industrial | 0.5ms | 60ms | 0.90 |
+| psytrance | 1.0ms | 120ms | 0.70 |
+
+#### `audio/analyzer/calibrate.py` — 레퍼런스 유사도 평가
+
+5-metric composite score (0-100):
+
+```bash
+python3 audio/analyzer/calibrate.py <reference.wav> <synthesized.wav> \
+  [--hybrid hybrid.wav] [--ref-stems dir] [--synth-stems dir] [-o out.json]
+```
+
+| 메트릭 | 가중치 | 측정 |
+|--------|--------|------|
+| MFCC + DTW | 30% | 음색 유사도 |
+| Band-weighted Spectral | 20% | 주파수 분포 (Low/Mid/High 대역별) |
+| RMS Envelope | 20% | 에너지 곡선 상관도 |
+| Onset F1 | 15% | 어택 타이밍 정밀도 (50ms 허용) |
+| Chroma DTW | 15% | 화성 진행 유사도 |
+
+Quality 라벨: ≥75 Production Ready / ≥65 Good / <65 Needs Work
+
+#### `audio/analyzer/sample_extract.py` — 히트 추출
+
+demucs stem에서 개별 히트를 추출하여 WAV + manifest.json 생성.
+
+```bash
+python3 audio/analyzer/sample_extract.py <stem.wav> <output_dir> <stem_type>
+# stem_type: drums | bass | other
+```
+
+멀티피처 분류: low energy >40% → kick, high energy >50% → hat, flatness >0.3 → snare
+
+---
+
+### Sample Packs
+
+#### 909 (`audio/samples/909/`)
+
+6개 원샷 드럼 샘플:
+
+| 파일 | 용도 |
+|------|------|
+| `kick.wav` | 킥 (~150ms attack, 500ms tail) |
+| `snare.wav` | 스네어 |
+| `hat-closed.wav` | 클로즈드 하이햇 |
+| `hat-open.wav` | 오픈 하이햇 (~180ms) |
+| `clap.wav` | 핸드클랩 |
+| `ride.wav` | 라이드 심벌 |
+
+`generate.py`: 909 샘플 생성기 (프로젝트 내 포함)
+
+#### 303 (`audio/samples/303/`)
+
+`generate.py`로 생성되는 크로매틱 샘플 뱅크:
+- **음역**: C1-C5 (MIDI 24-72, 49노트)
+- **웨이브폼**: saw + square
+- **아티큘레이션**: normal, accent, stab, squelch, long
+- **FX 텍스처**: sweep_mild, sweep_acid, sweep_scream, zap
+- **퍼커션**: click, tick, chirp, hat_short, hat_open (라운드 로빈)
+- **총 ~550+ 샘플**
+
+---
+
+### Audio Prerequisites
+
+```bash
+# Python 의존성 (analyzer)
+pip3 install -r audio/analyzer/requirements.txt
+# → librosa, essentia, numpy, soundfile, pyloudnorm, scipy
+
+# Acid Reinterpreter 추가 의존성
+pip3 install pedalboard basic-pitch madmom
+
+# 선택적 피치 트래커 (3-tier fallback)
+pip3 install torchcrepe pesto-pitch
+
+# 환경변수 (.env)
+REPLICATE_API_TOKEN=r8_...    # Demucs stem 분리 (Replicate API)
+ANTHROPIC_API_KEY=sk-ant-...  # LLM 해석 (Claude Sonnet)
 ```
 
 ---
@@ -353,42 +693,33 @@ video-art/
 
 ### Runtime
 
-| 패키지 | 버전 | 역할 |
-|--------|------|------|
-| three | ^0.172.0 | 3D 렌더링 (ShaderMaterial) |
-| postprocessing | ^6.39.0 | Bloom, ChromaticAberration |
-| puppeteer | ^24.40.0 | headless Chrome 프레임 캡처 |
-| sharp | ^0.34.5 | 이미지 처리 (mask, metric) |
-| replicate | ^1.4.0 | SAM 2 API |
-| @fal-ai/client | ^1.9.5 | fal.ai API |
-| zod | ^4.3.6 | 스키마 검증 |
-| dotenv | ^17.3.1 | 환경변수 |
+| 패키지 | 역할 |
+|--------|------|
+| three | 3D 렌더링 (ShaderMaterial) |
+| postprocessing | Bloom, ChromaticAberration |
+| puppeteer | headless Chrome 프레임 캡처 |
+| sharp | 이미지 처리 (리사이즈, 마스크, 디노이징) |
+| replicate | bria/flux-fill/ESRGAN/depth/demucs API |
+| @anthropic-ai/sdk | Claude Sonnet LLM (Acid Reinterpreter) |
+| zod | 스키마 검증 |
+| dotenv | 환경변수 로딩 |
 
-### Dev
+### Python (Audio)
 
-| 패키지 | 버전 | 역할 |
-|--------|------|------|
-| vite | ^6.2.0 | 번들러 + HMR |
-| vite-plugin-glsl | ^1.3.1 | .frag/.vert import |
-| typescript | ^5.7.0 | strict 타입 체크 |
-| tsx | ^4.21.0 | TS 스크립트 실행 |
-| vitest | ^4.1.1 | 2565 tests (76 files) |
+| 패키지 | 역할 |
+|--------|------|
+| librosa | 오디오 분석 (BPM, onset, STFT, MFCC) |
+| essentia | 프로 분석 (BPM, Key, Loudness, Danceability) |
+| pedalboard | DSP 이펙트 체인 (Comp, Reverb, Delay, EQ) |
+| pyloudnorm | EBU R128 LUFS 미터링 |
+| soundfile | WAV/FLAC I/O |
+| scipy | 신호처리 (Butterworth 필터) |
+| basic-pitch | 뉴럴 피치 트래킹 (선택적) |
+| torchcrepe | CREPE 피치 트래킹 (선택적) |
 
 ### External
 
 | 도구 | 역할 |
 |------|------|
-| ffmpeg | MP4 인코딩 + VMAF 평가 |
-| SuperCollider | 오디오 합성 + NRT 렌더 |
-
----
-
-## Security
-
-| 위협 | 방어 |
-|------|------|
-| Path traversal | `validateFilePath()` — realpathSync + startsWith(root + sep) + symlink + dir 검증 |
-| Shell injection | `execFile` (array-form) 전용 |
-| SC code injection | Zod enum 검증 값만 보간 |
-| Replicate version drift | `enforceVersionPin()` — production 모드 64-char hex SHA 강제 |
-| Preset injection | `/^[a-zA-Z0-9_-]+$/` regex |
+| ffmpeg | MP4 인코딩 (HEVC + H.264) + 다운스케일 |
+| python3 | 오디오 분석/렌더/마스터링 (3.9+) |
