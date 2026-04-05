@@ -227,12 +227,16 @@ npx tsx scripts/pipeline-pro.ts <input.png> [options]
 | `npm run publish <img>` | **원커맨드** Instagram Reels 퍼블리시 |
 | `npm run pipeline <img>` | pro-pipeline → 프리뷰 → 익스포트 |
 | `npm run pipeline:pro <img>` | AI 레이어 분해만 |
+| `npm run pipeline:validate` | scene.json 루프 검증 |
 | `npm run export:layered` | layered mp4 익스포트 |
+| `npm run export:sketch` | sketch mp4 익스포트 |
+| `npm run preset:save` | 프리셋 저장 |
+| `npm run preset:list` | 프리셋 목록 |
 | `npm run analyze:track <wav>` | 트랙 분석 → preset + Tidal + 샘플 추출 |
-| `npx tsx scripts/acid-reinterpreter.ts <wav>` | Acid Reinterpreter (LLM 303/909 리크리에이션) |
+| `npm run acid <wav>` | Acid Reinterpreter (LLM 303/909 리크리에이션) |
 | `npm run dev` | Vite 개발서버 |
 | `npm run build` | TypeScript + Vite 프로덕션 빌드 |
-| `npm run test` | Vitest |
+| `npm run test` | Vitest (12 suites, 143 tests) |
 | `npm run test:watch` | Vitest watch 모드 |
 
 ---
@@ -329,35 +333,63 @@ out/layered/{date}_{title}-{hash}/
 video-art/
 ├── src/
 │   ├── main.ts                       진입점: sketch/layered 라우팅
+│   ├── core/
+│   │   └── clock.ts                  결정적 프레임 타이밍 (녹화/실시간)
 │   ├── lib/
 │   │   ├── scene-schema.ts           Zod 스키마 (fps default: 60)
 │   │   ├── scene-loader.ts           scene.json fetch + 검증
-│   │   └── effect-composer.ts        EffectComposer (Bloom + CA)
+│   │   ├── effect-composer.ts        EffectComposer (Bloom + CA)
+│   │   ├── shader-plane.ts           ShaderMaterial PlaneGeometry 생성
+│   │   ├── sketch-configs.ts         sketch별 설정 레지스트리
+│   │   ├── sketch-registry.ts        sketch 설정 re-export + tone mapping
+│   │   ├── bpm-calculator.ts         BPM 계산 유틸
+│   │   └── palette.ts                컬러 팔레트 유틸
 │   ├── shaders/
 │   │   ├── layer.frag                HSV hue rotation + hueKey 셰이더
 │   │   ├── layer.vert                버텍스 셰이더
-│   │   └── sketches/*.frag           sketch 작품 셰이더
+│   │   ├── base.vert                 기본 버텍스 셰이더
+│   │   ├── post.frag / post.vert     포스트프로세싱 셰이더
+│   │   ├── psy-v3-post.frag          psy-v3 전용 포스트 셰이더
+│   │   ├── signal-post.frag          signal 전용 포스트 셰이더
+│   │   └── sketches/                 sketch 작품 셰이더 (8개)
+│   │       ├── psychedelic.frag      blueprint.frag      kaleidoscope.frag
+│   │       ├── psy.frag              psy-v3.frag         rainbow-spiral.frag
+│   │       └── psychedelic-eye.frag  signal.frag
 │   └── sketches/
-│       └── layered-psychedelic.ts    layered 모드 Three.js 셋업
+│       ├── layered-psychedelic.ts    layered 모드 Three.js 셋업
+│       ├── psychedelic.ts            psychedelic sketch 로직
+│       ├── psy-v3.ts                 psy-v3 sketch 로직
+│       ├── rainbow-spiral.ts         rainbow-spiral sketch 로직
+│       └── signal.ts                 signal sketch 로직
 │
 ├── scripts/
 │   ├── publish.ts                    ★ 원커맨드 Instagram Reels 퍼블리시
 │   ├── pipeline.ts                   메인 파이프라인 (pipeline-pro + 프리뷰 + 익스포트)
 │   ├── pipeline-pro.ts               pro-pipeline (bria + ESRGAN + flux-fill + depth)
 │   ├── export-layered.ts             mp4 익스포트 (Puppeteer + ffmpeg)
+│   ├── export-sketch.ts              sketch 모드 mp4 익스포트
+│   ├── validate-loop.ts              루프 검증 (scene.json duration 정합성)
+│   ├── preset-save.ts                프리셋 저장
+│   ├── preset-list.ts                프리셋 목록
 │   ├── analyze-track.ts              ★ TS 오케스트레이터 (analyze → preset → Tidal → 샘플)
 │   ├── acid-reinterpreter.ts         ★ Acid E2E 파이프라인 (5-step)
 │   └── lib/
 │       ├── pipeline-cli.ts           CLI 인자 파싱
-│       ├── replicate-utils.ts        Replicate API 유틸
+│       ├── replicate-utils.ts        Replicate API 유틸 (retry, version pin)
 │       ├── archive.ts               아카이브 디렉토리 + RunContext
+│       ├── browser-utils.ts          Puppeteer 유틸
+│       ├── check-deps.ts             외부 의존성 검증 (ffmpeg 등)
+│       ├── genre-preset.ts           장르 → 셰이더 프리셋 매핑
+│       ├── track-analyzer.ts         트랙 분석 후처리 (preset/Tidal/scene-audio)
+│       ├── validate-file-path.ts     파일 경로 검증
+│       ├── work-dir.ts               _work/ 디렉토리 + 포트 관리
 │       └── acid/                     Acid Reinterpreter 모듈
 │           ├── separate.ts           Step 1: Demucs via Replicate
 │           ├── analyze.py            Step 2: 멀티스템 분석
 │           ├── interpret.ts          Step 3: Claude Sonnet LLM 해석
 │           ├── prompt.ts             Step 3: 시스템/유저 프롬프트
 │           ├── normalizer.ts         Step 3: 그리드 퀀타이즈 + 스케일 스냅
-│           ├── schemas.ts            Zod 스키마 (analysis/interpretation/QC)
+│           ├── schemas.ts            Zod 스키마 (analysis/interpretation)
 │           ├── render.py             Step 4: 303 합성 + 909 샘플 트리거
 │           └── master.py             Step 5: 프로 믹싱 + 마스터링
 │
@@ -655,11 +687,9 @@ python3 audio/analyzer/sample_extract.py <stem.wav> <output_dir> <stem_type>
 | `clap.wav` | 핸드클랩 |
 | `ride.wav` | 라이드 심벌 |
 
-`generate.py`: 909 샘플 생성기 (프로젝트 내 포함)
-
 #### 303 (`audio/samples/303/`)
 
-`generate.py`로 생성되는 크로매틱 샘플 뱅크:
+크로매틱 샘플 뱅크:
 - **음역**: C1-C5 (MIDI 24-72, 49노트)
 - **웨이브폼**: saw + square
 - **아티큘레이션**: normal, accent, stab, squelch, long
