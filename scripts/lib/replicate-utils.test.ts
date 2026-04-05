@@ -1,10 +1,5 @@
 import { describe, it, expect, afterEach } from "vitest";
-import {
-  getToken,
-  validateReplicateUrl,
-  maskToken,
-  enforceVersionPin,
-} from "./replicate-utils.js";
+import { getToken, enforceVersionPin } from "./replicate-utils.js";
 
 describe("getToken (replicate)", () => {
   const original = process.env.REPLICATE_API_TOKEN;
@@ -22,18 +17,6 @@ describe("getToken (replicate)", () => {
   it("throws when not set", () => {
     delete process.env.REPLICATE_API_TOKEN;
     expect(() => getToken()).toThrow("REPLICATE_API_TOKEN");
-  });
-});
-
-describe("validateReplicateUrl", () => {
-  it("still works for replicate URLs", () => {
-    expect(() => validateReplicateUrl("https://pbxt.replicate.delivery/abc.png")).not.toThrow();
-  });
-});
-
-describe("maskToken", () => {
-  it("masks replicate token", () => {
-    expect(maskToken("token is r8_abc123", "r8_abc123")).toBe("token is r8_***");
   });
 });
 

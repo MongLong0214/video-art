@@ -22,39 +22,6 @@ export function getToken(): string {
 }
 
 // ---------------------------------------------------------------------------
-// URL domain validation
-// ---------------------------------------------------------------------------
-
-// ---------------------------------------------------------------------------
-// URL domain validation
-// ---------------------------------------------------------------------------
-
-const ALLOWED_DOMAINS = [".replicate.delivery", ".replicate.com"];
-
-/**
- * Validate that a Replicate output URL comes from a trusted domain.
- */
-export function validateReplicateUrl(url: string): void {
-  let parsed: URL;
-  try {
-    parsed = new URL(url);
-  } catch {
-    throw new Error(`Invalid URL: ${url}`);
-  }
-
-  const hostname = parsed.hostname;
-  const trusted = ALLOWED_DOMAINS.some(
-    (domain) => hostname === domain.slice(1) || hostname.endsWith(domain),
-  );
-
-  if (!trusted) {
-    throw new Error(
-      `Untrusted domain: ${hostname}. Expected ${ALLOWED_DOMAINS.map(d => `*${d}`).join(" or ")}`,
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
 // Version pin enforcement
 // ---------------------------------------------------------------------------
 
@@ -127,16 +94,3 @@ export async function withRetry<T>(
   throw new Error("withRetry: exhausted all attempts");
 }
 
-// ---------------------------------------------------------------------------
-// Token masking for log output
-// ---------------------------------------------------------------------------
-
-/**
- * Mask an API token in text for safe logging.
- * Keeps the first 3 chars (prefix like "r8_") and replaces the rest with "***".
- */
-export function maskToken(text: string, token: string): string {
-  if (!token || token.length < 4) return text;
-  const prefix = token.slice(0, 3);
-  return text.replaceAll(token, `${prefix}***`);
-}

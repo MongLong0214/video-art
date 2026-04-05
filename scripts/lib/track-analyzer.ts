@@ -354,18 +354,6 @@ const mapRmsToOverrides = (energyCurve: number[], segStart: number, segEnd: numb
   };
 };
 
-// === Accent extraction from pitch_contour velocity (AC-8.4) ===
-const extractAccents = (
-  noteEvents: { time: number; velocity: number }[],
-  segStart: number,
-  segEnd: number,
-  threshold = 0.7,
-): number[] => {
-  return noteEvents
-    .filter((n) => n.time >= segStart && n.time < segEnd && n.velocity > threshold)
-    .map((n) => n.time);
-};
-
 // === Section overrides by label (AC-8.2) ===
 const buildSectionOverrides = (
   label: string,

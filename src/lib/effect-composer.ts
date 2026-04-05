@@ -8,17 +8,13 @@ import {
 } from "postprocessing";
 import type { EffectsConfig } from "./scene-schema";
 
-export interface ComposerSetup {
-  composer: EffectComposer;
-}
-
 export function createComposer(
   renderer: THREE.WebGLRenderer,
   scene: THREE.Scene,
   camera: THREE.Camera,
   effects: EffectsConfig,
   _resolution: [number, number],
-): ComposerSetup {
+) {
   const composer = new EffectComposer(renderer, {
     frameBufferType: THREE.HalfFloatType,
   });

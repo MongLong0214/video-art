@@ -139,5 +139,3 @@ export const validateAnalysis = (data: unknown): AnalysisResult =>
 export const validateInterpretation = (data: unknown): InterpretationResult =>
   interpretationSchema.parse(data);
 
-export const validateQC = (data: unknown): QCResult =>
-  qcSchema.parse(data);

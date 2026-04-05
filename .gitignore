@@ -44,12 +44,15 @@ audio/samples/auto-machine/
 # Recordings (legacy)
 recordings/
 
+# Test/debug images (root level)
+/*.png
+/input/
+/test/
+
 # Autoresearch
 .cache/research/
 results.tsv
 source.mp4
-input.png
-prepared-*.png
 
 # Reference tracks (copyright)
 audio/references/
