@@ -21,20 +21,83 @@ JC303_DEFAULT_PATH = os.path.expanduser("~/Library/Audio/Plug-Ins/VST3/JC303.vst
 SR = 44100
 
 
+class SoftSynth303:
+    """Fallback 303-style subtractive synth using numpy (no VST required)."""
+
+    def __call__(self, midi_msgs, duration, sample_rate, num_channels=2, reset=True):
+        assert num_channels == 2, f"SoftSynth303 only supports stereo (got {num_channels})"
+        total = int(duration * sample_rate)
+        output = np.zeros(total, dtype=np.float32)
+
+        # Parse MIDI into note events
+        notes = []
+        pending = {}
+        for msg_bytes, t in midi_msgs:
+            status = msg_bytes[0] & 0xF0
+            note = msg_bytes[1]
+            vel = msg_bytes[2]
+            if status == 0x90 and vel > 0:
+                pending[note] = (t, vel)
+            elif status == 0x80 or (status == 0x90 and vel == 0):
+                if note in pending:
+                    start_t, start_vel = pending.pop(note)
+                    notes.append((start_t, t - start_t, note, start_vel))
+
+        for start_t, dur_s, midi_note, vel in notes:
+            freq = 440.0 * (2.0 ** ((midi_note - 69) / 12.0))
+            n_samples = max(1, int(dur_s * sample_rate))
+            start_idx = int(start_t * sample_rate)
+            if start_idx >= total:
+                continue
+
+            t_arr = np.arange(n_samples) / sample_rate
+            # Saw wave
+            phase = (freq * t_arr) % 1.0
+            saw = 2.0 * phase - 1.0
+
+            # Simple resonant filter envelope (decaying cutoff)
+            accent = vel > 100
+            env_attack = 0.002
+            env_decay = 0.15 if accent else 0.1
+            env = np.exp(-t_arr / env_decay)
+            env[:int(env_attack * sample_rate)] = np.linspace(0, 1, int(env_attack * sample_rate))[:len(env[:int(env_attack * sample_rate)])]
+
+            # Crude low-pass approximation via exponential smoothing
+            cutoff_norm = 0.3 * env + 0.05
+            filtered = np.zeros_like(saw)
+            prev = 0.0
+            for i in range(len(saw)):
+                alpha = min(cutoff_norm[i], 0.99)
+                prev = prev + alpha * (saw[i] - prev)
+                filtered[i] = prev
+
+            # Amplitude envelope
+            amp_env = np.exp(-t_arr / 0.3)
+            velocity_scale = vel / 127.0
+            signal = filtered * amp_env * velocity_scale * 0.4
+
+            end_idx = min(start_idx + n_samples, total)
+            length = end_idx - start_idx
+            output[start_idx:end_idx] += signal[:length]
+
+        # Stereo
+        return np.stack([output, output])
+
+
 def render_303_track(events: list[dict], synth, duration: float) -> np.ndarray:
     """Render 303 events in a single pass — preserves slide/accent/filter state."""
     if not events:
         return np.zeros((2, int(duration * SR)), dtype=np.float32)
 
-    # Global knob positions — use median values from events
-    cutoffs = [e.get("cutoff", 400) for e in events]
-    synth.cutoff = (sum(cutoffs) / len(cutoffs)) / 5000
-    synth.resonance = events[0].get("resonance", 0.85)
-    synth.envmod = events[0].get("envMod", 0.5)
-    synth.decay = events[0].get("decay", 0.3)
-    synth.waveform = float(events[0].get("waveform", 0))
-    # accent controlled by velocity, not knob
-    synth.accent = 0.8
+    # Global knob positions — only for JC-303 VST (not SoftSynth303)
+    if not isinstance(synth, SoftSynth303):
+        cutoffs = [e.get("cutoff", 400) for e in events]
+        synth.cutoff = (sum(cutoffs) / len(cutoffs)) / 5000
+        synth.resonance = events[0].get("resonance", 0.85)
+        synth.envmod = events[0].get("envMod", 0.5)
+        synth.decay = events[0].get("decay", 0.3)
+        synth.waveform = float(events[0].get("waveform", 0))
+        synth.accent = 0.8
 
     midi_msgs = []
     for event in events:
@@ -148,11 +211,6 @@ def main():
         print("Error: pedalboard not installed. pip install pedalboard", file=sys.stderr)
         sys.exit(1)
 
-    if not os.path.exists(args.jc303_path):
-        print(f"Error: JC-303 VST3 not found at {args.jc303_path}", file=sys.stderr)
-        print("Install: https://github.com/midilab/jc303/releases", file=sys.stderr)
-        sys.exit(1)
-
     os.makedirs(args.out_dir, exist_ok=True)
 
     with open(args.interpretation) as f:
@@ -160,9 +218,13 @@ def main():
 
     duration = args.duration
 
-    # Load JC-303 once
-    print("Loading JC-303 VST3...")
-    synth = pedalboard.load_plugin(args.jc303_path)
+    # Load JC-303 or fallback to software synth
+    if os.path.exists(args.jc303_path):
+        print("Loading JC-303 VST3...")
+        synth = pedalboard.load_plugin(args.jc303_path)
+    else:
+        print("JC-303 not found, using software fallback synth...")
+        synth = SoftSynth303()
 
     # Render 303 bass
     print("Rendering bass_303...")

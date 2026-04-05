@@ -41,8 +41,8 @@ Generate a complete JSON with this exact structure:
 }
 
 IMPORTANT:
-- bass_303 events must cover the full ${duration}s duration with at least 50 events
-- riff_303 events should have at least 20 events
+- bass_303: Generate ONE BAR of events (16 16th-notes). Time starts at 0.0, 16th = ${(15 / bpm).toFixed(4)}s. These events will be repeated programmatically to fill ${duration}s.
+- riff_303: Generate ONE BAR of events (8-16 notes). Same timing grid.
 - Use the detected BPM for timing grid (16th note = ${(15 / bpm).toFixed(4)}s at ${bpm} BPM)
 - Match the energy/structure from the analysis
 - All 909 patterns must be exactly 16 steps

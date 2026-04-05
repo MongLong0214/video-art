@@ -14,7 +14,7 @@ import { interpret } from "./lib/acid/interpret.ts";
 import { normalize } from "./lib/acid/normalizer.ts";
 import { validateAnalysis, validateInterpretation } from "./lib/acid/schemas.ts";
 
-const UV_PYTHON = ["uv", "run", "--with", "numpy,soundfile,librosa,crepe,pedalboard,pyloudnorm"];
+const UV_PYTHON = ["uv", "run", "--with", "numpy,soundfile,librosa,pedalboard,pyloudnorm"];
 
 const runPython = (script: string, args: string[], timeoutMs: number): string => {
   const result = execFileSync(UV_PYTHON[0], [...UV_PYTHON.slice(1), "python", script, ...args], {
