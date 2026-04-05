@@ -19,7 +19,9 @@ export function createComposer(
   effects: EffectsConfig,
   _resolution: [number, number],
 ): ComposerSetup {
-  const composer = new EffectComposer(renderer);
+  const composer = new EffectComposer(renderer, {
+    frameBufferType: THREE.HalfFloatType,
+  });
   composer.addPass(new RenderPass(scene, camera));
 
   const bloomEffect = new BloomEffect({

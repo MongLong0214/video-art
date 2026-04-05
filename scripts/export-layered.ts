@@ -54,8 +54,14 @@ async function captureFrames(outputDir: string, totalFrames: number, resolution:
     console.log("Server ready.");
 
     browser = await puppeteer.launch({
-      headless: true,
-      args: ["--no-sandbox", "--use-gl=angle", "--disable-gpu-compositing"],
+      headless: "new",
+      args: [
+        "--no-sandbox",
+        "--use-gl=angle",
+        "--enable-gpu-rasterization",
+        "--enable-webgl",
+        "--ignore-gpu-blocklist",
+      ],
     });
 
     const page = await browser.newPage();
@@ -214,6 +220,34 @@ async function main() {
   } catch (err) {
     ctx.cleanup();
     throw err;
+  }
+
+  // HEVC VideoToolbox re-encode for smooth playback on macOS
+  if (!proresFlag) {
+    const hevcPath = outputPath.replace(/\.mp4$/, "-hevc.mp4");
+    console.log("\nRe-encoding with VideoToolbox HEVC...");
+    await new Promise<void>((resolve, reject) => {
+      const proc = execFile("ffmpeg", [
+        "-y", "-i", outputPath,
+        "-c:v", "hevc_videotoolbox", "-q:v", "45", "-pix_fmt", "yuv420p",
+        "-tag:v", "hvc1", "-movflags", "+faststart",
+        hevcPath,
+      ], (err) => {
+        if (err) reject(new Error(`HEVC encode failed: ${err.message}`));
+        else resolve();
+      });
+      proc.stderr?.on("data", (d: string) => {
+        if (d.includes("frame=")) process.stdout.write(`\r  ${d.trim()}`);
+      });
+    });
+    // Replace H.264 with HEVC as primary output
+    fs.unlinkSync(outputPath);
+    fs.renameSync(hevcPath, outputPath);
+    const hevcStat = fs.statSync(outputPath);
+    const hevcMB = (hevcStat.size / (1024 * 1024)).toFixed(1);
+    const hevcMbps = DURATION > 0 ? ((hevcStat.size * 8) / (DURATION * 1_000_000)).toFixed(2) : "N/A";
+    console.log(`\nHEVC Output: ${outputPath}`);
+    console.log(`Size: ${hevcMB}MB, Bitrate: ${hevcMbps} Mbps`);
   }
 
   // Snapshot layers + scene.json into archive

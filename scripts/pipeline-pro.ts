@@ -21,7 +21,7 @@ const INPUT = args.inputPath || "input.png";
 if (!fs.existsSync(INPUT)) { console.error(`Input not found: ${INPUT}`); process.exit(1); }
 
 const DURATION = args.duration ?? 20;
-const FPS = args.fps ?? 60;
+const FPS = args.fps ?? 30;
 const PRODUCTION = args.production;
 
 const OUTPUT_DIR = args.workDir
@@ -166,7 +166,12 @@ async function main() {
     for (const f of fs.readdirSync(layersDir)) fs.rmSync(path.join(layersDir, f), { force: true });
   }
   fs.mkdirSync(layersDir, { recursive: true });
-  fs.copyFileSync(path.join(OUTPUT_DIR, "layer-bg.png"), path.join(layersDir, "layer-0.png"));
+
+  // Background: heavy blur to remove inpainting noise (preserves color, eliminates grain)
+  const bgSmoothed = await sharp(bgPlate).median(5).blur(4.0).png().toBuffer();
+  await sharp(bgSmoothed).toFile(path.join(layersDir, "layer-0.png"));
+  console.log("  layer-0.png — background (median+blur denoised)");
+
   fs.copyFileSync(path.join(OUTPUT_DIR, "layer-fg.png"), path.join(layersDir, "layer-1.png"));
   await sharp(depthBuf).resize(W, H, { kernel: "lanczos3" }).grayscale().toFile(path.join(layersDir, "depth.png"));
 
@@ -229,8 +234,8 @@ async function main() {
       },
     ],
     effects: {
-      bloom: { strength: 0.7, radius: 0.5, threshold: 0.35 },
-      chromaticAberration: { offset: 3.0, modulationOffset: 0.5 },
+      bloom: { strength: 0.5, radius: 0.4, threshold: 0.45 },
+      chromaticAberration: { offset: 2.0, modulationOffset: 0.4 },
       parallax: { scale: 0 },
       haze: { intensity: 0 },
       feather: { radius: 0 },
@@ -240,7 +245,7 @@ async function main() {
   fs.writeFileSync(path.join(serveDir, "scene.json"), JSON.stringify(scene, null, 2));
   console.log("\n  scene.json written (no parallax, no haze, pure shader)");
   console.log("\n═══ Ready to export ═══");
-  console.log("Run: npx tsx scripts/export-layered.ts --title pro-pipeline --fps 60");
+  console.log("Run: npx tsx scripts/export-layered.ts --title pro-pipeline --fps 30");
 }
 
 main().catch((err) => {
