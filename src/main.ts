@@ -283,7 +283,14 @@ async function init() {
     composerRender();
     return renderer.domElement.toDataURL("image/png");
   };
-  win.__startCapture = (fps: number) => {
+  win.__startCapture = async (fps: number) => {
+    // Preload all motion frame textures before capture starts
+    if (IS_LAYERED) {
+      const layeredSketch = sketch as import("@/sketches/layered-psychedelic").LayeredSketch;
+      if ("preloadMotionFrames" in layeredSketch) {
+        await layeredSketch.preloadMotionFrames();
+      }
+    }
     capturing = true;
     clock.setFps(fps);
     clock.startRecording();

@@ -654,6 +654,154 @@ describe("sceneSchema audio field", () => {
   });
 });
 
+describe("sceneSchema motion field", () => {
+  const baseScene = {
+    version: 1 as const,
+    source: "test.png",
+    resolution: [1080, 1080] as [number, number],
+    duration: 16,
+    fps: 30,
+    layers: [
+      {
+        id: "bg",
+        file: "layers/layer-0.png",
+        zIndex: 0,
+        animation: {
+          colorCycle: { speed: 1.0, period: 16 },
+        },
+      },
+    ],
+  };
+
+  const validMotion = {
+    enabled: true,
+    framesDir: "layers/bg-frames/",
+    frameCount: 384,
+    fps: 24,
+    intensity: "medium" as const,
+  };
+
+  it("parses scene with motion field", () => {
+    const result = sceneSchema.safeParse({
+      ...baseScene,
+      layers: [
+        {
+          ...baseScene.layers[0],
+          motion: validMotion,
+        },
+      ],
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.layers[0].motion).toBeDefined();
+      expect(result.data.layers[0].motion!.enabled).toBe(true);
+      expect(result.data.layers[0].motion!.framesDir).toBe("layers/bg-frames/");
+      expect(result.data.layers[0].motion!.frameCount).toBe(384);
+    }
+  });
+
+  it("parses scene without motion field (v1 compat)", () => {
+    const result = sceneSchema.safeParse(baseScene);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.layers[0].motion).toBeUndefined();
+    }
+  });
+
+  it("validates motion.framesDir as non-empty string", () => {
+    const result = sceneSchema.safeParse({
+      ...baseScene,
+      layers: [
+        {
+          ...baseScene.layers[0],
+          motion: { ...validMotion, framesDir: "" },
+        },
+      ],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("validates motion.frameCount as positive int", () => {
+    const result = sceneSchema.safeParse({
+      ...baseScene,
+      layers: [
+        {
+          ...baseScene.layers[0],
+          motion: { ...validMotion, frameCount: 0 },
+        },
+      ],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("validates motion.intensity enum", () => {
+    const result = sceneSchema.safeParse({
+      ...baseScene,
+      layers: [
+        {
+          ...baseScene.layers[0],
+          motion: { ...validMotion, intensity: "extreme" },
+        },
+      ],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("motion enabled with duration=16 passes period check", () => {
+    const result = sceneSchema.safeParse({
+      ...baseScene,
+      duration: 16,
+      layers: [
+        {
+          ...baseScene.layers[0],
+          motion: validMotion,
+          animation: {
+            colorCycle: { speed: 1.0, period: 8 },
+          },
+        },
+      ],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts motion with optional model field", () => {
+    const result = sceneSchema.safeParse({
+      ...baseScene,
+      layers: [
+        {
+          ...baseScene.layers[0],
+          motion: { ...validMotion, model: "google/veo-3.1" },
+        },
+      ],
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.layers[0].motion!.model).toBe("google/veo-3.1");
+    }
+  });
+
+  it("defaults intensity to medium", () => {
+    const { intensity: _, ...motionNoIntensity } = validMotion;
+    const result = sceneSchema.safeParse({
+      ...baseScene,
+      layers: [
+        {
+          ...baseScene.layers[0],
+          motion: motionNoIntensity,
+        },
+      ],
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.layers[0].motion!.intensity).toBe("medium");
+    }
+  });
+
+  it("getValidPeriods(16) returns [1,2,4,8,16]", () => {
+    expect(getValidPeriods(16)).toEqual([1, 2, 4, 8, 16]);
+  });
+});
+
 describe("LayerRole schema", () => {
   const VALID_ROLES: LayerRole[] = [
     "background-plate",

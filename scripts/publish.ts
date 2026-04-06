@@ -57,6 +57,13 @@ async function main() {
     // Step 1: Pro pipeline → writes to _work/
     const proArgs = ["tsx", "scripts/pipeline-pro.ts", inputPath!, "--work-dir", workDir];
     if (duration) proArgs.push("--duration", duration);
+    // Forward motion flags
+    if (args.includes("--motion")) proArgs.push("--motion");
+    const mmIdx = args.indexOf("--motion-model");
+    if (mmIdx !== -1 && mmIdx + 1 < args.length) proArgs.push("--motion-model", args[mmIdx + 1]);
+    const miIdx = args.indexOf("--motion-intensity");
+    if (miIdx !== -1 && miIdx + 1 < args.length) proArgs.push("--motion-intensity", args[miIdx + 1]);
+    if (args.includes("--skip-flow")) proArgs.push("--skip-flow");
     run("npx", proArgs);
 
     // Step 2: Export → reads from _work/, dynamic port, renders mp4 into same archiveDir

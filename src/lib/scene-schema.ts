@@ -60,6 +60,17 @@ const animationSchema = z.object({
 
 const blendModeSchema = z.enum(["normal", "add", "multiply", "screen"]).default("normal");
 
+const motionIntensitySchema = z.enum(["low", "medium", "high"]).default("medium");
+
+const motionSchema = z.object({
+  enabled: z.boolean(),
+  framesDir: z.string().min(1),
+  frameCount: z.number().int().positive(),
+  fps: z.number().positive(),
+  model: z.string().optional(),
+  intensity: motionIntensitySchema,
+});
+
 const layerSchema = z.object({
   id: z.string(),
   file: z.string().regex(/^[\w\-\/\.]+\.png$/, "Layer file must be a relative PNG path"),
@@ -79,6 +90,7 @@ const layerSchema = z.object({
     hueKey: 0,
     hueSpeed: 1,
   }),
+  motion: motionSchema.optional(),
 });
 
 const bloomSchema = z.object({
@@ -173,4 +185,5 @@ export type LayerConfig = z.infer<typeof layerSchema>;
 export type AnimationConfig = z.infer<typeof animationSchema>;
 export type EffectsConfig = z.infer<typeof effectsSchema>;
 export type AudioConfig = z.infer<typeof audioSchema>;
+export type MotionConfig = z.infer<typeof motionSchema>;
 

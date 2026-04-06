@@ -15,12 +15,21 @@ import path from "node:path";
 import { getToken, withRetry, enforceVersionPin } from "./lib/replicate-utils.js";
 import { parseCliArgs } from "./lib/pipeline-cli.js";
 import { getValidPeriods } from "../src/lib/scene-schema.js";
+import { checkPythonDeps, runPython, parsePythonOutput } from "./lib/python-bridge.js";
+import { runMotionI2v, extractFrames } from "./lib/motion-i2v.js";
+import { createPingPongLoop } from "./lib/pingpong.js";
+import { TARGET_DURATION_SEC, TARGET_FPS, TARGET_FRAMES } from "./lib/motion-models.js";
 
 const args = parseCliArgs(process.argv.slice(2));
 const INPUT = args.inputPath || "input.png";
 if (!fs.existsSync(INPUT)) { console.error(`Input not found: ${INPUT}`); process.exit(1); }
 
-const DURATION = args.duration ?? 20;
+const MOTION = args.motion;
+const MOTION_DURATION = 16; // 8s i2v × ping-pong = 16s
+const DURATION = MOTION ? MOTION_DURATION : (args.duration ?? 20);
+if (MOTION && args.duration) {
+  console.warn("WARNING: --motion mode uses fixed duration=16. --duration ignored.");
+}
 const FPS = args.fps ?? 30;
 const PRODUCTION = args.production;
 
@@ -259,6 +268,160 @@ async function main() {
 
   fs.writeFileSync(path.join(serveDir, "scene.json"), JSON.stringify(scene, null, 2));
   console.log("\n  scene.json written (no parallax, no haze, pure shader)");
+
+  // ═══ Motion Pipeline (--motion flag) ═══
+  if (MOTION) {
+    console.log("\n═══ Motion Pipeline ═══");
+    const motionStart = Date.now();
+    const intermediateDir = path.join(serveDir, "intermediate");
+
+    // Clean previous intermediate artifacts
+    if (fs.existsSync(intermediateDir)) {
+      fs.rmSync(intermediateDir, { recursive: true, force: true });
+    }
+    fs.mkdirSync(intermediateDir, { recursive: true });
+
+    // ── Step M1: Per-Layer i2v ──
+    console.log("\n── Step M1: Per-Layer i2v ──");
+    const tM1 = Date.now();
+
+    const i2vResults = await runMotionI2v(
+      [
+        { imagePath: path.join(layersDir, "layer-0.png"), role: "background-plate", hasAlpha: false },
+        { imagePath: path.join(layersDir, "layer-1.png"), role: "subject", hasAlpha: true },
+      ],
+      {
+        modelName: args.motionModel,
+        intensity: args.motionIntensity,
+        workDir: intermediateDir,
+      },
+    );
+
+    if (!i2vResults) {
+      console.warn("  Motion i2v failed — continuing without motion.");
+      console.log("\n═══ Ready to export (static mode) ═══");
+      return;
+    }
+    console.log(`  Step M1: ${Date.now() - tM1}ms`);
+
+    // ── Step M3: Optical Flow (RAFT) ──
+    let skipFlow = args.skipFlow;
+
+    if (!skipFlow) {
+      const pythonCheck = await checkPythonDeps();
+      if (!pythonCheck.available) {
+        console.warn(`  WARNING: ${pythonCheck.error}`);
+        console.warn("  Auto-enabling --skip-flow. hueKey color preservation NOT guaranteed.");
+        skipFlow = true;
+      }
+    }
+
+    const layerFrameDirs: string[] = [];
+
+    if (!skipFlow) {
+      console.log("\n── Step M3: Optical Flow (RAFT) ──");
+
+      for (let i = 0; i < i2vResults.length; i++) {
+        const tM3 = Date.now();
+        const flowDir = path.join(intermediateDir, `layer-${i}`, "flow");
+        fs.mkdirSync(flowDir, { recursive: true });
+
+        console.log(`  Layer ${i}: Extracting RAFT optical flow...`);
+        const flowResult = await runPython(
+          "scripts/motion/extract_flow.py",
+          [i2vResults[i].framesDir, flowDir],
+        );
+        const flowMeta = parsePythonOutput<{ flow_count: number; device: string; elapsed_sec: number }>(flowResult.stdout);
+        console.log(`  Layer ${i}: ${flowMeta.flow_count} flows (${flowMeta.device}, ${flowMeta.elapsed_sec}s)`);
+        console.log(`  ${Date.now() - tM3}ms`);
+
+        // ── Step M4: Original Pixel Warping ──
+        console.log(`\n── Step M4: Warp original pixels (layer ${i}) ──`);
+        const tM4 = Date.now();
+        const warpedDir = path.join(intermediateDir, `layer-${i}`, "warped");
+
+        const warpArgs = [
+          path.join(layersDir, `layer-${i}.png`),
+          flowDir,
+          warpedDir,
+          "--ref-frames-dir", i2vResults[i].framesDir,
+        ];
+        if (i === 1) warpArgs.push("--has-alpha"); // foreground has alpha
+
+        const warpResult = await runPython("scripts/motion/warp_pixels.py", warpArgs);
+        const warpMeta = parsePythonOutput<{ frame_count: number; disocclusion_ratio_avg: number }>(warpResult.stdout);
+        console.log(`  Layer ${i}: ${warpMeta.frame_count} warped frames (disocclusion: ${(warpMeta.disocclusion_ratio_avg * 100).toFixed(1)}%)`);
+        console.log(`  ${Date.now() - tM4}ms`);
+
+        layerFrameDirs.push(warpedDir);
+      }
+    } else {
+      // --skip-flow: use AI ref frames directly (no color preservation guarantee)
+      console.log("\n── Step M3-M4: SKIPPED (--skip-flow) ──");
+      console.warn("  WARNING: Using AI video frames directly. hueKey color preservation NOT guaranteed.");
+      for (const result of i2vResults) {
+        layerFrameDirs.push(result.framesDir);
+      }
+    }
+
+    // ── Step M5: Ping-Pong Loop ──
+    console.log("\n── Step M5: Ping-Pong Loop ──");
+    const finalFrameDirs: string[] = [];
+
+    for (let i = 0; i < layerFrameDirs.length; i++) {
+      const tM5 = Date.now();
+      const loopDir = path.join(layersDir, i === 0 ? "bg-frames" : "fg-frames");
+
+      // Clean previous frames
+      if (fs.existsSync(loopDir)) fs.rmSync(loopDir, { recursive: true, force: true });
+      fs.mkdirSync(loopDir, { recursive: true });
+
+      const result = await createPingPongLoop(layerFrameDirs[i], loopDir, { blendFrames: 3 });
+      console.log(`  Layer ${i}: ${result.frameCount} loop frames (${Date.now() - tM5}ms)`);
+      finalFrameDirs.push(loopDir);
+    }
+
+    // ── Step M6: Update scene.json with motion ──
+    console.log("\n── Step M6: Update scene.json ──");
+    const loopFrameCount = fs.readdirSync(finalFrameDirs[0]).filter(f => f.endsWith(".png")).length;
+
+    // Update scene with motion fields
+    scene.duration = MOTION_DURATION;
+
+    // Recalculate periods for duration=16
+    const motionPeriods = getValidPeriods(MOTION_DURATION);
+    const motionLong = motionPeriods[motionPeriods.length - 1];
+    const motionMid = motionPeriods[Math.max(0, Math.floor(motionPeriods.length / 2))];
+    const motionShort = motionPeriods[Math.max(0, Math.floor(motionPeriods.length / 4))];
+
+    scene.layers[0].animation.colorCycle.period = motionLong;
+    scene.layers[0].animation.glow.period = motionMid;
+    scene.layers[1].animation.colorCycle.period = motionMid;
+    scene.layers[1].animation.glow.period = motionShort;
+
+    // Add motion fields
+    const motionField = (dir: string) => ({
+      enabled: true,
+      framesDir: path.relative(serveDir, dir) + "/",
+      frameCount: loopFrameCount,
+      fps: TARGET_FPS,
+      model: args.motionModel,
+      intensity: args.motionIntensity,
+    });
+
+    (scene.layers[0] as Record<string, unknown>).motion = motionField(finalFrameDirs[0]);
+    (scene.layers[1] as Record<string, unknown>).motion = motionField(finalFrameDirs[1]);
+
+    fs.writeFileSync(path.join(serveDir, "scene.json"), JSON.stringify(scene, null, 2));
+    console.log(`  scene.json updated: duration=${MOTION_DURATION}, motion enabled, periods=[${motionPeriods.join(",")}]`);
+
+    // Cleanup intermediate (keep only final frame dirs)
+    console.log("\n  Cleaning intermediate artifacts...");
+    fs.rmSync(intermediateDir, { recursive: true, force: true });
+
+    console.log(`\n═══ Motion Pipeline Complete (${Date.now() - motionStart}ms) ═══`);
+  }
+
   console.log("\n═══ Ready to export ═══");
   console.log("Run: npx tsx scripts/export-layered.ts --title pro-pipeline --fps 30");
 }

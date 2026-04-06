@@ -2,6 +2,12 @@
  * CLI argument parsing for pipeline-pro.
  */
 
+const VALID_MOTION_MODELS = ["wan-2.2", "veo-3.1", "seedance"] as const;
+type MotionModel = (typeof VALID_MOTION_MODELS)[number];
+
+const VALID_MOTION_INTENSITIES = ["low", "medium", "high"] as const;
+type MotionIntensity = (typeof VALID_MOTION_INTENSITIES)[number];
+
 export interface PipelineCliArgs {
   inputPath: string;
   duration?: number;
@@ -9,6 +15,10 @@ export interface PipelineCliArgs {
   prores?: boolean;
   fps?: number;
   workDir?: string;
+  motion: boolean;
+  motionModel: MotionModel;
+  motionIntensity: MotionIntensity;
+  skipFlow: boolean;
 }
 
 export function parseCliArgs(argv: string[]): PipelineCliArgs {
@@ -50,6 +60,38 @@ export function parseCliArgs(argv: string[]): PipelineCliArgs {
     workDir = argv[wdIdx + 1];
   }
 
+  // --motion
+  const motion = argv.includes("--motion");
+
+  // --motion-model <model>
+  let motionModel: MotionModel = "wan-2.2";
+  const mmIdx = argv.indexOf("--motion-model");
+  if (mmIdx !== -1 && mmIdx + 1 < argv.length) {
+    const val = argv[mmIdx + 1];
+    if (!VALID_MOTION_MODELS.includes(val as MotionModel)) {
+      throw new Error(
+        `Invalid --motion-model "${val}". Valid: ${VALID_MOTION_MODELS.join(", ")}`,
+      );
+    }
+    motionModel = val as MotionModel;
+  }
+
+  // --motion-intensity <level>
+  let motionIntensity: MotionIntensity = "medium";
+  const miIdx = argv.indexOf("--motion-intensity");
+  if (miIdx !== -1 && miIdx + 1 < argv.length) {
+    const val = argv[miIdx + 1];
+    if (!VALID_MOTION_INTENSITIES.includes(val as MotionIntensity)) {
+      throw new Error(
+        `Invalid --motion-intensity "${val}". Valid: ${VALID_MOTION_INTENSITIES.join(", ")}`,
+      );
+    }
+    motionIntensity = val as MotionIntensity;
+  }
+
+  // --skip-flow
+  const skipFlow = argv.includes("--skip-flow");
+
   return {
     inputPath,
     duration,
@@ -57,5 +99,9 @@ export function parseCliArgs(argv: string[]): PipelineCliArgs {
     prores,
     fps,
     workDir,
+    motion,
+    motionModel,
+    motionIntensity,
+    skipFlow,
   };
 }

@@ -2,6 +2,7 @@ import * as THREE from "three";
 import type { Sketch } from "./psychedelic";
 import type { LayerConfig, SceneConfig } from "@/lib/scene-schema";
 import { loadScene } from "@/lib/scene-loader";
+import { FrameTexturePool, computeFrameIndex } from "@/lib/frame-texture-pool";
 import vertexShader from "@/shaders/layer.vert";
 import fragmentShader from "@/shaders/layer.frag";
 
@@ -9,9 +10,13 @@ interface LayerMesh {
   mesh: THREE.Mesh;
   material: THREE.ShaderMaterial;
   config: LayerConfig;
+  textureSource: THREE.Texture | FrameTexturePool;
 }
 
-export type LayeredSketch = Sketch & { sceneConfig: SceneConfig };
+export type LayeredSketch = Sketch & {
+  sceneConfig: SceneConfig;
+  preloadMotionFrames: () => Promise<void>;
+};
 
 export async function createLayeredPsychedelic(
   sceneUrl = "/scene.json",
@@ -25,6 +30,20 @@ export async function createLayeredPsychedelic(
   const textureLoader = new THREE.TextureLoader();
   const layerMeshes: LayerMesh[] = [];
 
+  // Load textures: static PNG or FrameTexturePool for motion layers
+  const textureSources: (THREE.Texture | FrameTexturePool)[] = [];
+  for (const l of config.layers) {
+    if (l.motion?.enabled) {
+      textureSources.push(
+        new FrameTexturePool(l.motion.framesDir, l.motion.frameCount),
+      );
+    } else {
+      textureSources.push(await loadTexture(textureLoader, `/${l.file}`));
+    }
+  }
+
+  // For initial render, static textures are used directly.
+  // Motion layers use the original PNG as initial texture (replaced per-frame in update).
   const textures = await Promise.all(
     config.layers.map((l) => loadTexture(textureLoader, `/${l.file}`)),
   );
@@ -90,28 +109,47 @@ export async function createLayeredPsychedelic(
     mesh.renderOrder = layerConfig.zIndex;
 
     scene.add(mesh);
-    layerMeshes.push({ mesh, material, config: layerConfig });
+    layerMeshes.push({ mesh, material, config: layerConfig, textureSource: textureSources[idx] });
   }
 
   return {
     scene,
     camera,
     sceneConfig: config,
+    async preloadMotionFrames() {
+      for (const { textureSource } of layerMeshes) {
+        if (textureSource instanceof FrameTexturePool) {
+          await textureSource.preloadAll();
+        }
+      }
+    },
     update(time: number) {
       const normalizedTime = (time % loopDuration) / loopDuration;
-      for (const { material } of layerMeshes) {
+      for (const { material, textureSource } of layerMeshes) {
         material.uniforms.uTime.value = normalizedTime;
+
+        // Motion layers: swap texture per frame
+        if (textureSource instanceof FrameTexturePool) {
+          const frameIndex = computeFrameIndex(normalizedTime, textureSource.frameCount);
+          const frameTex = textureSource.getTexture(frameIndex);
+          if (frameTex) {
+            material.uniforms.uTexture.value = frameTex;
+          }
+        }
       }
     },
     resize(_width: number, _height: number) {
       // OrthographicCamera is fixed -1..1, no resize needed for square
     },
     dispose() {
-      for (const { mesh, material } of layerMeshes) {
+      for (const { mesh, material, textureSource } of layerMeshes) {
         mesh.geometry.dispose();
         material.dispose();
-        const tex = material.uniforms.uTexture.value as THREE.Texture;
-        tex.dispose();
+        if (textureSource instanceof FrameTexturePool) {
+          textureSource.dispose();
+        } else {
+          textureSource.dispose();
+        }
         scene.remove(mesh);
       }
       layerMeshes.length = 0;
