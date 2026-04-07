@@ -10,7 +10,10 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import os from "node:os";
 import sharp from "sharp";
+
+const CONCURRENCY = Math.max(1, os.cpus().length);
 
 interface PingPongOptions {
   blendFrames?: number; // Number of frames to blend at each seam (default: 3)
@@ -62,7 +65,7 @@ export async function createPingPongLoop(
   // Seam 1: forward→reverse transition at index N-1/N
   // Seam 2: reverse→forward transition at index 2N-1/0 (loop point)
 
-  for (let i = 0; i < totalFrames; i++) {
+  const processFrame = async (i: number) => {
     const srcPath = path.join(inputDir, sequence[i]);
     const outName = `frame_${String(i + 1).padStart(5, "0")}.png`;
     const outPath = path.join(outputDir, outName);
@@ -72,11 +75,8 @@ export async function createPingPongLoop(
     const distToSeam2 = Math.min(i, totalFrames - i); // seam at loop point
 
     if (distToSeam1 <= blendFrames && distToSeam1 > 0) {
-      // Blend near seam 1 (forward→reverse transition)
       const t = distToSeam1 / (blendFrames + 1);
       const weight = 0.5 + 0.5 * Math.cos(Math.PI * (1 - t));
-
-      // Blend current frame with its mirror counterpart
       const mirrorIdx =
         i < n ? n + (n - 1 - i) : n - 1 - (i - n);
       if (mirrorIdx >= 0 && mirrorIdx < totalFrames && mirrorIdx !== i) {
@@ -87,15 +87,13 @@ export async function createPingPongLoop(
         })
           .png()
           .toFile(outPath);
-        continue;
+        return;
       }
     }
 
     if (distToSeam2 <= blendFrames && distToSeam2 > 0 && i > 0) {
-      // Blend near seam 2 (loop point: end→start)
       const t = distToSeam2 / (blendFrames + 1);
       const weight = 0.5 + 0.5 * Math.cos(Math.PI * (1 - t));
-
       const mirrorIdx = i < blendFrames ? totalFrames - blendFrames + i : i - totalFrames + blendFrames;
       if (mirrorIdx >= 0 && mirrorIdx < totalFrames && mirrorIdx !== i) {
         const mirrorPath = path.join(inputDir, sequence[mirrorIdx]);
@@ -105,12 +103,21 @@ export async function createPingPongLoop(
         })
           .png()
           .toFile(outPath);
-        continue;
+        return;
       }
     }
 
     // No blending needed — straight copy
     fs.copyFileSync(srcPath, outPath);
+  };
+
+  // Process frames in parallel batches
+  for (let start = 0; start < totalFrames; start += CONCURRENCY) {
+    const batch = Array.from(
+      { length: Math.min(CONCURRENCY, totalFrames - start) },
+      (_, k) => processFrame(start + k),
+    );
+    await Promise.all(batch);
   }
 
   return { frameCount: totalFrames, blendFrames };

@@ -43,7 +43,8 @@ def backward_warp(image: np.ndarray, flow: np.ndarray) -> np.ndarray:
     y = np.arange(h, dtype=np.float32)
     grid_x, grid_y = np.meshgrid(x, y)
 
-    # Apply flow displacement (backward: subtract flow)
+    # Apply flow displacement: RAFT flow[i] = dest[i] - src[i],
+    # so source pixel for dest (x,y) is at (x + flow_x, y + flow_y)
     map_x = grid_x + flow[:, :, 0]
     map_y = grid_y + flow[:, :, 1]
 

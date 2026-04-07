@@ -32,20 +32,31 @@ export class FrameTexturePool {
     this.frameCount = frameCount;
   }
 
+  private static readonly BATCH_SIZE = 16;
+
   /**
    * Preload all frames into memory (capture mode).
+   * Loads in batches of 16 for parallel fetching.
    * Must be awaited before calling getTexture() in capture mode.
    */
   async preloadAll(): Promise<void> {
     const map = new Map<number, THREE.Texture>();
 
-    for (let i = 0; i < this.frameCount; i++) {
-      const url = this.frameUrl(i);
-      const texture = await this.loadTextureAsync(url);
-      texture.colorSpace = THREE.SRGBColorSpace;
-      texture.wrapS = THREE.ClampToEdgeWrapping;
-      texture.wrapT = THREE.ClampToEdgeWrapping;
-      map.set(i, texture);
+    for (let start = 0; start < this.frameCount; start += FrameTexturePool.BATCH_SIZE) {
+      const end = Math.min(start + FrameTexturePool.BATCH_SIZE, this.frameCount);
+      const indices = Array.from({ length: end - start }, (_, k) => start + k);
+
+      const textures = await Promise.all(
+        indices.map((i) => this.loadTextureAsync(this.frameUrl(i))),
+      );
+
+      for (let j = 0; j < indices.length; j++) {
+        const texture = textures[j];
+        texture.colorSpace = THREE.SRGBColorSpace;
+        texture.wrapS = THREE.ClampToEdgeWrapping;
+        texture.wrapT = THREE.ClampToEdgeWrapping;
+        map.set(indices[j], texture);
+      }
     }
 
     this.preloadedFrames = map;

@@ -8,6 +8,8 @@ export interface MotionModelConfig {
   defaultDuration: number; // seconds
   supportsLastFrame: boolean;
   promptSuffix: string;
+  imageInputKey: "image" | "first_frame"; // model-specific image parameter name
+  lastFrameKey?: string; // model-specific last-frame parameter name
 }
 
 const MOTION_MODELS: Record<string, MotionModelConfig> = {
@@ -16,18 +18,23 @@ const MOTION_MODELS: Record<string, MotionModelConfig> = {
     defaultDuration: 5,
     supportsLastFrame: false,
     promptSuffix: ", high quality, smooth motion",
+    imageInputKey: "image",
   },
   "veo-3.1": {
     replicateId: "google/veo-3.1",
     defaultDuration: 8,
     supportsLastFrame: true,
     promptSuffix: "",
+    imageInputKey: "image",
+    lastFrameKey: "last_frame",
   },
   "seedance": {
     replicateId: "bytedance/seedance-1-pro",
     defaultDuration: 5,
     supportsLastFrame: true,
     promptSuffix: "",
+    imageInputKey: "image",
+    lastFrameKey: "last_frame_image",
   },
 };
 

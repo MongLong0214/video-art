@@ -12,13 +12,13 @@ import Replicate from "replicate";
 import sharp from "sharp";
 import fs from "node:fs";
 import path from "node:path";
-import { getToken, withRetry, enforceVersionPin } from "./lib/replicate-utils.js";
+import { getToken, withRetry, enforceVersionPin, extractUrl } from "./lib/replicate-utils.js";
 import { parseCliArgs } from "./lib/pipeline-cli.js";
 import { getValidPeriods } from "../src/lib/scene-schema.js";
 import { checkPythonDeps, runPython, parsePythonOutput } from "./lib/python-bridge.js";
-import { runMotionI2v, extractFrames } from "./lib/motion-i2v.js";
+import { runMotionI2v } from "./lib/motion-i2v.js";
 import { createPingPongLoop } from "./lib/pingpong.js";
-import { TARGET_DURATION_SEC, TARGET_FPS, TARGET_FRAMES } from "./lib/motion-models.js";
+import { TARGET_FPS } from "./lib/motion-models.js";
 
 const args = parseCliArgs(process.argv.slice(2));
 const INPUT = args.inputPath || "input.png";
@@ -38,18 +38,6 @@ const OUTPUT_DIR = args.workDir
   : path.join(process.cwd(), "out", "pro-pipeline");
 fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 
-function extractUrl(output: unknown): string {
-  if (typeof output === "string") return output;
-  if (output && typeof output === "object") {
-    const str = String(output);
-    if (str.startsWith("http")) return str;
-    if ("url" in output) {
-      const urlVal = (output as Record<string, unknown>).url;
-      return typeof urlVal === "function" ? (urlVal as () => string)() : String(urlVal);
-    }
-  }
-  return String(output);
-}
 
 const BRIA_MODEL = "bria/remove-background";
 const FLUX_FILL_MODEL = "black-forest-labs/flux-fill-pro";
@@ -205,7 +193,46 @@ async function main() {
   const midPeriod = periods[Math.max(0, Math.floor(periods.length / 2))];
   const shortPeriod = periods[Math.max(0, Math.floor(periods.length / 4))];
 
-  const scene = {
+  interface SceneLayer {
+    id: string;
+    file: string;
+    zIndex: number;
+    opacity: number;
+    blending: string;
+    role: string;
+    meanDepth: number;
+    animation: {
+      colorCycle: { speed: number; period: number; phaseOffset: number };
+      glow: { intensity: number; pulse: number; period: number };
+      saturationBoost: number;
+      luminanceKey: number;
+      satBlendLow: number;
+      satBlendHigh: number;
+      satInjectionMul: number;
+      glowPulseFloor: number;
+      lumExponent: number;
+      hueKey: number;
+      hueSpeed: number;
+    };
+    motion?: {
+      enabled: boolean;
+      framesDir: string;
+      frameCount: number;
+      fps: number;
+      model: string;
+      intensity: string;
+    };
+  }
+
+  const scene: {
+    version: number;
+    source: string;
+    resolution: number[];
+    duration: number;
+    fps: number;
+    layers: SceneLayer[];
+    effects: Record<string, Record<string, number>>;
+  } = {
     version: 1,
     source: path.basename(INPUT),
     resolution: [W, H],
@@ -394,10 +421,10 @@ async function main() {
     const motionMid = motionPeriods[Math.max(0, Math.floor(motionPeriods.length / 2))];
     const motionShort = motionPeriods[Math.max(0, Math.floor(motionPeriods.length / 4))];
 
-    scene.layers[0].animation.colorCycle.period = motionLong;
-    scene.layers[0].animation.glow.period = motionMid;
-    scene.layers[1].animation.colorCycle.period = motionMid;
-    scene.layers[1].animation.glow.period = motionShort;
+    for (const layer of scene.layers) {
+      layer.animation.colorCycle.period = layer.role === "background-plate" ? motionLong : motionMid;
+      layer.animation.glow.period = layer.role === "background-plate" ? motionMid : motionShort;
+    }
 
     // Add motion fields
     const motionField = (dir: string) => ({
@@ -409,8 +436,8 @@ async function main() {
       intensity: args.motionIntensity,
     });
 
-    (scene.layers[0] as Record<string, unknown>).motion = motionField(finalFrameDirs[0]);
-    (scene.layers[1] as Record<string, unknown>).motion = motionField(finalFrameDirs[1]);
+    scene.layers[0].motion = motionField(finalFrameDirs[0]);
+    scene.layers[1].motion = motionField(finalFrameDirs[1]);
 
     fs.writeFileSync(path.join(serveDir, "scene.json"), JSON.stringify(scene, null, 2));
     console.log(`  scene.json updated: duration=${MOTION_DURATION}, motion enabled, periods=[${motionPeriods.join(",")}]`);

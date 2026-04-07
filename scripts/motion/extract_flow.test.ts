@@ -8,19 +8,28 @@ import os from "node:os";
 const execFileAsync = promisify(execFile);
 const SCRIPT = path.resolve("scripts/motion/extract_flow.py");
 
-const SKIP = process.env.SKIP_PYTHON_TESTS === "1";
+let SKIP = process.env.SKIP_PYTHON_TESTS === "1";
+if (!SKIP) {
+  try {
+    await execFileAsync("python3", ["-c", "import numpy; import torch; import torchvision"], { timeout: 30_000 });
+  } catch {
+    SKIP = true;
+  }
+}
 
 // Helper: create a solid color PNG using raw pixel data
+// RAFT requires minimum 128x128 input (downsampled by 8 → 16x16 feature maps)
+const TEST_SIZE = 128;
+
 async function createTestPng(filePath: string, r: number, g: number, b: number): Promise<void> {
-  // Use sharp if available, otherwise create minimal PNG manually
   const sharp = await import("sharp").then(m => m.default);
-  const pixels = Buffer.alloc(64 * 64 * 3);
-  for (let i = 0; i < 64 * 64; i++) {
+  const pixels = Buffer.alloc(TEST_SIZE * TEST_SIZE * 3);
+  for (let i = 0; i < TEST_SIZE * TEST_SIZE; i++) {
     pixels[i * 3] = r;
     pixels[i * 3 + 1] = g;
     pixels[i * 3 + 2] = b;
   }
-  await sharp(pixels, { raw: { width: 64, height: 64, channels: 3 } })
+  await sharp(pixels, { raw: { width: TEST_SIZE, height: TEST_SIZE, channels: 3 } })
     .png()
     .toFile(filePath);
 }
@@ -116,7 +125,7 @@ describe.skipIf(SKIP)("extract_flow.py", () => {
       expect(meta).toHaveProperty("device");
       expect(meta).toHaveProperty("elapsed_sec");
       expect(meta).toHaveProperty("resolution");
-      expect(meta.resolution).toEqual([64, 64]);
+      expect(meta.resolution).toEqual([TEST_SIZE, TEST_SIZE]);
     } finally {
       cleanup();
     }

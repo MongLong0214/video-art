@@ -45,6 +45,23 @@ export function enforceVersionPin(
 }
 
 // ---------------------------------------------------------------------------
+// Extract URL from Replicate output (various formats)
+// ---------------------------------------------------------------------------
+
+export function extractUrl(output: unknown): string {
+  if (typeof output === "string") return output;
+  if (output && typeof output === "object") {
+    const str = String(output);
+    if (str.startsWith("http")) return str;
+    if ("url" in output) {
+      const urlVal = (output as Record<string, unknown>).url;
+      return typeof urlVal === "function" ? (urlVal as () => string)() : String(urlVal);
+    }
+  }
+  return String(output);
+}
+
+// ---------------------------------------------------------------------------
 // Retry with exponential backoff + Retry-After support
 // ---------------------------------------------------------------------------
 

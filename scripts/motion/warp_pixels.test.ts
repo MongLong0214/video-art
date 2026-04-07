@@ -9,9 +9,16 @@ import sharp from "sharp";
 const execFileAsync = promisify(execFile);
 const SCRIPT = path.resolve("scripts/motion/warp_pixels.py");
 
-const SKIP = process.env.SKIP_PYTHON_TESTS === "1";
+let SKIP = process.env.SKIP_PYTHON_TESTS === "1";
+if (!SKIP) {
+  try {
+    await execFileAsync("python3", ["-c", "import numpy; import cv2; from PIL import Image"], { timeout: 15_000 });
+  } catch {
+    SKIP = true;
+  }
+}
 
-async function createTestPng(filePath: string, r: number, g: number, b: number, size = 64): Promise<void> {
+async function createTestPng(filePath: string, r: number, g: number, b: number, size = 128): Promise<void> {
   const pixels = Buffer.alloc(size * size * 3);
   for (let i = 0; i < size * size; i++) {
     pixels[i * 3] = r;
@@ -23,7 +30,7 @@ async function createTestPng(filePath: string, r: number, g: number, b: number, 
     .toFile(filePath);
 }
 
-async function createTestRgba(filePath: string, r: number, g: number, b: number, a: number, size = 64): Promise<void> {
+async function createTestRgba(filePath: string, r: number, g: number, b: number, a: number, size = 128): Promise<void> {
   const pixels = Buffer.alloc(size * size * 4);
   for (let i = 0; i < size * size; i++) {
     pixels[i * 4] = r;
@@ -41,17 +48,6 @@ function createZeroFlow(dir: string, name: string, h: number, w: number): void {
   // Simple .npy format: header + float32 data
   const header = createNpyHeader(h, w);
   const data = Buffer.alloc(h * w * 2 * 4); // float32, 2 channels
-  const buf = Buffer.concat([header, data]);
-  fs.writeFileSync(path.join(dir, name), buf);
-}
-
-function createUniformFlow(dir: string, name: string, h: number, w: number, dx: number, dy: number): void {
-  const header = createNpyHeader(h, w);
-  const data = Buffer.alloc(h * w * 2 * 4);
-  for (let i = 0; i < h * w; i++) {
-    data.writeFloatLE(dx, i * 8);
-    data.writeFloatLE(dy, i * 8 + 4);
-  }
   const buf = Buffer.concat([header, data]);
   fs.writeFileSync(path.join(dir, name), buf);
 }
@@ -94,7 +90,7 @@ describe.skipIf(SKIP)("warp_pixels.py", () => {
     try {
       const imgPath = path.join(tmpDir, "original.png");
       await createTestPng(imgPath, 128, 64, 200);
-      createZeroFlow(path.join(tmpDir, "flow"), "flow_00001.npy", 64, 64);
+      createZeroFlow(path.join(tmpDir, "flow"), "flow_00001.npy", 128, 128);
 
       const { stdout } = await execFileAsync("python3", [
         SCRIPT, imgPath, path.join(tmpDir, "flow"), path.join(tmpDir, "output"),
@@ -115,7 +111,7 @@ describe.skipIf(SKIP)("warp_pixels.py", () => {
     try {
       const imgPath = path.join(tmpDir, "original.png");
       await createTestRgba(imgPath, 200, 100, 50, 128);
-      createZeroFlow(path.join(tmpDir, "flow"), "flow_00001.npy", 64, 64);
+      createZeroFlow(path.join(tmpDir, "flow"), "flow_00001.npy", 128, 128);
 
       const { stdout } = await execFileAsync("python3", [
         SCRIPT, imgPath, path.join(tmpDir, "flow"), path.join(tmpDir, "output"),
@@ -139,7 +135,7 @@ describe.skipIf(SKIP)("warp_pixels.py", () => {
     try {
       const imgPath = path.join(tmpDir, "original.png");
       await createTestPng(imgPath, 100, 100, 100);
-      createZeroFlow(path.join(tmpDir, "flow"), "flow_00001.npy", 64, 64);
+      createZeroFlow(path.join(tmpDir, "flow"), "flow_00001.npy", 128, 128);
 
       const { stdout } = await execFileAsync("python3", [
         SCRIPT, imgPath, path.join(tmpDir, "flow"), path.join(tmpDir, "output"),

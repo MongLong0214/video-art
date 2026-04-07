@@ -16,7 +16,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { getToken, withRetry } from "./replicate-utils.js";
+import { getToken, withRetry, extractUrl } from "./replicate-utils.js";
 import {
   getMotionModel,
   generateMotionPrompt,
@@ -27,6 +27,16 @@ import {
 } from "./motion-models.js";
 
 const execFileAsync = promisify(execFile);
+
+function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(message)), ms);
+    promise.then(
+      (val) => { clearTimeout(timer); resolve(val); },
+      (err) => { clearTimeout(timer); reject(err); },
+    );
+  });
+}
 
 interface I2vLayerInput {
   imagePath: string;
@@ -78,33 +88,23 @@ async function runI2v(
 
   const input: Record<string, unknown> = {
     prompt: prompt + modelConfig.promptSuffix,
+    [modelConfig.imageInputKey]: dataUri,
+    resolution: "720p",
+    duration: Math.min(TARGET_DURATION_SEC, modelConfig.defaultDuration),
   };
 
-  // Model-specific input format
-  if (modelConfig.replicateId.startsWith("google/")) {
-    input.image = dataUri;
-    input.duration = TARGET_DURATION_SEC;
-    input.resolution = "720p";
-    if (modelConfig.supportsLastFrame) {
-      input.last_frame = dataUri;
-    }
-  } else if (modelConfig.replicateId.startsWith("wan-video/")) {
-    input.first_frame = dataUri;
-    input.resolution = "720p";
-    input.duration = Math.min(TARGET_DURATION_SEC, modelConfig.defaultDuration);
-  } else if (modelConfig.replicateId.startsWith("bytedance/")) {
-    input.image = dataUri;
-    input.duration = Math.min(TARGET_DURATION_SEC, 10);
-    input.resolution = "720p";
-    input.camera_fixed = true;
-    if (modelConfig.supportsLastFrame) {
-      input.last_frame_image = dataUri;
-    }
+  if (modelConfig.supportsLastFrame && modelConfig.lastFrameKey) {
+    input[modelConfig.lastFrameKey] = dataUri;
   }
 
-  const output = await withRetry(async () => {
-    return replicate.run(modelConfig.replicateId as `${string}/${string}`, { input });
-  });
+  const I2V_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes
+  const output = await withTimeout(
+    withRetry(async () =>
+      replicate.run(modelConfig.replicateId as `${string}/${string}`, { input }),
+    ),
+    I2V_TIMEOUT_MS,
+    `i2v timed out after ${I2V_TIMEOUT_MS / 1000}s for model ${modelConfig.replicateId}`,
+  );
 
   // Download video
   const videoUrl = extractUrl(output);
@@ -118,18 +118,6 @@ async function runI2v(
   return outputVideoPath;
 }
 
-function extractUrl(output: unknown): string {
-  if (typeof output === "string") return output;
-  if (output && typeof output === "object") {
-    const str = String(output);
-    if (str.startsWith("http")) return str;
-    if ("url" in output) {
-      const urlVal = (output as Record<string, unknown>).url;
-      return typeof urlVal === "function" ? (urlVal as () => string)() : String(urlVal);
-    }
-  }
-  return String(output);
-}
 
 /**
  * Extract frames from video using ffmpeg.
@@ -175,26 +163,27 @@ export async function normalizeFrameCount(
     const tmpDir = framesDir + "_tmp";
     fs.mkdirSync(tmpDir, { recursive: true });
 
-    // Move existing frames to tmp
-    const files = fs.readdirSync(framesDir).filter(f => f.endsWith(".png")).sort();
-    for (const f of files) {
-      fs.renameSync(path.join(framesDir, f), path.join(tmpDir, f));
+    try {
+      // Move existing frames to tmp
+      const files = fs.readdirSync(framesDir).filter(f => f.endsWith(".png")).sort();
+      for (const f of files) {
+        fs.renameSync(path.join(framesDir, f), path.join(tmpDir, f));
+      }
+
+      // Reassemble via ffmpeg with target frame count
+      const inputPattern = path.join(tmpDir, "frame_%05d.png");
+      const targetFps = targetCount / TARGET_DURATION_SEC;
+
+      await execFileAsync("ffmpeg", [
+        "-framerate", String(currentCount / TARGET_DURATION_SEC),
+        "-i", inputPattern,
+        "-vf", `fps=${targetFps}`,
+        "-f", "image2",
+        path.join(framesDir, "frame_%05d.png"),
+      ]);
+    } finally {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
     }
-
-    // Reassemble via ffmpeg with target frame count
-    const inputPattern = path.join(tmpDir, "frame_%05d.png");
-    const targetFps = targetCount / TARGET_DURATION_SEC;
-
-    await execFileAsync("ffmpeg", [
-      "-framerate", String(currentCount / TARGET_DURATION_SEC),
-      "-i", inputPattern,
-      "-vf", `fps=${targetFps}`,
-      "-f", "image2",
-      path.join(framesDir, "frame_%05d.png"),
-    ]);
-
-    // Cleanup tmp
-    fs.rmSync(tmpDir, { recursive: true, force: true });
 
     return fs.readdirSync(framesDir).filter(f => f.endsWith(".png")).length;
   }

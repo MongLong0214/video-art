@@ -64,7 +64,7 @@ const motionIntensitySchema = z.enum(["low", "medium", "high"]).default("medium"
 
 const motionSchema = z.object({
   enabled: z.boolean(),
-  framesDir: z.string().min(1),
+  framesDir: z.string().min(1).regex(/^[\w\-\/\.]+\/$/, "framesDir must be a relative path ending with /"),
   frameCount: z.number().int().positive(),
   fps: z.number().positive(),
   model: z.string().optional(),

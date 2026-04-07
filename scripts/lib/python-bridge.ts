@@ -57,14 +57,16 @@ export async function checkPythonDeps(): Promise<{
   }
 
   try {
-    await execFileAsync("python3", ["-c", "import torchvision"], {
-      timeout: 30_000,
-    });
+    await execFileAsync(
+      "python3",
+      ["-c", "import numpy; import cv2; from PIL import Image; import torchvision"],
+      { timeout: 30_000 },
+    );
   } catch {
     return {
       available: false,
       error:
-        "torchvision not installed. Run: pip3 install -r requirements-motion.txt",
+        "Missing Python deps. Run: pip3 install -r requirements-motion.txt",
     };
   }
 
