@@ -56,6 +56,7 @@ const animationSchema = z.object({
   lumExponent: z.number().default(1.0),
   hueKey: z.number().min(0).default(0),
   hueSpeed: z.number().default(1),
+  palette: z.array(z.number().min(0).max(1)).max(8).optional(),
 });
 
 const blendModeSchema = z.enum(["normal", "add", "multiply", "screen"]).default("normal");

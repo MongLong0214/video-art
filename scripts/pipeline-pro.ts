@@ -15,6 +15,7 @@ import path from "node:path";
 import { getToken, withRetry, enforceVersionPin } from "./lib/replicate-utils.js";
 import { parseCliArgs } from "./lib/pipeline-cli.js";
 import { getValidPeriods } from "../src/lib/scene-schema.js";
+import { extractPalette } from "./lib/extract-palette.js";
 
 const args = parseCliArgs(process.argv.slice(2));
 const INPUT = args.inputPath || "input.png";
@@ -23,6 +24,7 @@ if (!fs.existsSync(INPUT)) { console.error(`Input not found: ${INPUT}`); process
 const DURATION = args.duration ?? 20;
 const FPS = args.fps ?? 30;
 const PRODUCTION = args.production;
+const COLOR_MODE = args.colorMode;
 
 const OUTPUT_DIR = args.workDir
   ? path.join(args.workDir, "intermediate")
@@ -191,6 +193,22 @@ async function main() {
   await sharp(depthBuf).resize(W, H, { kernel: "lanczos3" }).grayscale().toFile(path.join(layersDir, "depth.png"));
 
   // ═══ Step 6: Generate scene.json ═══
+  let palette0: number[] | undefined;
+  let palette1: number[] | undefined;
+  if (COLOR_MODE === "palette") {
+    const layer0Path = path.join(layersDir, "layer-0.png");
+    const layer1Path = path.join(layersDir, "layer-1.png");
+    [palette0, palette1] = await Promise.all([
+      extractPalette(layer0Path),
+      extractPalette(layer1Path),
+    ]);
+    console.log(`  color-mode: palette`);
+    console.log(`  palette layer-0: ${palette0.map((h) => (h * 360).toFixed(0) + "°").join(", ")}`);
+    console.log(`  palette layer-1: ${palette1.map((h) => (h * 360).toFixed(0) + "°").join(", ")}`);
+  } else {
+    console.log(`  color-mode: classic (full spectrum)`);
+  }
+
   const periods = getValidPeriods(DURATION);
   const longPeriod = periods[periods.length - 1]; // DURATION itself
   const midPeriod = periods[Math.max(0, Math.floor(periods.length / 2))];
@@ -223,6 +241,7 @@ async function main() {
           lumExponent: 1.8,
           hueKey: 1.5,
           hueSpeed: 3.0,
+          ...(palette0 ? { palette: palette0 } : {}),
         },
       },
       {
@@ -245,6 +264,7 @@ async function main() {
           lumExponent: 1.8,
           hueKey: 1.5,
           hueSpeed: 3.0,
+          ...(palette1 ? { palette: palette1 } : {}),
         },
       },
     ],
