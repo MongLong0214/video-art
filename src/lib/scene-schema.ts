@@ -56,6 +56,13 @@ const animationSchema = z.object({
   lumExponent: z.number().default(1.0),
   hueKey: z.number().min(0).default(0),
   hueSpeed: z.number().default(1),
+  breath: z
+    .object({
+      amplitude: z.number().min(0).max(0.1).default(0),
+      frequency: z.number().min(0).max(20).default(3),
+      period: z.number().positive().default(10),
+    })
+    .optional(),
 });
 
 const blendModeSchema = z.enum(["normal", "add", "multiply", "screen"]).default("normal");
@@ -104,12 +111,23 @@ const featherEffectSchema = z.object({
   radius: z.number().min(0).max(0.2).default(0),
 });
 
+const trailsEffectSchema = z.object({
+  strength: z.number().min(0).max(0.5).default(0),
+});
+
+const kaleidoscopeEffectSchema = z.object({
+  segments: z.number().int().min(0).max(12).default(0),
+  blend: z.number().min(0).max(1).default(0.3),
+});
+
 const effectsSchema = z.object({
   bloom: bloomSchema.default({ strength: 0.6, radius: 0.4, threshold: 0.7 }),
   chromaticAberration: chromaticAberrationSchema.default({ offset: 1.5, modulationOffset: 0.3 }),
   parallax: parallaxEffectSchema.default({ scale: 0 }),
   haze: hazeEffectSchema.default({ intensity: 0 }),
   feather: featherEffectSchema.default({ radius: 0 }),
+  trails: trailsEffectSchema.default({ strength: 0 }),
+  kaleidoscope: kaleidoscopeEffectSchema.default({ segments: 0, blend: 0.3 }),
 });
 
 const audioSchema = z.object({
@@ -146,6 +164,8 @@ export const sceneSchema = z
       parallax: { scale: 0 },
       haze: { intensity: 0 },
       feather: { radius: 0 },
+      trails: { strength: 0 },
+      kaleidoscope: { segments: 0, blend: 0.3 },
     }),
     audio: audioSchema.optional(),
   })
@@ -165,6 +185,7 @@ export const sceneSchema = z
       if (anim.colorCycle) checkPeriod("colorCycle", anim.colorCycle.period);
       if (anim.wave) checkPeriod("wave", anim.wave.period);
       if (anim.glow) checkPeriod("glow", anim.glow.period);
+      if (anim.breath) checkPeriod("breath", anim.breath.period);
     });
   });
 

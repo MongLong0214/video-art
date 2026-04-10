@@ -25,6 +25,11 @@ uniform float uSatInjectionMul;
 uniform float uGlowPulseFloor;
 uniform float uLumExponent;
 
+// Breathing / morphing
+uniform float uBreathAmp;
+uniform float uBreathFreq;
+uniform float uBreathPeriod;
+
 // Depth cinematic
 uniform float uHazeIntensity;
 uniform float uDepthNorm;
@@ -58,8 +63,17 @@ vec3 hsv2rgb(vec3 c) {
 void main() {
   float time = uTime * uLoopDuration;
 
-  // No wave/parallax — structure stays pixel-stable
-  vec4 texColor = texture2D(uTexture, vUv);
+  // Breathing UV distortion
+  vec2 breathUv = vUv;
+  if (uBreathAmp > 0.0001) {
+    float breathT = time * TAU / max(uBreathPeriod, 1e-4);
+    vec2 fromCenter = breathUv - 0.5;
+    float dist = length(fromCenter);
+    float breathWave = sin(breathT + dist * uBreathFreq) * uBreathAmp;
+    breathUv += normalize(fromCenter + 1e-6) * breathWave * dist;
+  }
+
+  vec4 texColor = texture2D(uTexture, breathUv);
   if (texColor.a < 0.01) discard;
 
   // === LUMINANCE-PRESERVING HUE ROTATION ===
