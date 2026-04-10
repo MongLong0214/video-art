@@ -34,10 +34,6 @@ uniform float uFeatherRadius;
 uniform float uHueKey;         // 0=off, >0=hue regions animate differently
 uniform float uHueSpeed;       // hue-region speed multiplier
 
-// Palette snap: constrain hue to original image colors
-uniform float uPaletteHues[8]; // extracted dominant hues (0~1)
-uniform int uPaletteSize;      // 0=off (continuous), 1~8=snap mode
-
 varying vec2 vUv;
 
 #define PI 3.14159265359
@@ -57,19 +53,6 @@ vec3 hsv2rgb(vec3 c) {
   vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
   vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
   return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
-}
-
-float snapToPalette(float hue) {
-  if (uPaletteSize < 1) return hue;
-  float best = uPaletteHues[0];
-  float bestDist = 1.0;
-  for (int i = 0; i < 8; i++) {
-    if (i >= uPaletteSize) break;
-    float h = uPaletteHues[i];
-    float d = min(abs(hue - h), 1.0 - abs(hue - h));
-    if (d < bestDist) { bestDist = d; best = h; }
-  }
-  return best;
 }
 
 void main() {
@@ -95,8 +78,8 @@ void main() {
   // (duration / period * speed) is always an integer → fract wraps cleanly
   float hueShift = fract(time / safePeriod * uColorCycleSpeed + lumPhase + huePhase + uPhaseOffset / 360.0);
 
-  float shiftedHue = snapToPalette(fract(hsv.x + hueShift));
-  float injectedHue = snapToPalette(fract(hueShift + lum * uLuminanceKey));
+  float shiftedHue = fract(hsv.x + hueShift);
+  float injectedHue = fract(hueShift + lum * uLuminanceKey);
 
   float blend = smoothstep(uSatBlendLow, uSatBlendHigh, originalSat);
   hsv.x = mix(injectedHue, shiftedHue, blend);

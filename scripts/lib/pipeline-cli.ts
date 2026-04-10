@@ -2,8 +2,6 @@
  * CLI argument parsing for pipeline-pro.
  */
 
-export type ColorMode = "palette" | "classic";
-
 export interface PipelineCliArgs {
   inputPath: string;
   duration?: number;
@@ -11,7 +9,6 @@ export interface PipelineCliArgs {
   prores?: boolean;
   fps?: number;
   workDir?: string;
-  colorMode: ColorMode;
 }
 
 export function parseCliArgs(argv: string[]): PipelineCliArgs {
@@ -53,9 +50,6 @@ export function parseCliArgs(argv: string[]): PipelineCliArgs {
     workDir = argv[wdIdx + 1];
   }
 
-  // Second positional arg: color mode (palette|classic)
-  const colorMode: ColorMode = positional[1] === "classic" ? "classic" : "palette";
-
   return {
     inputPath,
     duration,
@@ -63,6 +57,5 @@ export function parseCliArgs(argv: string[]): PipelineCliArgs {
     prores,
     fps,
     workDir,
-    colorMode,
   };
 }

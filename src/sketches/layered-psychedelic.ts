@@ -5,13 +5,6 @@ import { loadScene } from "@/lib/scene-loader";
 import vertexShader from "@/shaders/layer.vert";
 import fragmentShader from "@/shaders/layer.frag";
 
-const MAX_PALETTE = 8;
-function padPalette(hues: number[]): number[] {
-  const arr = hues.slice(0, MAX_PALETTE);
-  while (arr.length < MAX_PALETTE) arr.push(0);
-  return arr;
-}
-
 interface LayerMesh {
   mesh: THREE.Mesh;
   material: THREE.ShaderMaterial;
@@ -72,8 +65,6 @@ export async function createLayeredPsychedelic(
         uFeatherRadius: { value: config.effects?.feather?.radius ?? 0 },
         uHueKey: { value: anim.hueKey ?? 0 },
         uHueSpeed: { value: anim.hueSpeed ?? 1 },
-        uPaletteHues: { value: padPalette(anim.palette ?? []) },
-        uPaletteSize: { value: anim.palette?.length ?? 0 },
       },
       transparent: true,
       depthWrite: false,

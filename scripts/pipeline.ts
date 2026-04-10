@@ -41,12 +41,8 @@ async function main() {
   const wdIdx = args.indexOf("--work-dir");
   const workDirArgs = wdIdx !== -1 && wdIdx + 1 < args.length ? ["--work-dir", args[wdIdx + 1]] : [];
 
-  // Forward color mode positional arg if present
-  const positional = args.filter((a) => !a.startsWith("--"));
-  const colorModeArg = positional[1] === "classic" ? ["classic"] : [];
-
   // Run pro-pipeline (bria + flux-fill-pro + depth)
-  run("npx", ["tsx", "scripts/pipeline-pro.ts", inputPath!, ...colorModeArg, ...workDirArgs]);
+  run("npx", ["tsx", "scripts/pipeline-pro.ts", inputPath!, ...workDirArgs]);
 
   if (!noPreview) {
     console.log("\n--- Step 3: Preview ---");
