@@ -35,10 +35,8 @@ describe("layer.vert — parallax uniforms & formula", () => {
   });
 
   it("parallax offset math: max offset ≤ 0.1", () => {
-    const TAU = 2 * Math.PI;
     const maxScale = 0.1;
     const maxDepthNorm = 1.0;
-    // For t in [0, TAU], max |sin(t)| = 1
     const maxOffset = maxScale * maxDepthNorm * 1.0;
     expect(maxOffset).toBeLessThanOrEqual(0.1);
   });

@@ -8,7 +8,7 @@ import { promisify } from "node:util";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { validateFilePath } from "./lib/validate-file-path.js";
-import { generatePreset, generateTidalPattern, generateTidalSections, generateSceneAudio } from "./lib/track-analyzer.js";
+import { generatePreset, generateTidalSections, generateSceneAudio } from "./lib/track-analyzer.js";
 import { presetSchema } from "./lib/genre-preset.js";
 
 const execFile = promisify(execFileCb);
@@ -121,14 +121,6 @@ const main = async () => {
     fs.mkdirSync(generatedDir, { recursive: true });
     fs.copyFileSync(presetPath, path.join(generatedDir, `${filename}.json`));
     console.log(`Preset copied: audio/presets/generated/${filename}.json`);
-
-    // 4. Generate Tidal patterns
-    const kickPattern = analysis.kick_pattern
-      ? generateTidalPattern(analysis.kick_pattern.positions, analysis.bpm.value)
-      : "~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~";
-    const hatPattern = analysis.hat_pattern
-      ? generateTidalPattern(analysis.hat_pattern.positions, analysis.bpm.value)
-      : "~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~";
 
     const tidalContent = `-- Auto-generated from: ${path.basename(resolvedInput)}
 -- Key: ${analysis.key}
