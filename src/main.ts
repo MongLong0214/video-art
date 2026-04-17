@@ -132,7 +132,7 @@ async function init() {
       config.resolution,
     );
     composerRender = () => composer.render();
-    updatePostUniforms = () => {};
+    updatePostUniforms = (time: number) => composer.setTime(time);
   } else if (sketchConfig.postProcessing === "none") {
     composerRender = () => renderer.render(sketch.scene, sketch.camera);
     updatePostUniforms = () => {};
@@ -286,6 +286,16 @@ async function init() {
   win.__startCapture = (fps: number) => {
     capturing = true;
     clock.setFps(fps);
+    // Loop-seam fix: pre-render last ~0.5s of the loop so trails feedback
+    // buffer matches continuous-loop state at frame 0.
+    const warmupFrames = Math.max(15, Math.floor(fps * 0.5));
+    const dt = 1 / fps;
+    for (let i = 0; i < warmupFrames; i++) {
+      const t = LOOP_DUR - (warmupFrames - i) * dt;
+      sketch.update(t, dt);
+      updatePostUniforms(t);
+      composerRender();
+    }
     clock.startRecording();
   };
 

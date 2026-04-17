@@ -16,6 +16,7 @@ export const layerRoleSchema = z.enum([
   "subject",
   "detail",
   "foreground-occluder",
+  "light-rays",
 ]);
 
 export type LayerRole = z.infer<typeof layerRoleSchema>;
@@ -63,6 +64,15 @@ const animationSchema = z.object({
       period: z.number().positive().default(10),
     })
     .optional(),
+  noiseScale: z.number().min(0).max(20).default(0),
+  noiseSpeed: z.number().min(0).max(10).default(1),
+  noiseAmount: z.number().min(0).max(1).default(0),
+  rimIntensity: z.number().min(0).max(2).default(0),
+  rimHueShift: z.number().min(-2).max(2).default(0.1),
+  rimWidth: z.number().min(0).max(0.05).default(0.004),
+  ringIntensity: z.number().min(0).max(2).default(0),
+  ringFreq: z.number().min(0).max(200).default(30),
+  ringPeriod: z.number().positive().default(10),
 });
 
 const blendModeSchema = z.enum(["normal", "add", "multiply", "screen"]).default("normal");
@@ -85,6 +95,15 @@ const layerSchema = z.object({
     lumExponent: 1.0,
     hueKey: 0,
     hueSpeed: 1,
+    noiseScale: 0,
+    noiseSpeed: 1,
+    noiseAmount: 0,
+    rimIntensity: 0,
+    rimHueShift: 0.1,
+    rimWidth: 0.004,
+    ringIntensity: 0,
+    ringFreq: 30,
+    ringPeriod: 10,
   }),
 });
 
@@ -120,6 +139,44 @@ const kaleidoscopeEffectSchema = z.object({
   blend: z.number().min(0).max(1).default(0.3),
 });
 
+const godRaysEffectSchema = z.object({
+  intensity: z.number().min(0).max(2).default(0),
+  decay: z.number().min(0).max(1).default(0.94),
+  density: z.number().min(0).max(2).default(0.9),
+  weight: z.number().min(0).max(2).default(0.4),
+  threshold: z.number().min(0).max(1).default(0.6),
+  samples: z.number().int().min(8).max(128).default(64),
+  centerX: z.number().min(-1).max(2).default(0.5),
+  centerY: z.number().min(-1).max(2).default(0.5),
+});
+
+const auraEffectSchema = z.object({
+  intensity: z.number().min(0).max(2).default(0),
+  radius: z.number().min(0).max(0.2).default(0.04),
+  hueSpeed: z.number().min(0).max(5).default(0.1),
+  samples: z.number().int().min(4).max(32).default(16),
+});
+
+const mandalaEffectSchema = z.object({
+  opacity: z.number().min(0).max(1).default(0),
+  segments: z.number().int().min(3).max(24).default(12),
+  rings: z.number().min(1).max(30).default(8),
+  rotationSpeed: z.number().min(-2).max(2).default(0.08),
+  breathSpeed: z.number().min(0).max(3).default(0.4),
+  hueSpeed: z.number().min(0).max(2).default(0.05),
+});
+
+const filmGradeEffectSchema = z.object({
+  grain: z.number().min(0).max(0.3).default(0),
+  vignetteIntensity: z.number().min(0).max(1).default(0),
+  vignetteRadius: z.number().min(0).max(1.5).default(0.9),
+  vignetteTintR: z.number().min(0).max(1).default(0.12),
+  vignetteTintG: z.number().min(0).max(1).default(0.05),
+  vignetteTintB: z.number().min(0).max(1).default(0.25),
+  contrast: z.number().min(0.5).max(2).default(1),
+  sCurve: z.number().min(0).max(1).default(0),
+});
+
 const effectsSchema = z.object({
   bloom: bloomSchema.default({ strength: 0.6, radius: 0.4, threshold: 0.7 }),
   chromaticAberration: chromaticAberrationSchema.default({ offset: 1.5, modulationOffset: 0.3 }),
@@ -128,6 +185,10 @@ const effectsSchema = z.object({
   feather: featherEffectSchema.default({ radius: 0 }),
   trails: trailsEffectSchema.default({ strength: 0 }),
   kaleidoscope: kaleidoscopeEffectSchema.default({ segments: 0, blend: 0.3 }),
+  godRays: godRaysEffectSchema.default({ intensity: 0, decay: 0.94, density: 0.9, weight: 0.4, threshold: 0.6, samples: 64, centerX: 0.5, centerY: 0.5 }),
+  aura: auraEffectSchema.default({ intensity: 0, radius: 0.04, hueSpeed: 0.1, samples: 16 }),
+  mandala: mandalaEffectSchema.default({ opacity: 0, segments: 12, rings: 8, rotationSpeed: 0.08, breathSpeed: 0.4, hueSpeed: 0.05 }),
+  filmGrade: filmGradeEffectSchema.default({ grain: 0, vignetteIntensity: 0, vignetteRadius: 0.9, vignetteTintR: 0.12, vignetteTintG: 0.05, vignetteTintB: 0.25, contrast: 1, sCurve: 0 }),
 });
 
 const audioSchema = z.object({
@@ -166,6 +227,10 @@ export const sceneSchema = z
       feather: { radius: 0 },
       trails: { strength: 0 },
       kaleidoscope: { segments: 0, blend: 0.3 },
+      godRays: { intensity: 0, decay: 0.94, density: 0.9, weight: 0.4, threshold: 0.6, samples: 64, centerX: 0.5, centerY: 0.5 },
+      aura: { intensity: 0, radius: 0.04, hueSpeed: 0.1, samples: 16 },
+      mandala: { opacity: 0, segments: 12, rings: 8, rotationSpeed: 0.08, breathSpeed: 0.4, hueSpeed: 0.05 },
+      filmGrade: { grain: 0, vignetteIntensity: 0, vignetteRadius: 0.9, vignetteTintR: 0.12, vignetteTintG: 0.05, vignetteTintB: 0.25, contrast: 1, sCurve: 0 },
     }),
     audio: audioSchema.optional(),
   })

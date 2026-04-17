@@ -187,7 +187,29 @@ async function main() {
   await sharp(bgSmoothed).toFile(path.join(layersDir, "layer-0.png"));
   console.log("  layer-0.png — background (ESRGAN upscaled, light blur)");
 
-  fs.copyFileSync(path.join(OUTPUT_DIR, "layer-fg.png"), path.join(layersDir, "layer-1.png"));
+  // Split fg by luminance: silhouettes vs. light rays
+  const LUM_THRESHOLD = 160;
+  const { data: fgRaw } = await sharp(fgLayer).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  const silBuf = Buffer.alloc(W * H * 4, 0);
+  const rayBuf = Buffer.alloc(W * H * 4, 0);
+  let silPx = 0, rayPx = 0;
+  for (let i = 0; i < W * H; i++) {
+    const r = fgRaw[i * 4], g = fgRaw[i * 4 + 1], b = fgRaw[i * 4 + 2], a = fgRaw[i * 4 + 3];
+    if (a < 10) continue;
+    const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+    if (lum >= LUM_THRESHOLD) {
+      rayBuf[i * 4] = r; rayBuf[i * 4 + 1] = g; rayBuf[i * 4 + 2] = b; rayBuf[i * 4 + 3] = a;
+      rayPx++;
+    } else {
+      silBuf[i * 4] = r; silBuf[i * 4 + 1] = g; silBuf[i * 4 + 2] = b; silBuf[i * 4 + 3] = a;
+      silPx++;
+    }
+  }
+  console.log(`  silhouettes: ${silPx} px  light-rays: ${rayPx} px (${(rayPx / (silPx + rayPx) * 100).toFixed(1)}%)`);
+  await sharp(silBuf, { raw: { width: W, height: H, channels: 4 } }).png().toFile(path.join(layersDir, "layer-1.png"));
+  await sharp(rayBuf, { raw: { width: W, height: H, channels: 4 } }).png().toFile(path.join(layersDir, "layer-2.png"));
+  console.log("  layer-1.png — silhouettes  layer-2.png — light rays");
+
   await sharp(depthBuf).resize(W, H, { kernel: "lanczos3" }).grayscale().toFile(path.join(layersDir, "depth.png"));
 
   // ═══ Step 6: Generate scene.json ═══
@@ -208,21 +230,22 @@ async function main() {
         file: "layers/layer-0.png",
         zIndex: 0,
         opacity: 1,
-        blending: "normal",
+        blending: "screen",
         role: "background-plate",
         meanDepth: 50,
         animation: {
-          colorCycle: { speed: 5, period: longPeriod, phaseOffset: 0 },
-          glow: { intensity: 0.12, pulse: 0.6, period: midPeriod },
-          saturationBoost: 6.0,
-          luminanceKey: 1.0,
-          satBlendLow: 0.05,
-          satBlendHigh: 0.3,
-          satInjectionMul: 0.5,
-          glowPulseFloor: 0.3,
-          lumExponent: 1.8,
-          hueKey: 1.5,
-          hueSpeed: 3.0,
+          colorCycle: { speed: 6, period: longPeriod, phaseOffset: 0 },
+          glow: { intensity: 0, pulse: 0, period: midPeriod },
+          saturationBoost: 3.0,
+          luminanceKey: 1,
+          satBlendLow: 0.02,
+          satBlendHigh: 0.18,
+          satInjectionMul: 0.7,
+          glowPulseFloor: 0,
+          lumExponent: 1.5,
+          hueKey: 3.0,
+          hueSpeed: 7,
+          breath: { amplitude: 0.02, frequency: 4.0, period: midPeriod },
         },
       },
       {
@@ -234,26 +257,52 @@ async function main() {
         role: "subject",
         meanDepth: 180,
         animation: {
-          colorCycle: { speed: 11, period: midPeriod, phaseOffset: 180 },
-          glow: { intensity: 0.2, pulse: 0.7, period: shortPeriod },
-          saturationBoost: 6.0,
-          luminanceKey: 1.0,
-          satBlendLow: 0.05,
-          satBlendHigh: 0.3,
-          satInjectionMul: 0.5,
-          glowPulseFloor: 0.3,
+          colorCycle: { speed: 10, period: shortPeriod, phaseOffset: 180 },
+          glow: { intensity: 0, pulse: 0, period: shortPeriod },
+          saturationBoost: 3.5,
+          luminanceKey: 1,
+          satBlendLow: 0.02,
+          satBlendHigh: 0.12,
+          satInjectionMul: 0.75,
+          glowPulseFloor: 0,
           lumExponent: 1.8,
-          hueKey: 1.5,
-          hueSpeed: 3.0,
+          hueKey: 5.0,
+          hueSpeed: 8,
+          breath: { amplitude: 0.012, frequency: 6.0, period: shortPeriod },
+        },
+      },
+      {
+        id: "layer-2",
+        file: "layers/layer-2.png",
+        zIndex: 2,
+        opacity: 0.65,
+        blending: "screen",
+        role: "light-rays",
+        meanDepth: 120,
+        animation: {
+          colorCycle: { speed: 3, period: shortPeriod, phaseOffset: 90 },
+          glow: { intensity: 0, pulse: 0, period: midPeriod },
+          saturationBoost: 1.2,
+          luminanceKey: 1,
+          satBlendLow: 0.02,
+          satBlendHigh: 0.1,
+          satInjectionMul: 0.4,
+          glowPulseFloor: 0,
+          lumExponent: 1.2,
+          hueKey: 2.0,
+          hueSpeed: 4,
+          breath: { amplitude: 0.015, frequency: 3.0, period: shortPeriod },
         },
       },
     ],
     effects: {
-      bloom: { strength: 0.5, radius: 0.4, threshold: 0.45 },
-      chromaticAberration: { offset: 2.0, modulationOffset: 0.4 },
+      bloom: { strength: 0, radius: 0.8, threshold: 0.9 },
+      chromaticAberration: { offset: 0, modulationOffset: 0 },
       parallax: { scale: 0 },
       haze: { intensity: 0 },
       feather: { radius: 0 },
+      trails: { strength: 0 },
+      kaleidoscope: { segments: 6, blend: 0.3 },
     },
   };
 
