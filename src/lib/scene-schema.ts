@@ -69,6 +69,7 @@ const animationSchema = z.object({
   noiseAmount: z.number().min(0).max(1).default(0),
   domainWarp: z.number().min(0).max(3).default(0),
   tileRepeat: z.number().min(0).max(20).default(0),
+  polarTwist: z.number().min(-10).max(10).default(0),
   rimIntensity: z.number().min(0).max(2).default(0),
   rimHueShift: z.number().min(-2).max(2).default(0.1),
   rimWidth: z.number().min(0).max(0.05).default(0.004),

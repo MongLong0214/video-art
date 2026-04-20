@@ -50,6 +50,9 @@ uniform float uDomainWarp;
 // Domain repetition — fbm UV tiling (shader-dev T2)
 uniform float uTileRepeat;
 
+// Polar UV twist — spiral distortion at layer level (shader-dev T3)
+uniform float uPolarTwist;
+
 // --- Visionary upgrades ---
 // Fresnel rim lighting — chromatic glow along silhouette edges
 uniform float uRimIntensity;
@@ -124,8 +127,17 @@ vec3 hsv2rgb(vec3 c) {
 void main() {
   float time = uTime * uLoopDuration;
 
+  // Polar UV twist: angle-dependent distortion — spiral (shader-dev T3)
+  vec2 polarUv = vUv;
+  if (abs(uPolarTwist) > 0.0001) {
+    vec2 cPol = polarUv - 0.5;
+    float rPol = length(cPol);
+    float aPol = atan(cPol.y, cPol.x) + uPolarTwist * rPol;
+    polarUv = 0.5 + vec2(cos(aPol), sin(aPol)) * rPol;
+  }
+
   // Breathing UV distortion
-  vec2 breathUv = vUv;
+  vec2 breathUv = polarUv;
   if (uBreathAmp > 0.0001) {
     float breathT = time * TAU / max(uBreathPeriod, 1e-4);
     vec2 fromCenter = breathUv - 0.5;

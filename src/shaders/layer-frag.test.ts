@@ -75,6 +75,16 @@ describe("layer.frag — shader-dev T2: domain-repetition", () => {
   });
 });
 
+describe("layer.frag — shader-dev T3: polar-uv-manipulation", () => {
+  it("declares uPolarTwist uniform", () => {
+    expect(fragSrc).toMatch(/uniform\s+float\s+uPolarTwist/);
+  });
+
+  it("uses atan for polar conversion of UV", () => {
+    expect(fragSrc).toMatch(/atan\(\s*\w+\.y\s*,\s*\w+\.x\s*\)/);
+  });
+});
+
 describe("haze math (JS port)", () => {
   it("hazeIntensity=0 any depthNorm → satFactor=1.0", () => {
     for (const dn of [0, 0.5, 1]) {

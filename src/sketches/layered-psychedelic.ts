@@ -73,6 +73,7 @@ export async function createLayeredPsychedelic(
         uNoiseAmount: { value: anim.noiseAmount ?? 0 },
         uDomainWarp: { value: anim.domainWarp ?? 0 },
         uTileRepeat: { value: anim.tileRepeat ?? 0 },
+        uPolarTwist: { value: anim.polarTwist ?? 0 },
         uRimIntensity: { value: anim.rimIntensity ?? 0 },
         uRimHueShift: { value: anim.rimHueShift ?? 0.1 },
         uRimWidth: { value: anim.rimWidth ?? 0.004 },
