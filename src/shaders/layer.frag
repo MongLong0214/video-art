@@ -53,6 +53,10 @@ uniform float uTileRepeat;
 // Polar UV twist — spiral distortion at layer level (shader-dev T3)
 uniform float uPolarTwist;
 
+// Voronoi cellular — crystalline pattern overlay (shader-dev T4)
+uniform float uVoronoiScale;
+uniform float uVoronoiAmount;
+
 // --- Visionary upgrades ---
 // Fresnel rim lighting — chromatic glow along silhouette edges
 uniform float uRimIntensity;
@@ -95,6 +99,23 @@ float snoise(vec2 v) {
   g.x = a0.x * x0.x + h.x * x0.y;
   g.yz = a0.yz * x12.xz + h.yz * x12.yw;
   return 130.0 * dot(m, g);
+}
+
+// Voronoi cellular noise — returns min distance to feature point (shader-dev T4)
+float voronoi(vec2 p) {
+  vec2 n = floor(p);
+  vec2 f = fract(p);
+  float md = 1.0;
+  for (int j = -1; j <= 1; j++) {
+    for (int i = -1; i <= 1; i++) {
+      vec2 g = vec2(float(i), float(j));
+      vec2 o = vec2(hash12(n + g), hash12(n + g + 17.0));
+      vec2 r = g + o - f;
+      float d = dot(r, r);
+      md = min(md, d);
+    }
+  }
+  return sqrt(md);
 }
 
 // Multi-octave fractal Brownian motion — ethereal energy field
@@ -212,6 +233,13 @@ void main() {
   hsv.y *= max(0.0, 1.0 - uHazeIntensity * (1.0 - uDepthNorm));
 
   vec3 rgb = hsv2rgb(hsv);
+
+  // Voronoi cell overlay — crystalline additive highlights (shader-dev T4)
+  if (uVoronoiAmount > 0.001) {
+    float vCell = voronoi(vUv * uVoronoiScale + vec2(time * 0.3, time * 0.2));
+    float vRidge = 1.0 - smoothstep(0.0, 0.25, vCell);
+    rgb += vRidge * uVoronoiAmount * vec3(0.6, 0.8, 1.0);
+  }
 
   // --- Glow pulse ---
   float safeGlowPeriod = max(uGlowPeriod, 1e-4);

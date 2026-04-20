@@ -85,6 +85,20 @@ describe("layer.frag — shader-dev T3: polar-uv-manipulation", () => {
   });
 });
 
+describe("layer.frag — shader-dev T4: voronoi", () => {
+  it("declares uVoronoiAmount uniform", () => {
+    expect(fragSrc).toMatch(/uniform\s+float\s+uVoronoiAmount/);
+  });
+
+  it("declares uVoronoiScale uniform", () => {
+    expect(fragSrc).toMatch(/uniform\s+float\s+uVoronoiScale/);
+  });
+
+  it("defines voronoi function", () => {
+    expect(fragSrc).toMatch(/float\s+voronoi\s*\(/);
+  });
+});
+
 describe("haze math (JS port)", () => {
   it("hazeIntensity=0 any depthNorm → satFactor=1.0", () => {
     for (const dn of [0, 0.5, 1]) {
