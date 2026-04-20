@@ -4,7 +4,9 @@ import simShader from "@/shaders/sketches/cellular-sim.frag";
 import displayShader from "@/shaders/sketches/cellular.frag";
 
 const GRID = 256;
-const STEPS_PER_FRAME = 4;
+// 20 sim steps per display frame — at 60fps that's 1200 steps/sec.
+// At f=0.055/k=0.062 (maze regime), visible pattern forms in ~300-500 steps.
+const STEPS_PER_FRAME = 20;
 
 const fullscreenVert = /* glsl */ `
   varying vec2 vUv;
@@ -15,20 +17,18 @@ const fullscreenVert = /* glsl */ `
 `;
 
 function createStateTarget(): THREE.WebGLRenderTarget {
+  // FloatType confirmed supported on ANGLE via T0-b spike (err 3.2e-8).
   return new THREE.WebGLRenderTarget(GRID, GRID, {
-    type: THREE.HalfFloatType,
+    type: THREE.FloatType,
     format: THREE.RGBAFormat,
     minFilter: THREE.NearestFilter,
     magFilter: THREE.NearestFilter,
-    wrapS: THREE.RepeatWrapping,
-    wrapT: THREE.RepeatWrapping,
+    wrapS: THREE.ClampToEdgeWrapping,
+    wrapT: THREE.ClampToEdgeWrapping,
   });
 }
 
 export function createCellularSketch(): Sketch {
-  const renderer = null as unknown as THREE.WebGLRenderer; // placeholder reference, set in update via global
-  void renderer;
-
   const simScene = new THREE.Scene();
   const simCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
   const simGeom = new THREE.PlaneGeometry(2, 2);
@@ -36,11 +36,11 @@ export function createCellularSketch(): Sketch {
     uniforms: {
       uState: { value: null as THREE.Texture | null },
       uGridSize: { value: new THREE.Vector2(GRID, GRID) },
-      uFeed: { value: 0.0367 },
-      uKill: { value: 0.0649 },
+      // "Maze" regime — forms stripes/labyrinth fast
+      uFeed: { value: 0.055 },
+      uKill: { value: 0.062 },
       uDiffA: { value: 1.0 },
       uDiffB: { value: 0.5 },
-      uTime: { value: 0 },
     },
     vertexShader: fullscreenVert,
     fragmentShader: simShader,
@@ -48,11 +48,11 @@ export function createCellularSketch(): Sketch {
   const simQuad = new THREE.Mesh(simGeom, simMat);
   simScene.add(simQuad);
 
-  // Ping-pong targets
   let target0 = createStateTarget();
   let target1 = createStateTarget();
 
-  // Initial state: center seed of v
+  // Initial state: background u=1, v=0 everywhere. Seed: large central disk
+  // with v=0.5 + heavy noise sprinkle for organic variation.
   const initScene = new THREE.Scene();
   const initMat = new THREE.ShaderMaterial({
     vertexShader: fullscreenVert,
@@ -61,13 +61,23 @@ export function createCellularSketch(): Sketch {
       varying vec2 vUv;
       float h(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
       void main() {
-        // u=1 substrate, v seeded heavily near center + random sprinkle
         vec2 c = vUv - 0.5;
         float d = length(c);
         float u = 1.0;
         float v = 0.0;
-        if (d < 0.4) v = 0.3 + 0.1 * h(vUv * 80.0);
-        if (h(vUv * 150.0) > 0.7) v = max(v, 0.3);
+        // Central disk — strong seed
+        if (d < 0.4) {
+          v = 0.5;
+        }
+        // 40% noise sprinkle everywhere
+        if (h(vUv * 180.0) > 0.6) {
+          u = 0.5;
+          v = max(v, 0.25);
+        }
+        // Dense inner noise for pattern bootstrap
+        if (d < 0.35 && h(vUv * 350.0) > 0.4) {
+          v = 0.6;
+        }
         gl_FragColor = vec4(u, v, 0.0, 1.0);
       }
     `,
@@ -75,7 +85,6 @@ export function createCellularSketch(): Sketch {
   const initQuad = new THREE.Mesh(simGeom, initMat);
   initScene.add(initQuad);
 
-  // Display scene (main output)
   const scene = new THREE.Scene();
   const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
   const displayGeom = new THREE.PlaneGeometry(2, 2);
@@ -91,23 +100,19 @@ export function createCellularSketch(): Sketch {
   scene.add(displayQuad);
 
   let initialized = false;
-  let stepCount = 0;
 
-  // Inject a reference to the global renderer via a side channel — main.ts sets this
   const getRenderer = (): THREE.WebGLRenderer | null => {
     const r = (window as unknown as { __renderer?: THREE.WebGLRenderer }).__renderer;
     return r ?? null;
   };
 
   const initializeState = (renderer: THREE.WebGLRenderer): void => {
-    const prevTarget = renderer.getRenderTarget();
+    const prev = renderer.getRenderTarget();
     renderer.setRenderTarget(target0);
-    renderer.clear();
     renderer.render(initScene, simCamera);
     renderer.setRenderTarget(target1);
-    renderer.clear();
     renderer.render(initScene, simCamera);
-    renderer.setRenderTarget(prevTarget);
+    renderer.setRenderTarget(prev);
     initialized = true;
   };
 
@@ -119,24 +124,22 @@ export function createCellularSketch(): Sketch {
       if (!renderer) return;
       if (!initialized) initializeState(renderer);
 
+      const prev = renderer.getRenderTarget();
       for (let i = 0; i < STEPS_PER_FRAME; i++) {
         simMat.uniforms.uState.value = target0.texture;
-        simMat.uniforms.uTime.value = time + i * 0.01;
-        const prev = renderer.getRenderTarget();
         renderer.setRenderTarget(target1);
         renderer.render(simScene, simCamera);
-        renderer.setRenderTarget(prev);
         const tmp = target0;
         target0 = target1;
         target1 = tmp;
-        stepCount++;
       }
+      renderer.setRenderTarget(prev);
 
       displayMat.uniforms.uState.value = target0.texture;
       displayMat.uniforms.uTime.value = time;
     },
     resize() {
-      // sim grid fixed at 512; display scales via viewport
+      // Grid fixed; display scales via orthographic viewport
     },
     dispose() {
       simGeom.dispose();
