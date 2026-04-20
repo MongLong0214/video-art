@@ -180,6 +180,16 @@ describe("layer.frag — shader-dev T11: bicubic texture sampling", () => {
   });
 });
 
+describe("layer.frag — shader-dev T12: Worley noise (F1-F2)", () => {
+  it("declares uWorleyAmount uniform", () => {
+    expect(fragSrc).toMatch(/uniform\s+float\s+uWorleyAmount/);
+  });
+
+  it("defines worley function", () => {
+    expect(fragSrc).toMatch(/float\s+worley\s*\(/);
+  });
+});
+
 describe("haze math (JS port)", () => {
   it("hazeIntensity=0 any depthNorm → satFactor=1.0", () => {
     for (const dn of [0, 0.5, 1]) {

@@ -88,6 +88,8 @@ const animationSchema = z.object({
   rotateSpeed: z.number().min(-5).max(5).default(0),
   scalePulse: z.number().min(0).max(0.5).default(0),
   bicubicFilter: z.boolean().default(false),
+  worleyScale: z.number().min(0).max(50).default(8),
+  worleyAmount: z.number().min(0).max(1).default(0),
   rimIntensity: z.number().min(0).max(2).default(0),
   rimHueShift: z.number().min(-2).max(2).default(0.1),
   rimWidth: z.number().min(0).max(0.05).default(0.004),

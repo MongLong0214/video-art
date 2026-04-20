@@ -80,6 +80,10 @@ uniform float uScalePulse;
 uniform float uBicubicFilter;
 uniform vec2 uTextureSize;
 
+// Worley noise — F2-F1 edges (shader-dev T12)
+uniform float uWorleyScale;
+uniform float uWorleyAmount;
+
 // IQ cosine palette — a + b*cos(TAU*(c*t+d)) (shader-dev T5)
 uniform float uPaletteAmount;
 uniform vec3 uPaletteA;
@@ -197,6 +201,24 @@ float voronoi(vec2 p) {
     }
   }
   return sqrt(md);
+}
+
+// Worley noise — F2-F1 (shader-dev T12): sharper cell boundary than voronoi
+float worley(vec2 p) {
+  vec2 n = floor(p);
+  vec2 f = fract(p);
+  float f1 = 1.0;
+  float f2 = 1.0;
+  for (int j = -1; j <= 1; j++) {
+    for (int i = -1; i <= 1; i++) {
+      vec2 g = vec2(float(i), float(j));
+      vec2 o = vec2(hash12(n + g), hash12(n + g + 31.7));
+      float d = length(g + o - f);
+      if (d < f1) { f2 = f1; f1 = d; }
+      else if (d < f2) { f2 = d; }
+    }
+  }
+  return f2 - f1;
 }
 
 // Multi-octave fractal Brownian motion — ethereal energy field
@@ -384,6 +406,14 @@ void main() {
       pat = 1.0 - smoothstep(0.2, 0.35, length(c));
     }
     rgb = mix(rgb, rgb * (0.5 + 0.5 * pat), uPatternAmount);
+  }
+
+  // Worley F2-F1 vein pattern (shader-dev T12)
+  if (uWorleyAmount > 0.001) {
+    float w = worley(vUv * uWorleyScale + vec2(time * 0.2, time * -0.15));
+    // Crisp vein edges where F2-F1 is small
+    float vein = 1.0 - smoothstep(0.0, 0.3, w);
+    rgb = mix(rgb, rgb + vec3(0.3, 0.6, 1.0) * vein, uWorleyAmount);
   }
 
   // Voronoi cell overlay — crystalline additive highlights (shader-dev T4)
