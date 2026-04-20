@@ -1,3 +1,4 @@
+#extension GL_OES_standard_derivatives : enable
 precision highp float;
 
 uniform sampler2D uTexture;
@@ -324,7 +325,9 @@ void main() {
     if (uSDFType < 1.5)      d = sdCircle(sp, 0.4);
     else if (uSDFType < 2.5) d = sdStar(sp, 0.5, 5.0);
     else                     d = sdHexagon(sp, 0.4);
-    float edge = 1.0 - smoothstep(0.0, 0.05, abs(d));
+    // Derivative-based AA: pixel-correct edge regardless of scale (shader-dev T10)
+    float w = fwidth(d);
+    float edge = 1.0 - smoothstep(0.0, max(w, 1e-4), abs(d));
     rgb = mix(rgb, rgb + vec3(1.0, 0.8, 0.4) * edge, uSDFAmount);
   }
 
@@ -369,8 +372,9 @@ void main() {
     float ringR = length(ringCentered);
     float ringT = time * TAU / ringPeriod;
     float ringWave = sin(ringR * uRingFreq - ringT);
-    // Sharpen + bias so bands are crisp but not dominant
-    float ring = pow(max(ringWave, 0.0), 3.0);
+    // Sharpen + bias so bands are crisp but AA-smoothed (shader-dev T10)
+    float ringAAW = fwidth(ringWave);
+    float ring = smoothstep(-ringAAW, ringAAW, ringWave) * pow(max(ringWave, 0.0), 3.0);
     // Falloff: strongest at mid-radius, fades at center + corners
     ring *= smoothstep(0.0, 0.1, ringR) * smoothstep(0.75, 0.25, ringR);
     // Chromatic ring: hue rotates over time

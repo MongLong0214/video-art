@@ -159,6 +159,17 @@ describe("layer.frag — shader-dev T9: matrix-transform UV", () => {
   });
 });
 
+describe("layer.frag — shader-dev T10: anti-aliasing (fwidth)", () => {
+  it("uses fwidth for derivative-based edge AA", () => {
+    expect(fragSrc).toMatch(/fwidth\s*\(/);
+  });
+
+  it("applies AA to ring edge (smoothstep with fwidth-derived bounds)", () => {
+    // Match smoothstep using derivative-derived bounds (either inline fwidth or via named var)
+    expect(fragSrc).toMatch(/smoothstep\(\s*-?\w*AAW?\s*,\s*\w*AAW?\s*,|smoothstep\([^)]*fwidth/);
+  });
+});
+
 describe("haze math (JS port)", () => {
   it("hazeIntensity=0 any depthNorm → satFactor=1.0", () => {
     for (const dn of [0, 0.5, 1]) {
