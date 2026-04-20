@@ -99,6 +99,24 @@ describe("layer.frag — shader-dev T4: voronoi", () => {
   });
 });
 
+describe("layer.frag — shader-dev T5: IQ cosine palette", () => {
+  it("declares uPaletteAmount uniform", () => {
+    expect(fragSrc).toMatch(/uniform\s+float\s+uPaletteAmount/);
+  });
+
+  it("declares uPaletteA/B/C/D vec3 uniforms", () => {
+    expect(fragSrc).toMatch(/uniform\s+vec3\s+uPaletteA/);
+    expect(fragSrc).toMatch(/uniform\s+vec3\s+uPaletteB/);
+    expect(fragSrc).toMatch(/uniform\s+vec3\s+uPaletteC/);
+    expect(fragSrc).toMatch(/uniform\s+vec3\s+uPaletteD/);
+  });
+
+  it("defines palette function with cos(TAU * ...)", () => {
+    expect(fragSrc).toMatch(/vec3\s+palette\s*\(/);
+    expect(fragSrc).toMatch(/cos\(\s*TAU/);
+  });
+});
+
 describe("haze math (JS port)", () => {
   it("hazeIntensity=0 any depthNorm → satFactor=1.0", () => {
     for (const dn of [0, 0.5, 1]) {

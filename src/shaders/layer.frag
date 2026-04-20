@@ -57,6 +57,13 @@ uniform float uPolarTwist;
 uniform float uVoronoiScale;
 uniform float uVoronoiAmount;
 
+// IQ cosine palette — a + b*cos(TAU*(c*t+d)) (shader-dev T5)
+uniform float uPaletteAmount;
+uniform vec3 uPaletteA;
+uniform vec3 uPaletteB;
+uniform vec3 uPaletteC;
+uniform vec3 uPaletteD;
+
 // --- Visionary upgrades ---
 // Fresnel rim lighting — chromatic glow along silhouette edges
 uniform float uRimIntensity;
@@ -128,6 +135,11 @@ float fbm(vec2 p) {
     a *= 0.5;
   }
   return v;
+}
+
+// IQ cosine palette (shader-dev T5) — https://iquilezles.org/articles/palettes/
+vec3 palette(float t) {
+  return uPaletteA + uPaletteB * cos(TAU * (uPaletteC * t + uPaletteD));
 }
 
 vec3 rgb2hsv(vec3 c) {
@@ -233,6 +245,12 @@ void main() {
   hsv.y *= max(0.0, 1.0 - uHazeIntensity * (1.0 - uDepthNorm));
 
   vec3 rgb = hsv2rgb(hsv);
+
+  // IQ cosine palette blend — drive color by hueShift phase (shader-dev T5)
+  if (uPaletteAmount > 0.001) {
+    vec3 pal = palette(fract(hueShift));
+    rgb = mix(rgb, pal * originalVal, uPaletteAmount);
+  }
 
   // Voronoi cell overlay — crystalline additive highlights (shader-dev T4)
   if (uVoronoiAmount > 0.001) {
