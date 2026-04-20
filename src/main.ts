@@ -33,6 +33,7 @@ function getSketchShader(name: string): string {
 const params = new URLSearchParams(window.location.search);
 const MODE = params.get("mode"); // "layered" or null
 const SKETCH_NAME = params.get("sketch") || "psychedelic";
+const SCENE_URL = params.get("scene") || "/scene.json";
 
 // --- config ---
 const IS_LAYERED = MODE === "layered";
@@ -96,7 +97,7 @@ async function loadSketch(): Promise<Sketch> {
     const { createLayeredPsychedelic } = await import(
       "@/sketches/layered-psychedelic"
     );
-    return createLayeredPsychedelic("/scene.json");
+    return createLayeredPsychedelic(SCENE_URL);
   }
   const sketch = createShaderSketch(SKETCH_NAME);
   sketch.resize(WIDTH, HEIGHT);
