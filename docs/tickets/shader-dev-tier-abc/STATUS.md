@@ -35,7 +35,7 @@ Sessions 2 onwards have NO inter-dependencies (Tier B/C sketches are independent
 | T-A3 | Post-processing chain (bloom/tone-map improvements) + **pixel-regression impl** (Tier A before/after) | Done | S | T-A1, T-A2 | 1 | PASS SSIM=1.0 |
 | T-B1 | Cellular automata sketch (Gray-Scott RD) | Done* | L | T0-b | 2 | PASS (*visual tuning TBD) |
 | T-B2 | Volumetric sketch (raymarch fog) | Done | L | T0-a | 2 | PASS |
-| T-B3 | Particles sketch (GPU particles flow field) | Todo | L | T0-b | 2 | - |
+| T-B3 | Particles sketch (GPU particles flow field) | Done | L | T0-b | 2 | PASS |
 | T-C1 | Fractal cave base (primitives + raymarch + normal) | Todo | M | T0-a | 3 | - |
 | T-C2 | Fractal cave lighting (Phong + shadow + AO) | Todo | M | T-C1 | 3 | - |
 | T-C3 | Fractal cave polish (sdf-tricks + CSG + morph) | Todo | M | T-C2 | 3 | - |

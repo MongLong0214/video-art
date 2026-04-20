@@ -109,6 +109,12 @@ async function loadSketch(): Promise<Sketch> {
     s.resize(WIDTH, HEIGHT);
     return s;
   }
+  if (SKETCH_NAME === "particles") {
+    const { createParticlesSketch } = await import("@/sketches/particles");
+    const s = createParticlesSketch();
+    s.resize(WIDTH, HEIGHT);
+    return s;
+  }
   // Fullscreen fragment-shader sketches (loaded via glob)
   const sketch = createShaderSketch(SKETCH_NAME);
   sketch.resize(WIDTH, HEIGHT);
