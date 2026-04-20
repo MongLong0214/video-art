@@ -86,6 +86,13 @@ export const SKETCH_REGISTRY: Record<string, SketchConfig> = {
     toneMapping: "none",
     postProcessing: "none",
   },
+  "fractal-cave": {
+    name: "fractal-cave",
+    width: 720, height: 1280, fps: 30,
+    loopDuration: 5.0,
+    toneMapping: "aces",
+    postProcessing: "none",
+  },
 };
 
 export const DEFAULT_CONFIG: SketchConfig = {
