@@ -65,6 +65,16 @@ describe("layer.frag — shader-dev T1: domain-warping", () => {
   });
 });
 
+describe("layer.frag — shader-dev T2: domain-repetition", () => {
+  it("declares uTileRepeat uniform", () => {
+    expect(fragSrc).toMatch(/uniform\s+float\s+uTileRepeat/);
+  });
+
+  it("uses fract-based tiling when uTileRepeat > 0", () => {
+    expect(fragSrc).toMatch(/fract\([^)]*uTileRepeat/);
+  });
+});
+
 describe("haze math (JS port)", () => {
   it("hazeIntensity=0 any depthNorm → satFactor=1.0", () => {
     for (const dn of [0, 0.5, 1]) {
