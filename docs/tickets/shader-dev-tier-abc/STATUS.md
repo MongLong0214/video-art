@@ -30,7 +30,7 @@ Sessions 2 onwards have NO inter-dependencies (Tier B/C sketches are independent
 |--------|-------|--------|------|---------|---------|--------|
 | T0-a | Shader compile check script + **pixel-regression stub** | Done | S | None | 1 | PASS |
 | T0-b | FBO float texture spike | Done | S | None | 1 | PASS (floatErr=3.2e-8) |
-| T-A1 | Multipass feedback (warp + decay) + **scene-schema: multipassFeedbackSchema** | Todo | M | T0-a | 1 | - |
+| T-A1 | Multipass feedback (warp + decay) + **scene-schema: multipassFeedbackSchema** | Done | M | T0-a | 1 | PASS |
 | T-A2 | Camera effects (lens/barrel/fisheye/DoF) + **scene-schema: lensDistortionSchema** | Todo | M | T0-a | 1 | - |
 | T-A3 | Post-processing chain (bloom/tone-map improvements) + **pixel-regression impl** (Tier A before/after) | Todo | S | T-A1, T-A2 | 1 | - |
 | T-B1 | Cellular automata sketch (Gray-Scott RD) | Todo | L | T0-b | 2 | - |

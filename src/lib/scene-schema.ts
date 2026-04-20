@@ -170,6 +170,20 @@ const mandalaEffectSchema = z.object({
   hueSpeed: z.number().min(0).max(2).default(0.05),
 });
 
+const multipassFeedbackSchema = z.object({
+  strength: z.number().min(0).max(0.95).default(0),
+  warp: z.number().min(0).max(1).default(0.2),
+  decay: z.number().min(0).max(1).default(0.9),
+  hueShift: z.number().min(0).max(1).default(0),
+});
+
+const lensDistortionSchema = z.object({
+  barrel: z.number().min(-0.5).max(0.5).default(0),
+  chromatic: z.number().min(0).max(2).default(0),
+  dof: z.number().min(0).max(1).default(0),
+  vignetteRadius: z.number().min(0.5).max(1).default(1),
+});
+
 const filmGradeEffectSchema = z.object({
   grain: z.number().min(0).max(0.3).default(0),
   vignetteIntensity: z.number().min(0).max(1).default(0),
@@ -193,6 +207,8 @@ const effectsSchema = z.object({
   aura: auraEffectSchema.default({ intensity: 0, radius: 0.04, hueSpeed: 0.1, samples: 16 }),
   mandala: mandalaEffectSchema.default({ opacity: 0, segments: 12, rings: 8, rotationSpeed: 0.08, breathSpeed: 0.4, hueSpeed: 0.05 }),
   filmGrade: filmGradeEffectSchema.default({ grain: 0, vignetteIntensity: 0, vignetteRadius: 0.9, vignetteTintR: 0.12, vignetteTintG: 0.05, vignetteTintB: 0.25, contrast: 1, sCurve: 0 }),
+  multipassFeedback: multipassFeedbackSchema.default({ strength: 0, warp: 0.2, decay: 0.9, hueShift: 0 }),
+  lensDistortion: lensDistortionSchema.default({ barrel: 0, chromatic: 0, dof: 0, vignetteRadius: 1 }),
 });
 
 const audioSchema = z.object({
@@ -235,6 +251,8 @@ export const sceneSchema = z
       aura: { intensity: 0, radius: 0.04, hueSpeed: 0.1, samples: 16 },
       mandala: { opacity: 0, segments: 12, rings: 8, rotationSpeed: 0.08, breathSpeed: 0.4, hueSpeed: 0.05 },
       filmGrade: { grain: 0, vignetteIntensity: 0, vignetteRadius: 0.9, vignetteTintR: 0.12, vignetteTintG: 0.05, vignetteTintB: 0.25, contrast: 1, sCurve: 0 },
+      multipassFeedback: { strength: 0, warp: 0.2, decay: 0.9, hueShift: 0 },
+      lensDistortion: { barrel: 0, chromatic: 0, dof: 0, vignetteRadius: 1 },
     }),
     audio: audioSchema.optional(),
   })
