@@ -44,6 +44,9 @@ uniform float uNoiseScale;
 uniform float uNoiseSpeed;
 uniform float uNoiseAmount;
 
+// Domain warping — recursive fbm for organic swirls (shader-dev T1)
+uniform float uDomainWarp;
+
 // --- Visionary upgrades ---
 // Fresnel rim lighting — chromatic glow along silhouette edges
 uniform float uRimIntensity;
@@ -163,7 +166,13 @@ void main() {
   float nGlow = 0.0;
   if (uNoiseAmount > 0.001) {
     vec2 flow = vec2(time * uNoiseSpeed * 0.1, time * uNoiseSpeed * 0.07);
-    nHue = fbm(vUv * uNoiseScale + flow);
+    vec2 p = vUv * uNoiseScale + flow;
+    // Domain warping (IQ-style): fbm(p + warp * vec2(fbm(p+a), fbm(p+b))) (shader-dev T1)
+    if (uDomainWarp > 0.0001) {
+      nHue = fbm(p + uDomainWarp * vec2(fbm(p + vec2(1.7, 9.2)), fbm(p + vec2(8.3, 2.8))));
+    } else {
+      nHue = fbm(p);
+    }
     nSat = fbm(vUv * uNoiseScale * 0.8 + vec2(flow.y, 0.5));
     nGlow = fbm(vUv * uNoiseScale * 0.5 + vec2(0.3, time * uNoiseSpeed * 0.08));
     hueShift += nHue * uNoiseAmount;

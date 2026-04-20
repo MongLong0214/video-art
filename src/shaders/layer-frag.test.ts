@@ -50,6 +50,21 @@ describe("layer.frag — feather uniforms & formula", () => {
   });
 });
 
+describe("layer.frag — shader-dev T1: domain-warping", () => {
+  it("declares uDomainWarp uniform", () => {
+    expect(fragSrc).toMatch(/uniform\s+float\s+uDomainWarp/);
+  });
+
+  it("uses recursive fbm (domain warping pattern)", () => {
+    // fbm call inside another fbm's argument — fbm(... fbm(... ) ...)
+    expect(fragSrc).toMatch(/fbm\([^)]*fbm\(/);
+  });
+
+  it("guards domain warp behind uDomainWarp > threshold", () => {
+    expect(fragSrc).toMatch(/uDomainWarp\s*>\s*0\.0001/);
+  });
+});
+
 describe("haze math (JS port)", () => {
   it("hazeIntensity=0 any depthNorm → satFactor=1.0", () => {
     for (const dn of [0, 0.5, 1]) {
