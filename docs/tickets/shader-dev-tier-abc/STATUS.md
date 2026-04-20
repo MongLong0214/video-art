@@ -3,7 +3,7 @@
 **PRD**: `docs/prd/PRD-shader-dev-tier-abc.md` (v0.3)
 **Branch**: `experiment/shader-dev-maximal`
 **Size**: XL
-**Current Phase**: 5 (TDD Development — Session 1 starting)
+**Current Phase**: 7 (Complete — Phase 5 all 13 tickets Done)
 
 ## Session Plan (Independent Sessions)
 
@@ -41,7 +41,7 @@ Sessions 2 onwards have NO inter-dependencies (Tier B/C sketches are independent
 | T-C3 | Fractal cave polish (sdf-tricks + CSG + morph) | Done | M | T-C2 | 3 | PASS |
 | T-F1 | Gallery render update (Tier A, existing 13) | Done | S | T-A1..A3 | 4 | PASS |
 | T-F2 | Gallery render sketches (Tier B/C, new 4) + **`?sketch=` URL routing** | Done | S | T-B1..B3, T-C3 | 4 | PASS |
-| T-F3 | Shader-dev manual docs + final review prep | Todo | S | All above | 4 | - |
+| T-F3 | Shader-dev manual docs + final review prep | Done | S | All above | 4 | PASS |
 
 **Total: 13 tickets** (2 infra + 3 A + 3 B + 3 C + 3 finalization)
 
