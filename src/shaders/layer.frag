@@ -71,6 +71,10 @@ uniform float uSDFAmount;
 uniform float uJuliaAmount;
 uniform vec2 uJuliaC;
 
+// Matrix transform UV — rotation + scale pulse (shader-dev T9)
+uniform float uRotateSpeed;
+uniform float uScalePulse;
+
 // IQ cosine palette — a + b*cos(TAU*(c*t+d)) (shader-dev T5)
 uniform float uPaletteAmount;
 uniform vec3 uPaletteA;
@@ -195,8 +199,19 @@ vec3 hsv2rgb(vec3 c) {
 void main() {
   float time = uTime * uLoopDuration;
 
+  // Matrix transform UV — time-based rotation/scale pulse (shader-dev T9)
+  vec2 mtxUv = vUv;
+  if (abs(uRotateSpeed) > 0.0001 || uScalePulse > 0.0001) {
+    vec2 cm = mtxUv - 0.5;
+    float ra = time * uRotateSpeed;
+    float sp = 1.0 + uScalePulse * sin(time * TAU);
+    mat2 R = mat2(cos(ra), -sin(ra), sin(ra), cos(ra));
+    cm = (R * cm) / sp;
+    mtxUv = cm + 0.5;
+  }
+
   // Polar UV twist: angle-dependent distortion — spiral (shader-dev T3)
-  vec2 polarUv = vUv;
+  vec2 polarUv = mtxUv;
   if (abs(uPolarTwist) > 0.0001) {
     vec2 cPol = polarUv - 0.5;
     float rPol = length(cPol);

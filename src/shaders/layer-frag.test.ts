@@ -148,6 +148,17 @@ describe("layer.frag — shader-dev T8: Julia fractal", () => {
   });
 });
 
+describe("layer.frag — shader-dev T9: matrix-transform UV", () => {
+  it("declares uRotateSpeed + uScalePulse uniforms", () => {
+    expect(fragSrc).toMatch(/uniform\s+float\s+uRotateSpeed/);
+    expect(fragSrc).toMatch(/uniform\s+float\s+uScalePulse/);
+  });
+
+  it("constructs mat2 rotation from sin/cos", () => {
+    expect(fragSrc).toMatch(/mat2\(\s*cos\([^)]*\)\s*,\s*-?sin/);
+  });
+});
+
 describe("haze math (JS port)", () => {
   it("hazeIntensity=0 any depthNorm → satFactor=1.0", () => {
     for (const dn of [0, 0.5, 1]) {
