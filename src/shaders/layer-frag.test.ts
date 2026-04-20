@@ -46,7 +46,7 @@ describe("layer.frag — feather uniforms & formula", () => {
   });
 
   it("feather multiplies alpha", () => {
-    expect(fragSrc).toMatch(/alpha\s*\*=\s*feather|texColor\.a\s*\*\s*uOpacity\s*\*\s*feather/);
+    expect(fragSrc).toMatch(/alpha\s*=\s*alpha\s*\*\s*uOpacity\s*\*\s*feather|alpha\s*\*=\s*feather|texColor\.a\s*\*\s*uOpacity\s*\*\s*feather/);
   });
 });
 
