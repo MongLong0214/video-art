@@ -137,6 +137,17 @@ describe("layer.frag — shader-dev T7: SDF-2D overlay", () => {
   });
 });
 
+describe("layer.frag — shader-dev T8: Julia fractal", () => {
+  it("declares uJuliaAmount and uJuliaC uniforms", () => {
+    expect(fragSrc).toMatch(/uniform\s+float\s+uJuliaAmount/);
+    expect(fragSrc).toMatch(/uniform\s+vec2\s+uJuliaC/);
+  });
+
+  it("uses bounded iteration loop for Julia set", () => {
+    expect(fragSrc).toMatch(/for\s*\(\s*int\s+\w+\s*=\s*0\s*;\s*\w+\s*<\s*\d+\s*;/);
+  });
+});
+
 describe("haze math (JS port)", () => {
   it("hazeIntensity=0 any depthNorm → satFactor=1.0", () => {
     for (const dn of [0, 0.5, 1]) {

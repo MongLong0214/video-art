@@ -83,6 +83,8 @@ const animationSchema = z.object({
   sdfType: z.number().min(0).max(3).default(0),
   sdfScale: z.number().min(0).max(20).default(2),
   sdfAmount: z.number().min(0).max(1).default(0),
+  juliaAmount: z.number().min(0).max(1).default(0),
+  juliaC: z.tuple([z.number(), z.number()]).default([-0.7, 0.27015]),
   rimIntensity: z.number().min(0).max(2).default(0),
   rimHueShift: z.number().min(-2).max(2).default(0.1),
   rimWidth: z.number().min(0).max(0.05).default(0.004),

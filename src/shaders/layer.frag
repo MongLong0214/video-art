@@ -67,6 +67,10 @@ uniform float uSDFType;
 uniform float uSDFScale;
 uniform float uSDFAmount;
 
+// Julia fractal overlay (shader-dev T8)
+uniform float uJuliaAmount;
+uniform vec2 uJuliaC;
+
 // IQ cosine palette — a + b*cos(TAU*(c*t+d)) (shader-dev T5)
 uniform float uPaletteAmount;
 uniform vec3 uPaletteA;
@@ -281,6 +285,21 @@ void main() {
   if (uPaletteAmount > 0.001) {
     vec3 pal = palette(fract(hueShift));
     rgb = mix(rgb, pal * originalVal, uPaletteAmount);
+  }
+
+  // Julia set fractal overlay (shader-dev T8)
+  if (uJuliaAmount > 0.001) {
+    vec2 z = (vUv - 0.5) * 3.0;
+    float iter = 0.0;
+    const int MAX = 32;
+    for (int i = 0; i < MAX; i++) {
+      if (dot(z, z) > 4.0) break;
+      z = vec2(z.x*z.x - z.y*z.y, 2.0*z.x*z.y) + uJuliaC;
+      iter += 1.0;
+    }
+    float jt = iter / float(MAX);
+    vec3 jCol = 0.5 + 0.5 * cos(TAU * (vec3(0.0, 0.33, 0.67) + jt + time * 0.1));
+    rgb = mix(rgb, rgb + jCol * (1.0 - jt), uJuliaAmount);
   }
 
   // SDF 2D overlay (shader-dev T7)
