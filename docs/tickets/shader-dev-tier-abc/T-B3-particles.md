@@ -18,6 +18,7 @@ Implement `?sketch=particles` — 65,536 GPU particles (256×256 position FBO) f
 - [ ] AC-4: Rendering: `THREE.Points` with `PointsMaterial` custom shader — reads position from FBO (`gl_VertexID` via `aVertexIndex` attribute → UV lookup)
 - [ ] AC-5: Trail effect via blend = additive + frame clear α=0.05 (gradual fade)
 - [ ] AC-6: 60fps target @ 720×1280
+- [x] AC-7: **Non-loopable — explicit disclosure** in `src/sketches/particles.ts` header. Position FBO evolves continuously via curl-noise flow + respawn cycles. Not loop-phase-synchronized. See cellular ticket for same disclosure.
 - [ ] AC-7: sketch-registry entry with `postProcessing: "default"` or `"none"` (decision per perf)
 
 ## 3. TDD Spec (Red Phase)

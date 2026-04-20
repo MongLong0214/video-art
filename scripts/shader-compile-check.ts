@@ -29,10 +29,11 @@ export const MODES: CheckMode[] = [
     required: true,
   },
   { name: "sketch-psychedelic", url: "/?sketch=psychedelic", required: true },
-  { name: "sketch-cellular", url: "/?sketch=cellular", required: false },
-  { name: "sketch-volumetric", url: "/?sketch=volumetric", required: false },
-  { name: "sketch-particles", url: "/?sketch=particles", required: false },
-  { name: "sketch-fractal-cave", url: "/?sketch=fractal-cave", required: false },
+  // All Tier B/C sketches now committed and required — missing file = FAIL, not skip.
+  { name: "sketch-cellular", url: "/?sketch=cellular", required: true },
+  { name: "sketch-volumetric", url: "/?sketch=volumetric", required: true },
+  { name: "sketch-particles", url: "/?sketch=particles", required: true },
+  { name: "sketch-fractal-cave", url: "/?sketch=fractal-cave", required: true },
 ];
 
 export const ERROR_PATTERNS: RegExp[] = [

@@ -20,7 +20,7 @@ Implement a standalone sketch mode `?sketch=cellular` that runs Gray-Scott react
 - [ ] AC-5a: **Stability validation**: After 500 simulation steps (8.3s @ 60fps), min/max value of state texture stays within [0.0, 1.0] (no divergence). Verify via spike: run sim 500 steps, readback, assert bounds. Document in `T-B1-stability-result.md`.
 - [ ] AC-6: Visualization pass: final state → hue-mapped output (use uPaletteA-D from Tier 1 T5 if reusable, or simpler colormap)
 - [ ] AC-7: `npm run check:shaders` PASS for `?sketch=cellular`
-- [ ] AC-8: Loops seamlessly at loopDuration=5s via time-modulated feed rate OR accepts non-looping nature and documents
+- [x] AC-8: **Non-loopable — explicit disclosure** in `src/sketches/cellular.ts` header JSDoc. Gray-Scott RD state evolves continuously, not loop-phase-synchronized. Gallery mp4 captures 5s snapshot (frame[0] ≠ frame[149]). Reels downstream can apply ffmpeg ping-pong or accept hard cut.
 
 ## 3. TDD Spec (Red Phase)
 

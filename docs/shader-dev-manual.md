@@ -77,7 +77,9 @@ Added as new ShaderPass effects in `effect-composer.ts` and scene schema.
 | T-A2 | camera-effects (Brown distortion + chromatic + DoF) | `effects.lensDistortion.{barrel, chromatic, dof, vignetteRadius}` | -0.5..0.5, 0..2, 0..1, 0.5..1 | 0, 0, 0, 1 |
 | T-A3 | post-processing chain polish | `effects.bloom.*` (tuning via existing uniforms) | — | preserved |
 
-**Pass order** (after RenderPass): aura → godRays → bloom → **trails → multipassFeedback → lensDistortion** → kaleidoscope → chromaticAberration → mandala → filmGrade
+**Pass order** (actual code in `effect-composer.ts`): RenderPass → aura → godRays → mandala → bloom+chromaticAberration (EffectPass) → kaleidoscope → filmGrade → **trails → lensDistortion → multipassFeedback**
+
+> Rationale: feedback-dependent passes (trails, multipassFeedback) run LAST so `feedbackTarget` captures the fully-composed screen-space output. lensDistortion inserted between them for lens-wrap-of-trails behavior.
 
 **Shared infra**: `multipassFeedback` reads from the SAME `feedbackTarget` WebGLRenderTarget as `trails` (no new allocation).
 
@@ -89,9 +91,9 @@ Independent sketches, loaded via `?sketch=<name>`.
 
 | # | Sketch | File | Technique coverage | FPS target |
 |---|--------|------|--------------------|-----------|
-| T-B1 | cellular | `src/shaders/sketches/cellular{,-sim}.frag` + `src/sketches/cellular.ts` | cellular-automata (Gray-Scott RD, ping-pong FBO) | 60 (visual tuning TBD) |
+| T-B1 | cellular | `src/shaders/sketches/cellular{,-sim}.frag` + `src/sketches/cellular.ts` | cellular-automata (Gray-Scott RD, ping-pong FBO) — **non-loopable (stateful)** | 60 |
 | T-B2 | volumetric | `src/shaders/sketches/volumetric.frag` | volumetric-rendering (64-step raymarch + 3D fbm density) | 60 |
-| T-B3 | particles | `src/shaders/sketches/particles{-sim}.{frag,vert}` + `src/sketches/particles.ts` | particle-system + simulation-physics (65k particles via position FBO ping-pong, curl-noise flow) | 60 |
+| T-B3 | particles | `src/shaders/sketches/particles{-sim}.{frag,vert}` + `src/sketches/particles.ts` | particle-system + simulation-physics (65k particles via position FBO ping-pong, curl-noise flow) — **non-loopable (stateful)** | 60 |
 
 **URL**: `http://localhost:5299/?sketch=volumetric` (or cellular, particles, fractal-cave)
 

@@ -3,6 +3,14 @@ import type { Sketch } from "./psychedelic";
 import simShader from "@/shaders/sketches/cellular-sim.frag";
 import displayShader from "@/shaders/sketches/cellular.frag";
 
+// LOOP-SEAM DISCLOSURE (non-loopable, stateful sketch):
+// Gray-Scott simulation state evolves continuously and is NOT loop-phase-synchronized.
+// The 5s gallery mp4 captures a snapshot of the continuously evolving pattern —
+// frame[0] and frame[149] will NOT be pixel-equal. This is intentional (RD is
+// naturally non-periodic). For Reels-style looping playback, downstream ffmpeg
+// ping-pong filter is acceptable, or accept single-play with hard cut.
+// T0-a __startCapture warmup primes display, NOT simulation state.
+
 const GRID = 256;
 // 20 sim steps per display frame — at 60fps that's 1200 steps/sec.
 // At f=0.055/k=0.062 (maze regime), visible pattern forms in ~300-500 steps.

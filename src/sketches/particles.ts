@@ -4,6 +4,11 @@ import simShader from "@/shaders/sketches/particles-sim.frag";
 import pointsVert from "@/shaders/sketches/particles.vert";
 import pointsFrag from "@/shaders/sketches/particles.frag";
 
+// LOOP-SEAM DISCLOSURE (non-loopable, stateful sketch):
+// Particle positions evolve continuously via curl-noise flow + respawn cycles.
+// State is NOT loop-phase-synchronized. 5s gallery mp4 frame[0] ≠ frame[149].
+// For Reels-style looping, use ffmpeg ping-pong or tolerate hard cut.
+
 const TEX_SIZE = 256;
 const PARTICLE_COUNT = TEX_SIZE * TEX_SIZE; // 65,536
 

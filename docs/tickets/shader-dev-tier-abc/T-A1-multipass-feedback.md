@@ -12,7 +12,7 @@
 Extend existing `effect-composer.ts` feedback infrastructure with a new `multipassFeedbackPass` that samples the previous frame with radial warp + chromatic decay, accumulating prior frames with time-varying distortion. Distinct from simple `trails` mix.
 
 ## 2. Acceptance Criteria
-- [ ] AC-1: New ShaderPass added in `effect-composer.ts`, inserted in order: `trails → multipassFeedback → kaleidoscope` (as per PRD §4.4)
+- [ ] AC-1: New ShaderPass added in `effect-composer.ts`, inserted AFTER existing trails pass (which is at end of chain per original composer convention). Actual order: `... kaleidoscope → filmGrade → trails → lensDistortion → multipassFeedback` (all feedback-dependent passes at end). See PRD §4.4 OQ-2 resolution.
 - [ ] AC-2: `scene-schema.ts` adds `multipassFeedbackSchema`: `{ strength: 0..0.95 (default 0), warp: 0..1 (default 0.2), decay: 0..1 (default 0.9), hueShift: 0..1 (default 0) }` with defaults → backward compat
 - [ ] AC-3: Uniform `uFeedbackStrength=0` produces **pixel-identical** output to pre-T-A1 (verified by `pixel-regression` in T-A3)
 - [ ] AC-4: Uniform `uFeedbackStrength=0.7, warp=0.3` produces visible swirling trail over successive frames (visual check)
@@ -27,7 +27,7 @@ Extend existing `effect-composer.ts` feedback infrastructure with a new `multipa
 | # | Test Name | Type | Description | Expected |
 |---|-----------|------|-------------|----------|
 | 1 | `effect-composer: declares multipassFeedback ShaderPass` | Unit | Source regex: `multipassFeedback|uFeedbackStrength` | FAIL |
-| 2 | `effect-composer: pass order trails → feedback → kaleidoscope` | Unit | Index of uTrailStrength < uFeedbackStrength < uSegments in addPass call order | FAIL |
+| 2 | `effect-composer: pass order kaleidoscope → trails → multipassFeedback` | Unit | Index of uSegments < uTrailStrength < uFeedbackStrength in addPass call order (trails-family passes at end of chain) | FAIL |
 | 3 | `scene-schema: multipassFeedback default values` | Unit | Parse empty effects → assert multipassFeedback.strength === 0 | FAIL |
 | 4 | `scene-schema: multipassFeedback validates max strength 0.95` | Unit | strength=1.0 → schema parse fail | FAIL |
 | 5 | `presets test: all 16 existing presets still parse under v3 schema` | Integration | iterate presets/ → sceneSchema.parse OK | PASS (backward compat) |

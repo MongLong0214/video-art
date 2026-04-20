@@ -235,7 +235,10 @@ export const sceneSchema = z
   .object({
     version: z.literal(1),
     source: z.string(),
-    resolution: z.tuple([z.number().positive(), z.number().positive()]),
+    // Resolution capped to prevent client-side DoS via arbitrary-size ?scene= URLs.
+    // 7680 (8K) is the practical upper bound for modern GPUs; layered pipeline produces
+    // 9:16 Reels content in 1080×1920 normally.
+    resolution: z.tuple([z.number().positive().max(7680), z.number().positive().max(7680)]),
     duration: z.number().int().positive().max(300).default(20),
     fps: z.number().positive().default(60),
     layers: z.array(layerSchema).min(1),

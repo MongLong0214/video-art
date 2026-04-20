@@ -49,14 +49,19 @@ describe("effect-composer — T-A1 multipassFeedback", () => {
     expect(matches.length).toBe(1);
   });
 
-  it("multipassFeedback pass registered after trails, before kaleidoscope", () => {
-    // Find ordering indicators in file
-    const trailsIdx = src.indexOf("trailsFragmentShader");
-    const multipassIdx = src.search(/multipassFeedback|uFeedbackStrength/);
-    const kaleidoIdx = src.indexOf("kaleidoFragmentShader");
-    expect(trailsIdx).toBeGreaterThan(-1);
-    expect(multipassIdx).toBeGreaterThan(-1);
-    expect(kaleidoIdx).toBeGreaterThan(-1);
+  it("pass order: kaleidoscope → trails → multipassFeedback (feedback passes at end)", () => {
+    // Actual chain convention: feedback-dependent passes (trails/multipassFeedback)
+    // run LAST so they observe the full accumulated screen-space FX output.
+    const kaleidoAddIdx = src.indexOf(`new ShaderPass(kaleidoMaterial`);
+    const trailsAddIdx = src.indexOf(`new ShaderPass(trailsMaterial`);
+    const multipassAddIdx = src.indexOf(`new ShaderPass(multipassMaterial`);
+    expect(kaleidoAddIdx).toBeGreaterThan(-1);
+    expect(trailsAddIdx).toBeGreaterThan(-1);
+    expect(multipassAddIdx).toBeGreaterThan(-1);
+    // kaleidoscope added BEFORE trails (earlier in file = earlier addPass call)
+    expect(kaleidoAddIdx).toBeLessThan(trailsAddIdx);
+    // multipassFeedback added AFTER trails
+    expect(trailsAddIdx).toBeLessThan(multipassAddIdx);
   });
 
   it("file stays under 800 LOC cap after T-A1", () => {

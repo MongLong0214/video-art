@@ -1,22 +1,21 @@
 /**
- * Pixel Regression (T-A3)
+ * Pixel Regression (T-A3) — Tier A backward compatibility gate
  *
- * Validates Tier A backward compatibility: rendering a preset with Tier A
- * uniforms all = 0 must produce pixel-near-identical output vs pre-Tier-A
- * baseline. Catches accidental visual regressions.
+ * Proves that Tier A uniforms=0 defaults produce pixel-identical output
+ * vs scenes without Tier A keys at all (legacy pre-Tier-A scene shape).
  *
- * Workflow:
- *   1. Starts Vite + Puppeteer
- *   2. For each preset in --presets:
- *      a. Renders at t=2.5s into a PNG screenshot
- *      b. Captures TWO renders:
- *         - Baseline: scene as-is (default Tier A uniforms = 0)
- *         - Control: same scene — should be identical (sanity check)
- *   3. Compares with SSIM. Fails if SSIM < threshold (default 0.995)
+ * Workflow per preset:
+ *   1. Render (a) legacy: scene as-is, no multipassFeedback/lensDistortion keys
+ *      → schema supplies defaults at parse time
+ *   2. Render (b) explicit: same scene with multipassFeedback.strength=0 +
+ *      lensDistortion.barrel=0 (etc.) literally in JSON
+ *   3. SSIM(a, b) must be ≥ threshold (default 0.995)
+ *
+ * If defaults diverge from "0 = off", this detects regression.
  *
  * Usage:
- *   npm run regress:pixel -- --preset T13-baseline
- *   npm run regress:pixel -- --preset mandala-flow --threshold 0.99
+ *   npm run regress:pixel -- --preset solo/T13-baseline
+ *   npm run regress:pixel -- --preset shader-dev-mandala-flow --threshold 0.99
  */
 import "dotenv/config";
 import fs from "node:fs";
@@ -106,21 +105,45 @@ export async function main(argv: string[] = process.argv.slice(2)): Promise<numb
     await waitForVite(PORT);
     browser = await launchHeadlessBrowser();
 
+    // Tier A backward-compat test: render the SAME preset with TWO scene configs:
+    //   (a) "legacy" — no Tier A keys at all (schema fills defaults)
+    //   (b) "explicit-off" — multipassFeedback.strength=0 + lensDistortion.barrel=0 explicit
+    // If Tier A code honors defaults correctly, a.png and b.png must be pixel-identical.
+    // This proves defaults = no visual change, not just determinism.
+    const TIER_A_OFF = {
+      multipassFeedback: { strength: 0, warp: 0.2, decay: 0.9, hueShift: 0 },
+      lensDistortion: { barrel: 0, chromatic: 0, dof: 0, vignetteRadius: 1 },
+    };
+
     for (const preset of presets) {
       const scene = preset.startsWith("/") ? preset : `/presets/${preset}.json`;
-      const url = `http://localhost:${PORT}/?mode=layered&scene=${scene}`;
-      const a = path.join(outDir, `${preset.replace(/\//g, "_")}-a.png`);
-      const b = path.join(outDir, `${preset.replace(/\//g, "_")}-b.png`);
-      console.log(`  ${preset} — capturing twice`);
-      await captureFrame(browser, url, args.width!, args.height!, args.captureTime!, a);
-      await captureFrame(browser, url, args.width!, args.height!, args.captureTime!, b);
+      const legacyUrl = `http://localhost:${PORT}/?mode=layered&scene=${scene}`;
 
-      const imgA = await loadImage(a);
-      const imgB = await loadImage(b);
-      const s = ssimLite(imgA, imgB);
-      const pass = s >= (args.threshold ?? 0.995);
-      console.log(`    ssim=${s.toFixed(5)} ${pass ? "✓" : "✗"}`);
-      if (!pass) failures.push({ preset, ssim: s });
+      // Create a modified copy with explicit Tier A off uniforms and serve via public/
+      const presetDiskPath = path.join("public", scene);
+      const raw = JSON.parse(fs.readFileSync(presetDiskPath, "utf-8"));
+      raw.effects = { ...(raw.effects ?? {}), ...TIER_A_OFF };
+      const explicitPath = `/regress-explicit-tier-a-off.json`;
+      const explicitDisk = path.join("public", explicitPath.slice(1));
+      fs.writeFileSync(explicitDisk, JSON.stringify(raw, null, 2));
+      const explicitUrl = `http://localhost:${PORT}/?mode=layered&scene=${explicitPath}`;
+
+      const a = path.join(outDir, `${preset.replace(/\//g, "_")}-legacy.png`);
+      const b = path.join(outDir, `${preset.replace(/\//g, "_")}-explicit-off.png`);
+      console.log(`  ${preset} — legacy (no Tier A keys) vs explicit (uniforms=0)`);
+      try {
+        await captureFrame(browser, legacyUrl, args.width!, args.height!, args.captureTime!, a);
+        await captureFrame(browser, explicitUrl, args.width!, args.height!, args.captureTime!, b);
+
+        const imgA = await loadImage(a);
+        const imgB = await loadImage(b);
+        const s = ssimLite(imgA, imgB);
+        const pass = s >= (args.threshold ?? 0.995);
+        console.log(`    ssim=${s.toFixed(5)} ${pass ? "✓" : "✗"}`);
+        if (!pass) failures.push({ preset, ssim: s });
+      } finally {
+        if (fs.existsSync(explicitDisk)) fs.unlinkSync(explicitDisk);
+      }
     }
   } finally {
     await browser?.close().catch(() => {});
