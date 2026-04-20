@@ -91,17 +91,25 @@ http://localhost:5299/presets/solo/gallery.html
 
 ## 3. 사용법 B — mp4 영상 렌더링
 
-### 3.1 빠른 프리뷰 (720×1280, 5초 × 30fps = 17개 mp4 자동 렌더)
+### 3.1 빠른 프리뷰 (720×1280, 5초 × 30fps = 21개 mp4 자동 렌더)
 
 ```bash
 npx tsx scripts/gallery-render.ts
-# 또는 스케치만:
+# 스케치만:
 npx tsx scripts/gallery-render.ts --sketches-only
+# Tier A before/after 데모 쌍만:
+npx tsx scripts/gallery-render.ts --tier-a-demo
+# Tier A 데모 생략:
+npx tsx scripts/gallery-render.ts --no-demo
 ```
+
+> OUT_DIR(`out/shader-gallery/`)은 실행 시작 시 기존 mp4/frames를 정리합니다.
+> 렌더 실패는 프로세스 종료 코드 1로 보고됩니다 (CI/artifact-count 체크 신뢰 가능).
 
 **출력**: `out/shader-gallery/` 아래에:
 - `T1-domain-warp.mp4` ~ `T13-baseline.mp4` (13개 Tier 1 solo)
-- `sketch-cellular.mp4`, `sketch-volumetric.mp4`, `sketch-particles.mp4`, `sketch-fractal-cave.mp4` (4개 스케치)
+- `cellular.mp4`, `volumetric.mp4`, `particles.mp4`, `fractal-cave.mp4` (4개 스케치)
+- `baseline-pre-A.mp4`, `baseline-post-A.mp4`, `mandala-pre-A.mp4`, `mandala-post-A.mp4` (4개 Tier A before/after 데모)
 
 ### 3.2 실전 프로덕션 렌더 (1080×1920, 20초 풀 해상도)
 

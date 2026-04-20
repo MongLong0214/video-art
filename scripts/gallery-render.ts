@@ -23,6 +23,14 @@ const GALLERY_DURATION = 5;
 const GALLERY_FPS = 30;
 const TOTAL_FRAMES = GALLERY_DURATION * GALLERY_FPS;
 
+// Fresh OUT_DIR each run so stale mp4s from prior runs can't masquerade as green.
+if (fs.existsSync(OUT_DIR)) {
+  for (const entry of fs.readdirSync(OUT_DIR)) {
+    if (entry.endsWith(".mp4") || entry.startsWith(".frames-")) {
+      fs.rmSync(path.join(OUT_DIR, entry), { recursive: true, force: true });
+    }
+  }
+}
 fs.mkdirSync(OUT_DIR, { recursive: true });
 
 function rewritePresetForGallery(srcPath: string): string {
@@ -304,8 +312,13 @@ async function main(): Promise<void> {
     });
 
     const t0 = Date.now();
+    const failures: string[] = [];
     if (tierADemoOnly) {
-      await renderTierADemo(browser, port, tempScenePath);
+      try {
+        await renderTierADemo(browser, port, tempScenePath);
+      } catch (err) {
+        failures.push(`tier-a-demo: ${err instanceof Error ? err.message : String(err)}`);
+      }
     } else {
       // Layered presets
       for (let i = 0; i < presets.length; i++) {
@@ -314,7 +327,9 @@ async function main(): Promise<void> {
         try {
           await renderPreset(browser, port, preset, tempScenePath);
         } catch (err) {
-          console.error(`  ✗ ${preset} failed:`, err instanceof Error ? err.message : err);
+          const msg = err instanceof Error ? err.message : String(err);
+          console.error(`  ✗ ${preset} failed:`, msg);
+          failures.push(`${preset}: ${msg}`);
         }
       }
       // Sketch modes (Tier B/C)
@@ -324,17 +339,27 @@ async function main(): Promise<void> {
         try {
           await renderSketch(browser, port, sketch);
         } catch (err) {
-          console.error(`  ✗ ${sketch} failed:`, err instanceof Error ? err.message : err);
+          const msg = err instanceof Error ? err.message : String(err);
+          console.error(`  ✗ ${sketch} failed:`, msg);
+          failures.push(`${sketch}: ${msg}`);
         }
       }
       // Tier A before/after demo pairs (unless skipped)
       if (!sketchOnly && !skipTierADemo) {
-        await renderTierADemo(browser, port, tempScenePath);
+        try {
+          await renderTierADemo(browser, port, tempScenePath);
+        } catch (err) {
+          failures.push(`tier-a-demo: ${err instanceof Error ? err.message : String(err)}`);
+        }
       }
     }
     const totalMin = ((Date.now() - t0) / 60000).toFixed(1);
-    console.log(`\nAll done in ${totalMin} min.`);
-    console.log(`Gallery: ${path.relative(PROJECT_ROOT, OUT_DIR)}/`);
+    console.log(`\nDone in ${totalMin} min. Gallery: ${path.relative(PROJECT_ROOT, OUT_DIR)}/`);
+    if (failures.length > 0) {
+      console.error(`\n${failures.length} render(s) failed:`);
+      for (const f of failures) console.error(`  - ${f}`);
+      process.exitCode = 1;
+    }
   } finally {
     await browser?.close().catch(() => {});
     await killVite(viteProc);

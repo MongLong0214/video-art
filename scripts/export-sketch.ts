@@ -16,10 +16,36 @@ function parseArg(argv: string[], flag: string, fallback: string): string {
   return fallback;
 }
 
+// --url must be a local dev server. We disable Chromium sandbox so allowing
+// arbitrary origins would give any caller a browser with weakened isolation.
+const DEV_HOST_ALLOWLIST = new Set(["localhost", "127.0.0.1", "::1", "0.0.0.0"]);
+
+function validateDevUrl(url: string): string {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    throw new Error(`--url must be a valid URL, got: ${url}`);
+  }
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    throw new Error(`--url protocol must be http/https, got: ${parsed.protocol}`);
+  }
+  if (!DEV_HOST_ALLOWLIST.has(parsed.hostname)) {
+    throw new Error(
+      `--url host must be local dev (localhost/127.0.0.1), got: ${parsed.hostname}`,
+    );
+  }
+  return url;
+}
+
+// Sketches whose state is not phase-locked to the loop duration.
+// Disclosed in src/sketches/{cellular,particles}.ts headers.
+const NON_LOOPABLE_SKETCHES = new Set(["cellular", "particles"]);
+
 async function main() {
   const args = process.argv.slice(2);
   const sketch = parseArg(args, "--sketch", "psychedelic");
-  const devUrl = parseArg(args, "--url", "http://localhost:5173");
+  const devUrl = validateDevUrl(parseArg(args, "--url", "http://localhost:5173"));
   const cfg = getSketchConfig(sketch);
   const WIDTH = cfg.width;
   const HEIGHT = cfg.height;
@@ -58,7 +84,6 @@ async function main() {
       args: [
         `--window-size=${WIDTH},${HEIGHT}`,
         "--no-sandbox",
-        "--disable-gpu-sandbox",
         "--use-gl=angle",
         "--use-angle=metal",
       ],
@@ -124,7 +149,10 @@ async function main() {
   fs.copyFileSync(fragPath, path.join(ctx.archiveDir, `${sketch}.frag`));
 
   console.log(`\nOutput: ${path.relative(projectRoot, outputPath)}`);
-  console.log(`  ${WIDTH}x${HEIGHT} @ ${FPS}fps, ${LOOP_DUR}s seamless loop`);
+  const loopLabel = NON_LOOPABLE_SKETCHES.has(sketch)
+    ? "non-loopable (stateful simulation — frame[0] ≠ frame[last])"
+    : "seamless loop";
+  console.log(`  ${WIDTH}x${HEIGHT} @ ${FPS}fps, ${LOOP_DUR}s ${loopLabel}`);
 
   // Cleanup _work/ before listing
   ctx.cleanup();

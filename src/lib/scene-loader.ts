@@ -3,7 +3,13 @@ import { sceneSchema, type SceneConfig } from "./scene-schema";
 // Whitelist for ?scene= URLs. Prevents arbitrary-URL fetch DoS surface.
 // Accepts: /scene.json, /presets/*.json (any depth under presets/).
 // Dev-only debug (`/regress-explicit-tier-a-off.json`) also allowed for pixel-regression script.
-const ALLOWED_PREFIXES = ["/scene.json", "/presets/", "/regress-"];
+// `/gallery-temp.json` used by scripts/gallery-render.ts for per-preset rewrites.
+const ALLOWED_PREFIXES = [
+  "/scene.json",
+  "/presets/",
+  "/regress-",
+  "/gallery-temp.json",
+];
 
 function isAllowedSceneUrl(url: string): boolean {
   // Only accept relative, absolute-path URLs. Reject protocol URLs.
