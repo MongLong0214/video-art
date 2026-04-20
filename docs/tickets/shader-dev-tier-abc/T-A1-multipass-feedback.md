@@ -16,7 +16,8 @@ Extend existing `effect-composer.ts` feedback infrastructure with a new `multipa
 - [ ] AC-2: `scene-schema.ts` adds `multipassFeedbackSchema`: `{ strength: 0..0.95 (default 0), warp: 0..1 (default 0.2), decay: 0..1 (default 0.9), hueShift: 0..1 (default 0) }` with defaults → backward compat
 - [ ] AC-3: Uniform `uFeedbackStrength=0` produces **pixel-identical** output to pre-T-A1 (verified by `pixel-regression` in T-A3)
 - [ ] AC-4: Uniform `uFeedbackStrength=0.7, warp=0.3` produces visible swirling trail over successive frames (visual check)
-- [ ] AC-5: Shares `feedbackTarget` with existing trails pass (no new WebGLRenderTarget allocation)
+- [ ] AC-5: Shares `feedbackTarget` with existing trails pass (**no new WebGLRenderTarget allocation** — verified by regex test on effect-composer.ts: count of `new THREE.WebGLRenderTarget` must remain 1)
+- [ ] AC-5a: **Cleanup test** — extend existing dispose hook at effect-composer.ts:482 still fires on unmount (no additional dispose calls needed since target is shared)
 - [ ] AC-6: `npm run check:shaders` PASS after edit
 - [ ] AC-7: Existing 16 presets (3 killer + 13 solo) continue to load + parse (schema backward-compat verified)
 
@@ -82,6 +83,8 @@ Extend existing `effect-composer.ts` feedback infrastructure with a new `multipa
 ## 6. Review Checklist
 - [ ] Red/Green/Refactor cycle complete
 - [ ] `npm run check:shaders` PASS (new composer + shader)
+- [ ] **File size**: `effect-composer.ts` ≤ 800 LOC after Tier A1 (current 490 + ~50-80 new = ≤ 570)
+- [ ] Regex test: `grep -c "new THREE.WebGLRenderTarget" src/lib/effect-composer.ts` == 1 (feedbackTarget reuse)
 - [ ] 16 existing presets parse under v3 schema
 - [ ] Manual: `?scene=/presets/solo/T13-baseline.json` unchanged with strength=0
 - [ ] Manual: override strength=0.7 → swirling trail visible

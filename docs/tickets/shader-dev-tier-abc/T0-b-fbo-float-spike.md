@@ -56,7 +56,8 @@ Validate that Puppeteer + ANGLE (used in gallery render) supports `THREE.FloatTy
 5. Output JSON to stdout; write result file
 
 ### 4.3 Refactor Phase
-- Extract `runInPuppeteerPage` helper (shared with shader-compile-check)
+- **Consume** `scripts/lib/headless-browser.ts` created in T0-a. Do NOT duplicate puppeteer.launch or vite boot logic
+- If T0-a headless-browser.ts not yet merged (out-of-order session), wait for T0-a (dep)
 
 ## 5. Edge Cases
 - EC-1: ANGLE reports float support but readback returns NaN → mark unsupported

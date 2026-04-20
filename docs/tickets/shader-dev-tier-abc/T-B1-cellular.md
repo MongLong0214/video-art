@@ -16,7 +16,8 @@ Implement a standalone sketch mode `?sketch=cellular` that runs Gray-Scott react
 - [ ] AC-2: `src/lib/sketch-registry.ts` registers `cellular` with `width: 720, height: 1280, fps: 60, postProcessing: "default"`
 - [ ] AC-3: `?sketch=cellular` loads → 60fps RD simulation on 512×512 grid (internal) → output 720×1280
 - [ ] AC-4: Ping-pong implementation: two `WebGLRenderTarget({ type: HalfFloatType })` alternating read/write each frame
-- [ ] AC-5: Uniforms: `uFeed=0.0367, uKill=0.0649, uDiffA=1.0, uDiffB=0.5, uTime` (stable RD params)
+- [ ] AC-5: Uniforms: `uFeed=0.0367, uKill=0.0649, uDiffA=1.0, uDiffB=0.5, uTime` (stable RD params per **Pearson 1993** "Complex patterns in a simple system" — classic coral/spot regime)
+- [ ] AC-5a: **Stability validation**: After 500 simulation steps (8.3s @ 60fps), min/max value of state texture stays within [0.0, 1.0] (no divergence). Verify via spike: run sim 500 steps, readback, assert bounds. Document in `T-B1-stability-result.md`.
 - [ ] AC-6: Visualization pass: final state → hue-mapped output (use uPaletteA-D from Tier 1 T5 if reusable, or simpler colormap)
 - [ ] AC-7: `npm run check:shaders` PASS for `?sketch=cellular`
 - [ ] AC-8: Loops seamlessly at loopDuration=5s via time-modulated feed rate OR accepts non-looping nature and documents

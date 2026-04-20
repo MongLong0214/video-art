@@ -3,7 +3,7 @@
 **PRD**: `docs/prd/PRD-shader-dev-tier-abc.md` (v0.3)
 **Branch**: `experiment/shader-dev-maximal`
 **Size**: XL
-**Current Phase**: 3 (Ticket Authoring — PRD Approved)
+**Current Phase**: 5 (TDD Development — Session 1 starting)
 
 ## Session Plan (Independent Sessions)
 
@@ -51,6 +51,8 @@ Sessions 2 onwards have NO inter-dependencies (Tier B/C sketches are independent
 |-------|-------|---------|----|----|----|----|
 | 2 | 1 | HAS ISSUE | 2 | 4 | 1 | Boomer: composer integration, mandatory compile test, STATUS.md absent, perf, float FBO, gallery scope, fractal structure |
 | 2 | 2 | PROCEED_WITH_CAUTION | 0 | 4 | 0 | PRD v0.3 spec ALL PASS. 4 new implementation-scope notes (N1-N4) absorbed into tickets: schema edits → T-A1/A2 (not separate), pixel-regression → T0-a + T-A3, gallery ?sketch= routing → T-F2. No P0s. P1s addressed by ticket scoping. **CONVERGED** |
+| 4 | 1 | HAS ISSUE | 0 | 4 | 3 | Boomer: helper ownership, iteration caps, feedbackTarget lifetime, file size cap absent, Gray-Scott source, T-F2 artifact count, T-F1 time est, T-F3 AC layout |
+| 4 | 2 | ALL PASS | 0 | 0 | 1 | Fixes: T0-a claims helper ownership; T0-b consumes. T-B1 adds AC-5a stability. T-A1 adds AC-5a cleanup regex + 800 LOC cap. T-A2 adds schema cap. T-F1/F2 clarifications. T-F3 P3 minor accepted. **CONVERGED** |
 
 ## Artifacts
 

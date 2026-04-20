@@ -40,6 +40,7 @@ Implement `?sketch=particles` — 65,536 GPU particles (256×256 position FBO) f
 | `src/shaders/sketches/particles-sim.frag` | Create (position update) |
 | `src/shaders/sketches/particles-sim.vert` | Create (fullscreen quad) |
 | `src/sketches/particles.ts` | Create (THREE orchestration) |
+| `src/main.ts` | Modify (add `particles` branch in `loadSketch()` like T-B1 cellular pattern) |
 | `src/lib/sketch-registry.ts` | Modify |
 | `src/shaders/sketches/particles.test.ts` | Create |
 

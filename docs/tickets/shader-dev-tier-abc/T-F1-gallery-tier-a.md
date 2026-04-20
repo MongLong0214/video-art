@@ -2,7 +2,7 @@
 
 **PRD Ref**: PRD-shader-dev-tier-abc > US-4 (AC-4.1a, AC-4.2)
 **Priority**: P2
-**Size**: S (< 2h)
+**Size**: S (< 2h — includes ~3-5 min actual render runtime: 17 mp4 × ~8s capture + encode = ~2.3min. CLI branch logic = main dev work)
 **Status**: Todo
 **Depends On**: T-A1, T-A2, T-A3
 

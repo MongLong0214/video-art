@@ -40,7 +40,7 @@ Implement `?sketch=volumetric` sketch — a ray-marched volumetric fog/cloud sce
 | `src/shaders/sketches/volumetric.frag` | Create |
 | `src/shaders/sketches/volumetric.test.ts` | Create (regex tests) |
 | `src/lib/sketch-registry.ts` | Add volumetric entry |
-| `src/main.ts` | Already supports sketches via glob (no change if pattern maintained) |
+| `src/main.ts` | **Verify** glob auto-pickup works for fullscreen shader sketches (no FBO). If `createShaderSketch(name)` covers volumetric, no main.ts change. Otherwise add branch. |
 
 ### 4.2 Implementation Steps (Green Phase)
 1. Red tests

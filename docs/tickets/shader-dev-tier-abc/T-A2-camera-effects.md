@@ -87,6 +87,8 @@ Add `lensDistortionPass` as a new ShaderPass to `effect-composer.ts` covering **
 ## 6. Review Checklist
 - [ ] Red/Green/Refactor
 - [ ] `check:shaders` PASS
+- [ ] **File size**: `effect-composer.ts` ≤ 800 LOC after T-A1+T-A2 (est. ≤ 650)
+- [ ] **Schema size**: `scene-schema.ts` ≤ 400 LOC after Tier A (current ~270 + 2 schemas)
 - [ ] Manual: barrel=0.3 visible pincushion. barrel=-0.3 visible barrel
 - [ ] chromatic=1.5 visible RGB separation
 - [ ] All defaults → no visual change on 16 presets

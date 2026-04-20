@@ -13,7 +13,7 @@ Extend `gallery-render.ts` to handle sketch modes (cellular, volumetric, particl
 
 ## 2. Acceptance Criteria
 - [ ] AC-1: `gallery-render.ts` branches on "sketch" vs "preset" inputs: if preset `.json` → existing layered flow; if sketch name → `?sketch=` URL + sketch-registry duration/fps lookup
-- [ ] AC-2: 4 신규 mp4 생성: `cellular.mp4`, `volumetric.mp4`, `particles.mp4`, `fractal-cave.mp4`
+- [ ] AC-2: **정확히 4 신규 mp4 생성** (sketch 당 1개): `cellular.mp4`, `volumetric.mp4`, `particles.mp4`, `fractal-cave.mp4`. **scene.json 불필요** — 스케치 모드는 주소 파라미터 `?sketch=`만 사용 (sketch-registry가 fps/duration 제공). Tier B/C 스케치는 scene preset 개념 없음.
 - [ ] AC-3: 각 sketch 720×1280 9:16 5s @ 30fps (or sketch-registry fps if different, documented)
 - [ ] AC-4: 총 갤러리 mp4 ≥21 (T-F1의 17 + T-F2의 4)
 - [ ] AC-5: `scripts/gallery-render.ts` refactored — `renderLayeredPreset(name)` + `renderSketch(name)` 분리 함수

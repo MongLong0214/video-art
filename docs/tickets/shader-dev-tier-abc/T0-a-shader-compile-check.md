@@ -62,8 +62,14 @@ Tier 1 hit `'program not valid'` runtime errors that regex tests missed. This sc
 8. Add `check:shaders` npm script
 9. Verify: `npm run check:shaders` on current branch (layered/psychedelic modes only) passes — Tier B/C sketches don't exist yet, filter or skip gracefully
 
-### 4.3 Refactor Phase
-- Extract vite-boot + puppeteer-init helpers to `scripts/lib/headless-browser.ts` (shared with gallery-render.ts)
+### 4.3 Refactor Phase (**Helper Ownership: T0-a OWNS**)
+- **T0-a creates** `scripts/lib/headless-browser.ts` exporting:
+  - `startViteServer(port): ChildProcess`
+  - `waitForVite(port): Promise<void>`
+  - `launchHeadlessBrowser(): Promise<Browser>` (puppeteer with ANGLE flags)
+  - `runInPuppeteerPage(url: string, fn: (page) => Promise<T>): Promise<T>` (page create + navigate + fn + cleanup)
+- **T0-b (downstream), gallery-render.ts (existing), pixel-regression.ts (T-A3) all consume** this helper — must NOT duplicate vite/puppeteer boot logic
+- Verify via T-F3 audit: only `scripts/lib/headless-browser.ts` contains `puppeteer.launch`
 
 ## 5. Edge Cases
 - EC-1: Vite server fails to start → exit 1 with clear message (not hang)
