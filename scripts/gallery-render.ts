@@ -131,13 +131,58 @@ async function renderPreset(
   }
 }
 
+const SKETCH_NAMES = ["volumetric", "cellular", "particles", "fractal-cave"];
+
+async function renderSketch(
+  browser: Browser,
+  port: number,
+  sketch: string,
+): Promise<void> {
+  const outMp4 = path.join(OUT_DIR, `sketch-${sketch}.mp4`);
+  const framesDir = path.join(OUT_DIR, `.frames-sketch-${sketch}`);
+  fs.mkdirSync(framesDir, { recursive: true });
+
+  const page = await browser.newPage();
+  try {
+    await page.setViewport({ width: GALLERY_WIDTH, height: GALLERY_HEIGHT });
+    await page.goto(
+      `http://localhost:${port}/?sketch=${sketch}`,
+      { waitUntil: "networkidle0" },
+    );
+    await page.waitForFunction("window.__captureReady === true", { timeout: 15000 });
+    await page.evaluate(`window.__startCapture(${GALLERY_FPS})`);
+
+    const t0 = Date.now();
+    for (let i = 0; i < TOTAL_FRAMES; i++) {
+      const dataUrl = (await page.evaluate("window.__captureFrame()")) as string;
+      const buf = Buffer.from(dataUrl.replace(/^data:image\/png;base64,/, ""), "base64");
+      fs.writeFileSync(
+        path.join(framesDir, `frame_${String(i).padStart(5, "0")}.png`),
+        buf,
+      );
+    }
+    const dtCapture = ((Date.now() - t0) / 1000).toFixed(1);
+
+    const tEnc = Date.now();
+    await encodeMp4(framesDir, outMp4);
+    const dtEncode = ((Date.now() - tEnc) / 1000).toFixed(1);
+
+    const sizeKB = (fs.statSync(outMp4).size / 1024).toFixed(0);
+    console.log(`  ✓ sketch-${sketch}.mp4 — ${sizeKB}KB (capture ${dtCapture}s + encode ${dtEncode}s)`);
+  } finally {
+    await page.close();
+    fs.rmSync(framesDir, { recursive: true, force: true });
+  }
+}
+
 async function main(): Promise<void> {
-  const presets = fs
+  const sketchOnly = process.argv.includes("--sketches-only");
+  const presets = sketchOnly ? [] : fs
     .readdirSync(PRESET_DIR)
     .filter((f) => f.endsWith(".json"))
     .sort();
 
-  console.log(`shader-dev gallery render: ${presets.length} presets`);
+  console.log(`shader-dev gallery render: ${presets.length} presets + ${SKETCH_NAMES.length} sketches`);
   console.log(`Resolution: ${GALLERY_WIDTH}x${GALLERY_HEIGHT}, ${GALLERY_DURATION}s @ ${GALLERY_FPS}fps`);
   console.log(`Output: ${path.relative(PROJECT_ROOT, OUT_DIR)}/\n`);
 
@@ -163,13 +208,24 @@ async function main(): Promise<void> {
     });
 
     const t0 = Date.now();
+    // Layered presets
     for (let i = 0; i < presets.length; i++) {
       const preset = presets[i];
-      console.log(`[${i + 1}/${presets.length}] ${preset}`);
+      console.log(`[layered ${i + 1}/${presets.length}] ${preset}`);
       try {
         await renderPreset(browser, port, preset, tempScenePath);
       } catch (err) {
         console.error(`  ✗ ${preset} failed:`, err instanceof Error ? err.message : err);
+      }
+    }
+    // Sketch modes (Tier B/C)
+    for (let i = 0; i < SKETCH_NAMES.length; i++) {
+      const sketch = SKETCH_NAMES[i];
+      console.log(`[sketch ${i + 1}/${SKETCH_NAMES.length}] ${sketch}`);
+      try {
+        await renderSketch(browser, port, sketch);
+      } catch (err) {
+        console.error(`  ✗ sketch-${sketch} failed:`, err instanceof Error ? err.message : err);
       }
     }
     const totalMin = ((Date.now() - t0) / 60000).toFixed(1);

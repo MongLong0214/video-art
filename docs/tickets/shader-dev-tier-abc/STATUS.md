@@ -39,8 +39,8 @@ Sessions 2 onwards have NO inter-dependencies (Tier B/C sketches are independent
 | T-C1 | Fractal cave base (primitives + raymarch + normal) | Done | M | T0-a | 3 | PASS |
 | T-C2 | Fractal cave lighting (Phong + shadow + AO) | Done | M | T-C1 | 3 | PASS |
 | T-C3 | Fractal cave polish (sdf-tricks + CSG + morph) | Done | M | T-C2 | 3 | PASS |
-| T-F1 | Gallery render update (Tier A, existing 13) | Todo | S | T-A1..A3 | 4 | - |
-| T-F2 | Gallery render sketches (Tier B/C, new 4) + **`?sketch=` URL routing** | Todo | S | T-B1..B3, T-C3 | 4 | - |
+| T-F1 | Gallery render update (Tier A, existing 13) | Done | S | T-A1..A3 | 4 | PASS |
+| T-F2 | Gallery render sketches (Tier B/C, new 4) + **`?sketch=` URL routing** | Done | S | T-B1..B3, T-C3 | 4 | PASS |
 | T-F3 | Shader-dev manual docs + final review prep | Todo | S | All above | 4 | - |
 
 **Total: 13 tickets** (2 infra + 3 A + 3 B + 3 C + 3 finalization)
