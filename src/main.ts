@@ -55,6 +55,9 @@ renderer.toneMapping = IS_LAYERED ? THREE.ACESFilmicToneMapping : getToneMapping
 renderer.toneMappingExposure = 1.0;
 document.body.appendChild(renderer.domElement);
 
+// Expose renderer for FBO-based sketches (cellular, particles)
+(window as unknown as { __renderer: THREE.WebGLRenderer }).__renderer = renderer;
+
 // --- sketch loading ---
 function createShaderSketch(name: string): Sketch {
   const fragmentShader = getSketchShader(name);
@@ -99,6 +102,14 @@ async function loadSketch(): Promise<Sketch> {
     );
     return createLayeredPsychedelic(SCENE_URL);
   }
+  // Custom sketches with FBO or bespoke logic
+  if (SKETCH_NAME === "cellular") {
+    const { createCellularSketch } = await import("@/sketches/cellular");
+    const s = createCellularSketch();
+    s.resize(WIDTH, HEIGHT);
+    return s;
+  }
+  // Fullscreen fragment-shader sketches (loaded via glob)
   const sketch = createShaderSketch(SKETCH_NAME);
   sketch.resize(WIDTH, HEIGHT);
   return sketch;

@@ -72,6 +72,13 @@ export const SKETCH_REGISTRY: Record<string, SketchConfig> = {
     toneMapping: "none",
     postProcessing: "none",
   },
+  cellular: {
+    name: "cellular",
+    width: 720, height: 1280, fps: 60,
+    loopDuration: 5.0,
+    toneMapping: "none",
+    postProcessing: "none",
+  },
 };
 
 export const DEFAULT_CONFIG: SketchConfig = {
