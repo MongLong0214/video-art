@@ -49,7 +49,7 @@ npm run regress:pixel — SSIM 1.00000 (Tier A backward compat verified)
   - → 7개 shader-dev 기법 동시 구현
 
 ### Session 4 — Finalization (3 티켓)
-- **T-F1+F2**: `scripts/gallery-render.ts` 확장 — sketch URL routing + 17개 mp4 렌더 (13 layered + 4 sketches). 총 2.4분
+- **T-F1+F2**: `scripts/gallery-render.ts` 확장 — sketch URL routing + 21개 mp4 렌더 (13 layered + 4 sketches + 4 Tier A before/after demo). 총 2.4분+
 - **T-F3**: `docs/shader-dev-manual.md` (150+ 라인) — 31 기법 uniform 매트릭스 + URL cheat sheet + CLI 명령어
 
 ## 리뷰 이력
@@ -96,7 +96,7 @@ npm run regress:pixel — SSIM 1.00000 (Tier A backward compat verified)
 - `src/shaders/sketches/fractal-cave.frag` (T-C 7-in-1 bundle)
 
 ### Output
-- `out/shader-gallery/*.mp4` (17 files, 720×1280 9:16, 5s @ 30fps)
+- `out/shader-gallery/*.mp4` (21 files: 13 layered + 4 sketches + 4 Tier A before/after demo pairs, 720×1280 9:16, 5s @ 30fps)
 
 ## 후속 작업 (follow-up, optional)
 

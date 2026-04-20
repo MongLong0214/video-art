@@ -16,9 +16,13 @@ function parseArg(argv: string[], flag: string, fallback: string): string {
   return fallback;
 }
 
-// --url must be a local dev server. We disable Chromium sandbox so allowing
-// arbitrary origins would give any caller a browser with weakened isolation.
-const DEV_HOST_ALLOWLIST = new Set(["localhost", "127.0.0.1", "::1", "0.0.0.0"]);
+// --url must be a local dev server origin. Chromium launches with --no-sandbox
+// (required for WebGL/ANGLE rendering), so we cannot let the caller point this
+// script at an arbitrary URL. Constraints: local host + http(s) + origin-only
+// (no path/query/fragment) + port in common dev-server range.
+const DEV_HOST_ALLOWLIST = new Set(["localhost", "127.0.0.1", "::1"]);
+const MIN_DEV_PORT = 1024;
+const MAX_DEV_PORT = 65535;
 
 function validateDevUrl(url: string): string {
   let parsed: URL;
@@ -35,7 +39,25 @@ function validateDevUrl(url: string): string {
       `--url host must be local dev (localhost/127.0.0.1), got: ${parsed.hostname}`,
     );
   }
-  return url;
+  // Origin-only: reject any path/query/hash so a compromised localhost service
+  // can't be reached via this CLI with a crafted URL.
+  if (parsed.pathname !== "/" && parsed.pathname !== "") {
+    throw new Error(`--url must be origin only (no path), got pathname: ${parsed.pathname}`);
+  }
+  if (parsed.search || parsed.hash) {
+    throw new Error(`--url must not contain query/fragment, got: ${parsed.search}${parsed.hash}`);
+  }
+  if (parsed.username || parsed.password) {
+    throw new Error(`--url must not contain credentials`);
+  }
+  if (parsed.port) {
+    const port = Number(parsed.port);
+    if (!Number.isInteger(port) || port < MIN_DEV_PORT || port > MAX_DEV_PORT) {
+      throw new Error(`--url port must be in [${MIN_DEV_PORT}, ${MAX_DEV_PORT}], got: ${parsed.port}`);
+    }
+  }
+  // Return normalized origin (strips any trailing slash from pathname).
+  return parsed.origin;
 }
 
 // Sketches whose state is not phase-locked to the loop duration.
