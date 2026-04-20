@@ -1,6 +1,15 @@
 #extension GL_OES_standard_derivatives : enable
 precision highp float;
 
+// AUDIT (shader-dev T13) — WebGL pitfalls addressed:
+//   1. #extension declared BEFORE precision (driver-strict order)
+//   2. All helper fns declared before use (hash12 -> voronoi/worley, fbm -> noise flow)
+//   3. Julia loop has bounded break condition (dot(z,z)>4) — no unbounded iteration
+//   4. Divisions guarded with max(x, 1e-4) on period/scale uniforms
+//   5. sin/cos only in hot path when feature enabled (uniform > threshold branch-gate)
+//   6. hash12 uses fract chain (no sin, more stable across drivers)
+//   7. Dynamic loop in voronoi/worley are small (3x3 fixed), const-bounded
+
 uniform sampler2D uTexture;
 uniform float uTime;
 uniform float uOpacity;
