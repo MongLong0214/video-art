@@ -117,6 +117,14 @@ describe("layer.frag — shader-dev T5: IQ cosine palette", () => {
   });
 });
 
+describe("layer.frag — shader-dev T6: procedural 2D pattern", () => {
+  it("declares uPatternType/Scale/Amount uniforms", () => {
+    expect(fragSrc).toMatch(/uniform\s+(int|float)\s+uPatternType/);
+    expect(fragSrc).toMatch(/uniform\s+float\s+uPatternScale/);
+    expect(fragSrc).toMatch(/uniform\s+float\s+uPatternAmount/);
+  });
+});
+
 describe("haze math (JS port)", () => {
   it("hazeIntensity=0 any depthNorm → satFactor=1.0", () => {
     for (const dn of [0, 0.5, 1]) {

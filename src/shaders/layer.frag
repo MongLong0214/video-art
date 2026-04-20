@@ -57,6 +57,11 @@ uniform float uPolarTwist;
 uniform float uVoronoiScale;
 uniform float uVoronoiAmount;
 
+// Procedural 2D patterns (shader-dev T6) — 0=off 1=check 2=stripe 3=dot
+uniform float uPatternType;
+uniform float uPatternScale;
+uniform float uPatternAmount;
+
 // IQ cosine palette — a + b*cos(TAU*(c*t+d)) (shader-dev T5)
 uniform float uPaletteAmount;
 uniform vec3 uPaletteA;
@@ -250,6 +255,25 @@ void main() {
   if (uPaletteAmount > 0.001) {
     vec3 pal = palette(fract(hueShift));
     rgb = mix(rgb, pal * originalVal, uPaletteAmount);
+  }
+
+  // Procedural 2D pattern overlay (shader-dev T6)
+  if (uPatternAmount > 0.001 && uPatternType > 0.5) {
+    vec2 pg = vUv * uPatternScale;
+    float pat = 0.0;
+    if (uPatternType < 1.5) {
+      // Checkerboard
+      vec2 c = floor(pg);
+      pat = mod(c.x + c.y, 2.0);
+    } else if (uPatternType < 2.5) {
+      // Stripe
+      pat = step(0.5, fract(pg.x));
+    } else {
+      // Dot grid
+      vec2 c = fract(pg) - 0.5;
+      pat = 1.0 - smoothstep(0.2, 0.35, length(c));
+    }
+    rgb = mix(rgb, rgb * (0.5 + 0.5 * pat), uPatternAmount);
   }
 
   // Voronoi cell overlay — crystalline additive highlights (shader-dev T4)
