@@ -170,6 +170,16 @@ describe("layer.frag — shader-dev T10: anti-aliasing (fwidth)", () => {
   });
 });
 
+describe("layer.frag — shader-dev T11: bicubic texture sampling", () => {
+  it("declares uBicubicFilter uniform", () => {
+    expect(fragSrc).toMatch(/uniform\s+float\s+uBicubicFilter/);
+  });
+
+  it("defines sampleBicubic function", () => {
+    expect(fragSrc).toMatch(/vec4\s+sampleBicubic\s*\(/);
+  });
+});
+
 describe("haze math (JS port)", () => {
   it("hazeIntensity=0 any depthNorm → satFactor=1.0", () => {
     for (const dn of [0, 0.5, 1]) {

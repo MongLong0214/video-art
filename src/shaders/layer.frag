@@ -76,6 +76,10 @@ uniform vec2 uJuliaC;
 uniform float uRotateSpeed;
 uniform float uScalePulse;
 
+// Bicubic texture sampling toggle (shader-dev T11)
+uniform float uBicubicFilter;
+uniform vec2 uTextureSize;
+
 // IQ cosine palette — a + b*cos(TAU*(c*t+d)) (shader-dev T5)
 uniform float uPaletteAmount;
 uniform vec3 uPaletteA;
@@ -125,6 +129,36 @@ float snoise(vec2 v) {
   g.x = a0.x * x0.x + h.x * x0.y;
   g.yz = a0.yz * x12.xz + h.yz * x12.yw;
   return 130.0 * dot(m, g);
+}
+
+// B-spline bicubic sampling via 4 bilinear taps (shader-dev T11)
+vec4 cubic(float v) {
+  vec4 n = vec4(1.0, 2.0, 3.0, 4.0) - v;
+  vec4 s = n * n * n;
+  float x = s.x;
+  float y = s.y - 4.0 * s.x;
+  float z = s.z - 4.0 * s.y + 6.0 * s.x;
+  float w = 6.0 - x - y - z;
+  return vec4(x, y, z, w) * (1.0 / 6.0);
+}
+vec4 sampleBicubic(sampler2D tex, vec2 uv, vec2 texSize) {
+  vec2 invTex = 1.0 / texSize;
+  uv = uv * texSize - 0.5;
+  vec2 fuv = fract(uv);
+  uv = floor(uv);
+  vec4 xc = cubic(fuv.x);
+  vec4 yc = cubic(fuv.y);
+  vec4 c = uv.xxyy + vec2(-0.5, 1.5).xyxy;
+  vec4 s = vec4(xc.x + xc.y, xc.z + xc.w, yc.x + yc.y, yc.z + yc.w);
+  vec4 o = c + vec4(xc.y, xc.w, yc.y, yc.w) / s;
+  o *= invTex.xxyy;
+  vec4 s0 = texture2D(tex, vec2(o.x, o.z));
+  vec4 s1 = texture2D(tex, vec2(o.y, o.z));
+  vec4 s2 = texture2D(tex, vec2(o.x, o.w));
+  vec4 s3 = texture2D(tex, vec2(o.y, o.w));
+  float sx = s.x / (s.x + s.y);
+  float sy = s.z / (s.z + s.w);
+  return mix(mix(s3, s2, sx), mix(s1, s0, sx), sy);
 }
 
 // SDF 2D shapes (shader-dev T7) — https://iquilezles.org/articles/distfunctions2d/
@@ -230,7 +264,9 @@ void main() {
     breathUv += normalize(fromCenter + 1e-6) * breathWave * dist;
   }
 
-  vec4 texColor = texture2D(uTexture, breathUv);
+  vec4 texColor = uBicubicFilter > 0.5
+    ? sampleBicubic(uTexture, breathUv, uTextureSize)
+    : texture2D(uTexture, breathUv);
 
   // --- Fresnel rim: sample alpha neighbors BEFORE alpha-discard so edges glow ---
   float rimFactor = 0.0;

@@ -87,6 +87,7 @@ const animationSchema = z.object({
   juliaC: z.tuple([z.number(), z.number()]).default([-0.7, 0.27015]),
   rotateSpeed: z.number().min(-5).max(5).default(0),
   scalePulse: z.number().min(0).max(0.5).default(0),
+  bicubicFilter: z.boolean().default(false),
   rimIntensity: z.number().min(0).max(2).default(0),
   rimHueShift: z.number().min(-2).max(2).default(0.1),
   rimWidth: z.number().min(0).max(0.05).default(0.004),

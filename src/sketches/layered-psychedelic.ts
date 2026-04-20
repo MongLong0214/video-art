@@ -91,6 +91,13 @@ export async function createLayeredPsychedelic(
         uJuliaC: { value: new THREE.Vector2(...(anim.juliaC ?? [-0.7, 0.27015])) },
         uRotateSpeed: { value: anim.rotateSpeed ?? 0 },
         uScalePulse: { value: anim.scalePulse ?? 0 },
+        uBicubicFilter: { value: anim.bicubicFilter ? 1 : 0 },
+        uTextureSize: {
+          value: new THREE.Vector2(
+            texture.image?.width ?? 1024,
+            texture.image?.height ?? 1024,
+          ),
+        },
         uRimIntensity: { value: anim.rimIntensity ?? 0 },
         uRimHueShift: { value: anim.rimHueShift ?? 0.1 },
         uRimWidth: { value: anim.rimWidth ?? 0.004 },
