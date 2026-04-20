@@ -62,6 +62,11 @@ uniform float uPatternType;
 uniform float uPatternScale;
 uniform float uPatternAmount;
 
+// SDF 2D overlay (shader-dev T7) — 0=off 1=circle 2=star 3=hexagon
+uniform float uSDFType;
+uniform float uSDFScale;
+uniform float uSDFAmount;
+
 // IQ cosine palette — a + b*cos(TAU*(c*t+d)) (shader-dev T5)
 uniform float uPaletteAmount;
 uniform vec3 uPaletteA;
@@ -111,6 +116,27 @@ float snoise(vec2 v) {
   g.x = a0.x * x0.x + h.x * x0.y;
   g.yz = a0.yz * x12.xz + h.yz * x12.yw;
   return 130.0 * dot(m, g);
+}
+
+// SDF 2D shapes (shader-dev T7) — https://iquilezles.org/articles/distfunctions2d/
+float sdCircle(vec2 p, float r) { return length(p) - r; }
+float sdStar(vec2 p, float r, float n) {
+  float an = PI / n;
+  float en = PI / max(n - 2.0, 2.0);
+  vec2 acs = vec2(cos(an), sin(an));
+  vec2 ecs = vec2(cos(en), sin(en));
+  float bn = mod(atan(p.x, p.y), 2.0 * an) - an;
+  p = length(p) * vec2(cos(bn), abs(sin(bn)));
+  p -= r * acs;
+  p += ecs * clamp(-dot(p, ecs), 0.0, r * acs.y / ecs.y);
+  return length(p) * sign(p.x);
+}
+float sdHexagon(vec2 p, float r) {
+  const vec3 k = vec3(-0.866025404, 0.5, 0.577350269);
+  p = abs(p);
+  p -= 2.0 * min(dot(k.xy, p), 0.0) * k.xy;
+  p -= vec2(clamp(p.x, -k.z * r, k.z * r), r);
+  return length(p) * sign(p.y);
 }
 
 // Voronoi cellular noise — returns min distance to feature point (shader-dev T4)
@@ -255,6 +281,17 @@ void main() {
   if (uPaletteAmount > 0.001) {
     vec3 pal = palette(fract(hueShift));
     rgb = mix(rgb, pal * originalVal, uPaletteAmount);
+  }
+
+  // SDF 2D overlay (shader-dev T7)
+  if (uSDFAmount > 0.001 && uSDFType > 0.5) {
+    vec2 sp = (vUv - 0.5) * uSDFScale;
+    float d = 1.0;
+    if (uSDFType < 1.5)      d = sdCircle(sp, 0.4);
+    else if (uSDFType < 2.5) d = sdStar(sp, 0.5, 5.0);
+    else                     d = sdHexagon(sp, 0.4);
+    float edge = 1.0 - smoothstep(0.0, 0.05, abs(d));
+    rgb = mix(rgb, rgb + vec3(1.0, 0.8, 0.4) * edge, uSDFAmount);
   }
 
   // Procedural 2D pattern overlay (shader-dev T6)

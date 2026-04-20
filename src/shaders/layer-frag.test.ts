@@ -125,6 +125,18 @@ describe("layer.frag — shader-dev T6: procedural 2D pattern", () => {
   });
 });
 
+describe("layer.frag — shader-dev T7: SDF-2D overlay", () => {
+  it("declares uSDFType/Scale/Amount uniforms", () => {
+    expect(fragSrc).toMatch(/uniform\s+float\s+uSDFType/);
+    expect(fragSrc).toMatch(/uniform\s+float\s+uSDFScale/);
+    expect(fragSrc).toMatch(/uniform\s+float\s+uSDFAmount/);
+  });
+
+  it("defines sdStar function", () => {
+    expect(fragSrc).toMatch(/float\s+sdStar\s*\(/);
+  });
+});
+
 describe("haze math (JS port)", () => {
   it("hazeIntensity=0 any depthNorm → satFactor=1.0", () => {
     for (const dn of [0, 0.5, 1]) {
