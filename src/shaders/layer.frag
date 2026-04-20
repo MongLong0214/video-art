@@ -1,8 +1,7 @@
-#extension GL_OES_standard_derivatives : enable
 precision highp float;
 
 // AUDIT (shader-dev T13) — WebGL pitfalls addressed:
-//   1. #extension declared BEFORE precision (driver-strict order)
+//   1. Three.js r172 uses WebGL2 (GLSL 300 ES) — fwidth built-in, no extension needed
 //   2. All helper fns declared before use (hash12 -> voronoi/worley, fbm -> noise flow)
 //   3. Julia loop has bounded break condition (dot(z,z)>4) — no unbounded iteration
 //   4. Divisions guarded with max(x, 1e-4) on period/scale uniforms
@@ -142,6 +141,13 @@ float snoise(vec2 v) {
   g.x = a0.x * x0.x + h.x * x0.y;
   g.yz = a0.yz * x12.xz + h.yz * x12.yw;
   return 130.0 * dot(m, g);
+}
+
+// Per-pixel hash12 (used by voronoi/worley) — sin-free for GPU stability
+float hash12(vec2 p) {
+  vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+  p3 += dot(p3, p3.yzx + 33.33);
+  return fract((p3.x + p3.y) * p3.z);
 }
 
 // B-spline bicubic sampling via 4 bilinear taps (shader-dev T11)
