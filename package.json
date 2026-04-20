@@ -18,6 +18,8 @@
     "preset:save": "tsx scripts/preset-save.ts",
     "preset:list": "tsx scripts/preset-list.ts",
     "analyze:track": "tsx scripts/analyze-track.ts",
+    "check:shaders": "tsx scripts/shader-compile-check.ts",
+    "regress:pixel": "tsx scripts/pixel-regression.ts",
     "acid": "tsx scripts/acid-reinterpreter.ts",
     "publish": "tsx scripts/publish.ts"
   },

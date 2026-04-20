@@ -28,7 +28,7 @@ Sessions 2 onwards have NO inter-dependencies (Tier B/C sketches are independent
 
 | Ticket | Title | Status | Size | Depends | Session | Review |
 |--------|-------|--------|------|---------|---------|--------|
-| T0-a | Shader compile check script + **pixel-regression stub** | Todo | S | None | 1 | - |
+| T0-a | Shader compile check script + **pixel-regression stub** | Done | S | None | 1 | PASS |
 | T0-b | FBO float texture spike | Todo | S | None | 1 or 2 | - |
 | T-A1 | Multipass feedback (warp + decay) + **scene-schema: multipassFeedbackSchema** | Todo | M | T0-a | 1 | - |
 | T-A2 | Camera effects (lens/barrel/fisheye/DoF) + **scene-schema: lensDistortionSchema** | Todo | M | T0-a | 1 | - |
