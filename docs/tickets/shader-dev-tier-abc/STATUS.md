@@ -32,7 +32,7 @@ Sessions 2 onwards have NO inter-dependencies (Tier B/C sketches are independent
 | T0-b | FBO float texture spike | Done | S | None | 1 | PASS (floatErr=3.2e-8) |
 | T-A1 | Multipass feedback (warp + decay) + **scene-schema: multipassFeedbackSchema** | Done | M | T0-a | 1 | PASS |
 | T-A2 | Camera effects (lens/barrel/fisheye/DoF) + **scene-schema: lensDistortionSchema** | Done | M | T0-a | 1 | PASS |
-| T-A3 | Post-processing chain (bloom/tone-map improvements) + **pixel-regression impl** (Tier A before/after) | Todo | S | T-A1, T-A2 | 1 | - |
+| T-A3 | Post-processing chain (bloom/tone-map improvements) + **pixel-regression impl** (Tier A before/after) | Done | S | T-A1, T-A2 | 1 | PASS SSIM=1.0 |
 | T-B1 | Cellular automata sketch (Gray-Scott RD) | Todo | L | T0-b | 2 | - |
 | T-B2 | Volumetric sketch (raymarch fog) | Todo | L | T0-a | 2 | - |
 | T-B3 | Particles sketch (GPU particles flow field) | Todo | L | T0-b | 2 | - |
