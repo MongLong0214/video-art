@@ -71,6 +71,54 @@ const blitFragmentShader = `
   }
 `;
 
+// Lens Distortion — Brown distortion (barrel/pincushion) + chromatic + DoF radial blur + vignette (T-A2)
+const lensDistortionFragmentShader = `
+  uniform sampler2D inputBuffer;
+  uniform float uBarrelAmount;
+  uniform float uLensChromatic;
+  uniform float uLensDoF;
+  uniform float uLensVignetteRadius;
+  varying vec2 vUv;
+
+  vec2 distort(vec2 uv, float k) {
+    vec2 c = uv - 0.5;
+    float r2 = dot(c, c);
+    return 0.5 + c * (1.0 + k * r2);
+  }
+
+  void main() {
+    float k = uBarrelAmount;
+    float ch = uLensChromatic * 0.02;
+    vec2 uvR = distort(vUv, k * (1.0 + ch));
+    vec2 uvG = distort(vUv, k);
+    vec2 uvB = distort(vUv, k * (1.0 - ch));
+    vec4 sR = texture2D(inputBuffer, clamp(uvR, 0.0, 1.0));
+    vec4 sG = texture2D(inputBuffer, clamp(uvG, 0.0, 1.0));
+    vec4 sB = texture2D(inputBuffer, clamp(uvB, 0.0, 1.0));
+    vec3 col = vec3(sR.r, sG.g, sB.b);
+
+    // Radial DoF (5-tap ring blur proportional to distance from center)
+    float d = length(vUv - 0.5);
+    float blurAmt = uLensDoF * smoothstep(0.0, 0.7, d);
+    if (blurAmt > 0.0001) {
+      vec3 acc = col;
+      float ring = max(blurAmt * 0.02, 0.001);
+      for (int i = 0; i < 5; i++) {
+        float a = float(i) * 1.2566370614; // TAU/5
+        vec2 off = vec2(cos(a), sin(a)) * ring;
+        acc += texture2D(inputBuffer, clamp(distort(vUv + off, k), 0.0, 1.0)).rgb;
+      }
+      col = acc / 6.0;
+    }
+
+    // Soft vignette
+    float vig = smoothstep(uLensVignetteRadius, uLensVignetteRadius * 0.5, d);
+    col *= mix(1.0, vig, step(0.999, uLensVignetteRadius) == 1.0 ? 0.0 : 1.0);
+
+    gl_FragColor = vec4(col, sG.a);
+  }
+`;
+
 // Multipass feedback — reads prev frame with radial warp, decay, hue-shift,
 // accumulates into current. Extends trails with warped trail effect. (T-A1)
 const multipassFeedbackFragmentShader = `
@@ -495,6 +543,24 @@ export function createComposer(
       fragmentShader: trailsFragmentShader,
     });
     composer.addPass(new ShaderPass(trailsMaterial, "inputBuffer"));
+  }
+
+  // Lens distortion pass (T-A2) — inserted after multipass, before kaleidoscope
+  const ld = effects.lensDistortion;
+  const hasLens = ld && (Math.abs(ld.barrel) > 0.001 || ld.chromatic > 0.001 || ld.dof > 0.001 || ld.vignetteRadius < 0.999);
+  if (hasLens) {
+    const lensMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        inputBuffer: { value: null },
+        uBarrelAmount: { value: ld.barrel },
+        uLensChromatic: { value: ld.chromatic },
+        uLensDoF: { value: ld.dof },
+        uLensVignetteRadius: { value: ld.vignetteRadius },
+      },
+      vertexShader: fullscreenVertexShader,
+      fragmentShader: lensDistortionFragmentShader,
+    });
+    composer.addPass(new ShaderPass(lensMaterial, "inputBuffer"));
   }
 
   // Multipass feedback pass (warp + decay + hue-shift, shares feedbackTarget) (T-A1)

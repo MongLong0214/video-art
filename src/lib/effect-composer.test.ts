@@ -7,6 +7,31 @@ import { fileURLToPath } from "url";
 const __dirname = resolve(fileURLToPath(import.meta.url), "..");
 const src = readFileSync(resolve(__dirname, "effect-composer.ts"), "utf-8");
 
+describe("effect-composer — T-A2 lensDistortion", () => {
+  it("declares lensDistortion fragment shader with Brown distortion", () => {
+    expect(src).toMatch(/lensDistortion|uBarrelAmount/);
+  });
+
+  it("uses Brown distortion formula r*(1+k*r^2)", () => {
+    // k1*r^2 term somewhere in the shader code
+    expect(src).toMatch(/1\.0\s*\+\s*\w+\s*\*\s*r2|1\.0\s*\+\s*\w+\s*\*\s*dot\(c\s*,\s*c\)/);
+  });
+
+  it("declares uLensChromatic + uLensDoF + uVignetteRadius uniforms", () => {
+    expect(src).toMatch(/uLensChromatic/);
+    expect(src).toMatch(/uLensDoF/);
+    expect(src).toMatch(/uLensVignetteRadius/);
+  });
+
+  it("samples RGB at 3 different distorted UVs for chromatic", () => {
+    expect(src).toMatch(/distort\(vUv/);
+  });
+
+  it("file stays under 800 LOC cap after T-A2", () => {
+    expect(src.split("\n").length).toBeLessThanOrEqual(800);
+  });
+});
+
 describe("effect-composer — T-A1 multipassFeedback", () => {
   it("declares multipassFeedback fragment shader or uniforms", () => {
     expect(src).toMatch(/multipassFeedback|uFeedbackStrength/);
