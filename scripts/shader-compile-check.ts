@@ -34,6 +34,7 @@ export const MODES: CheckMode[] = [
   { name: "sketch-volumetric", url: "/?sketch=volumetric", required: true },
   { name: "sketch-particles", url: "/?sketch=particles", required: true },
   { name: "sketch-fractal-cave", url: "/?sketch=fractal-cave", required: true },
+  { name: "mode-dmt", url: "/?mode=dmt", required: true },
 ];
 
 export const ERROR_PATTERNS: RegExp[] = [

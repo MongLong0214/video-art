@@ -6,7 +6,7 @@ export interface DmtConfig {
   zoomLoops: number;
   cameraLoops: number;
   foldScale: number;
-  paletteMode: 0 | 1;
+  paletteMode: 0 | 1 | 2 | 3;
   hueSpeed: number;
   glow: number;
   bloomStrength: number;

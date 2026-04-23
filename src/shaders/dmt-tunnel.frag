@@ -1,46 +1,44 @@
 precision highp float;
 
 // =============================================================================
-// v60 — MASTERPIECE SYNTHESIS v47 Recipe (committed production)
+// v62 — MASTERPIECE SYNTHESIS (v47 recipe)
 //
-// Reference bank: docs/research/MASTERPIECE-SYNTHESIS.md
-// Target: commercial-safe (non-commercial use approved by Isaac 2026-04-23)
+// STATUS: STUDY / NON-COMMERCIAL USE ONLY.
+//   Rights for commercial redistribution are NOT cleared.
+//   Shadertoy sources default to CC BY-NC-SA 3.0 (see MASTERPIECE-SYNTHESIS §60).
+//   Personal/educational use approved by Isaac 2026-04-23.
 //
-// Licensed ingredients:
-//   [MIT]  iq Apollonian map              — iquilezles.org, 4sX3Rn, 4ds3zn
-//   [MIT]  iq cosine palette              — iquilezles.org/articles/palettes
-//   [CC0]  mrange smoothKaleidoscope      — Shadertoy 7lKSWW (SABS fold)
-//   [Pub]  AgX tonemap                    — iolite-engine.com minimal AgX
-//   [NC-SA] Way of Light volumetric       — Shadertoy cdsSRf (re-implemented)
-//   [Pub math] Log-Moebius background     — Shadertoy XdyXD3 concept
-//   [Pub math] IQ exponential fog         — iquilezles.org/articles/morenoise
+// Ingredient provenance (re-implemented from published math):
+//   [MIT]       iq cosine palette              — iquilezles.org/articles/palettes
+//   [MIT]       iq Apollonian inversion math   — iquilezles.org, 4ds3zn concept
+//   [Public]    AgX tonemap                    — iolite-engine.com minimal AgX
+//   [Published] Way of Light volumetric idea   — Shadertoy cdsSRf (CC BY-NC-SA)
+//                — re-implemented; original code NOT embedded
+//   [Published] Log-Moebius warp concept       — Shadertoy XdyXD3 (reference)
+//   [Public]    Sun & Wang thin-film           — academic paper, §13 approximation
+//   [Public]    IQ exponential fog             — common formula
 //
-// 6-Pass architecture (from MASTERPIECE-SYNTHESIS §Production Recipe):
-//   Pass 0: Base IQ Apollonian + 3-stage orbit-trap color + free AO
-//   Pass 1: Breathing fractal s (2 breaths/loop, integer)
-//   Pass 2: Separate iridescence (Annihilation petrol slick via Fresnel)
-//   Pass 3: Volumetric color accumulation along ray (Way of Light)
-//   Pass 4: Background core + halo + palette-tinted glow (Way of Light)
-//   Pass 5: Post AgX + S-curve + CA + exp fog + breathing vignette
+// 6-Pass architecture (MASTERPIECE-SYNTHESIS §Production Recipe):
+//   Pass 0: IQ Apollonian + orbit trap (with structural N-fold)
+//   Pass 1: Breathing fractal s (uZoomLoops breaths/loop)
+//   Pass 2: Separate iridescence via Sun&Wang thin-film (§13)
+//   Pass 3: Volumetric color accumulation
+//   Pass 4: Background core + halo + palette tint
+//   Pass 5: Exp fog + AgX + S-curve + CA + breathing vignette
 //
-// Strict seamless discipline (§Loop Strategy line 713):
-//   All time terms: cos(integer · time) where time = phase · TAU
-//   Camera orbit cycles: 2, 3 integer
-//   Breathing: 2/loop; vignette: 1/loop
-//   Palette cosine freq c = 1.0 integer for strict first/last match
-//
-// Masterpiece principles applied:
-//   Doctor Strange §2373: "artist-broken math" — hand-tuned `s` offset
-//   Annihilation §2383: separate iridescence pass for comp control
-//   Enter The Void §2351: CA + vignette breathe + exposure pulse
-//   Bressloff/Form constants: smoothKaleidoscope on geometry not post
-//   Horsthuis §336: fog + scale cues = architectural depth
+// Strict seamless discipline:
+//   - time = phase · TAU, phase ∈ [0,1)
+//   - orbit cycles: uCameraLoops (must be integer for seamless)
+//   - breathing: uZoomLoops (must be integer for seamless)
+//   - palette cosine freq c = 1.0 integer
 // =============================================================================
 
-uniform float uTime;         // normalized [0..1]
+uniform float uTime;           // normalized [0..1]
 uniform vec2  uResolution;
-uniform float uSymmetry;     // N-fold mandala
-uniform float uFoldScale;    // Apollonian s base
+uniform float uSymmetry;       // N-fold mandala
+uniform float uZoomLoops;      // fractal-breathing cycles per loop (integer)
+uniform float uCameraLoops;    // camera orbit cycles per loop (integer)
+uniform float uFoldScale;      // Apollonian s base
 uniform int   uPaletteMode;
 uniform float uHueSpeed;
 uniform float uGlow;
@@ -49,33 +47,6 @@ varying vec2 vUv;
 
 #define PI  3.14159265359
 #define TAU 6.28318530718
-
-// ═══════════════════════════════════════════════════════════════════════════
-// [CC0] mrange smoothKaleidoscope (Shadertoy 7lKSWW)
-// ═══════════════════════════════════════════════════════════════════════════
-float pmin(float a, float b, float k) {
-  float h = clamp(0.5 + 0.5*(b-a)/k, 0.0, 1.0);
-  return mix(b, a, h) - k*h*(1.0-h);
-}
-float pmax(float a, float b, float k) { return -pmin(-a, -b, k); }
-float pabs(float a, float k) { return pmax(a, -a, k); }
-vec2 toPolar(vec2 p) { return vec2(length(p), atan(p.y, p.x)); }
-vec2 toRect(vec2 p) { return vec2(p.x*cos(p.y), p.x*sin(p.y)); }
-float modMirror1(inout float p, float size) {
-  float halfsize = size*0.5;
-  float c = floor((p + halfsize)/size);
-  p = mod(p + halfsize, size) - halfsize;
-  p *= mod(c, 2.0)*2.0 - 1.0;
-  return c;
-}
-float smoothKaleidoscope(inout vec2 p, float sm, float rep) {
-  vec2 hpp = toPolar(p);
-  modMirror1(hpp.y, TAU/rep);
-  float sa = PI/rep - pabs(PI/rep - abs(hpp.y), sm);
-  hpp.y = sign(hpp.y)*(sa);
-  p = toRect(hpp);
-  return 0.0;
-}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // [MIT] iq Apollonian fractal with 4-channel orbit trap
@@ -245,16 +216,19 @@ void main() {
   // NOTE: Kaleidoscope moved into map() as structural 3D fold (§6)
   // No screen-space kaleidoscope here — avoids ray-direction seams
 
-  // ── Camera: 3-axis integer-cycle orbit (strict seamless) ──────────────
-  // 2 cycles X, 3 cycles Y (height), 2 cycles Z (phase-offset for drift)
+  // ── Camera: uCameraLoops-cycle orbit (integer for strict seamless) ────
+  // X: uCameraLoops cycles, Y: uCameraLoops+1 cycles (height drift),
+  // Z: uCameraLoops cycles with phase offset
+  float camN = uCameraLoops;
+  float auxN = uCameraLoops + 1.0;
   vec3 ro = vec3(
-    2.6 * cos(2.0 * time),
-    0.35 + 0.25 * cos(3.0 * time),
-    2.6 * cos(0.7 + 2.0 * time)
+    2.6 * cos(camN * time),
+    0.35 + 0.25 * cos(auxN * time),
+    2.6 * cos(0.7 + camN * time)
   );
   vec3 ta = vec3(
     0.25 * cos(1.0 * time),
-    0.15 * cos(2.0 * time),
+    0.15 * cos(camN * time),
     0.25 * cos(1.0 * time + 1.3)
   );
   float roll = 0.15 * cos(1.0 * time);
@@ -264,8 +238,8 @@ void main() {
   vec3 cv = normalize(cross(cu, cw));
   vec3 rd = normalize(p.x*cu + p.y*cv + 2.0*cw);
 
-  // ── Pass 1: Fractal parameter breathing (2 breaths/loop integer) ──────
-  float s = uFoldScale + 0.15 * cos(2.0 * time);
+  // ── Pass 1: Fractal breathing (uZoomLoops breaths/loop, integer) ──────
+  float s = uFoldScale + 0.15 * cos(uZoomLoops * time);
 
   // ── Pass 0+3: Volumetric raymarch + orbit trap ────────────────────────
   Ray rr = raymarchVol(ro, rd, s, t);
@@ -303,8 +277,8 @@ void main() {
     // Wavelength-based RGB phase from film thickness + view angle
     float ndotv = clamp(dot(nor, -rd), 0.0, 1.0);
     float fresnel = pow(1.0 - ndotv, 4.0);  // sharper edge-only
-    // Film thickness breathes 2x/loop (integer → strict seamless)
-    float thickness = 380.0 + 120.0 * cos(2.0 * time);
+    // Film thickness breathes on uZoomLoops (integer → strict seamless)
+    float thickness = 380.0 + 120.0 * cos(uZoomLoops * time);
     vec3 lambda = vec3(680.0, 530.0, 440.0);
     vec3 iphase = TAU * thickness * ndotv / lambda;
     vec3 iridescence = 0.5 + 0.5 * cos(iphase + vec3(0.0, 2.09, 4.18));
