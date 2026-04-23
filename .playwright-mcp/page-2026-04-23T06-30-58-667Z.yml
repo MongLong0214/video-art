@@ -1,0 +1,1055 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - link "Shadertoy" [ref=e4] [cursor=pointer]:
+        - /url: /
+      - searchbox "Search..." [ref=e7]
+    - generic [ref=e8]:
+      - link "Browse" [ref=e9] [cursor=pointer]:
+        - /url: /browse
+      - link "New" [ref=e10] [cursor=pointer]:
+        - /url: /new
+      - link "Sign In" [ref=e11] [cursor=pointer]:
+        - /url: /signin
+  - generic [ref=e13]:
+    - generic [ref=e14]:
+      - generic [ref=e17]:
+        - generic [ref=e18]:
+          - generic "Reset time (<ALT>+<DownArrow>)" [ref=e19] [cursor=pointer]
+          - generic "Pause/Resume (<ALT>+<UpArrow>)" [ref=e20] [cursor=pointer]
+        - generic [ref=e21]:
+          - generic [ref=e22]: "5.97"
+          - generic [ref=e23]: 1.0 fps
+          - generic [ref=e24]: 420 x 236
+        - generic [ref=e25]:
+          - generic "Record (<ALT>+<R>)" [ref=e26] [cursor=pointer]
+          - generic "Volume" [ref=e27] [cursor=pointer]
+          - generic "Go fullscreen" [ref=e28] [cursor=pointer]
+      - generic [ref=e29]:
+        - generic [ref=e30]:
+          - generic [ref=e31]:
+            - text: Neural Stanford Bunny (5 kb)
+            - img "This shader has been Shader of the Week!" [ref=e33]
+          - generic [ref=e34]:
+            - img "share this shader" [ref=e35] [cursor=pointer]
+            - img [ref=e36]
+            - text: "349"
+          - generic [ref=e37]:
+            - text: "Views: 22997"
+            - text: ", Tags:"
+            - link "bunny" [ref=e178] [cursor=pointer]:
+              - /url: /results?query=tag%3Dbunny
+          - generic [ref=e38]:
+            - text: Created by
+            - link "blackle" [ref=e180] [cursor=pointer]:
+              - /url: /user/blackle
+            - text: in 2021-01-28
+        - generic [ref=e181]: "my suspicions that mat4 multiplies and sines are really fast on the gpu are confirmed yet again explainer: https://youtu.be/8pwXpfi-0bU"
+    - generic [ref=e39]:
+      - generic [ref=e40] [cursor=pointer]:
+        - combobox [ref=e183]:
+          - option "Common"
+          - option "Sound"
+          - option "Buffer A"
+          - option "Buffer B"
+          - option "Buffer C"
+          - option "Buffer D"
+          - option "Cubemap A"
+        - generic [ref=e184]:
+          - img [ref=e185]
+          - generic [ref=e186]: Image
+      - generic [ref=e42] [cursor=pointer]:
+        - generic [ref=e43]: Shader Inputs
+        - generic [ref=e46]:
+          - text: uniform vec3 iResolution; // viewport resolution (in pixels)
+          - text: uniform float iTime; // shader playback time (in seconds)
+          - text: uniform float iTimeDelta; // render time (in seconds)
+          - text: uniform float iFrameRate; // shader frame rate
+          - text: uniform int iFrame; // shader playback frame
+          - text: uniform float iChannelTime[4]; // channel playback time (in seconds)
+          - text: uniform vec3 iChannelResolution[4]; // channel resolution (in pixels)
+          - text: "uniform vec4 iMouse; // mouse pixel coords. xy: current (if MLB down), zw: click"
+          - text: uniform samplerXX iChannel0..3; // input channel. XX = 2D/Cube
+          - text: uniform vec4 iDate; // (year, month, day, time in seconds)
+          - text: uniform float iSampleRate; // sound sample rate (i.e., 44100)
+      - generic [ref=e48]:
+        - textbox [ref=e49]
+        - generic [ref=e52]:
+          - generic [ref=e192]:
+            - generic [ref=e193]: "1"
+            - text: //CC0 1.0 Universal https://creativecommons.org/publicdomain/zero/1.0/
+          - generic [ref=e194]:
+            - generic [ref=e195]: "2"
+            - text: //To the extent possible under law, Blackle Mori has waived all copyright and related or neighboring rights to this work.
+          - generic [ref=e197]: "3"
+          - generic [ref=e198]:
+            - generic [ref=e199]: "4"
+            - text: //like the last few shaders I've published, this is a neural network experiment.
+          - generic [ref=e200]:
+            - generic [ref=e201]: "5"
+            - text: //this time, the neural network reproduces an SDF given the x,y,z coordinates
+          - generic [ref=e202]:
+            - generic [ref=e203]: "6"
+            - text: "//using siren networks with skip connections: https://vsitzmann.github.io/siren/"
+          - generic [ref=e205]: "7"
+          - generic [ref=e206]:
+            - generic:
+              - generic [ref=e207]: "8"
+              - generic [ref=e209] [cursor=pointer]: ▾
+            - text: "vec3 erot(vec3 p, vec3 ax, float ro) {"
+          - generic [ref=e210]:
+            - generic [ref=e211]: "9"
+            - text: return mix(dot(p,ax)*ax,p,cos(ro))+sin(ro)*cross(ax,p);
+          - generic [ref=e212]:
+            - generic [ref=e213]: "10"
+            - text: "}"
+          - generic [ref=e215]: "11"
+          - generic [ref=e216]:
+            - generic:
+              - generic [ref=e217]: "12"
+              - generic [ref=e219] [cursor=pointer]: ▾
+            - text: "float scene(vec3 p) {"
+          - generic [ref=e220]:
+            - generic [ref=e221]: "13"
+            - text: //sdf is undefined outside the unit sphere, uncomment to witness the abominations
+          - generic [ref=e222]:
+            - generic:
+              - generic [ref=e223]: "14"
+              - generic [ref=e225] [cursor=pointer]: ▾
+            - text: "if (length(p) > 1.) {"
+          - generic [ref=e226]:
+            - generic [ref=e227]: "15"
+            - text: return length(p)-.8;
+          - generic [ref=e228]:
+            - generic [ref=e229]: "16"
+            - text: "}"
+          - generic [ref=e230]:
+            - generic [ref=e231]: "17"
+            - text: //neural networks can be really compact... when they want to be
+          - generic [ref=e232]:
+            - generic [ref=e233]: "18"
+            - text: vec4 f00=sin(p.y*vec4(-3.02,1.95,-3.42,-.60)+p.z*vec4(3.08,.85,-2.25,-.24)-p.x*vec4(-.29,1.16,-3.74,2.89)+vec4(-.71,4.50,-3.24,-3.50));
+          - generic [ref=e234]:
+            - generic [ref=e235]: "19"
+            - text: vec4 f01=sin(p.y*vec4(-.40,-3.61,3.23,-.14)+p.z*vec4(-.36,3.64,-3.91,2.66)-p.x*vec4(2.90,-.54,-2.75,2.71)+vec4(7.02,-5.41,-1.12,-7.41));
+          - generic [ref=e236]:
+            - generic [ref=e237]: "20"
+            - text: vec4 f02=sin(p.y*vec4(-1.77,-1.28,-4.29,-3.20)+p.z*vec4(-3.49,-2.81,-.64,2.79)-p.x*vec4(3.15,2.14,-3.85,1.83)+vec4(-2.07,4.49,5.33,-2.17));
+          - generic [ref=e238]:
+            - generic [ref=e239]: "21"
+            - text: vec4 f03=sin(p.y*vec4(-.49,.68,3.05,.42)+p.z*vec4(-2.87,.78,3.78,-3.41)-p.x*vec4(-2.65,.33,.07,-.64)+vec4(-3.24,-5.90,1.14,-4.71));
+          - generic [ref=e240]:
+            - generic [ref=e241]: "22"
+            - text: vec4 f10=sin(mat4(-.34,.06,-.59,-.76,.10,-.19,-.12,.44,.64,-.02,-.26,.15,-.16,.21,.91,.15)*f00+
+          - generic [ref=e242]:
+            - generic [ref=e243]: "23"
+            - text: mat4(.01,.54,-.77,.11,.06,-.14,.43,.51,-.18,.08,.39,.20,.33,-.49,-.10,.19)*f01+
+          - generic [ref=e244]:
+            - generic [ref=e245]: "24"
+            - text: mat4(.27,.22,.43,.53,.18,-.17,.23,-.64,-.14,.02,-.10,.16,-.13,-.06,-.04,-.36)*f02+
+          - generic [ref=e246]:
+            - generic [ref=e247]: "25"
+            - text: mat4(-.13,.29,-.29,.08,1.13,.02,-.83,.32,-.32,.04,-.31,-.16,.14,-.03,-.20,.39)*f03+
+          - generic [ref=e248]:
+            - generic [ref=e249]: "26"
+            - text: vec4(.73,-4.28,-1.56,-1.80))/1.0+f00;
+          - generic [ref=e250]:
+            - generic [ref=e251]: "27"
+            - text: vec4 f11=sin(mat4(-1.11,.55,-.12,-1.00,.16,.15,-.30,.31,-.01,.01,.31,-.42,-.29,.38,-.04,.71)*f00+
+          - generic [ref=e252]:
+            - generic [ref=e253]: "28"
+            - text: mat4(.96,-.02,.86,.52,-.14,.60,.44,.43,.02,-.15,-.49,-.05,-.06,-.25,-.03,-.22)*f01+
+          - generic [ref=e254]:
+            - generic [ref=e255]: "29"
+            - text: mat4(.52,.44,-.05,-.11,-.56,-.10,-.61,-.40,-.04,.55,.32,-.07,-.02,.28,.26,-.49)*f02+
+          - generic [ref=e256]:
+            - generic [ref=e257]: "30"
+            - text: mat4(.02,-.32,.06,-.17,-.59,.00,-.24,.60,-.06,.13,-.21,-.27,-.12,-.14,.58,-.55)*f03+
+          - generic [ref=e258]:
+            - generic [ref=e259]: "31"
+            - text: vec4(-2.24,-3.48,-.80,1.41))/1.0+f01;
+          - generic [ref=e260]:
+            - generic [ref=e261]: "32"
+            - text: vec4 f12=sin(mat4(.44,-.06,-.79,-.46,.05,-.60,.30,.36,.35,.12,.02,.12,.40,-.26,.63,-.21)*f00+
+          - generic [ref=e262]:
+            - generic [ref=e263]: "33"
+            - text: mat4(-.48,.43,-.73,-.40,.11,-.01,.71,.05,-.25,.25,-.28,-.20,.32,-.02,-.84,.16)*f01+
+          - generic [ref=e264]:
+            - generic [ref=e265]: "34"
+            - text: mat4(.39,-.07,.90,.36,-.38,-.27,-1.86,-.39,.48,-.20,-.05,.10,-.00,-.21,.29,.63)*f02+
+          - generic [ref=e266]:
+            - generic [ref=e267]: "35"
+            - text: mat4(.46,-.32,.06,.09,.72,-.47,.81,.78,.90,.02,-.21,.08,-.16,.22,.32,-.13)*f03+
+          - generic [ref=e268]:
+            - generic [ref=e269]: "36"
+            - text: vec4(3.38,1.20,.84,1.41))/1.0+f02;
+          - generic [ref=e270]:
+            - generic [ref=e271]: "37"
+            - text: vec4 f13=sin(mat4(-.41,-.24,-.71,-.25,-.24,-.75,-.09,.02,-.27,-.42,.02,.03,-.01,.51,-.12,-1.24)*f00+
+          - generic [ref=e272]:
+            - generic [ref=e273]: "38"
+            - text: mat4(.64,.31,-1.36,.61,-.34,.11,.14,.79,.22,-.16,-.29,-.70,.02,-.37,.49,.39)*f01+
+          - generic [ref=e274]:
+            - generic [ref=e275]: "39"
+            - text: mat4(.79,.47,.54,-.47,-1.13,-.35,-1.03,-.22,-.67,-.26,.10,.21,-.07,-.73,-.11,.72)*f02+
+          - generic [ref=e276]:
+            - generic [ref=e277]: "40"
+            - text: mat4(.43,-.23,.13,.09,1.38,-.63,1.57,-.20,.39,-.14,.42,.13,-.57,-.08,-.21,.21)*f03+
+          - generic [ref=e278]:
+            - generic [ref=e279]: "41"
+            - text: vec4(-.34,-3.28,.43,-.52))/1.0+f03;
+          - generic [ref=e280]:
+            - generic [ref=e281]: "42"
+            - text: f00=sin(mat4(-.72,.23,-.89,.52,.38,.19,-.16,-.88,.26,-.37,.09,.63,.29,-.72,.30,-.95)*f10+
+          - generic [ref=e282]:
+            - generic [ref=e283]: "43"
+            - text: mat4(-.22,-.51,-.42,-.73,-.32,.00,-1.03,1.17,-.20,-.03,-.13,-.16,-.41,.09,.36,-.84)*f11+
+          - generic [ref=e284]:
+            - generic [ref=e285]: "44"
+            - text: mat4(-.21,.01,.33,.47,.05,.20,-.44,-1.04,.13,.12,-.13,.31,.01,-.34,.41,-.34)*f12+
+          - generic [ref=e286]:
+            - generic [ref=e287]: "45"
+            - text: mat4(-.13,-.06,-.39,-.22,.48,.25,.24,-.97,-.34,.14,.42,-.00,-.44,.05,.09,-.95)*f13+
+          - generic [ref=e288]:
+            - generic [ref=e289]: "46"
+            - text: vec4(.48,.87,-.87,-2.06))/1.4+f10;
+          - generic [ref=e290]:
+            - generic [ref=e291]: "47"
+            - text: f01=sin(mat4(-.27,.29,-.21,.15,.34,-.23,.85,-.09,-1.15,-.24,-.05,-.25,-.12,-.73,-.17,-.37)*f10+
+          - generic [ref=e292]:
+            - generic [ref=e293]: "48"
+            - text: mat4(-1.11,.35,-.93,-.06,-.79,-.03,-.46,-.37,.60,-.37,-.14,.45,-.03,-.21,.02,.59)*f11+
+          - generic [ref=e294]:
+            - generic [ref=e295]: "49"
+            - text: mat4(-.92,-.17,-.58,-.18,.58,.60,.83,-1.04,-.80,-.16,.23,-.11,.08,.16,.76,.61)*f12+
+          - generic [ref=e296]:
+            - generic [ref=e297]: "50"
+            - text: mat4(.29,.45,.30,.39,-.91,.66,-.35,-.35,.21,.16,-.54,-.63,1.10,-.38,.20,.15)*f13+
+          - generic [ref=e298]:
+            - generic [ref=e299]: "51"
+            - text: vec4(-1.72,-.14,1.92,2.08))/1.4+f11;
+          - generic [ref=e300]:
+            - generic [ref=e301]: "52"
+            - text: f02=sin(mat4(1.00,.66,1.30,-.51,.88,.25,-.67,.03,-.68,-.08,-.12,-.14,.46,1.15,.38,-.10)*f10+
+          - generic [ref=e302]:
+            - generic [ref=e303]: "53"
+            - text: mat4(.51,-.57,.41,-.09,.68,-.50,-.04,-1.01,.20,.44,-.60,.46,-.09,-.37,-1.30,.04)*f11+
+          - generic [ref=e304]:
+            - generic [ref=e305]: "54"
+            - text: mat4(.14,.29,-.45,-.06,-.65,.33,-.37,-.95,.71,-.07,1.00,-.60,-1.68,-.20,-.00,-.70)*f12+
+          - generic [ref=e306]:
+            - generic [ref=e307]: "55"
+            - text: mat4(-.31,.69,.56,.13,.95,.36,.56,.59,-.63,.52,-.30,.17,1.23,.72,.95,.75)*f13+
+          - generic [ref=e308]:
+            - generic [ref=e309]: "56"
+            - text: vec4(-.90,-3.26,-.44,-3.11))/1.4+f12;
+          - generic [ref=e310]:
+            - generic [ref=e311]: "57"
+            - text: f03=sin(mat4(.51,-.98,-.28,.16,-.22,-.17,-1.03,.22,.70,-.15,.12,.43,.78,.67,-.85,-.25)*f10+
+          - generic [ref=e312]:
+            - generic [ref=e313]: "58"
+            - text: mat4(.81,.60,-.89,.61,-1.03,-.33,.60,-.11,-.06,.01,-.02,-.44,.73,.69,1.02,.62)*f11+
+          - generic [ref=e314]:
+            - generic [ref=e315]: "59"
+            - text: mat4(-.10,.52,.80,-.65,.40,-.75,.47,1.56,.03,.05,.08,.31,-.03,.22,-1.63,.07)*f12+
+          - generic [ref=e316]:
+            - generic [ref=e317]: "60"
+            - text: mat4(-.18,-.07,-1.22,.48,-.01,.56,.07,.15,.24,.25,-.09,-.54,.23,-.08,.20,.36)*f13+
+          - generic [ref=e318]:
+            - generic [ref=e319]: "61"
+            - text: vec4(-1.11,-4.28,1.02,-.23))/1.4+f13;
+          - generic [ref=e320]:
+            - generic [ref=e321]: "62"
+            - text: return dot(f00,vec4(.09,.12,-.07,-.03))+dot(f01,vec4(-.04,.07,-.08,.05))+
+          - generic [ref=e322]:
+            - generic [ref=e323]: "63"
+            - text: dot(f02,vec4(-.01,.06,-.02,.07))+dot(f03,vec4(-.05,.07,.03,.04))-0.16;
+          - generic [ref=e324]:
+            - generic [ref=e325]: "64"
+            - text: "}"
+          - generic [ref=e327]: "65"
+          - generic [ref=e328]:
+            - generic:
+              - generic [ref=e329]: "66"
+              - generic [ref=e331] [cursor=pointer]: ▾
+            - text: "vec3 norm(vec3 p) {"
+          - generic [ref=e332]:
+            - generic [ref=e333]: "67"
+            - text: mat3 k = mat3(p,p,p)-mat3(0.001);
+          - generic [ref=e334]:
+            - generic [ref=e335]: "68"
+            - text: return normalize(scene(p) - vec3(scene(k[0]),scene(k[1]),scene(k[2])));
+          - generic [ref=e336]:
+            - generic [ref=e337]: "69"
+            - text: "}"
+          - generic [ref=e339]: "70"
+          - generic [ref=e340]:
+            - generic [ref=e341]: "71"
+            - text: void mainImage( out vec4 fragColor, in vec2 fragCoord )
+          - generic [ref=e342]:
+            - generic:
+              - generic [ref=e343]: "72"
+              - generic [ref=e345] [cursor=pointer]: ▾
+            - text: "{"
+          - generic [ref=e346]:
+            - generic [ref=e347]: "73"
+            - text: vec2 uv = (fragCoord-0.5*iResolution.xy)/iResolution.y;
+          - generic [ref=e348]:
+            - generic [ref=e349]: "74"
+            - text: vec2 mouse = (iMouse.xy-0.5*iResolution.xy)/iResolution.y;
+          - generic [ref=e351]: "75"
+          - generic [ref=e352]:
+            - generic [ref=e353]: "76"
+            - text: vec3 cam = normalize(vec3(1.5,uv));
+          - generic [ref=e354]:
+            - generic [ref=e355]: "77"
+            - text: vec3 init = vec3(-3.,0,0);
+          - generic [ref=e357]: "78"
+          - generic [ref=e358]:
+            - generic [ref=e359]: "79"
+            - text: float yrot = 0.5;
+          - generic [ref=e360]:
+            - generic [ref=e361]: "80"
+            - text: float zrot = iTime*.2;
+          - generic [ref=e362]:
+            - generic:
+              - generic [ref=e363]: "81"
+              - generic [ref=e365] [cursor=pointer]: ▾
+            - text: "if (iMouse.z > 0.) {"
+          - generic [ref=e366]:
+            - generic [ref=e367]: "82"
+            - text: yrot += -4.*mouse.y;
+          - generic [ref=e368]:
+            - generic [ref=e369]: "83"
+            - text: zrot = 4.*mouse.x;
+          - generic [ref=e370]:
+            - generic [ref=e371]: "84"
+            - text: "}"
+          - generic [ref=e372]:
+            - generic [ref=e373]: "85"
+            - text: cam = erot(cam, vec3(0,1,0), yrot);
+          - generic [ref=e374]:
+            - generic [ref=e375]: "86"
+            - text: init = erot(init, vec3(0,1,0), yrot);
+          - generic [ref=e376]:
+            - generic [ref=e377]: "87"
+            - text: cam = erot(cam, vec3(0,0,1), zrot);
+          - generic [ref=e378]:
+            - generic [ref=e379]: "88"
+            - text: init = erot(init, vec3(0,0,1), zrot);
+          - generic [ref=e381]: "89"
+          - generic [ref=e382]:
+            - generic [ref=e383]: "90"
+            - text: vec3 p = init;
+          - generic [ref=e384]:
+            - generic [ref=e385]: "91"
+            - text: bool hit = false;
+          - generic [ref=e386]:
+            - generic:
+              - generic [ref=e387]: "92"
+              - generic [ref=e389] [cursor=pointer]: ▾
+            - text: "for (int i = 0; i < 150 && !hit; i++) {"
+      - generic [ref=e59]:
+        - generic [ref=e60]:
+          - img "Compile (<ALT>+<ENTER>)" [ref=e61] [cursor=pointer]
+          - link "Compiled in 0.0 secs" [ref=e390] [cursor=pointer]:
+            - /url: "#"
+        - generic [ref=e62]: 4959 chars
+        - generic [ref=e63]:
+          - combobox "Change font size (<ALT>+<+/->)" [ref=e65]:
+            - option "XS"
+            - option "S" [selected]
+            - option "M"
+            - option "L"
+            - option "XL"
+            - option "XXL"
+          - img "Show GLSL help" [ref=e66] [cursor=pointer]
+      - generic [ref=e67]:
+        - generic [ref=e68]:
+          - generic [ref=e69]:
+            - generic:
+              - text: Filter
+              - combobox "Pixel filtering mode" [ref=e71]:
+                - option "nearest" [selected]
+                - option "linear"
+                - option "mipmap"
+              - text: Wrap
+              - combobox "Pixel filtering mode" [ref=e72]:
+                - option "clamp" [selected]
+                - option "repeat"
+              - generic [ref=e74]:
+                - text: VFlip
+                - checkbox "VFlip" [ref=e75]
+          - generic [ref=e77]: iChannel0
+        - generic [ref=e80]:
+          - generic [ref=e81]:
+            - generic:
+              - text: Filter
+              - combobox "Pixel filtering mode" [ref=e83]:
+                - option "nearest" [selected]
+                - option "linear"
+                - option "mipmap"
+              - text: Wrap
+              - combobox "Pixel filtering mode" [ref=e84]:
+                - option "clamp" [selected]
+                - option "repeat"
+              - generic [ref=e86]:
+                - text: VFlip
+                - checkbox "VFlip" [ref=e87]
+          - generic [ref=e89]: iChannel1
+        - generic [ref=e92]:
+          - generic [ref=e93]:
+            - generic:
+              - text: Filter
+              - combobox "Pixel filtering mode" [ref=e95]:
+                - option "nearest" [selected]
+                - option "linear"
+                - option "mipmap"
+              - text: Wrap
+              - combobox "Pixel filtering mode" [ref=e96]:
+                - option "clamp" [selected]
+                - option "repeat"
+              - generic [ref=e98]:
+                - text: VFlip
+                - checkbox "VFlip" [ref=e99]
+          - generic [ref=e101]: iChannel2
+        - generic [ref=e104]:
+          - generic [ref=e105]:
+            - generic:
+              - text: Filter
+              - combobox "Pixel filtering mode" [ref=e107]:
+                - option "nearest" [selected]
+                - option "linear"
+                - option "mipmap"
+              - text: Wrap
+              - combobox "Pixel filtering mode" [ref=e108]:
+                - option "clamp" [selected]
+                - option "repeat"
+              - generic [ref=e110]:
+                - text: VFlip
+                - checkbox "VFlip" [ref=e111]
+          - generic [ref=e113]: iChannel3
+    - generic [ref=e117]:
+      - text: Comments (74)
+      - generic [ref=e118]:
+        - link "Sign in" [ref=e120] [cursor=pointer]:
+          - /url: /signin
+        - text: to post a comment.
+      - generic [ref=e391]:
+        - generic [ref=e392]:
+          - img [ref=e394]
+          - generic [ref=e395]:
+            - link "FrederickAmpsUp" [ref=e396] [cursor=pointer]:
+              - /url: /user/FrederickAmpsUp
+            - text: ", 2023-11-05"
+            - text: bnuuy
+        - generic [ref=e397]:
+          - img [ref=e399]
+          - generic [ref=e400]:
+            - link "01000001" [ref=e401] [cursor=pointer]:
+              - /url: /user/01000001
+            - text: ", 2023-11-03"
+            - text: happy to see this featured after so long
+            - img [ref=e402]
+        - generic [ref=e403]:
+          - img [ref=e405]
+          - generic [ref=e406]:
+            - link "Noratekki" [ref=e407] [cursor=pointer]:
+              - /url: /user/Noratekki
+            - text: ", 2023-11-02"
+            - text: bnuuy
+        - generic [ref=e408]:
+          - img [ref=e410]
+          - generic [ref=e411]:
+            - link "mrange" [ref=e412] [cursor=pointer]:
+              - /url: /user/mrange
+            - text: ", 2023-11-02"
+            - text: Neat! I was experimenting with models and simple SDFs but this seems like a more fruitful idea.
+        - generic [ref=e413]:
+          - img [ref=e415]
+          - generic [ref=e416]:
+            - link "H2ongzh" [ref=e417] [cursor=pointer]:
+              - /url: /user/H2ongzh
+            - text: ", 2022-09-07"
+            - text: amazing idea, cool stuff!!!
+        - generic [ref=e418]:
+          - img [ref=e420]
+          - generic [ref=e421]:
+            - link "goingdigital" [ref=e422] [cursor=pointer]:
+              - /url: /user/goingdigital
+            - text: ", 2021-08-30"
+            - text: "RBFs seem to work reasonably well for small models. Attempt at Stanford Bunny in 2k, with linked Google Colab: https://www.shadertoy.com/view/7dtGR2"
+        - generic [ref=e423]:
+          - img [ref=e425]
+          - generic [ref=e426]:
+            - link "logoliv" [ref=e427] [cursor=pointer]:
+              - /url: /user/logoliv
+            - text: ", 2021-08-18"
+            - text: there's some visible differences with Blackle version on the ears, don't know what version is closer to the original model
+        - generic [ref=e428]:
+          - img [ref=e430]
+          - generic [ref=e431]:
+            - link "goingdigital" [ref=e432] [cursor=pointer]:
+              - /url: /user/goingdigital
+            - text: ", 2021-08-17"
+            - text: Really inspiring idea which is a great introduction to machine learning. I reimplemented this as a 12 wide 3 layer SIREN. Seems skip connections may not be needed. Slightly smaller, probably slightly faster, Tensorflow framework, well under 4kB. https://www.shadertoy.com/view/sd33zN with linked Collab.
+        - generic [ref=e433]:
+          - img [ref=e435]
+          - generic [ref=e436]:
+            - link "FabriceNeyret2" [ref=e437] [cursor=pointer]:
+              - /url: /user/FabriceNeyret2
+            - text: ", 2021-03-03"
+            - text: thanks ! I didn't know that form !
+        - generic [ref=e438]:
+          - img [ref=e440]
+          - generic [ref=e441]:
+            - link "blackle" [ref=e442] [cursor=pointer]:
+              - /url: /user/blackle
+            - text: ", 2021-03-03"
+            - text: I wrote it, it's based on this formula https://en.m.wikipedia.org/wiki/Rodrigues%27_rotation_formula
+        - generic [ref=e443]:
+          - img [ref=e445]
+          - generic [ref=e446]:
+            - link "FabriceNeyret2" [ref=e447] [cursor=pointer]:
+              - /url: /user/FabriceNeyret2
+            - text: ", 2021-03-03"
+            - text: BTW, where did you got this compact rotation function ? I saw it in many shader, but I'm not sure where it come from.
+        - generic [ref=e448]:
+          - img [ref=e450]
+          - generic [ref=e451]:
+            - link "blackle" [ref=e452] [cursor=pointer]:
+              - /url: /user/blackle
+            - text: ", 2021-02-09"
+            - text: your idea of using handwritten SDF primitives in the network is a cool idea. I think you could possibly use pytorch's auto differentiation feature to be able to fit a handful of primitives to a given SDF by doing back propagation to their origins.
+        - generic [ref=e453]:
+          - img [ref=e455]
+          - generic [ref=e456]:
+            - link "blackle" [ref=e457] [cursor=pointer]:
+              - /url: /user/blackle
+            - text: ", 2021-02-09"
+            - text: the high frequency artefacts are just a texture I added because I thought it looked cool, lines 101 and 102 add that effect.
+        - generic [ref=e458]:
+          - img [ref=e460]
+          - generic [ref=e461]:
+            - link "lahwran" [ref=e462] [cursor=pointer]:
+              - /url: /user/lahwran
+            - text: ", 2021-02-09"
+            - text: "also it's worth noting: using operations typically used in handwritten SDFs as the activation operations in neural SDFs should allow the neural SDFs to in many cases exactly recover the behavior of the handwritten SDF. if you can't even in principle find weights that exactly recover a handwritten SDF with at most a similar number of operations in the network, then you haven't found a network representation that properly describes the space of possible SDFs."
+        - generic [ref=e463]:
+          - img [ref=e465]
+          - generic [ref=e466]:
+            - link "lahwran" [ref=e467] [cursor=pointer]:
+              - /url: /user/lahwran
+            - text: ", 2021-02-09"
+            - text: "hello have a braindump I hope this enriches your life because I really should be doing something else right now. so it doesn't seem like this network is likely to be using its weights very efficiently. I haven't done the detailed investigation to know this for sure - to do that, I'd do visualizations of the output volumes of each layer of the network, to see what the intermediate representations are - but the big tell is those high freqency artifacts on the surface of the bunny, if it was using its low frequency features ideally it wouldn't need those high frequency ones. https://arxiv.org/pdf/2006.10739.pdf it might be interesting to try a network like this, one where the sinusoidal is on the input rather than as an activation function. that allows regularizing the number of sinusoidal inputs you need: for the first layer, initially start too wide, eg 16 or 32 or even more fourier features, and use model compression style regularization to set input connections to zero - l1+fading-in soft-l0, no l2, sample n nonzero weights per output column on the input matrix each training example - outputting to an 8-wide output. that gives you input feature selection. then, feed that through some number of 4x4 mults to a few different activation functions. might also be worth looking at trying multi-bias. at least one of the activation functions should probably be something smooth like sigmoid or tanh or smoothstep or something else that provides additional smoothness in the mid layers, also probably pow(relu(x), 2.) or something would help with distance calculation. in other words - use operations that have a similar shape to what is typically used in shaders (just a few branches and distance calculations), and evaluate it in a space that allows it to select its position representation. that should allow compressing more. if you really want to spend compute on it, one could try automl, I'm not up to date on what options there are for serious automl for tiny networks like this but the full-space output supervision means there's a good shot at evolving an efficient network. Then, once you have that working, you could then train a network like this for every pose of a model and initially give it massively overcomplete input representation of concat(fourier_features(model_pose_state), fourier_features(3dnearest_2d_texel_pos), fourier_features(model_space_xyz)) and use the initial regularized matrix to feature-select out of those, and then evaluate it in screenspace to sdf-trace through a higher resolution version of the model in the implicit space of the neural network. If done right this should allow combining an actual mesh model and texture with a neural SDF upsampler, thereby allowing faking much higher resolution detail than a texture bumpmap otherwise allows. though, maybe you'd need to tell it the relative position in a texel, and feed it one texel to give it information on what kind of upsampling to do in that texel. or maybe you'd need to give it the four adjacent texels as input and have it figure out if it needs to use them? it also really depends on your final compute budget, but my hope is that this allows compressing models enough to render them on lower end devices, which means using a low res texture and the tiniest model manageable. if you're instead going to use a high res texture, then an option might be to use entirely different weights in different regions of the texture, thereby completely replacing the concept of bump map textures."
+        - generic [ref=e468]:
+          - img [ref=e470]
+          - generic [ref=e471]:
+            - link "BigWIngs" [ref=e472] [cursor=pointer]:
+              - /url: /user/BigWIngs
+            - text: ", 2021-02-03"
+            - text: Damn thats neat! Quite compact! Also thanks for the tut. Subscribed!
+        - generic [ref=e473]:
+          - img [ref=e475]
+          - generic [ref=e476]:
+            - link "GregRostami" [ref=e477] [cursor=pointer]:
+              - /url: /user/GregRostami
+            - text: ", 2021-02-02"
+            - text: Really Amazing!! It seems like hard corners currently do not convert well to a neural SDF.
+        - generic [ref=e478]:
+          - img [ref=e480]
+          - generic [ref=e481]:
+            - link "PixelPhil" [ref=e482] [cursor=pointer]:
+              - /url: /user/PixelPhil
+            - text: ", 2021-02-02"
+            - text: Thank you so much for sharing this.
+        - generic [ref=e483]:
+          - img [ref=e485]
+          - generic [ref=e486]:
+            - link "iuryBorgesRodrigues" [ref=e487] [cursor=pointer]:
+              - /url: /user/iuryBorgesRodrigues
+            - text: ", 2021-02-01"
+            - text: "after time of trying: https://www.shadertoy.com/view/wtdBzn"
+        - generic [ref=e488]:
+          - img [ref=e490]
+          - generic [ref=e491]:
+            - link "oneshade" [ref=e492] [cursor=pointer]:
+              - /url: /user/oneshade
+            - text: ", 2021-01-31"
+            - text: "Here's the classic Blender monkey (Suzanne): https://raw.githubusercontent.com/OpenGLInsights/OpenGLInsightsCode/master/Chapter%2026%20Indexing%20Multiple%20Vertex%20Arrays/article/suzanne.obj"
+        - generic [ref=e493]:
+          - img [ref=e495]
+          - generic [ref=e496]:
+            - link "iuryBorgesRodrigues" [ref=e497] [cursor=pointer]:
+              - /url: /user/iuryBorgesRodrigues
+            - text: ", 2021-01-31"
+            - text: it works, but I’m still trying to get a model of a monkey’s head, but it’s all buggy
+        - generic [ref=e498]:
+          - img [ref=e500]
+          - generic [ref=e501]:
+            - link "iuryBorgesRodrigues" [ref=e502] [cursor=pointer]:
+              - /url: /user/iuryBorgesRodrigues
+            - text: ", 2021-01-31"
+            - text: ok
+        - generic [ref=e503]:
+          - img [ref=e505]
+          - generic [ref=e506]:
+            - link "blackle" [ref=e507] [cursor=pointer]:
+              - /url: /user/blackle
+            - text: ", 2021-01-31"
+            - text: remove ".cuda()" from everywhere
+        - generic [ref=e508]:
+          - img [ref=e510]
+          - generic [ref=e511]:
+            - link "iuryBorgesRodrigues" [ref=e512] [cursor=pointer]:
+              - /url: /user/iuryBorgesRodrigues
+            - text: ", 2021-01-31"
+            - text: this happened at jupyter
+        - generic [ref=e513]:
+          - img [ref=e515]
+          - generic [ref=e516]:
+            - link "iuryBorgesRodrigues" [ref=e517] [cursor=pointer]:
+              - /url: /user/iuryBorgesRodrigues
+            - text: ", 2021-01-31"
+            - text: "--------------------------------------------------------------------------- RuntimeError Traceback (most recent call last) <ipython-input-7-02e6dda6639d> in <module> ----> 1 sdf_siren = train_siren(sdfloader, 16, 2, 15) 2 serialize_to_shadertoy(sdf_siren,\"f\") <ipython-input-6-80b500934dac> in train_siren(dataloader, hidden_features, hidden_layers, omega) 3 def train_siren(dataloader, hidden_features, hidden_layers, omega): 4 model_input, ground_truth = next(iter(dataloader)) ----> 5 model_input, ground_truth = model_input.cuda(), ground_truth.cuda() 6 7 img_curr = Siren(in_features=3, out_features=1, hidden_features=hidden_features, ~/.local/lib/python3.8/site-packages/torch/cuda/__init__.py in _lazy_init() 170 # This function throws if there's a driver initialization error, no GPUs 171 # are found or any other error occurs --> 172 torch._C._cuda_init() 173 # Some of the queued calls may reentrantly call _lazy_init(); 174 # we need to just return without initializing in that case. RuntimeError: Found no NVIDIA driver on your system. Please check that you have an NVIDIA GPU and installed a driver from http://www.nvidia.com/Download/index.aspx"
+        - generic [ref=e518]:
+          - img [ref=e520]
+          - generic [ref=e521]:
+            - link "blackle" [ref=e522] [cursor=pointer]:
+              - /url: /user/blackle
+            - text: ", 2021-01-31"
+            - text: if you're using jupyter you only need to open the link it produces from the command line in the web browser, you don't need to use google colab in that case.
+        - generic [ref=e523]:
+          - img [ref=e525]
+          - generic [ref=e526]:
+            - link "iuryBorgesRodrigues" [ref=e527] [cursor=pointer]:
+              - /url: /user/iuryBorgesRodrigues
+            - text: ", 2021-01-31"
+            - text: i'm trying to connect jupyter to google colab, until i get it, the problem is how do i run the local files in google colab.
+        - generic [ref=e528]:
+          - img [ref=e530]
+          - generic [ref=e531]:
+            - link "iuryBorgesRodrigues" [ref=e532] [cursor=pointer]:
+              - /url: /user/iuryBorgesRodrigues
+            - text: ", 2021-01-31"
+            - text: must have nvidia video placard?
+        - generic [ref=e533]:
+          - img [ref=e535]
+          - generic [ref=e536]:
+            - link "iq" [ref=e537] [cursor=pointer]:
+              - /url: /user/iq
+            - text: ", 2021-01-31"
+            - text: Very cool!
+        - generic [ref=e538]:
+          - img [ref=e540]
+          - generic [ref=e541]:
+            - link "iuryBorgesRodrigues" [ref=e542] [cursor=pointer]:
+              - /url: /user/iuryBorgesRodrigues
+            - text: ", 2021-01-30"
+            - text: thanks
+        - generic [ref=e543]:
+          - img [ref=e545]
+          - generic [ref=e546]:
+            - link "iuryBorgesRodrigues" [ref=e547] [cursor=pointer]:
+              - /url: /user/iuryBorgesRodrigues
+            - text: ", 2021-01-30"
+            - text: thanks
+        - generic [ref=e548]:
+          - img [ref=e550]
+          - generic [ref=e551]:
+            - link "blackle" [ref=e552] [cursor=pointer]:
+              - /url: /user/blackle
+            - text: ", 2021-01-30"
+            - text: I made a haphazard video explaining things which I hope helps! https://youtu.be/8pwXpfi-0bU
+        - generic [ref=e553]:
+          - img [ref=e555]
+          - generic [ref=e556]:
+            - link "iuryBorgesRodrigues" [ref=e557] [cursor=pointer]:
+              - /url: /user/iuryBorgesRodrigues
+            - text: ", 2021-01-30"
+            - text: It's not me that has the same problem, then someone's link commenting on the same problem -> https://github.com/marian42/mesh_to_sdf/issues/18
+        - generic [ref=e558]:
+          - img [ref=e560]
+          - generic [ref=e561]:
+            - link "iuryBorgesRodrigues" [ref=e562] [cursor=pointer]:
+              - /url: /user/iuryBorgesRodrigues
+            - text: ", 2021-01-30"
+            - text: I'm trying here, error is appearing after error, I got to format the computer and the errors kept showing up, just read the comments I posted about the errors
+        - generic [ref=e563]:
+          - img [ref=e565]
+          - generic [ref=e566]:
+            - link "ufffd" [ref=e567] [cursor=pointer]:
+              - /url: /user/ufffd
+            - text: ", 2021-01-30"
+            - text: "I'm completely blown away by this. I ended up staying up til 2 last night trying to replicate this in a colab, really just incredible stuff. Thanks so much for providing the jumping off point. @valalalala: try import skimage.measure @everyone else just posting errors and expecting free labor: just google those errors yourself, cmon."
+        - generic [ref=e568]:
+          - img [ref=e570]
+          - generic [ref=e571]:
+            - link "iuryBorgesRodrigues" [ref=e572] [cursor=pointer]:
+              - /url: /user/iuryBorgesRodrigues
+            - text: ", 2021-01-30"
+            - text: I'm pissed at life that I can't do
+            - img [ref=e573]
+        - generic [ref=e574]:
+          - img [ref=e576]
+          - generic [ref=e577]:
+            - link "valalalalala" [ref=e578] [cursor=pointer]:
+              - /url: /user/valalalalala
+            - text: ", 2021-01-30"
+            - text: "Following your notes, I was able reproduce the results for the bunny, but no luck for a couple of other models I tried: https://www.shadertoy.com/view/wtVcDd . ... still trying! Some issue with mesh_to_sdf not finding skimage.measure, but the other examples WFM. Is there some equivalent to serialize_to_shadertoy for mesh_to_sdf?"
+        - generic [ref=e579]:
+          - img [ref=e581]
+          - generic [ref=e582]:
+            - link "iuryBorgesRodrigues" [ref=e583] [cursor=pointer]:
+              - /url: /user/iuryBorgesRodrigues
+            - text: ", 2021-01-30"
+            - text: "Error: python3 voxelize_chair.py /home/iury/.local/lib/python3.8/site-packages/skimage/io/manage_plugins.py:23: UserWarning: Your installed pillow version is < 7.1.0. Several security issues (CVE-2020-11538, CVE-2020-10379, CVE-2020-10994, CVE-2020-10177) have been fixed in pillow 7.1.0 or higher. We recommend to upgrade this library. from .collection import imread_collection_wrapper Scanning... Traceback (most recent call last): File \"voxelize_chair.py\", line 11, in <module> cloud = get_surface_point_cloud(mesh, surface_point_method='scan', scan_count=20, scan_resolution=400) File \"/home/iury/.local/lib/python3.8/site-packages/mesh_to_sdf/__init__.py\", line 17, in get_surface_point_cloud return surface_point_cloud.create_from_scans(mesh, bounding_radius=bounding_radius, scan_count=scan_count, scan_resolution=scan_resolution, calculate_normals=calculate_normals) File \"/home/iury/.local/lib/python3.8/site-packages/mesh_to_sdf/surface_point_cloud.py\", line 125, in create_from_scans camera_transform = get_camera_transform_looking_at_origin(phi, theta, camera_distance=2 * bounding_radius) File \"/home/iury/.local/lib/python3.8/site-packages/mesh_to_sdf/scan.py\", line 16, in get_camera_transform_looking_at_origin camera_transform = np.matmul(get_rotation_matrix(rotation_x, axis='x'), camera_transform) File \"/home/iury/.local/lib/python3.8/site-packages/mesh_to_sdf/scan.py\", line 10, in get_rotation_matrix matrix[:3, :3] = Rotation.from_euler(axis, angle).as_dcm() AttributeError: 'scipy.spatial.transform.rotation.Rotation' object has no attribute 'as_dcm'"
+        - generic [ref=e584]:
+          - img [ref=e586]
+          - generic [ref=e587]:
+            - link "blackle" [ref=e588] [cursor=pointer]:
+              - /url: /user/blackle
+            - text: ", 2021-01-30"
+            - text: "oh you should be able to get it with `pip3 install mesh-to-sdf` its repo is here: https://github.com/marian42/mesh_to_sdf"
+        - generic [ref=e589]:
+          - img [ref=e591]
+          - generic [ref=e592]:
+            - link "oneshade" [ref=e593] [cursor=pointer]:
+              - /url: /user/oneshade
+            - text: ", 2021-01-30"
+            - text: "@blackle Where is the mesh_to_sdf module? I couldn't find it in the neural_experiments folder."
+        - generic [ref=e594]:
+          - img [ref=e596]
+          - generic [ref=e597]:
+            - link "OkiDoki" [ref=e598] [cursor=pointer]:
+              - /url: /user/OkiDoki
+            - text: ", 2021-01-30"
+            - text: "@iuryBorgesRodrigues at some point you must learn to help yourseft, Blackle already shared a lot. You said you are a python programmer, prove it a open a tutorial on how to a open notebook. A some point you want to lean something, you have to do the effort. You don't even \"google\" for \"ipynb\". I am not a believer, but \"God helps those who help themselves\" @blackle thank you for sharing all of this."
+        - generic [ref=e599]:
+          - img [ref=e601]
+          - generic [ref=e602]:
+            - link "iuryBorgesRodrigues" [ref=e603] [cursor=pointer]:
+              - /url: /user/iuryBorgesRodrigues
+            - text: ", 2021-01-29"
+            - text: When you have a little time let us know, that what you did few can do
+        - generic [ref=e604]:
+          - img [ref=e606]
+          - generic [ref=e607]:
+            - link "blackle" [ref=e608] [cursor=pointer]:
+              - /url: /user/blackle
+            - text: ", 2021-01-29"
+            - text: I would like to explain it more later but I've been really busy at work lately so I haven't had the time :c also I don't use he/him pronouns
+        - generic [ref=e609]:
+          - img [ref=e611]
+          - generic [ref=e612]:
+            - link "iuryBorgesRodrigues" [ref=e613] [cursor=pointer]:
+              - /url: /user/iuryBorgesRodrigues
+            - text: ", 2021-01-29"
+            - text: "yes"
+        - generic [ref=e614]:
+          - img [ref=e616]
+          - generic [ref=e617]:
+            - link "Pjbomb2" [ref=e618] [cursor=pointer]:
+              - /url: /user/Pjbomb2
+            - text: ", 2021-01-29"
+            - text: It would be nice to have an explanation as to how to do this with other models though
+        - generic [ref=e619]:
+          - img [ref=e621]
+          - generic [ref=e622]:
+            - link "iuryBorgesRodrigues" [ref=e623] [cursor=pointer]:
+              - /url: /user/iuryBorgesRodrigues
+            - text: ", 2021-01-29"
+            - text: Pjbomb2 -> he had shown some codes that I have never seen in my life and those same codes do not work, I even asked him to make a video on youtube teaching.
+        - generic [ref=e624]:
+          - img [ref=e626]
+          - generic [ref=e627]:
+            - link "Pjbomb2" [ref=e628] [cursor=pointer]:
+              - /url: /user/Pjbomb2
+            - text: ", 2021-01-29"
+            - text: wait so let me get this straight... you used a neural network... to convert a wiremesh of the bunny to a really fast SDF function... and then copied that neural networks state into shadertoy... to be used as the shapes definition... what. the. hell.... this is witchcraft, how do I make use of this witchcraft... for my own schemes? amazingly done, this is incredible, and the speed you get from such a detailed shape is insane...
+        - generic [ref=e629]:
+          - img [ref=e631]
+          - generic [ref=e632]:
+            - link "valalalalala" [ref=e633] [cursor=pointer]:
+              - /url: /user/valalalalala
+            - text: ", 2021-01-28"
+            - text: Amazing!
+        - generic [ref=e634]:
+          - img [ref=e636]
+          - generic [ref=e637]:
+            - link "iuryBorgesRodrigues" [ref=e638] [cursor=pointer]:
+              - /url: /user/iuryBorgesRodrigues
+            - text: ", 2021-01-28"
+            - text: make a video on youtube teaching how to use these tools
+        - generic [ref=e639]:
+          - img [ref=e641]
+          - generic [ref=e642]:
+            - link "iuryBorgesRodrigues" [ref=e643] [cursor=pointer]:
+              - /url: /user/iuryBorgesRodrigues
+            - text: ", 2021-01-28"
+            - text: "error google colab: https://drive.google.com/file/d/1gW5aNCaZtA9hYC5RFG34t0QN9T5YOWim/view?usp=sharing"
+        - generic [ref=e644]:
+          - img [ref=e646]
+          - generic [ref=e647]:
+            - link "iuryBorgesRodrigues" [ref=e648] [cursor=pointer]:
+              - /url: /user/iuryBorgesRodrigues
+            - text: ", 2021-01-28"
+            - text: if I want to do it with another 3D model, other than that rabbit, how do I do it?
+        - generic [ref=e649]:
+          - img [ref=e651]
+          - generic [ref=e652]:
+            - link "blackle" [ref=e653] [cursor=pointer]:
+              - /url: /user/blackle
+            - text: ", 2021-01-28"
+            - text: you need to use https://jupyter.org/ or google colab
+        - generic [ref=e654]:
+          - img [ref=e656]
+          - generic [ref=e657]:
+            - link "iuryBorgesRodrigues" [ref=e658] [cursor=pointer]:
+              - /url: /user/iuryBorgesRodrigues
+            - text: ", 2021-01-28"
+            - text: I'm a python programmer, but I've never seen a file with an ipynb ending
+        - generic [ref=e659]:
+          - img [ref=e661]
+          - generic [ref=e662]:
+            - link "iuryBorgesRodrigues" [ref=e663] [cursor=pointer]:
+              - /url: /user/iuryBorgesRodrigues
+            - text: ", 2021-01-28"
+            - text: i downloaded the sdf.ipynb file and went to the command terminal and typed python3 sdf.ipynb and nothing happened, how did you use that?
+        - generic [ref=e664]:
+          - img [ref=e666]
+          - generic [ref=e667]:
+            - link "xjorma" [ref=e668] [cursor=pointer]:
+              - /url: /user/xjorma
+            - text: ", 2021-01-28"
+            - text: Wow! I wanted to test SIREN, but I didn't think we could have this result, with so simple model. Impressive job!
+        - generic [ref=e669]:
+          - img [ref=e671]
+          - generic [ref=e672]:
+            - link "aiekick" [ref=e673] [cursor=pointer]:
+              - /url: /user/aiekick
+            - text: ", 2021-01-28"
+            - text: awesome
+        - generic [ref=e674]:
+          - img [ref=e676]
+          - generic [ref=e677]:
+            - link "blackle" [ref=e678] [cursor=pointer]:
+              - /url: /user/blackle
+            - text: ", 2021-01-28"
+            - text: "here's a link to the python notebooks I've used for the last few neural network shaders: https://drive.google.com/drive/folders/13-ks7iyLyI0vcS38xq1eeFdaMdfNlUC8?usp=sharing"
+        - generic [ref=e679]:
+          - img [ref=e681]
+          - generic [ref=e682]:
+            - link "Zi7ar21" [ref=e683] [cursor=pointer]:
+              - /url: /user/Zi7ar21
+            - text: ", 2021-01-28"
+            - text: I remember someone else made a Neural SDF of the Stanford bunny and it was amazing. It wasn't nearly as fast or pretty as this one though!
+        - generic [ref=e684]:
+          - img [ref=e686]
+          - generic [ref=e687]:
+            - link "blurryroots" [ref=e688] [cursor=pointer]:
+              - /url: /user/blurryroots
+            - text: ", 2021-01-28"
+            - text: Thanks for sharing. Incredible work.
+        - generic [ref=e689]:
+          - img [ref=e691]
+          - generic [ref=e692]:
+            - link "Logos" [ref=e693] [cursor=pointer]:
+              - /url: /user/Logos
+            - text: ", 2021-01-28"
+            - text: Cool! Heart!
+        - generic [ref=e694]:
+          - img [ref=e696]
+          - generic [ref=e697]:
+            - link "PauloFalcao" [ref=e698] [cursor=pointer]:
+              - /url: /user/PauloFalcao
+            - text: ", 2021-01-28"
+            - text: Impressive!
+        - generic [ref=e699]:
+          - img [ref=e701]
+          - generic [ref=e702]:
+            - link "michael0884" [ref=e703] [cursor=pointer]:
+              - /url: /user/michael0884
+            - text: ", 2021-01-28"
+            - text: big wow
+        - generic [ref=e704]:
+          - img [ref=e706]
+          - generic [ref=e707]:
+            - link "Duke" [ref=e708] [cursor=pointer]:
+              - /url: /user/Duke
+            - text: ", 2021-01-28"
+            - text: Wow!
+        - generic [ref=e709]:
+          - img [ref=e711]
+          - generic [ref=e712]:
+            - link "jeyko" [ref=e713] [cursor=pointer]:
+              - /url: /user/jeyko
+            - text: ", 2021-01-28"
+            - text: oh wow
+        - generic [ref=e714]:
+          - img [ref=e716]
+          - generic [ref=e717]:
+            - link "iuryBorgesRodrigues" [ref=e718] [cursor=pointer]:
+              - /url: /user/iuryBorgesRodrigues
+            - text: ", 2021-01-28"
+            - text: I've seen a lot of people posting 3D models made in software here, and it's curious how they did it
+        - generic [ref=e719]:
+          - img [ref=e721]
+          - generic [ref=e722]:
+            - link "iuryBorgesRodrigues" [ref=e723] [cursor=pointer]:
+              - /url: /user/iuryBorgesRodrigues
+            - text: ", 2021-01-28"
+            - text: what kind of software did you use to convert this rabbit to use in the shadertoy
+        - generic [ref=e724]:
+          - img [ref=e726]
+          - generic [ref=e727]:
+            - link "dean_the_coder" [ref=e728] [cursor=pointer]:
+              - /url: /user/dean_the_coder
+            - text: ", 2021-01-28"
+            - text: Awesome.
+        - generic [ref=e729]:
+          - img [ref=e731]
+          - generic [ref=e732]:
+            - link "iapafoto" [ref=e733] [cursor=pointer]:
+              - /url: /user/iapafoto
+            - text: ", 2021-01-28"
+            - text: still 350ch to remove :/
+            - generic [ref=e734]: vec4 f10=sin(.01*( mat4(-34,6,-59,-76,10,-19,-12,44,64,-02,-26,15,-16,21,91,15)*f00+ mat4(01,54,-77,11,06,-14,43,51,-18,8,39,20,33,-49,-10,19)*f01+ mat4(27,22,43,53,18,-17,23,-64,-14,02,-10,16,-13,-06,-4,-36)*f02+ mat4(-13,29,-29,8,113,2,-83,32,-32,4,-31,-16,14,-3,-20,39)*f03+ vec4(73,-428,-156,-180)))+f00, f11=sin(.01*( mat4(-111,55,-12,-100,16,15,-30,31,-1,1,31,-42,-29,38,-4,71)*f00+ mat4(96,-02,86,52,-14,60,44,43,02,-15,-49,-05,-06,-25,-03,-22)*f01+ mat4(52,44,-5,-11,-56,-10,-61,-40,-4,55,32,-7,-02,28,26,-49)*f02+ mat4(02,-32,6,-17,-59,0,-24,60,-06,13,-21,-27,-12,-14,58,-55)*f03+ vec4(-224,-348,-80,141)))+f01, f12=sin(.01*( mat4(44,-6,-79,-46,05,-60,30,36,35,12,2,12,40,-26,63,-21)*f00+ mat4(-48,43,-73,-40,11,-1,71,05,-25,25,-28,-20,32,-2,-84,16)*f01+ mat4(39,-7,90,36,-38,-27,-186,-39,48,-20,-5,10,-0,-21,29,63)*f02+ mat4(46,-32,6,9,72,-47,81,78,90,2,-21,8,-16,22,32,-13)*f03+ vec4(338,120,84,141)))+f02, f13=sin(.01*( mat4(-41,-24,-71,-25,-24,-75,-9,2,-27,-42,2,3,-01,51,-12,-124)*f00+ mat4(64,31,-136,61,-34,11,14,79,22,-16,-29,-70,02,-37,49,39)*f01+ mat4(79,47,54,-47,-113,-35,-103,-22,-67,-26,10,21,-7,-73,-11,72)*f02+ mat4(43,-23,13,9,138,-63,157,-20,39,-14,42,13,-57,-8,-21,21)*f03+ vec4(-34,-328,43,-52)))+f03; f00=sin(.01*( mat4(-72,23,-89,52,38,19,-16,-88,26,-37,9,63,29,-72,30,-95)*f10+ mat4(-22,-51,-42,-73,-32,0,-103,117,-20,-3,-13,-16,-41,9,36,-84)*f11+ mat4(-21,1,33,47,05,20,-44,-104,13,12,-13,31,1,-34,41,-34)*f12+ mat4(-13,-6,-39,-22,48,25,24,-97,-34,14,42,-0,-44,5,9,-95)*f13+ vec4(48,87,-87,-206)))/1.4+f10; f01=sin(.01*( mat4(-27,29,-21,15,34,-23,85,-9,-115,-24,-05,-25,-12,-73,-17,-37)*f10+ mat4(-111,35,-93,-6,-79,-03,-46,-37,60,-37,-14,45,-3,-21,2,59)*f11+ mat4(-92,-17,-58,-18,58,60,83,-104,-80,-16,23,-11,8,16,76,61)*f12+ mat4(29,45,30,39,-91,66,-35,-35,21,16,-54,-63,110,-38,20,15)*f13+ vec4(-172,-14,192,208)))/1.4+f11; f02=sin(.01*( mat4(100,66,130,-51,88,25,-67,3,-68,-8,-12,-14,46,115,38,-10)*f10+ mat4(51,-57,41,-9,68,-50,-4,-101,20,44,-60,46,-9,-37,-130,4)*f11+ mat4(14,29,-45,-6,-65,33,-37,-95,71,-07,100,-60,-168,-20,-0,-70)*f12+ mat4(-31,69,56,13,95,36,56,59,-63,52,-30,17,123,72,95,75)*f13+ vec4(-90,-326,-44,-311)))/1.4+f12; f03=sin(.01*( mat4(51,-98,-28,16,-22,-17,-103,22,70,-15,12,43,78,67,-85,-25)*f10+ mat4(81,60,-89,61,-103,-33,60,-11,-6,1,-2,-44,73,69,102,62)*f11+ mat4(-10,52,80,-65,40,-75,47,156,03,5,8,31,-03,22,-163,07)*f12+ mat4(-18,-7,-122,48,-1,56,07,15,24,25,-9,-54,23,-8,20,36)*f13+ vec4(-111,-428,102,-23)))/1.4+f13;
+        - generic [ref=e735]:
+          - img [ref=e737]
+          - generic [ref=e738]:
+            - link "iapafoto" [ref=e739] [cursor=pointer]:
+              - /url: /user/iapafoto
+            - text: ", 2021-01-28"
+            - text: Could be shorten a bit to reach 4K ?
+            - generic [ref=e740]: vec4 f10=sin(.01*( mat4(-34,6,-59,-76,10,-19,-12,44,64,-2,-26,15,-16,21,91,15)*f00+ mat4(1,54,-77,11,6,-14,43,51,-18,8,39,20,33,-49,-10,19)*f01+ mat4(27,22,43,53,18,-17,23,-64,-14,2,-10,16,-13,-6,-4,-36)*f02+ mat4(-13,29,-29,8,113,2,-83,32,-32,4,-31,-16,14,-3,-20,39)*f03+ vec4(73,-428,-156,-180)))/1.0+f00; vec4 f11=sin(.01*( mat4(-111,55,-12,-100,16,15,-30,31,-1,1,31,-42,-29,38,-4,71)*f00+ mat4(96,-2,86,52,-14,60,44,43,2,-15,-49,-5,-6,-25,-3,-22)*f01+ mat4(52,44,-5,-11,-56,-10,-61,-40,-4,55,32,-7,-2,28,26,-49)*f02+ mat4(2,-32,6,-17,-59,0,-24,60,-6,13,-21,-27,-12,-14,58,-55)*f03+ vec4(-224,-348,-80,141)))/1.0+f01;
+        - generic [ref=e741]:
+          - img [ref=e743]
+          - generic [ref=e744]:
+            - link "kastorp" [ref=e745] [cursor=pointer]:
+              - /url: /user/kastorp
+            - text: ", 2021-01-28"
+            - text: what a time to be alive!
+            - img [ref=e746]
+        - generic [ref=e747]:
+          - img [ref=e749]
+          - generic [ref=e750]:
+            - link "Dain" [ref=e751] [cursor=pointer]:
+              - /url: /user/Dain
+            - text: ", 2021-01-28"
+            - text: You have created procedural bunny noise(when disabling the bounds check)
+        - generic [ref=e752]:
+          - img [ref=e754]
+          - generic [ref=e755]:
+            - link "iapafoto" [ref=e756] [cursor=pointer]:
+              - /url: /user/iapafoto
+            - text: ", 2021-01-28"
+            - text: the future of 4K intro ?
+            - img [ref=e757]
+        - generic [ref=e758]:
+          - img [ref=e760]
+          - generic [ref=e761]:
+            - link "blackle" [ref=e762] [cursor=pointer]:
+              - /url: /user/blackle
+            - text: ", 2021-01-28"
+            - text: sorry the other ones have been crashing, I was really glad that I was able to get a really tiny neural network to do the job for this one
+        - generic [ref=e763]:
+          - img [ref=e765]
+          - generic [ref=e766]:
+            - link "oneshade" [ref=e767] [cursor=pointer]:
+              - /url: /user/oneshade
+            - text: ", 2021-01-28"
+            - text: This one doesn't crash thankfully, very cool! (The networks output beyond the unit sphere is rather interesting btw).
+  - generic [ref=e121]:
+    - generic [ref=e122]:
+      - text: Community Forums
+      - list [ref=e123]:
+        - listitem [ref=e124]:
+          - link "Official Events" [ref=e125] [cursor=pointer]:
+            - /url: /events
+        - listitem [ref=e126]:
+          - link "In Facebook (english)" [ref=e127] [cursor=pointer]:
+            - /url: https://www.facebook.com/groups/147749602472741
+        - listitem [ref=e128]:
+          - link "In Facebook (korean)" [ref=e129] [cursor=pointer]:
+            - /url: https://www.facebook.com/groups/1339783682699494
+        - listitem [ref=e130]:
+          - link "In Discord" [ref=e131] [cursor=pointer]:
+            - /url: https://discord.gg/XtmMN6E
+          - text: (
+          - link "direct link" [ref=e132] [cursor=pointer]:
+            - /url: https://discordapp.com/channels/578696555612209173/579531723348639754
+          - text: )
+    - generic [ref=e133]:
+      - text: Feedback and Support
+      - list [ref=e134]:
+        - listitem [ref=e135]:
+          - link "Facebook" [ref=e136] [cursor=pointer]:
+            - /url: https://www.facebook.com/Shadertoy
+        - listitem [ref=e137]:
+          - link "Twitter" [ref=e138] [cursor=pointer]:
+            - /url: https://twitter.com/shadertoy
+        - listitem [ref=e139]:
+          - link "Patreon" [ref=e140] [cursor=pointer]:
+            - /url: https://www.patreon.com/shadertoy
+        - listitem [ref=e141]:
+          - link "Roadmap" [ref=e142] [cursor=pointer]:
+            - /url: https://trello.com/b/5hM0CjId
+    - generic [ref=e143]:
+      - text: Shadertoy
+      - list [ref=e144]:
+        - listitem [ref=e145]:
+          - link "Store" [ref=e146] [cursor=pointer]:
+            - /url: /store
+        - listitem [ref=e147]:
+          - link "Documentation" [ref=e148] [cursor=pointer]:
+            - /url: /howto
+        - listitem [ref=e149]:
+          - link "Terms & Privacy" [ref=e150] [cursor=pointer]:
+            - /url: /terms
+        - listitem [ref=e151]:
+          - link "About" [ref=e152] [cursor=pointer]:
+            - /url: /about
+    - generic [ref=e153]:
+      - text: Apps and Plugins
+      - list [ref=e154]:
+        - listitem [ref=e155]:
+          - link "Official iPhone App" [ref=e156] [cursor=pointer]:
+            - /url: https://itunes.apple.com/us/app/shadertoy/id717961814
+          - text: by
+          - link "Reinder" [ref=e157] [cursor=pointer]:
+            - /url: /user/reinder
+        - listitem [ref=e158]:
+          - link "Screensaver" [ref=e159] [cursor=pointer]:
+            - /url: https://steamcommunity.com/sharedfiles/filedetails/?id=1726697188
+          - text: by
+          - link "Kosro" [ref=e160] [cursor=pointer]:
+            - /url: /user/kosro
+        - listitem [ref=e161]:
+          - link "Shadertoy plugin" [ref=e162] [cursor=pointer]:
+            - /url: https://chrome.google.com/webstore/detail/shadertoy-unofficial-plug/ohicbclhdmkhoabobgppffepcopomhgl
+          - text: by
+          - link "Patu" [ref=e163] [cursor=pointer]:
+            - /url: /user/patu
+    - generic [ref=e164]:
+      - text: Tutorials
+      - list [ref=e165]:
+        - listitem [ref=e166]:
+          - link "Shader coding intro" [ref=e167] [cursor=pointer]:
+            - /url: https://www.youtube.com/watch?v=0ifChJ0nJfM
+          - text: by
+          - link "iq" [ref=e168] [cursor=pointer]:
+            - /url: /user/iq
+        - listitem [ref=e169]:
+          - link "Shadertoy Unofficial" [ref=e170] [cursor=pointer]:
+            - /url: https://shadertoyunofficial.wordpress.com/
+          - text: by
+          - link "FabriceNeyret2" [ref=e171] [cursor=pointer]:
+            - /url: /user/FabriceNeyret2
+  - generic [ref=e172]:
+    - generic [ref=e173]:
+      - text: We use cookies to give you the best experience on our website. If you continue using Shadertoy, we'll assume that you are happy to receive all cookies on this website. For more information, please review our
+      - link "Terms & Privacy" [ref=e174] [cursor=pointer]:
+        - /url: /terms
+      - text: .
+    - button "Accept" [ref=e176]

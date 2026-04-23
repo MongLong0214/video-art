@@ -1,0 +1,872 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - link "Shadertoy" [ref=e4] [cursor=pointer]:
+        - /url: /
+      - searchbox "Search..." [ref=e7]
+    - generic [ref=e8]:
+      - link "Browse" [ref=e9] [cursor=pointer]:
+        - /url: /browse
+      - link "New" [ref=e10] [cursor=pointer]:
+        - /url: /new
+      - link "Sign In" [ref=e11] [cursor=pointer]:
+        - /url: /signin
+  - generic [ref=e13]:
+    - generic [ref=e14]:
+      - generic [ref=e17]:
+        - generic [ref=e18]:
+          - generic "Reset time (<ALT>+<DownArrow>)" [ref=e19] [cursor=pointer]
+          - generic "Pause/Resume (<ALT>+<UpArrow>)" [ref=e20] [cursor=pointer]
+        - generic [ref=e21]:
+          - generic [ref=e22]: "15.97"
+          - generic [ref=e23]: 1.0 fps
+          - generic [ref=e24]: 420 x 236
+        - generic [ref=e25]:
+          - generic "Record (<ALT>+<R>)" [ref=e26] [cursor=pointer]
+          - generic "Volume" [ref=e27] [cursor=pointer]
+          - generic "Go fullscreen" [ref=e28] [cursor=pointer]
+      - generic [ref=e29]:
+        - generic [ref=e30]:
+          - generic [ref=e31]:
+            - text: Abstract Corridor
+            - generic [ref=e32]:
+              - img "This shader has been Shader of the Week!" [ref=e33]
+              - img "This shader has been a Featured Shader!" [ref=e34]
+          - generic [ref=e35]:
+            - img "share this shader" [ref=e36] [cursor=pointer]
+            - img [ref=e37]
+            - text: "448"
+          - generic [ref=e38]:
+            - text: "Views: 37148"
+            - text: ", Tags:"
+            - generic [ref=e178]:
+              - link "noise" [ref=e179] [cursor=pointer]:
+                - /url: /results?query=tag%3Dnoise
+              - text: ","
+              - link "tunnel" [ref=e180] [cursor=pointer]:
+                - /url: /results?query=tag%3Dtunnel
+              - text: ","
+              - link "triangle" [ref=e181] [cursor=pointer]:
+                - /url: /results?query=tag%3Dtriangle
+              - text: ","
+              - link "abstract" [ref=e182] [cursor=pointer]:
+                - /url: /results?query=tag%3Dabstract
+          - generic [ref=e39]:
+            - text: Created by
+            - link "Shane" [ref=e184] [cursor=pointer]:
+              - /url: /user/Shane
+            - text: in 2015-08-26
+        - generic [ref=e185]: Using Nimitz's triangle noise idea and his curvature function to fake an abstract, flat-shaded, point-lit, mesh look.
+    - generic [ref=e40]:
+      - generic [ref=e41] [cursor=pointer]:
+        - combobox [ref=e187]:
+          - option "Common"
+          - option "Sound"
+          - option "Buffer A"
+          - option "Buffer B"
+          - option "Buffer C"
+          - option "Buffer D"
+          - option "Cubemap A"
+        - generic [ref=e188]:
+          - img [ref=e189]
+          - generic [ref=e190]: Image
+      - generic [ref=e43] [cursor=pointer]:
+        - generic [ref=e44]: Shader Inputs
+        - generic [ref=e47]:
+          - text: uniform vec3 iResolution; // viewport resolution (in pixels)
+          - text: uniform float iTime; // shader playback time (in seconds)
+          - text: uniform float iTimeDelta; // render time (in seconds)
+          - text: uniform float iFrameRate; // shader frame rate
+          - text: uniform int iFrame; // shader playback frame
+          - text: uniform float iChannelTime[4]; // channel playback time (in seconds)
+          - text: uniform vec3 iChannelResolution[4]; // channel resolution (in pixels)
+          - text: "uniform vec4 iMouse; // mouse pixel coords. xy: current (if MLB down), zw: click"
+          - text: uniform samplerXX iChannel0..3; // input channel. XX = 2D/Cube
+          - text: uniform vec4 iDate; // (year, month, day, time in seconds)
+          - text: uniform float iSampleRate; // sound sample rate (i.e., 44100)
+      - generic [ref=e49]:
+        - textbox [ref=e50]
+        - generic [ref=e53]:
+          - generic [ref=e193]:
+            - generic [ref=e194]: "1"
+            - text: /*
+          - generic [ref=e196]: "2"
+          - generic [ref=e197]:
+            - generic [ref=e198]: "3"
+            - text: Abstract Corridor
+          - generic [ref=e199]:
+            - generic [ref=e200]: "4"
+            - text: "-------------------"
+          - generic [ref=e202]: "5"
+          - generic [ref=e203]:
+            - generic [ref=e204]: "6"
+            - text: Using Shadertoy user Nimitz's triangle noise idea and his curvature function to fake
+          - generic [ref=e205]:
+            - generic [ref=e206]: "7"
+            - text: an abstract, flat-shaded, point-lit, mesh look.
+          - generic [ref=e208]: "8"
+          - generic [ref=e209]:
+            - generic [ref=e210]: "9"
+            - text: It's a slightly trimmed back, and hopefully, much quicker version my previous tunnel
+          - generic [ref=e211]:
+            - generic [ref=e212]: "10"
+            - text: example... which is not interesting enough to link to. :)
+          - generic [ref=e214]: "11"
+          - generic [ref=e215]:
+            - generic [ref=e216]: "12"
+            - text: "*/"
+          - generic [ref=e218]: "13"
+          - generic [ref=e219]:
+            - generic [ref=e220]: "14"
+            - text: "#define PI 3.1415926535898"
+          - generic [ref=e221]:
+            - generic [ref=e222]: "15"
+            - text: "#define FH 1.0 // Floor height. Set it to 2.0 to get rid of the floor."
+          - generic [ref=e224]: "16"
+          - generic [ref=e225]:
+            - generic [ref=e226]: "17"
+            - text: // Grey scale.
+          - generic [ref=e227]:
+            - generic [ref=e228]: "18"
+            - text: "float getGrey(vec3 p){ return p.x*0.299 + p.y*0.587 + p.z*0.114; }"
+          - generic [ref=e230]: "19"
+          - generic [ref=e231]:
+            - generic [ref=e232]: "20"
+            - text: // Non-standard vec3-to-vec3 hash function.
+          - generic [ref=e233]:
+            - generic:
+              - generic [ref=e234]: "21"
+              - generic [ref=e236] [cursor=pointer]: ▾
+            - text: "vec3 hash33(vec3 p){"
+          - generic [ref=e238]: "22"
+          - generic [ref=e239]:
+            - generic [ref=e240]: "23"
+            - text: float n = sin(dot(p, vec3(7, 157, 113)));
+          - generic [ref=e241]:
+            - generic [ref=e242]: "24"
+            - text: return fract(vec3(2097152, 262144, 32768)*n);
+          - generic [ref=e243]:
+            - generic [ref=e244]: "25"
+            - text: "}"
+          - generic [ref=e246]: "26"
+          - generic [ref=e247]:
+            - generic [ref=e248]: "27"
+            - text: // 2x2 matrix rotation.
+          - generic [ref=e249]:
+            - generic:
+              - generic [ref=e250]: "28"
+              - generic [ref=e252] [cursor=pointer]: ▾
+            - text: "mat2 rot2(float a){"
+          - generic [ref=e254]: "29"
+          - generic [ref=e255]:
+            - generic [ref=e256]: "30"
+            - text: float c = cos(a); float s = sin(a);
+          - generic [ref=e257]:
+            - generic [ref=e258]: "31"
+            - text: return mat2(c, s, -s, c);
+          - generic [ref=e259]:
+            - generic [ref=e260]: "32"
+            - text: "}"
+          - generic [ref=e262]: "33"
+          - generic [ref=e263]:
+            - generic [ref=e264]: "34"
+            - text: // Tri-Planar blending function. Based on an old Nvidia tutorial.
+          - generic [ref=e265]:
+            - generic:
+              - generic [ref=e266]: "35"
+              - generic [ref=e268] [cursor=pointer]: ▾
+            - text: "vec3 tex3D( sampler2D tex, in vec3 p, in vec3 n ){"
+          - generic [ref=e270]: "36"
+          - generic [ref=e271]:
+            - generic [ref=e272]: "37"
+            - text: n = max((abs(n) - 0.2)*7., 0.001); // max(abs(n), 0.001), etc.
+          - generic [ref=e273]:
+            - generic [ref=e274]: "38"
+            - text: n /= (n.x + n.y + n.z );
+          - generic [ref=e276]: "39"
+          - generic [ref=e277]:
+            - generic [ref=e278]: "40"
+            - text: return (texture(tex, p.yz)*n.x + texture(tex, p.zx)*n.y + texture(tex, p.xy)*n.z).xyz;
+          - generic [ref=e279]:
+            - generic [ref=e280]: "41"
+            - text: "}"
+          - generic [ref=e282]: "42"
+          - generic [ref=e283]:
+            - generic [ref=e284]: "43"
+            - text: // The triangle function that Shadertoy user Nimitz has used in various triangle noise
+          - generic [ref=e285]:
+            - generic [ref=e286]: "44"
+            - text: // demonstrations. See Xyptonjtroz - Very cool. Anyway, it's not really being used to its
+          - generic [ref=e287]:
+            - generic [ref=e288]: "45"
+            - text: // full potential here.
+          - generic [ref=e289]:
+            - generic [ref=e290]: "46"
+            - text: "vec3 tri(in vec3 x){return abs(x-floor(x)-.5);} // Triangle function."
+          - generic [ref=e292]: "47"
+          - generic [ref=e293]:
+            - generic [ref=e294]: "48"
+            - text: "// The function used to perturb the walls of the cavern: There are infinite possibities,"
+          - generic [ref=e295]:
+            - generic [ref=e296]: "49"
+            - text: // but this one is just a cheap...ish routine - based on the triangle function - to give a
+          - generic [ref=e297]:
+            - generic [ref=e298]: "50"
+            - text: // subtle jaggedness. Not very fancy, but it does a surprizingly good job at laying the
+          - generic [ref=e299]:
+            - generic [ref=e300]: "51"
+            - text: // foundations for a sharpish rock face. Obviously, more layers would be more convincing.
+          - generic [ref=e301]:
+            - generic [ref=e302]: "52"
+            - text: // However, this is a GPU-draining distance function, so the finer details
+          - generic [ref=e303]:
+            - generic [ref=e304]: "53"
+            - text: // are bump mapped.
+          - generic [ref=e305]:
+            - generic:
+              - generic [ref=e306]: "54"
+              - generic [ref=e308] [cursor=pointer]: ▾
+            - text: "float surfFunc(in vec3 p){"
+          - generic [ref=e310]: "55"
+          - generic [ref=e311]:
+            - generic [ref=e312]: "56"
+            - text: return dot(tri(p*0.5 + tri(p*0.25).yzx), vec3(0.666));
+          - generic [ref=e313]:
+            - generic [ref=e314]: "57"
+            - text: "}"
+          - generic [ref=e316]: "58"
+          - generic [ref=e318]: "59"
+          - generic [ref=e319]:
+            - generic [ref=e320]: "60"
+            - text: // The path is a 2D sinusoid that varies over time, depending upon the frequencies, and
+          - generic [ref=e321]:
+            - generic [ref=e322]: "61"
+            - text: // amplitudes.
+          - generic [ref=e323]:
+            - generic [ref=e324]: "62"
+            - text: "vec2 path(in float z){ float s = sin(z/24.)*cos(z/12.); return vec2(s*12., 0.); }"
+          - generic [ref=e326]: "63"
+          - generic [ref=e327]:
+            - generic [ref=e328]: "64"
+            - text: // Standard tunnel distance function with some perturbation thrown into the mix. A floor
+          - generic [ref=e329]:
+            - generic [ref=e330]: "65"
+            - text: // has been worked in also. A tunnel is just a tube with a smoothly shifting center as you
+          - generic [ref=e331]:
+            - generic [ref=e332]: "66"
+            - text: // traverse lengthwise. The walls of the tube are perturbed by a pretty cheap 3D surface
+          - generic [ref=e333]:
+            - generic [ref=e334]: "67"
+            - text: // function.
+          - generic [ref=e335]:
+            - generic:
+              - generic [ref=e336]: "68"
+              - generic [ref=e338] [cursor=pointer]: ▾
+            - text: "float map(vec3 p){"
+          - generic [ref=e340]: "69"
+          - generic [ref=e341]:
+            - generic [ref=e342]: "70"
+            - text: float sf = surfFunc(p - vec3(0, cos(p.z/3.)*.15, 0));
+          - generic [ref=e343]:
+            - generic [ref=e344]: "71"
+            - text: // Square tunnel.
+          - generic [ref=e345]:
+            - generic [ref=e346]: "72"
+            - text: "// For a square tunnel, use the Chebyshev(?) distance: max(abs(tun.x), abs(tun.y))"
+          - generic [ref=e347]:
+            - generic [ref=e348]: "73"
+            - text: vec2 tun = abs(p.xy - path(p.z))*vec2(0.5, 0.7071);
+          - generic [ref=e349]:
+            - generic [ref=e350]: "74"
+            - text: float n = 1. - max(tun.x, tun.y) + (0.5 - sf);
+          - generic [ref=e351]:
+            - generic [ref=e352]: "75"
+            - text: return min(n, p.y + FH);
+          - generic [ref=e354]: "76"
+          - generic [ref=e355]:
+            - generic [ref=e356]: "77"
+            - text: /*
+          - generic [ref=e357]:
+            - generic [ref=e358]: "78"
+            - text: // Round tunnel.
+          - generic [ref=e359]:
+            - generic [ref=e360]: "79"
+            - text: "// For a round tunnel, use the Euclidean distance: length(tun.y)"
+          - generic [ref=e361]:
+            - generic [ref=e362]: "80"
+            - text: vec2 tun = (p.xy - path(p.z))*vec2(0.5, 0.7071);
+          - generic [ref=e363]:
+            - generic [ref=e364]: "81"
+            - text: float n = 1.- length(tun) + (0.5 - sf);
+          - generic [ref=e365]:
+            - generic [ref=e366]: "82"
+            - text: return min(n, p.y + FH);
+          - generic [ref=e367]:
+            - generic [ref=e368]: "83"
+            - text: "*/"
+          - generic [ref=e370]: "84"
+          - generic [ref=e371]:
+            - generic [ref=e372]: "85"
+            - text: /*
+          - generic [ref=e373]:
+            - generic [ref=e374]: "86"
+            - text: "// Rounded square tunnel using Minkowski distance:"
+          - generic [ref=e375]:
+            - generic [ref=e376]: "87"
+            - text: // pow(pow(abs(tun.x), n), pow(abs(tun.y), n), 1/n)
+          - generic [ref=e377]:
+            - generic [ref=e378]: "88"
+            - text: vec2 tun = abs(p.xy - path(p.z))*vec2(0.5, 0.7071);
+          - generic [ref=e379]:
+            - generic [ref=e380]: "89"
+            - text: tun = pow(tun, vec2(4.));
+          - generic [ref=e381]:
+            - generic [ref=e382]: "90"
+            - text: float n =1.-pow(tun.x + tun.y, 1.0/4.) + (0.5 - sf);
+          - generic [ref=e383]:
+            - generic [ref=e384]: "91"
+            - text: return min(n, p.y + FH);
+          - generic [ref=e385]:
+            - generic [ref=e386]: "92"
+            - text: "*/"
+      - generic [ref=e60]:
+        - generic [ref=e61]:
+          - img "Compile (<ALT>+<ENTER>)" [ref=e62] [cursor=pointer]
+          - link "Compiled in 0.0 secs" [ref=e387] [cursor=pointer]:
+            - /url: "#"
+        - generic [ref=e63]: 3592 chars
+        - generic [ref=e64]:
+          - combobox "Change font size (<ALT>+<+/->)" [ref=e66]:
+            - option "XS"
+            - option "S" [selected]
+            - option "M"
+            - option "L"
+            - option "XL"
+            - option "XXL"
+          - img "Show GLSL help" [ref=e67] [cursor=pointer]
+      - generic [ref=e68]:
+        - generic [ref=e69]:
+          - generic [ref=e70]:
+            - img "remove input" [ref=e388] [cursor=pointer]
+            - generic:
+              - text: Filter
+              - combobox "Pixel filtering mode" [ref=e72]:
+                - option "nearest" [selected]
+                - option "linear"
+                - option "mipmap"
+              - text: Wrap
+              - combobox "Pixel filtering mode" [ref=e73]:
+                - option "clamp" [selected]
+                - option "repeat"
+              - generic [ref=e75]:
+                - text: VFlip
+                - checkbox "VFlip" [ref=e76]
+          - generic [ref=e77]:
+            - generic [ref=e78]: iChannel0
+            - img "sampler options" [ref=e80] [cursor=pointer]
+        - generic [ref=e81]:
+          - generic [ref=e82]:
+            - img "remove input" [ref=e389] [cursor=pointer]
+            - generic:
+              - text: Filter
+              - combobox "Pixel filtering mode" [ref=e84]:
+                - option "nearest" [selected]
+                - option "linear"
+                - option "mipmap"
+              - text: Wrap
+              - combobox "Pixel filtering mode" [ref=e85]:
+                - option "clamp" [selected]
+                - option "repeat"
+              - generic [ref=e87]:
+                - text: VFlip
+                - checkbox "VFlip" [ref=e88]
+          - generic [ref=e89]:
+            - generic [ref=e90]: iChannel1
+            - img "sampler options" [ref=e92] [cursor=pointer]
+        - generic [ref=e93]:
+          - generic [ref=e94]:
+            - generic:
+              - text: Filter
+              - combobox "Pixel filtering mode" [ref=e96]:
+                - option "nearest" [selected]
+                - option "linear"
+                - option "mipmap"
+              - text: Wrap
+              - combobox "Pixel filtering mode" [ref=e97]:
+                - option "clamp" [selected]
+                - option "repeat"
+              - generic [ref=e99]:
+                - text: VFlip
+                - checkbox "VFlip" [ref=e100]
+          - generic [ref=e102]: iChannel2
+        - generic [ref=e105]:
+          - generic [ref=e106]:
+            - generic:
+              - text: Filter
+              - combobox "Pixel filtering mode" [ref=e108]:
+                - option "nearest" [selected]
+                - option "linear"
+                - option "mipmap"
+              - text: Wrap
+              - combobox "Pixel filtering mode" [ref=e109]:
+                - option "clamp" [selected]
+                - option "repeat"
+              - generic [ref=e111]:
+                - text: VFlip
+                - checkbox "VFlip" [ref=e112]
+          - generic [ref=e114]: iChannel3
+    - generic [ref=e118]:
+      - text: Comments (47)
+      - generic [ref=e119]:
+        - link "Sign in" [ref=e121] [cursor=pointer]:
+          - /url: /signin
+        - text: to post a comment.
+      - generic [ref=e390]:
+        - generic [ref=e391]:
+          - img [ref=e393]
+          - generic [ref=e394]:
+            - link "foodi" [ref=e395] [cursor=pointer]:
+              - /url: /user/foodi
+            - text: ", 2026-01-13"
+            - text: Love this so much!
+        - generic [ref=e396]:
+          - img [ref=e398]
+          - generic [ref=e399]:
+            - link "jojo96" [ref=e400] [cursor=pointer]:
+              - /url: /user/jojo96
+            - text: ", 2025-09-26"
+            - text: This is so cool
+            - img [ref=e401]
+            - text: Amazing work
+        - generic [ref=e402]:
+          - img [ref=e404]
+          - generic [ref=e405]:
+            - link "TheArchCoder" [ref=e406] [cursor=pointer]:
+              - /url: /user/TheArchCoder
+            - text: ", 2025-05-03"
+            - text: "@Shane Makes sense then, Old shaders were forced to run fast. Nowaday's most 3D shaders run at 30 - 15 fps for me, I'm surprised this is running at 55 consistently."
+        - generic [ref=e407]:
+          - img [ref=e409]
+          - generic [ref=e410]:
+            - link "Shane" [ref=e411] [cursor=pointer]:
+              - /url: /user/Shane
+            - text: ", 2025-05-03"
+            - text: "@TheArchCoder This was written when GPUs were really picky about how many operations were placed inside the raymarching loop. Therefore, we were constantly on the lookout for simple routines with small overhead that would result in interesting visuals. Camera work and winding tunnels were an oldschool staple, since they were fun to watch and cheap, and the triangle noise (Nimitz's creation, as far as I know) isn't reliant on grids and hash functions, so is ideal for realtime creation. Of course, pre-calculation can lead to way more interesting things, but it's not always available, nor is it always simple in shader form. I miss that days when GPUs forced us to use minimal instructions, but there's always pressure to move with the times. I miss the days when I had more coding energy too."
+            - img [ref=e412]
+        - generic [ref=e413]:
+          - img [ref=e415]
+          - generic [ref=e416]:
+            - link "TheArchCoder" [ref=e417] [cursor=pointer]:
+              - /url: /user/TheArchCoder
+            - text: ", 2025-05-01"
+            - text: You have some really fast shader's.
+        - generic [ref=e418]:
+          - img [ref=e420]
+          - generic [ref=e421]:
+            - link "vdubois" [ref=e422] [cursor=pointer]:
+              - /url: /user/vdubois
+            - text: ", 2022-12-13"
+            - text: This is DOPE!
+        - generic [ref=e423]:
+          - img [ref=e425]
+          - generic [ref=e426]:
+            - link "sense" [ref=e427] [cursor=pointer]:
+              - /url: /user/sense
+            - text: ", 2021-02-23"
+            - text: beautiful stuff here.. @shane
+        - generic [ref=e428]:
+          - img [ref=e430]
+          - generic [ref=e431]:
+            - link "danhel95" [ref=e432] [cursor=pointer]:
+              - /url: /user/danhel95
+            - text: ", 2020-08-26"
+            - text: wow u r tunnels master
+            - img [ref=e433]
+        - generic [ref=e434]:
+          - img [ref=e436]
+          - generic [ref=e437]:
+            - link "Shane" [ref=e438] [cursor=pointer]:
+              - /url: /user/Shane
+            - text: ", 2018-07-04"
+            - text: "@chrisjj I use a distance related threshold more often than not these days. Although, I usually go for something cheap and subtle with a range. \"if(abs(d)<.001*(t*.125 + 1.) || t>FAR) break;\" -- I use that one a lot when I need to cover a bit of distance, since you can often get away with less precision with more distant objects. The code here is reasonably sound, but it was based on routines I'd written long before posting the example on Shadertoy -- Back when GPUs were slow, which meant taking shortcuts that you wouldn't take today. I usually try to make a note of it in the comments. Either way, I've been meaning to post a cleaner, more up-to-date version of this, so I'll put it on my list of things to do."
+            - img [ref=e439]
+        - generic [ref=e440]:
+          - img [ref=e442]
+          - generic [ref=e443]:
+            - link "chrisjj" [ref=e444] [cursor=pointer]:
+              - /url: /user/chrisjj
+            - text: ", 2018-07-04"
+            - text: "@Shane. the epsilon can be adaptive with distance, e.g. https://www.shadertoy.com/view/XsBXWt ."
+        - generic [ref=e445]:
+          - img [ref=e447]
+          - generic [ref=e448]:
+            - link "Shane" [ref=e449] [cursor=pointer]:
+              - /url: /user/Shane
+            - text: ", 2018-07-04"
+            - text: "@BigWings Ironically, I'd had this discussion behind the scenes years ago, and took the additional step out, but completely forgot to update the early shaders where I'd initially posed the question. Amazing that it's sat there for years unnoticed. I'll comment the line out. In fact, I'll take it all out to avoid confusion. You'll note that in examples I've written since, I don't take that step. One thing that I tend to implement to alleviate popping is checking for the absolute distance, just in case the ray traverses too far into the surface... It doesn't always work, but you'd be amazed at how often it helps. Another thing to note is the high surface hit threshold of \".005.\" I used to raymarch stuff before this site went up -- when computers were still pretty slow, so a common threshold today -- like \".001\" -- that required more iterations was considered a luxury. It needs to be lowered, but I might leave it there for posterity. In fact, this example needs a revamp. I might put together a more polished trapezoidal noise version."
+            - img [ref=e450]
+        - generic [ref=e451]:
+          - img [ref=e453]
+          - generic [ref=e454]:
+            - link "BigWIngs" [ref=e455] [cursor=pointer]:
+              - /url: /user/BigWIngs
+            - text: ", 2018-06-26"
+            - text: "line 207: All we know is that the position is AT MAXIMUM .005 from the surface. It could be much closer than that. What you are doing by adding dt one more time is overstepping the surface by 0 to .005 in the worst case scenario. Either way, I don't think you are gaining anything by doing the extra step."
+        - generic [ref=e456]:
+          - img [ref=e458]
+          - generic [ref=e459]:
+            - link "chrisjj" [ref=e460] [cursor=pointer]:
+              - /url: /user/chrisjj
+            - text: ", 2018-03-23"
+            - text: Thanks for the educational source comments! Is the fresnel term defunct? If I replace the expression by 0.5, I see no output difference.
+        - generic [ref=e461]:
+          - img [ref=e463]
+          - generic [ref=e464]:
+            - link "chrisjj" [ref=e465] [cursor=pointer]:
+              - /url: /user/chrisjj
+            - text: ", 2018-03-23"
+            - text: "Cool! A fault: \"Change to \"path2\" to traverse the other tunnel.\" causes an error. path2 is undefined."
+        - generic [ref=e466]:
+          - img [ref=e468]
+          - generic [ref=e469]:
+            - link "Imsure1200q_1UWE130" [ref=e470] [cursor=pointer]:
+              - /url: /user/Imsure1200q_1UWE130
+            - text: ", 2017-06-01"
+            - text: Wow! this is great! I wonder where the light is coming from tho. maybe a miner? Its really good performing on my device its like 60fps and its great
+            - img [ref=e471]
+        - generic [ref=e472]:
+          - img [ref=e474]
+          - generic [ref=e475]:
+            - link "Shane" [ref=e476] [cursor=pointer]:
+              - /url: /user/Shane
+            - text: ", 2017-04-03"
+            - text: "@marciot Apologies for the late response. I no longer own the name I signed up with, so I don't receive site messages... I really should write to admin and get that rectified. Anyway, I responded to your recent example, but feel free to use my code for anything you wish. I'm just happy it's of use to someone."
+            - img [ref=e477]
+        - generic [ref=e478]:
+          - img [ref=e480]
+          - generic [ref=e481]:
+            - link "marciot" [ref=e482] [cursor=pointer]:
+              - /url: /user/marciot
+            - text: ", 2017-03-27"
+            - text: Shane, your work is fantastic. I am authoring a library (dome.marciot.com) that allows folks to design content for projection on dome theaters. I would like to include this as an example of what can be done with just shader code (I think this would look great on a 360 dome), however it isn't clear what the default license CC-BY-SA-NC allows and I wanted to get your feedback. Thank you.
+        - generic [ref=e483]:
+          - img [ref=e485]
+          - generic [ref=e486]:
+            - link "CaliCoastReplay" [ref=e487] [cursor=pointer]:
+              - /url: /user/CaliCoastReplay
+            - text: ", 2016-08-10"
+            - text: FAST even at full screen. I admire your work Shane. *paws the hem of your robe*
+        - generic [ref=e488]:
+          - img [ref=e490]
+          - generic [ref=e491]:
+            - link "drone1" [ref=e492] [cursor=pointer]:
+              - /url: /user/drone1
+            - text: ", 2016-04-21"
+            - text: Cool!
+        - generic [ref=e493]:
+          - img [ref=e495]
+          - generic [ref=e496]:
+            - link "Shane" [ref=e497] [cursor=pointer]:
+              - /url: /user/Shane
+            - text: ", 2016-03-28"
+            - text: "@Barteks2x I prefer the rounded one myself. I can't remember why I went with the boxed version. Probably, just for something different. @Cubed Essentially, the process involves nothing more than moving a camera along a path \"vec3(path(time), time)\" through a curvy tube with distance function \"R - length(p.xy - path(p.z)).\" The noisy surface deformation is an added extra. In general, you can do this with more sophisticated objects than a simple tube. I have a winding Menger tunnel example that uses the same premise."
+        - generic [ref=e498]:
+          - img [ref=e500]
+          - generic [ref=e501]:
+            - link "Cubed" [ref=e502] [cursor=pointer]:
+              - /url: /user/Cubed
+            - text: ", 2016-03-25"
+            - text: Thanks so much for the commented code! I really wanted to find a good detailed example of ray-marched tunnels and this is it!
+            - img [ref=e503]
+        - generic [ref=e504]:
+          - img [ref=e506]
+          - generic [ref=e507]:
+            - link "Barteks2x" [ref=e508] [cursor=pointer]:
+              - /url: /user/Barteks2x
+            - text: ", 2016-03-25"
+            - text: I like the effect when you change PI to 33, add next layer to surf function and change the tunnel to round...
+        - generic [ref=e509]:
+          - img [ref=e511]
+          - generic [ref=e512]:
+            - link "Shane" [ref=e513] [cursor=pointer]:
+              - /url: /user/Shane
+            - text: ", 2016-03-23"
+            - text: Thanks for the extra comments. "Shader Of The Week" - Hooray! The most interesting aspects of this example are derived from Nimitz's work, but I'll take the win.
+            - img [ref=e514]
+            - text: Actually, it's not a bad starter template for anyone not familiar with raymarching a curvy tunnel. Although, I'd probably ignore the lighting. @MacSlow Poor man's cross hatching was the look I was going for.
+            - img [ref=e515]
+            - text: "@dr2 I saw your latest train, and that \"Train Ride\" shader of yours is insanely good. I honestly don't know how you make your shaders run so well with all that detail. An atmospheric metro tunnel, sans train, is on my to-do list. @XT95 I made this before I had access to that fancy AO code of yours."
+            - img [ref=e516]
+        - generic [ref=e517]:
+          - img [ref=e519]
+          - generic [ref=e520]:
+            - link "MacSlow" [ref=e521] [cursor=pointer]:
+              - /url: /user/MacSlow
+            - text: ", 2016-03-22"
+            - text: Very nice... the use of that texture in channel 0 gives it a slight cross-hatching feel!
+        - generic [ref=e522]:
+          - img [ref=e524]
+          - generic [ref=e525]:
+            - link "dr2" [ref=e526] [cursor=pointer]:
+              - /url: /user/dr2
+            - text: ", 2016-03-22"
+            - text: The next exercise is adding the train
+            - img [ref=e527]
+        - generic [ref=e528]:
+          - img [ref=e530]
+          - generic [ref=e531]:
+            - link "XT95" [ref=e532] [cursor=pointer]:
+              - /url: /user/XT95
+            - text: ", 2016-03-22"
+            - text: Super cool !
+        - generic [ref=e533]:
+          - img [ref=e535]
+          - generic [ref=e536]:
+            - link "Eybor" [ref=e537] [cursor=pointer]:
+              - /url: /user/Eybor
+            - text: ", 2016-03-22"
+            - text: It reminds me of some Franco-Belgian comics, I can't find the name of the author and that bothers me. Well great job!
+        - generic [ref=e538]:
+          - img [ref=e540]
+          - generic [ref=e541]:
+            - link "PauloFalcao" [ref=e542] [cursor=pointer]:
+              - /url: /user/PauloFalcao
+            - text: ", 2016-01-14"
+            - text: Awesome
+            - img [ref=e543]
+        - generic [ref=e544]:
+          - img [ref=e546]
+          - generic [ref=e547]:
+            - link "TambakoJaguar" [ref=e548] [cursor=pointer]:
+              - /url: /user/TambakoJaguar
+            - text: ", 2015-12-20"
+            - text: Awesome! And it renders fast!
+        - generic [ref=e549]:
+          - img [ref=e551]
+          - generic [ref=e552]:
+            - link "jt" [ref=e553] [cursor=pointer]:
+              - /url: /user/jt
+            - text: ", 2015-12-17"
+            - text: Cool!
+        - generic [ref=e554]:
+          - img [ref=e556]
+          - generic [ref=e557]:
+            - link "tsone" [ref=e558] [cursor=pointer]:
+              - /url: /user/tsone
+            - text: ", 2015-12-16"
+            - text: Well done! And it has a lot of comments too ;)
+        - generic [ref=e559]:
+          - img [ref=e561]
+          - generic [ref=e562]:
+            - link "Shane" [ref=e563] [cursor=pointer]:
+              - /url: /user/Shane
+            - text: ", 2015-11-16"
+            - text: "@Dave I just saw it. Theirs is fancier, but they have the benefit of triangle meshes, precalc... and an art department."
+            - img [ref=e564]
+            - text: I sometimes miss triangle meshes, but for an example like this, I'd be feeding stuff on the fly into the Marching Cubes algorithm, and I don't really miss that.
+        - generic [ref=e565]:
+          - img [ref=e567]
+          - generic [ref=e568]:
+            - link "Dave_Hoskins" [ref=e569] [cursor=pointer]:
+              - /url: /user/Dave_Hoskins
+            - text: ", 2015-11-12"
+            - text: I swear I just saw a Lexus advert with something like this in it. The advert was the one that also has the polygon fox in it.
+        - generic [ref=e570]:
+          - img [ref=e572]
+          - generic [ref=e573]:
+            - link "tomkh" [ref=e574] [cursor=pointer]:
+              - /url: /user/tomkh
+            - text: ", 2015-10-15"
+            - text: Really nice and fast! I have to explore this triangle noise further.
+        - generic [ref=e575]:
+          - img [ref=e577]
+          - generic [ref=e578]:
+            - link "dila" [ref=e579] [cursor=pointer]:
+              - /url: /user/dila
+            - text: ", 2015-10-06"
+            - text: Very good.
+        - generic [ref=e580]:
+          - img [ref=e582]
+          - generic [ref=e583]:
+            - link "Shane" [ref=e584] [cursor=pointer]:
+              - /url: /user/Shane
+            - text: ", 2015-08-30"
+            - text: "@nimitz Shadertoy is full of great ideas, but triangle noise is one of my favorites. So many possibilities. I'd almost go as far as to say that anyone who cares about GPU noise generation should learn about your idea."
+            - img [ref=e585]
+            - text: My favorite usage, so far, is deploying a 2D version to lay down the foundations for landscapes.
+        - generic [ref=e586]:
+          - img [ref=e588]
+          - generic [ref=e589]:
+            - link "Shane" [ref=e590] [cursor=pointer]:
+              - /url: /user/Shane
+            - text: ", 2015-08-30"
+            - text: I appreciate the comments. This was more of a novelty than anything else. In fact, I'm surprised anyone liked it, as I'm pretty sure it has no usage whatsoever.
+            - img [ref=e591]
+            - text: On a side note, I've noticed that texture-based bump mapping on Shadertoy looks a little less crisp than my offline examples. Is that due to anisotropic filtering not being used? Not that it matters, I was just curious.
+        - generic [ref=e592]:
+          - img [ref=e594]
+          - generic [ref=e595]:
+            - link "vgs" [ref=e596] [cursor=pointer]:
+              - /url: /user/vgs
+            - text: ", 2015-08-27"
+            - text: Beautiful!
+        - generic [ref=e597]:
+          - img [ref=e599]
+          - generic [ref=e600]:
+            - link "Dave_Hoskins" [ref=e601] [cursor=pointer]:
+              - /url: /user/Dave_Hoskins
+            - text: ", 2015-08-27"
+            - text: Cool. Nice silvery rock reflections.
+        - generic [ref=e602]:
+          - img [ref=e604]
+          - generic [ref=e605]:
+            - link "coyote" [ref=e606] [cursor=pointer]:
+              - /url: /user/coyote
+            - text: ", 2015-08-27"
+            - text: Excellent!
+        - generic [ref=e607]:
+          - img [ref=e609]
+          - generic [ref=e610]:
+            - link "nimitz" [ref=e611] [cursor=pointer]:
+              - /url: /user/nimitz
+            - text: ", 2015-08-27"
+            - text: looks great!
+        - generic [ref=e612]:
+          - img [ref=e614]
+          - generic [ref=e615]:
+            - link "revers" [ref=e616] [cursor=pointer]:
+              - /url: /user/revers
+            - text: ", 2015-08-26"
+            - text: Great colors!
+        - generic [ref=e617]:
+          - img [ref=e619]
+          - generic [ref=e620]:
+            - link "aiekick" [ref=e621] [cursor=pointer]:
+              - /url: /user/aiekick
+            - text: ", 2015-08-26"
+            - text: run fast also in fullscreen
+            - img [ref=e622]
+        - generic [ref=e623]:
+          - img [ref=e625]
+          - generic [ref=e626]:
+            - link "iq" [ref=e627] [cursor=pointer]:
+              - /url: /user/iq
+            - text: ", 2015-08-26"
+            - text: Super nice!
+        - generic [ref=e628]:
+          - img [ref=e630]
+          - generic [ref=e631]:
+            - link "aiekick" [ref=e632] [cursor=pointer]:
+              - /url: /user/aiekick
+            - text: ", 2015-08-26"
+            - text: wow
+            - img [ref=e633]
+            - img [ref=e634]
+            - img [ref=e635]
+        - generic [ref=e636]:
+          - img [ref=e638]
+          - generic [ref=e639]:
+            - link "poljere" [ref=e640] [cursor=pointer]:
+              - /url: /user/poljere
+            - text: ", 2015-08-26"
+            - text: Beautiful!
+        - generic [ref=e641]:
+          - img [ref=e643]
+          - generic [ref=e644]:
+            - link "public_int_i" [ref=e645] [cursor=pointer]:
+              - /url: /user/public_int_i
+            - text: ", 2015-08-26"
+            - text: Great job , looks like a piece of art
+  - generic [ref=e122]:
+    - generic [ref=e123]:
+      - text: Community Forums
+      - list [ref=e124]:
+        - listitem [ref=e125]:
+          - link "Official Events" [ref=e126] [cursor=pointer]:
+            - /url: /events
+        - listitem [ref=e127]:
+          - link "In Facebook (english)" [ref=e128] [cursor=pointer]:
+            - /url: https://www.facebook.com/groups/147749602472741
+        - listitem [ref=e129]:
+          - link "In Facebook (korean)" [ref=e130] [cursor=pointer]:
+            - /url: https://www.facebook.com/groups/1339783682699494
+        - listitem [ref=e131]:
+          - link "In Discord" [ref=e132] [cursor=pointer]:
+            - /url: https://discord.gg/XtmMN6E
+          - text: (
+          - link "direct link" [ref=e133] [cursor=pointer]:
+            - /url: https://discordapp.com/channels/578696555612209173/579531723348639754
+          - text: )
+    - generic [ref=e134]:
+      - text: Feedback and Support
+      - list [ref=e135]:
+        - listitem [ref=e136]:
+          - link "Facebook" [ref=e137] [cursor=pointer]:
+            - /url: https://www.facebook.com/Shadertoy
+        - listitem [ref=e138]:
+          - link "Twitter" [ref=e139] [cursor=pointer]:
+            - /url: https://twitter.com/shadertoy
+        - listitem [ref=e140]:
+          - link "Patreon" [ref=e141] [cursor=pointer]:
+            - /url: https://www.patreon.com/shadertoy
+        - listitem [ref=e142]:
+          - link "Roadmap" [ref=e143] [cursor=pointer]:
+            - /url: https://trello.com/b/5hM0CjId
+    - generic [ref=e144]:
+      - text: Shadertoy
+      - list [ref=e145]:
+        - listitem [ref=e146]:
+          - link "Store" [ref=e147] [cursor=pointer]:
+            - /url: /store
+        - listitem [ref=e148]:
+          - link "Documentation" [ref=e149] [cursor=pointer]:
+            - /url: /howto
+        - listitem [ref=e150]:
+          - link "Terms & Privacy" [ref=e151] [cursor=pointer]:
+            - /url: /terms
+        - listitem [ref=e152]:
+          - link "About" [ref=e153] [cursor=pointer]:
+            - /url: /about
+    - generic [ref=e154]:
+      - text: Apps and Plugins
+      - list [ref=e155]:
+        - listitem [ref=e156]:
+          - link "Official iPhone App" [ref=e157] [cursor=pointer]:
+            - /url: https://itunes.apple.com/us/app/shadertoy/id717961814
+          - text: by
+          - link "Reinder" [ref=e158] [cursor=pointer]:
+            - /url: /user/reinder
+        - listitem [ref=e159]:
+          - link "Screensaver" [ref=e160] [cursor=pointer]:
+            - /url: https://steamcommunity.com/sharedfiles/filedetails/?id=1726697188
+          - text: by
+          - link "Kosro" [ref=e161] [cursor=pointer]:
+            - /url: /user/kosro
+        - listitem [ref=e162]:
+          - link "Shadertoy plugin" [ref=e163] [cursor=pointer]:
+            - /url: https://chrome.google.com/webstore/detail/shadertoy-unofficial-plug/ohicbclhdmkhoabobgppffepcopomhgl
+          - text: by
+          - link "Patu" [ref=e164] [cursor=pointer]:
+            - /url: /user/patu
+    - generic [ref=e165]:
+      - text: Tutorials
+      - list [ref=e166]:
+        - listitem [ref=e167]:
+          - link "Shader coding intro" [ref=e168] [cursor=pointer]:
+            - /url: https://www.youtube.com/watch?v=0ifChJ0nJfM
+          - text: by
+          - link "iq" [ref=e169] [cursor=pointer]:
+            - /url: /user/iq
+        - listitem [ref=e170]:
+          - link "Shadertoy Unofficial" [ref=e171] [cursor=pointer]:
+            - /url: https://shadertoyunofficial.wordpress.com/
+          - text: by
+          - link "FabriceNeyret2" [ref=e172] [cursor=pointer]:
+            - /url: /user/FabriceNeyret2
+  - generic [ref=e173]:
+    - generic [ref=e174]:
+      - text: We use cookies to give you the best experience on our website. If you continue using Shadertoy, we'll assume that you are happy to receive all cookies on this website. For more information, please review our
+      - link "Terms & Privacy" [ref=e175] [cursor=pointer]:
+        - /url: /terms
+      - text: .
+    - button "Accept" [ref=e177]

@@ -1,0 +1,667 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - link "Shadertoy" [ref=e4] [cursor=pointer]:
+        - /url: /
+      - searchbox "Search..." [ref=e7]
+    - generic [ref=e8]:
+      - link "Browse" [ref=e9] [cursor=pointer]:
+        - /url: /browse
+      - link "New" [ref=e10] [cursor=pointer]:
+        - /url: /new
+      - link "Sign In" [ref=e11] [cursor=pointer]:
+        - /url: /signin
+  - generic [ref=e13]:
+    - generic [ref=e14]:
+      - generic [ref=e17]:
+        - generic [ref=e18]:
+          - generic "Reset time (<ALT>+<DownArrow>)" [ref=e19] [cursor=pointer]
+          - generic "Pause/Resume (<ALT>+<UpArrow>)" [ref=e20] [cursor=pointer]
+        - generic [ref=e21]:
+          - generic [ref=e22]: "9.11"
+          - generic [ref=e23]: 142.0 fps
+          - generic [ref=e24]: 420 x 236
+        - generic [ref=e25]:
+          - generic "Record (<ALT>+<R>)" [ref=e26] [cursor=pointer]
+          - generic "Volume" [ref=e27] [cursor=pointer]
+          - generic "Go fullscreen" [ref=e28] [cursor=pointer]
+      - generic [ref=e29]:
+        - generic [ref=e30]:
+          - generic [ref=e31]: Apollonian
+          - generic [ref=e32]:
+            - img "share this shader" [ref=e33] [cursor=pointer]
+            - img [ref=e34]
+            - text: "308"
+          - generic [ref=e35]:
+            - text: "Views: 39684"
+            - text: ", Tags:"
+            - generic [ref=e36]:
+              - link "3d" [ref=e37] [cursor=pointer]:
+                - /url: /results?query=tag%3D3d
+              - text: ","
+              - link "raymarching" [ref=e38] [cursor=pointer]:
+                - /url: /results?query=tag%3Draymarching
+              - text: ","
+              - link "fractal" [ref=e39] [cursor=pointer]:
+                - /url: /results?query=tag%3Dfractal
+              - text: ","
+              - link "distancefield" [ref=e40] [cursor=pointer]:
+                - /url: /results?query=tag%3Ddistancefield
+              - text: ","
+              - link "kleinian" [ref=e41] [cursor=pointer]:
+                - /url: /results?query=tag%3Dkleinian
+              - text: ","
+              - link "apollonian" [ref=e42] [cursor=pointer]:
+                - /url: /results?query=tag%3Dapollonian
+              - text: ","
+              - link "vr" [ref=e43] [cursor=pointer]:
+                - /url: /results?query=tag%3Dvr
+          - generic [ref=e44]:
+            - text: Created by
+            - link "iq" [ref=e46] [cursor=pointer]:
+              - /url: /user/iq
+            - text: in 2013-05-02
+        - generic [ref=e47]: The classic standard apollonian/kleinian fractal (everybody needs to render one at some point).
+    - generic [ref=e48]:
+      - generic [ref=e49] [cursor=pointer]:
+        - combobox [ref=e51]:
+          - option "Common"
+          - option "Sound"
+          - option "Buffer A"
+          - option "Buffer B"
+          - option "Buffer C"
+          - option "Buffer D"
+          - option "Cubemap A"
+        - generic [ref=e52]:
+          - img [ref=e53]
+          - generic [ref=e54]: Image
+      - generic [ref=e56] [cursor=pointer]:
+        - generic [ref=e57]: Shader Inputs
+        - generic [ref=e60]:
+          - text: uniform vec3 iResolution; // viewport resolution (in pixels)
+          - text: uniform float iTime; // shader playback time (in seconds)
+          - text: uniform float iTimeDelta; // render time (in seconds)
+          - text: uniform float iFrameRate; // shader frame rate
+          - text: uniform int iFrame; // shader playback frame
+          - text: uniform float iChannelTime[4]; // channel playback time (in seconds)
+          - text: uniform vec3 iChannelResolution[4]; // channel resolution (in pixels)
+          - text: "uniform vec4 iMouse; // mouse pixel coords. xy: current (if MLB down), zw: click"
+          - text: uniform samplerXX iChannel0..3; // input channel. XX = 2D/Cube
+          - text: uniform vec4 iDate; // (year, month, day, time in seconds)
+          - text: uniform float iSampleRate; // sound sample rate (i.e., 44100)
+      - generic [ref=e62]:
+        - textbox [ref=e63]
+        - generic [ref=e71]:
+          - generic [ref=e72]:
+            - generic [ref=e73]: "1"
+            - text: // Created by inigo quilez - iq/2013
+          - generic [ref=e74]:
+            - generic [ref=e75]: "2"
+            - text: // https://www.youtube.com/c/InigoQuilez
+          - generic [ref=e76]:
+            - generic [ref=e77]: "3"
+            - text: // https://iquilezles.org/
+          - generic [ref=e78]:
+            - generic [ref=e79]: "4"
+            - text: // I am the sole copyright owner of this Work.
+          - generic [ref=e80]:
+            - generic [ref=e81]: "5"
+            - text: // You cannot host, display, distribute or share this Work neither
+          - generic [ref=e82]:
+            - generic [ref=e83]: "6"
+            - text: // as it is or altered, here on Shadertoy or anywhere else, in any
+          - generic [ref=e84]:
+            - generic [ref=e85]: "7"
+            - text: // form including physical and digital. You cannot use this Work in any
+          - generic [ref=e86]:
+            - generic [ref=e87]: "8"
+            - text: // commercial or non-commercial product, website or project. You cannot
+          - generic [ref=e88]:
+            - generic [ref=e89]: "9"
+            - text: // sell this Work and you cannot mint an NFTs of it or train a neural
+          - generic [ref=e90]:
+            - generic [ref=e91]: "10"
+            - text: // network with it without permission. I share this Work for educational
+          - generic [ref=e92]:
+            - generic [ref=e93]: "11"
+            - text: // purposes, and you can link to it, through an URL, proper attribution
+          - generic [ref=e94]:
+            - generic [ref=e95]: "12"
+            - text: // and unmodified screenshot, as part of your educational material. If
+          - generic [ref=e96]:
+            - generic [ref=e97]: "13"
+            - text: // these conditions are too restrictive please contact me and we'll
+          - generic [ref=e98]:
+            - generic [ref=e99]: "14"
+            - text: // definitely work it out.
+          - generic [ref=e101]: "15"
+          - generic [ref=e103]: "16"
+          - generic [ref=e104]:
+            - generic [ref=e105]: "17"
+            - text: // I can't recall where I learnt about this fractal.
+          - generic [ref=e106]:
+            - generic [ref=e107]: "18"
+            - text: //
+          - generic [ref=e108]:
+            - generic [ref=e109]: "19"
+            - text: // Coloring and fake occlusions are done by orbit trapping, as usual.
+          - generic [ref=e111]: "20"
+          - generic [ref=e113]: "21"
+          - generic [ref=e114]:
+            - generic [ref=e115]: "22"
+            - text: // Antialiasing level
+          - generic [ref=e116]:
+            - generic [ref=e117]: "23"
+            - text: "#if HW_PERFORMANCE==0"
+          - generic [ref=e118]:
+            - generic [ref=e119]: "24"
+            - text: "#define AA 1"
+          - generic [ref=e120]:
+            - generic [ref=e121]: "25"
+            - text: "#else"
+          - generic [ref=e122]:
+            - generic [ref=e123]: "26"
+            - text: "#define AA 2 // Make it 3 if you have a fast machine"
+          - generic [ref=e124]:
+            - generic [ref=e125]: "27"
+            - text: "#endif"
+          - generic [ref=e127]: "28"
+          - generic [ref=e128]:
+            - generic [ref=e129]: "29"
+            - text: vec4 orb;
+          - generic [ref=e131]: "30"
+          - generic [ref=e132]:
+            - generic [ref=e133]: "31"
+            - text: float map( vec3 p, float s )
+          - generic [ref=e134]:
+            - generic:
+              - generic [ref=e135]: "32"
+              - generic [ref=e137] [cursor=pointer]: ▾
+            - text: "{"
+          - generic [ref=e138]:
+            - generic [ref=e139]: "33"
+            - text: float scale = 1.0;
+          - generic [ref=e141]: "34"
+          - generic [ref=e142]:
+            - generic [ref=e143]: "35"
+            - text: orb = vec4(1000.0);
+          - generic [ref=e145]: "36"
+          - generic [ref=e146]:
+            - generic [ref=e147]: "37"
+            - text: for( int i=0; i<8;i++ )
+          - generic [ref=e148]:
+            - generic:
+              - generic [ref=e149]: "38"
+              - generic [ref=e151] [cursor=pointer]: ▾
+            - text: "{"
+          - generic [ref=e152]:
+            - generic [ref=e153]: "39"
+            - text: p = -1.0 + 2.0*fract(0.5*p+0.5);
+          - generic [ref=e155]: "40"
+          - generic [ref=e156]:
+            - generic [ref=e157]: "41"
+            - text: float r2 = dot(p,p);
+          - generic [ref=e159]: "42"
+          - generic [ref=e160]:
+            - generic [ref=e161]: "43"
+            - text: orb = min( orb, vec4(abs(p),r2) );
+          - generic [ref=e163]: "44"
+          - generic [ref=e164]:
+            - generic [ref=e165]: "45"
+            - text: float k = s/r2;
+          - generic [ref=e166]:
+            - generic [ref=e167]: "46"
+            - text: p *= k;
+          - generic [ref=e168]:
+            - generic [ref=e169]: "47"
+            - text: scale *= k;
+          - generic [ref=e170]:
+            - generic [ref=e171]: "48"
+            - text: "}"
+          - generic [ref=e173]: "49"
+          - generic [ref=e174]:
+            - generic [ref=e175]: "50"
+            - text: return 0.25*abs(p.y)/scale;
+          - generic [ref=e176]:
+            - generic [ref=e177]: "51"
+            - text: "}"
+          - generic [ref=e179]: "52"
+          - generic [ref=e180]:
+            - generic [ref=e181]: "53"
+            - text: float trace( in vec3 ro, in vec3 rd, float s )
+          - generic [ref=e182]:
+            - generic:
+              - generic [ref=e183]: "54"
+              - generic [ref=e185] [cursor=pointer]: ▾
+            - text: "{"
+          - generic [ref=e186]:
+            - generic [ref=e187]: "55"
+            - text: float maxd = 30.0;
+          - generic [ref=e188]:
+            - generic [ref=e189]: "56"
+            - text: float t = 0.01;
+          - generic [ref=e190]:
+            - generic [ref=e191]: "57"
+            - text: for( int i=0; i<512; i++ )
+          - generic [ref=e192]:
+            - generic:
+              - generic [ref=e193]: "58"
+              - generic [ref=e195] [cursor=pointer]: ▾
+            - text: "{"
+          - generic [ref=e196]:
+            - generic [ref=e197]: "59"
+            - text: float precis = 0.001 * t;
+          - generic [ref=e199]: "60"
+          - generic [ref=e200]:
+            - generic [ref=e201]: "61"
+            - text: float h = map( ro+rd*t, s );
+          - generic [ref=e202]:
+            - generic [ref=e203]: "62"
+            - text: if( h<precis||t>maxd ) break;
+          - generic [ref=e204]:
+            - generic [ref=e205]: "63"
+            - text: t += h;
+          - generic [ref=e206]:
+            - generic [ref=e207]: "64"
+            - text: "}"
+          - generic [ref=e209]: "65"
+          - generic [ref=e210]:
+            - generic [ref=e211]: "66"
+            - text: if( t>maxd ) t=-1.0;
+          - generic [ref=e212]:
+            - generic [ref=e213]: "67"
+            - text: return t;
+          - generic [ref=e214]:
+            - generic [ref=e215]: "68"
+            - text: "}"
+          - generic [ref=e217]: "69"
+          - generic [ref=e218]:
+            - generic [ref=e219]: "70"
+            - text: vec3 calcNormal( in vec3 pos, in float t, in float s )
+          - generic [ref=e220]:
+            - generic:
+              - generic [ref=e221]: "71"
+              - generic [ref=e223] [cursor=pointer]: ▾
+            - text: "{"
+          - generic [ref=e224]:
+            - generic [ref=e225]: "72"
+            - text: float precis = 0.001 * t;
+          - generic [ref=e227]: "73"
+          - generic [ref=e228]:
+            - generic [ref=e229]: "74"
+            - text: vec2 e = vec2(1.0,-1.0)*precis;
+          - generic [ref=e230]:
+            - generic [ref=e231]: "75"
+            - text: return normalize( e.xyy*map( pos + e.xyy, s ) +
+          - generic [ref=e232]:
+            - generic [ref=e233]: "76"
+            - text: e.yyx*map( pos + e.yyx, s ) +
+          - generic [ref=e234]:
+            - generic [ref=e235]: "77"
+            - text: e.yxy*map( pos + e.yxy, s ) +
+          - generic [ref=e236]:
+            - generic [ref=e237]: "78"
+            - text: e.xxx*map( pos + e.xxx, s ) );
+          - generic [ref=e238]:
+            - generic [ref=e239]: "79"
+            - text: "}"
+          - generic [ref=e241]: "80"
+          - generic [ref=e242]:
+            - generic [ref=e243]: "81"
+            - text: vec3 render( in vec3 ro, in vec3 rd, in float anim )
+          - generic [ref=e244]:
+            - generic:
+              - generic [ref=e245]: "82"
+              - generic [ref=e247] [cursor=pointer]: ▾
+            - text: "{"
+          - generic [ref=e248]:
+            - generic [ref=e249]: "83"
+            - generic [ref=e250]: // trace
+          - generic [ref=e251]:
+            - generic [ref=e252]: "84"
+            - text: vec3 col = vec3(0.0);
+          - generic [ref=e253]:
+            - generic [ref=e254]: "85"
+            - text: float t = trace( ro, rd, anim );
+          - generic [ref=e255]:
+            - generic [ref=e256]: "86"
+            - text: if( t>0.0 )
+          - generic [ref=e257]:
+            - generic:
+              - generic [ref=e258]: "87"
+              - generic [ref=e260] [cursor=pointer]: ▾
+            - text: "{"
+          - generic [ref=e261]:
+            - generic [ref=e262]: "88"
+            - text: vec4 tra = orb;
+          - generic [ref=e263]:
+            - generic [ref=e264]: "89"
+            - text: vec3 pos = ro + t*rd;
+          - generic [ref=e265]:
+            - generic [ref=e266]: "90"
+            - text: vec3 nor = calcNormal( pos, t, anim );
+          - generic [ref=e268]: "91"
+          - generic [ref=e269]:
+            - generic [ref=e270]: "92"
+            - text: // lighting
+      - generic [ref=e275]:
+        - generic [ref=e276]:
+          - img "Compile (<ALT>+<ENTER>)" [ref=e277] [cursor=pointer]
+          - link "Compiled in 0.0 secs" [ref=e278] [cursor=pointer]:
+            - /url: "#"
+        - generic [ref=e279]: 2165 chars
+        - generic [ref=e280]:
+          - combobox "Change font size (<ALT>+<+/->)" [ref=e281]:
+            - option "XS"
+            - option "S" [selected]
+            - option "M"
+            - option "L"
+            - option "XL"
+            - option "XXL"
+          - img "Show GLSL help" [ref=e282] [cursor=pointer]
+      - generic [ref=e283]:
+        - generic [ref=e284]:
+          - generic [ref=e285]:
+            - generic:
+              - text: Filter
+              - combobox "Pixel filtering mode" [ref=e287]:
+                - option "nearest" [selected]
+                - option "linear"
+                - option "mipmap"
+              - text: Wrap
+              - combobox "Pixel filtering mode" [ref=e288]:
+                - option "clamp" [selected]
+                - option "repeat"
+              - generic [ref=e290]:
+                - text: VFlip
+                - checkbox "VFlip" [ref=e291]
+          - generic [ref=e293]: iChannel0
+        - generic [ref=e295]:
+          - generic [ref=e296]:
+            - generic:
+              - text: Filter
+              - combobox "Pixel filtering mode" [ref=e298]:
+                - option "nearest" [selected]
+                - option "linear"
+                - option "mipmap"
+              - text: Wrap
+              - combobox "Pixel filtering mode" [ref=e299]:
+                - option "clamp" [selected]
+                - option "repeat"
+              - generic [ref=e301]:
+                - text: VFlip
+                - checkbox "VFlip" [ref=e302]
+          - generic [ref=e304]: iChannel1
+        - generic [ref=e306]:
+          - generic [ref=e307]:
+            - generic:
+              - text: Filter
+              - combobox "Pixel filtering mode" [ref=e309]:
+                - option "nearest" [selected]
+                - option "linear"
+                - option "mipmap"
+              - text: Wrap
+              - combobox "Pixel filtering mode" [ref=e310]:
+                - option "clamp" [selected]
+                - option "repeat"
+              - generic [ref=e312]:
+                - text: VFlip
+                - checkbox "VFlip" [ref=e313]
+          - generic [ref=e315]: iChannel2
+        - generic [ref=e317]:
+          - generic [ref=e318]:
+            - generic:
+              - text: Filter
+              - combobox "Pixel filtering mode" [ref=e320]:
+                - option "nearest" [selected]
+                - option "linear"
+                - option "mipmap"
+              - text: Wrap
+              - combobox "Pixel filtering mode" [ref=e321]:
+                - option "clamp" [selected]
+                - option "repeat"
+              - generic [ref=e323]:
+                - text: VFlip
+                - checkbox "VFlip" [ref=e324]
+          - generic [ref=e326]: iChannel3
+    - generic [ref=e329]:
+      - text: Comments (20)
+      - generic [ref=e330]:
+        - link "Sign in" [ref=e332] [cursor=pointer]:
+          - /url: /signin
+        - text: to post a comment.
+      - generic [ref=e333]:
+        - generic [ref=e334]:
+          - img [ref=e336]
+          - generic [ref=e337]:
+            - link "kp1197" [ref=e338] [cursor=pointer]:
+              - /url: /user/kp1197
+            - text: ", 2025-11-29"
+            - text: Where is Dionysian?
+        - generic [ref=e339]:
+          - img [ref=e341]
+          - generic [ref=e342]:
+            - link "Suslik" [ref=e343] [cursor=pointer]:
+              - /url: /user/Suslik
+            - text: ", 2023-08-27"
+            - text: ok nvm found it on this link https://iquilezles.org/articles/normalsSDF/
+        - generic [ref=e344]:
+          - img [ref=e346]
+          - generic [ref=e347]:
+            - link "Suslik" [ref=e348] [cursor=pointer]:
+              - /url: /user/Suslik
+            - text: ", 2023-08-27"
+            - text: can I get a mathematical basis specifically for that tetrahedral gradient sampling pattern?
+        - generic [ref=e349]:
+          - img [ref=e351]
+          - generic [ref=e352]:
+            - link "ollj" [ref=e353] [cursor=pointer]:
+              - /url: /user/ollj
+            - text: ", 2023-08-27"
+            - text: "https://iquilezles.org/articles/normalsSDF/ mathematically iaa finite-difference-estimate https://en.wikipedia.org/wiki/Finite_difference#Relation_with_derivatives also shortly described here: https://computergraphics.stackexchange.com/questions/8093/how-to-compute-normal-of-surface-from-implicit-equation-for-ray-marching naive variants tap 6 times, simple ones tap 3 times+center (center-point has already been measured). This one taps 4 OFFSET-TETRAHEDRAL points instead (that still average out tho the same center), because using the central point will likely be too close to the surface, and useless in terms of precision (it will be a very small value/vector, to be added to significantly larger values/vectors, which is a waste of time in 32 bit precision or less)."
+        - generic [ref=e354]:
+          - img [ref=e356]
+          - generic [ref=e357]:
+            - link "ollj" [ref=e358] [cursor=pointer]:
+              - /url: /user/ollj
+            - text: ", 2023-08-27"
+            - text: "raymarching gives you point-distances-to-surface, but the process is not very precise in many cases. we need a surface NORMAL for various visual effects, and there are many ways to get them. - automatic differentiation (general or specific-to-shape-function) returns analytic normal (first derivative over all domains) - a function may also return the closest-point-on-the-surface cheaply, and that gives you a decent normal-vector from any point. - there are 3 different quick estimate-methods by multy-tapping (in 3 patterns): and the most common taps 4 (offset) points (to a point very close to the surface) for their distance2-surface . and this generates 3 axis-aligned normal-vector-parts, to compose them into a 3d normal-vector, that is a good enough lazy estimation, that uses already defined functions as subroutines. the issue here is that the epsilon-distance (scalar of the normal vector) is arbitrary (gets normalized anyways, but precision-ideally should be close to a length of 1 before mornamize(), BUT instead is as-short-as-possible to not lose local surface-detail, so you lose precision from normalizing a short vector here."
+        - generic [ref=e359]:
+          - img [ref=e361]
+          - generic [ref=e362]:
+            - link "Suslik" [ref=e363] [cursor=pointer]:
+              - /url: /user/Suslik
+            - text: ", 2023-08-27"
+            - text: is there an explanation what this normal calculation means?
+        - generic [ref=e364]:
+          - img [ref=e366]
+          - generic [ref=e367]:
+            - link "ollj" [ref=e368] [cursor=pointer]:
+              - /url: /user/ollj
+            - text: ", 2022-08-21"
+            - text: this one looks beter than average in 3d, due to close camera flybys.
+        - generic [ref=e369]:
+          - img [ref=e371]
+          - generic [ref=e372]:
+            - link "capitancrunch" [ref=e373] [cursor=pointer]:
+              - /url: /user/capitancrunch
+            - text: ", 2020-02-26"
+            - text: wow
+        - generic [ref=e374]:
+          - img [ref=e376]
+          - generic [ref=e377]:
+            - link "cmarangu" [ref=e378] [cursor=pointer]:
+              - /url: /user/cmarangu
+            - text: ", 2019-11-05"
+            - text: i mean how few
+        - generic [ref=e379]:
+          - img [ref=e381]
+          - generic [ref=e382]:
+            - link "cmarangu" [ref=e383] [cursor=pointer]:
+              - /url: /user/cmarangu
+            - text: ", 2019-11-05"
+            - text: look at how many lines of code
+        - generic [ref=e384]:
+          - img [ref=e386]
+          - generic [ref=e387]:
+            - link "dila" [ref=e388] [cursor=pointer]:
+              - /url: /user/dila
+            - text: ", 2018-03-25"
+            - text: saw a fork of this. the original is great!
+        - generic [ref=e389]:
+          - img [ref=e391]
+          - generic [ref=e392]:
+            - link "chrisjj" [ref=e393] [cursor=pointer]:
+              - /url: /user/chrisjj
+            - text: ", 2018-03-23"
+            - text: "huttarl, yes, I too found that odd. Here's a version with it moved from time to mouse: https://www.shadertoy.com/view/4sKyW1"
+        - generic [ref=e394]:
+          - img [ref=e396]
+          - generic [ref=e397]:
+            - link "andrewww1" [ref=e398] [cursor=pointer]:
+              - /url: /user/andrewww1
+            - text: ", 2017-01-11"
+            - text: fractals are creepy
+        - generic [ref=e399]:
+          - img [ref=e401]
+          - generic [ref=e402]:
+            - link "ollj" [ref=e403] [cursor=pointer]:
+              - /url: /user/ollj
+            - text: ", 2016-04-17"
+            - text: dint eat the yellow fractal.
+        - generic [ref=e404]:
+          - img [ref=e406]
+          - generic [ref=e407]:
+            - link "jt" [ref=e408] [cursor=pointer]:
+              - /url: /user/jt
+            - text: ", 2016-02-16"
+            - text: Very cool! :-)
+        - generic [ref=e409]:
+          - img [ref=e411]
+          - generic [ref=e412]:
+            - link "huttarl" [ref=e413] [cursor=pointer]:
+              - /url: /user/huttarl
+            - text: ", 2014-11-26"
+            - text: Very nice. What does it mean when the structure is changing at certain points, i.e. a chain is lengthening and more spheres are popping into existence?
+        - generic [ref=e414]:
+          - img [ref=e416]
+          - generic [ref=e417]:
+            - link "demofox" [ref=e418] [cursor=pointer]:
+              - /url: /user/demofox
+            - text: ", 2013-10-13"
+            - text: man, this is pretty!
+        - generic [ref=e419]:
+          - img [ref=e421]
+          - generic [ref=e422]:
+            - link "weyland" [ref=e423] [cursor=pointer]:
+              - /url: /user/weyland
+            - text: ", 2013-05-04"
+            - text: love the plastic look and colours
+        - generic [ref=e424]:
+          - img [ref=e426]
+          - generic [ref=e427]:
+            - link "PauloFalcao" [ref=e428] [cursor=pointer]:
+              - /url: /user/PauloFalcao
+            - text: ", 2013-05-02"
+            - text: Very, very cool and fast!
+            - img [ref=e429]
+        - generic [ref=e430]:
+          - img [ref=e432]
+          - generic [ref=e433]:
+            - link "CPU" [ref=e434] [cursor=pointer]:
+              - /url: /user/CPU
+            - text: ", 2013-05-02"
+            - text: WOW!! This is gorgeous and so fast!!
+  - generic [ref=e435]:
+    - generic [ref=e436]:
+      - text: Community Forums
+      - list [ref=e437]:
+        - listitem [ref=e438]:
+          - link "Official Events" [ref=e439] [cursor=pointer]:
+            - /url: /events
+        - listitem [ref=e440]:
+          - link "In Facebook (english)" [ref=e441] [cursor=pointer]:
+            - /url: https://www.facebook.com/groups/147749602472741
+        - listitem [ref=e442]:
+          - link "In Facebook (korean)" [ref=e443] [cursor=pointer]:
+            - /url: https://www.facebook.com/groups/1339783682699494
+        - listitem [ref=e444]:
+          - link "In Discord" [ref=e445] [cursor=pointer]:
+            - /url: https://discord.gg/XtmMN6E
+          - text: (
+          - link "direct link" [ref=e446] [cursor=pointer]:
+            - /url: https://discordapp.com/channels/578696555612209173/579531723348639754
+          - text: )
+    - generic [ref=e447]:
+      - text: Feedback and Support
+      - list [ref=e448]:
+        - listitem [ref=e449]:
+          - link "Facebook" [ref=e450] [cursor=pointer]:
+            - /url: https://www.facebook.com/Shadertoy
+        - listitem [ref=e451]:
+          - link "Twitter" [ref=e452] [cursor=pointer]:
+            - /url: https://twitter.com/shadertoy
+        - listitem [ref=e453]:
+          - link "Patreon" [ref=e454] [cursor=pointer]:
+            - /url: https://www.patreon.com/shadertoy
+        - listitem [ref=e455]:
+          - link "Roadmap" [ref=e456] [cursor=pointer]:
+            - /url: https://trello.com/b/5hM0CjId
+    - generic [ref=e457]:
+      - text: Shadertoy
+      - list [ref=e458]:
+        - listitem [ref=e459]:
+          - link "Store" [ref=e460] [cursor=pointer]:
+            - /url: /store
+        - listitem [ref=e461]:
+          - link "Documentation" [ref=e462] [cursor=pointer]:
+            - /url: /howto
+        - listitem [ref=e463]:
+          - link "Terms & Privacy" [ref=e464] [cursor=pointer]:
+            - /url: /terms
+        - listitem [ref=e465]:
+          - link "About" [ref=e466] [cursor=pointer]:
+            - /url: /about
+    - generic [ref=e467]:
+      - text: Apps and Plugins
+      - list [ref=e468]:
+        - listitem [ref=e469]:
+          - link "Official iPhone App" [ref=e470] [cursor=pointer]:
+            - /url: https://itunes.apple.com/us/app/shadertoy/id717961814
+          - text: by
+          - link "Reinder" [ref=e471] [cursor=pointer]:
+            - /url: /user/reinder
+        - listitem [ref=e472]:
+          - link "Screensaver" [ref=e473] [cursor=pointer]:
+            - /url: https://steamcommunity.com/sharedfiles/filedetails/?id=1726697188
+          - text: by
+          - link "Kosro" [ref=e474] [cursor=pointer]:
+            - /url: /user/kosro
+        - listitem [ref=e475]:
+          - link "Shadertoy plugin" [ref=e476] [cursor=pointer]:
+            - /url: https://chrome.google.com/webstore/detail/shadertoy-unofficial-plug/ohicbclhdmkhoabobgppffepcopomhgl
+          - text: by
+          - link "Patu" [ref=e477] [cursor=pointer]:
+            - /url: /user/patu
+    - generic [ref=e478]:
+      - text: Tutorials
+      - list [ref=e479]:
+        - listitem [ref=e480]:
+          - link "Shader coding intro" [ref=e481] [cursor=pointer]:
+            - /url: https://www.youtube.com/watch?v=0ifChJ0nJfM
+          - text: by
+          - link "iq" [ref=e482] [cursor=pointer]:
+            - /url: /user/iq
+        - listitem [ref=e483]:
+          - link "Shadertoy Unofficial" [ref=e484] [cursor=pointer]:
+            - /url: https://shadertoyunofficial.wordpress.com/
+          - text: by
+          - link "FabriceNeyret2" [ref=e485] [cursor=pointer]:
+            - /url: /user/FabriceNeyret2
+  - generic [ref=e486]:
+    - generic [ref=e487]:
+      - text: We use cookies to give you the best experience on our website. If you continue using Shadertoy, we'll assume that you are happy to receive all cookies on this website. For more information, please review our
+      - link "Terms & Privacy" [ref=e488] [cursor=pointer]:
+        - /url: /terms
+      - text: .
+    - button "Accept" [ref=e490]

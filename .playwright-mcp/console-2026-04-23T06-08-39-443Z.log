@@ -1,0 +1,2 @@
+[     340ms] [LOG] WebGL (2.0=true): Asynch Compile: yes, Textures: F32 [yes], F32 Linear Filter [yes], F16 [yes], F16 Linear Filter [no], Depth [yes], LOD [yes], Aniso [yes], Units [16], Max Size [16384], Cube Max Size [16384], Targets: MRT [yes], F32 [yes], Max Size [16384] @ https://www.shadertoy.com/view/7lKSWW:2567
+[     386ms] [WARNING] <meta name="apple-mobile-web-app-capable" content="yes"> is deprecated. Please include <meta name="mobile-web-app-capable" content="yes"> @ https://www.shadertoy.com/view/7lKSWW:0

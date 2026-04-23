@@ -1,0 +1,683 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - link "Shadertoy" [ref=e4] [cursor=pointer]:
+        - /url: /
+      - searchbox "Search..." [ref=e7]
+    - generic [ref=e8]:
+      - link "Browse" [ref=e9] [cursor=pointer]:
+        - /url: /browse
+      - link "New" [ref=e10] [cursor=pointer]:
+        - /url: /new
+      - link "Sign In" [ref=e11] [cursor=pointer]:
+        - /url: /signin
+  - generic [ref=e13]:
+    - generic [ref=e14]:
+      - generic [ref=e17]:
+        - generic [ref=e18]:
+          - generic "Reset time (<ALT>+<DownArrow>)" [ref=e19] [cursor=pointer]
+          - generic "Pause/Resume (<ALT>+<UpArrow>)" [ref=e20] [cursor=pointer]
+        - generic [ref=e21]:
+          - generic [ref=e22]: "6.05"
+          - generic [ref=e23]: 1.0 fps
+          - generic [ref=e24]: 420 x 236
+        - generic [ref=e25]:
+          - generic "Record (<ALT>+<R>)" [ref=e26] [cursor=pointer]
+          - generic "Volume" [ref=e27] [cursor=pointer]
+          - generic "Go fullscreen" [ref=e28] [cursor=pointer]
+      - generic [ref=e29]:
+        - generic [ref=e30]:
+          - generic [ref=e31]:
+            - text: Raymarched Hexagonal Truchet
+            - img "This shader has been a Featured Shader!" [ref=e33]
+          - generic [ref=e34]:
+            - img "share this shader" [ref=e35] [cursor=pointer]
+            - img [ref=e36]
+            - text: "334"
+          - generic [ref=e37]:
+            - text: "Views: 56500"
+            - text: ", Tags:"
+            - generic [ref=e177]:
+              - link "raymarch" [ref=e178] [cursor=pointer]:
+                - /url: /results?query=tag%3Draymarch
+              - text: ","
+              - link "map" [ref=e179] [cursor=pointer]:
+                - /url: /results?query=tag%3Dmap
+              - text: ","
+              - link "hexagon" [ref=e180] [cursor=pointer]:
+                - /url: /results?query=tag%3Dhexagon
+              - text: ","
+              - link "truchet" [ref=e181] [cursor=pointer]:
+                - /url: /results?query=tag%3Dtruchet
+              - text: ","
+              - link "edge" [ref=e182] [cursor=pointer]:
+                - /url: /results?query=tag%3Dedge
+              - text: ","
+              - link "environment" [ref=e183] [cursor=pointer]:
+                - /url: /results?query=tag%3Denvironment
+          - generic [ref=e38]:
+            - text: Created by
+            - link "Shane" [ref=e185] [cursor=pointer]:
+              - /url: /user/Shane
+            - text: in 2016-08-12
+        - generic [ref=e186]: Raymarched hexagonal Truchet tile, based off of Fabrice and Mattz's examples.
+    - generic [ref=e39]:
+      - generic [ref=e40] [cursor=pointer]:
+        - combobox [ref=e188]:
+          - option "Common"
+          - option "Sound"
+          - option "Buffer A"
+          - option "Buffer B"
+          - option "Buffer C"
+          - option "Buffer D"
+          - option "Cubemap A"
+        - generic [ref=e189]:
+          - img [ref=e190]
+          - generic [ref=e191]: Image
+      - generic [ref=e42] [cursor=pointer]:
+        - generic [ref=e43]: Shader Inputs
+        - generic [ref=e46]:
+          - text: uniform vec3 iResolution; // viewport resolution (in pixels)
+          - text: uniform float iTime; // shader playback time (in seconds)
+          - text: uniform float iTimeDelta; // render time (in seconds)
+          - text: uniform float iFrameRate; // shader frame rate
+          - text: uniform int iFrame; // shader playback frame
+          - text: uniform float iChannelTime[4]; // channel playback time (in seconds)
+          - text: uniform vec3 iChannelResolution[4]; // channel resolution (in pixels)
+          - text: "uniform vec4 iMouse; // mouse pixel coords. xy: current (if MLB down), zw: click"
+          - text: uniform samplerXX iChannel0..3; // input channel. XX = 2D/Cube
+          - text: uniform vec4 iDate; // (year, month, day, time in seconds)
+          - text: uniform float iSampleRate; // sound sample rate (i.e., 44100)
+      - generic [ref=e48]:
+        - textbox [ref=e49]
+        - generic [ref=e52]:
+          - generic [ref=e197]:
+            - generic [ref=e198]: "1"
+            - text: /*
+          - generic [ref=e200]: "2"
+          - generic [ref=e201]:
+            - generic [ref=e202]: "3"
+            - text: Raymarched Hexagonal Truchet
+          - generic [ref=e203]:
+            - generic [ref=e204]: "4"
+            - text: "----------------------------"
+          - generic [ref=e206]: "5"
+          - generic [ref=e207]:
+            - generic [ref=e208]: "6"
+            - text: Raymarching a hexagonal Truchet pattern. The Truchet pattern itself is pretty easy to produce.
+          - generic [ref=e209]:
+            - generic [ref=e210]: "7"
+            - text: This particular production method is based off of one of Fabrice Neyret's finely tuned examples,
+          - generic [ref=e211]:
+            - generic [ref=e212]: "8"
+            - text: which in turn was based on something Mattz did a while back. Both examples are below.
+          - generic [ref=e214]: "9"
+          - generic [ref=e215]:
+            - generic [ref=e216]: "10"
+            - text: Technically, there isn't a lot to it. The hardest part was producing the Truchet pattern in a
+          - generic [ref=e217]:
+            - generic [ref=e218]: "11"
+            - text: reasonably quick way, but most of that was already done for me. Therefore, since I had nothing new
+          - generic [ref=e219]:
+            - generic [ref=e220]: "12"
+            - text: to add, I prettied it up a bit... and by that I mean, I made it really shiny. Probably too shiny.
+          - generic [ref=e221]:
+            - generic [ref=e222]: "13"
+            - text: It kind of hurts my eyes. :)
+          - generic [ref=e224]: "14"
+          - generic [ref=e225]:
+            - generic [ref=e226]: "15"
+            - text: The weird, abstract, dragon disco style wasn't intentional. I'm briefly passing through parts of
+          - generic [ref=e227]:
+            - generic [ref=e228]: "16"
+            - text: Asia next week, so that may have mildy influenced my style choices. Hopefully, it meets
+          - generic [ref=e229]:
+            - generic [ref=e230]: "17"
+            - text: 834144373's approval. :)
+          - generic [ref=e232]: "18"
+          - generic [ref=e234]: "19"
+          - generic [ref=e235]:
+            - generic [ref=e236]: "20"
+            - text: "Based on:"
+          - generic [ref=e238]: "21"
+          - generic [ref=e239]:
+            - generic [ref=e240]: "22"
+            - text: hexagonal truchet ( 352 ) - FabriceNeyret2
+          - generic [ref=e241]:
+            - generic [ref=e242]: "23"
+            - text: https://www.shadertoy.com/view/Xdt3D8
+          - generic [ref=e244]: "24"
+          - generic [ref=e245]:
+            - generic [ref=e246]: "25"
+            - text: "... which, in turn, was based on:"
+          - generic [ref=e247]:
+            - generic [ref=e248]: "26"
+            - text: hexagonal tiling - mattz
+          - generic [ref=e249]:
+            - generic [ref=e250]: "27"
+            - text: https://www.shadertoy.com/view/4d2GzV
+          - generic [ref=e252]: "28"
+          - generic [ref=e253]:
+            - generic [ref=e254]: "29"
+            - text: "*/"
+          - generic [ref=e256]: "30"
+          - generic [ref=e258]: "31"
+          - generic [ref=e259]:
+            - generic [ref=e260]: "32"
+            - text: // Using a 2D Hexagonal Truchet pattern as the source of the height map. This is based on Fabrice's
+          - generic [ref=e261]:
+            - generic [ref=e262]: "33"
+            - text: // example which in turn was based on one by Mattz. I tailored it to suit my needs - and hopefully,
+          - generic [ref=e263]:
+            - generic [ref=e264]: "34"
+            - text: // sped it up a bit, but it wouldn't shock me if I'd slowed it down instead. :)
+          - generic [ref=e265]:
+            - generic [ref=e266]: "35"
+            - text: //
+          - generic [ref=e267]:
+            - generic [ref=e268]: "36"
+            - text: "// The process is pretty simple: Break space up into hexagons and color them according to the distance"
+          - generic [ref=e269]:
+            - generic [ref=e270]: "37"
+            - text: // from the center, then randomly flip some about the X-axis. The pattern you're left with isn't that
+          - generic [ref=e271]:
+            - generic [ref=e272]: "38"
+            - text: // visually appealing. However, once you wrap or fold the values over, you get some nice symmetrical
+          - generic [ref=e273]:
+            - generic [ref=e274]: "39"
+            - text: // patterns.
+          - generic [ref=e275]:
+            - generic [ref=e276]: "40"
+            - text: //
+          - generic [ref=e277]:
+            - generic [ref=e278]: "41"
+            - text: // Just to complicate things slightly, I'm performing the final value folding steps outside of this
+          - generic [ref=e279]:
+            - generic [ref=e280]: "42"
+            - text: // function in order to color things in sections... It's not that important.
+          - generic [ref=e281]:
+            - generic:
+              - generic [ref=e282]: "43"
+              - generic [ref=e284] [cursor=pointer]: ▾
+            - text: "float heightMap(in vec2 p) {"
+          - generic [ref=e286]: "44"
+          - generic [ref=e287]:
+            - generic [ref=e288]: "45"
+            - text: p *= 3.;
+          - generic [ref=e290]: "46"
+          - generic [ref=e291]:
+            - generic [ref=e292]: "47"
+            - text: // Hexagonal coordinates.
+          - generic [ref=e293]:
+            - generic [ref=e294]: "48"
+            - text: vec2 h = vec2(p.x + p.y*.57735, p.y*1.1547);
+          - generic [ref=e296]: "49"
+          - generic [ref=e297]:
+            - generic [ref=e298]: "50"
+            - text: // Closest hexagon center.
+          - generic [ref=e299]:
+            - generic [ref=e300]: "51"
+            - text: vec2 fh = floor(h);
+          - generic [ref=e301]:
+            - generic [ref=e302]: "52"
+            - text: vec2 f = h - fh; h = fh;
+          - generic [ref=e303]:
+            - generic [ref=e304]: "53"
+            - text: float c = fract((h.x + h.y)/3.);
+          - generic [ref=e305]:
+            - generic [ref=e306]: "54"
+            - text: "h = c<.666 ? c<.333 ? h : h + 1. : h + step(f.yx, f);"
+          - generic [ref=e308]: "55"
+          - generic [ref=e309]:
+            - generic [ref=e310]: "56"
+            - text: p -= vec2(h.x - h.y*.5, h.y*.8660254);
+          - generic [ref=e312]: "57"
+          - generic [ref=e313]:
+            - generic [ref=e314]: "58"
+            - text: // Rotate (flip, in this case) random hexagons. Otherwise, you'd have a bunch of circles only.
+          - generic [ref=e315]:
+            - generic [ref=e316]: "59"
+            - text: // Note that "h" is unique to each hexagon, so we can use it as the random ID.
+          - generic [ref=e317]:
+            - generic [ref=e318]: "60"
+            - text: c = fract(cos(dot(h, vec2(41, 289)))*43758.5453); // Reusing "c."
+          - generic [ref=e319]:
+            - generic [ref=e320]: "61"
+            - text: "p -= p*step(c, .5)*2.; // Equivalent to: if (c<.5) p *= -1.;"
+          - generic [ref=e322]: "62"
+          - generic [ref=e323]:
+            - generic [ref=e324]: "63"
+            - text: // Minimum squared distance to neighbors. Taking the square root after comparing, for speed.
+          - generic [ref=e325]:
+            - generic [ref=e326]: "64"
+            - text: // Three partitions need to be checked due to the flipping process.
+          - generic [ref=e327]:
+            - generic [ref=e328]: "65"
+            - text: p -= vec2(-1, 0);
+          - generic [ref=e329]:
+            - generic [ref=e330]: "66"
+            - text: c = dot(p, p); // Reusing "c" again.
+          - generic [ref=e331]:
+            - generic [ref=e332]: "67"
+            - text: p -= vec2(1.5, .8660254);
+          - generic [ref=e333]:
+            - generic [ref=e334]: "68"
+            - text: c = min(c, dot(p, p));
+          - generic [ref=e335]:
+            - generic [ref=e336]: "69"
+            - text: p -= vec2(0, -1.73205);
+          - generic [ref=e337]:
+            - generic [ref=e338]: "70"
+            - text: c = min(c, dot(p, p));
+          - generic [ref=e340]: "71"
+          - generic [ref=e341]:
+            - generic [ref=e342]: "72"
+            - text: return sqrt(c);
+          - generic [ref=e344]: "73"
+          - generic [ref=e345]:
+            - generic [ref=e346]: "74"
+            - text: // Wrapping the values - or folding the values over (abs(c-.5)*2., cos(c*6.283*1.), etc) - to produce
+          - generic [ref=e347]:
+            - generic [ref=e348]: "75"
+            - text: // the nicely lined-up, wavy patterns. I"m perfoming this step in the "map" function. It has to do
+          - generic [ref=e349]:
+            - generic [ref=e350]: "76"
+            - text: // with coloring and so forth.
+          - generic [ref=e351]:
+            - generic [ref=e352]: "77"
+            - text: //c = sqrt(c);
+          - generic [ref=e353]:
+            - generic [ref=e354]: "78"
+            - text: //c = cos(c*6.283*1.) + cos(c*6.283*2.);
+          - generic [ref=e355]:
+            - generic [ref=e356]: "79"
+            - text: //return (clamp(c*.6+.5, 0., 1.));
+          - generic [ref=e358]: "80"
+          - generic [ref=e359]:
+            - generic [ref=e360]: "81"
+            - text: "}"
+          - generic [ref=e362]: "82"
+          - generic [ref=e363]:
+            - generic [ref=e364]: "83"
+            - text: // Raymarching an XY-plane - raised a little by the hexagonal Truchet heightmap. Pretty standard.
+          - generic [ref=e365]:
+            - generic:
+              - generic [ref=e366]: "84"
+              - generic [ref=e368] [cursor=pointer]: ▾
+            - text: "float map(vec3 p){"
+          - generic [ref=e370]: "85"
+          - generic [ref=e372]: "86"
+          - generic [ref=e373]:
+            - generic [ref=e374]: "87"
+            - text: float c = heightMap(p.xy); // Height map.
+          - generic [ref=e375]:
+            - generic [ref=e376]: "88"
+            - text: // Wrapping, or folding the height map values over, to produce the nicely lined-up, wavy patterns.
+          - generic [ref=e377]:
+            - generic [ref=e378]: "89"
+            - text: c = cos(c*6.2831589) + cos(c*6.2831589*2.);
+          - generic [ref=e379]:
+            - generic [ref=e380]: "90"
+            - text: c = (clamp(c*.6 +.5, 0., 1.));
+          - generic [ref=e382]: "91"
+          - generic [ref=e384]: "92"
+      - generic [ref=e59]:
+        - generic [ref=e60]:
+          - img "Compile (<ALT>+<ENTER>)" [ref=e61] [cursor=pointer]
+          - link "Compiled in 0.0 secs" [ref=e385] [cursor=pointer]:
+            - /url: "#"
+        - generic [ref=e62]: 3330 chars
+        - generic [ref=e63]:
+          - combobox "Change font size (<ALT>+<+/->)" [ref=e65]:
+            - option "XS"
+            - option "S" [selected]
+            - option "M"
+            - option "L"
+            - option "XL"
+            - option "XXL"
+          - img "Show GLSL help" [ref=e66] [cursor=pointer]
+      - generic [ref=e67]:
+        - generic [ref=e68]:
+          - generic [ref=e69]:
+            - generic:
+              - text: Filter
+              - combobox "Pixel filtering mode" [ref=e71]:
+                - option "nearest" [selected]
+                - option "linear"
+                - option "mipmap"
+              - text: Wrap
+              - combobox "Pixel filtering mode" [ref=e72]:
+                - option "clamp" [selected]
+                - option "repeat"
+              - generic [ref=e74]:
+                - text: VFlip
+                - checkbox "VFlip" [ref=e75]
+          - generic [ref=e77]: iChannel0
+        - generic [ref=e80]:
+          - generic [ref=e81]:
+            - generic:
+              - text: Filter
+              - combobox "Pixel filtering mode" [ref=e83]:
+                - option "nearest" [selected]
+                - option "linear"
+                - option "mipmap"
+              - text: Wrap
+              - combobox "Pixel filtering mode" [ref=e84]:
+                - option "clamp" [selected]
+                - option "repeat"
+              - generic [ref=e86]:
+                - text: VFlip
+                - checkbox "VFlip" [ref=e87]
+          - generic [ref=e89]: iChannel1
+        - generic [ref=e92]:
+          - generic [ref=e93]:
+            - generic:
+              - text: Filter
+              - combobox "Pixel filtering mode" [ref=e95]:
+                - option "nearest" [selected]
+                - option "linear"
+                - option "mipmap"
+              - text: Wrap
+              - combobox "Pixel filtering mode" [ref=e96]:
+                - option "clamp" [selected]
+                - option "repeat"
+              - generic [ref=e98]:
+                - text: VFlip
+                - checkbox "VFlip" [ref=e99]
+          - generic [ref=e101]: iChannel2
+        - generic [ref=e104]:
+          - generic [ref=e105]:
+            - generic:
+              - text: Filter
+              - combobox "Pixel filtering mode" [ref=e107]:
+                - option "nearest" [selected]
+                - option "linear"
+                - option "mipmap"
+              - text: Wrap
+              - combobox "Pixel filtering mode" [ref=e108]:
+                - option "clamp" [selected]
+                - option "repeat"
+              - generic [ref=e110]:
+                - text: VFlip
+                - checkbox "VFlip" [ref=e111]
+          - generic [ref=e113]: iChannel3
+    - generic [ref=e117]:
+      - text: Comments (24)
+      - generic [ref=e118]:
+        - link "Sign in" [ref=e120] [cursor=pointer]:
+          - /url: /signin
+        - text: to post a comment.
+      - generic [ref=e386]:
+        - generic [ref=e387]:
+          - img [ref=e389]
+          - generic [ref=e390]:
+            - link "TripZilla" [ref=e391] [cursor=pointer]:
+              - /url: /user/TripZilla
+            - text: ", 2025-05-14"
+            - text: I wish I could get this good lol!
+        - generic [ref=e392]:
+          - img [ref=e394]
+          - generic [ref=e395]:
+            - link "bennoH" [ref=e396] [cursor=pointer]:
+              - /url: /user/bennoH
+            - text: ", 2025-03-08"
+            - text: "Thank you very much for your great truchet shader! I took the liberty of adapting it for the ISF format: https://editor.isf.video/shaders/66af4c148d90c9001a487225/ I have tried to create some intresting & fun inputs so that VJ's and video artists out there can use your work in their live performances and show this work of art to as wide an audience as possible worldwide in music clubs and or at other events and I assume that you will be happy about this. Since there was no license notice in your work or the inspiratings for that, I have set a \"CC BY-NC SA 4.0\" in the isf version and hope that this is OK. If not, let me know and I will adjust it accordingly. & Of course, I was given credits to you with respect of your art in my isf-code and the original Link to this Shadertoy-artwork as the original creation. By the way, I would like to add that in my eyes you are one of the top 20 coders on Shadedrtoy and I am therefore flattered that you like the \"all orange\". Do you know the address: https://jbaker.graphics/index.html Otherwise, this might be something for a crack like you. A great collection of SDFs and fractal formulas in GLSL and more. With only the best wishes and greetings from the mountainous Switzerland"
+        - generic [ref=e397]:
+          - img [ref=e399]
+          - generic [ref=e400]:
+            - link "CharmyStrings" [ref=e401] [cursor=pointer]:
+              - /url: /user/CharmyStrings
+            - text: ", 2024-11-07"
+            - text: Having only an incredibly mediocre experience with plotting stuff, this was absolutely amazing analysis. Well documented, and a lot of interesting concepts!
+        - generic [ref=e402]:
+          - img [ref=e404]
+          - generic [ref=e405]:
+            - link "XzAgE" [ref=e406] [cursor=pointer]:
+              - /url: /user/XzAgE
+            - text: ", 2024-08-24"
+            - text: That is dope man!
+        - generic [ref=e407]:
+          - img [ref=e409]
+          - generic [ref=e410]:
+            - link "huttarl" [ref=e411] [cursor=pointer]:
+              - /url: /user/huttarl
+            - text: ", 2018-02-15"
+            - text: I like the depth of the transparent texture.
+        - generic [ref=e412]:
+          - img [ref=e414]
+          - generic [ref=e415]:
+            - link "BigWIngs" [ref=e416] [cursor=pointer]:
+              - /url: /user/BigWIngs
+            - text: ", 2017-10-03"
+            - text: Wonderful pattern sir!
+        - generic [ref=e417]:
+          - img [ref=e419]
+          - generic [ref=e420]:
+            - link "rigel" [ref=e421] [cursor=pointer]:
+              - /url: /user/rigel
+            - text: ", 2017-08-03"
+            - text: This looks so precious
+            - img [ref=e422]
+        - generic [ref=e423]:
+          - img [ref=e425]
+          - generic [ref=e426]:
+            - link "CaliCoastReplay" [ref=e427] [cursor=pointer]:
+              - /url: /user/CaliCoastReplay
+            - text: ", 2016-08-17"
+            - text: By the way, I was referring to code comments...though the thread discussion is nice too
+            - img [ref=e428]
+            - text: All code should be commented this well...speaking as someone who all too often right now doesn't even comment mine unless it's something I'm particularly proud of. This inspires.
+        - generic [ref=e429]:
+          - img [ref=e431]
+          - generic [ref=e432]:
+            - link "Shane" [ref=e433] [cursor=pointer]:
+              - /url: /user/Shane
+            - text: ", 2016-08-14"
+            - text: "@stb I know the inside\\outside versions you're referring to, with the square Truchet tiles anyway. I'm having a little difficulty visualizing it with the hexagonal version. Either way, it would look pretty cool, and I'd imagine would only involve a simple adaption. With that extra variation, you could do some pretty interesting things. Obviously, you could use color, but I guess you could raise and lower regions, create city blocks, landscapes... I'm getting ahead of myself."
+            - img [ref=e434]
+        - generic [ref=e435]:
+          - img [ref=e437]
+          - generic [ref=e438]:
+            - link "kuvkar" [ref=e439] [cursor=pointer]:
+              - /url: /user/kuvkar
+            - text: ", 2016-08-13"
+            - text: looks beautiful!
+        - generic [ref=e440]:
+          - img [ref=e442]
+          - generic [ref=e443]:
+            - link "CaliCoastReplay" [ref=e444] [cursor=pointer]:
+              - /url: /user/CaliCoastReplay
+            - text: ", 2016-08-13"
+            - text: I appreciate the excellent comments. Great study example for raymarching.
+        - generic [ref=e445]:
+          - img [ref=e447]
+          - generic [ref=e448]:
+            - link "iq" [ref=e449] [cursor=pointer]:
+              - /url: /user/iq
+            - text: ", 2016-08-13"
+            - text: Very very nice!
+        - generic [ref=e450]:
+          - img [ref=e452]
+          - generic [ref=e453]:
+            - link "Shane" [ref=e454] [cursor=pointer]:
+              - /url: /user/Shane
+            - text: ", 2016-08-13"
+            - text: Thanks for the comments everyone. @mattz That "Rainbox Spaghetti" shader of yours is one of my favorite raymarched surface examples on here. I completely forgot that I was going to do a version of it, or at least attempt it.
+            - img [ref=e455]
+            - text: "@dila Almost every new concept I encounter ties my head in knots for a while. Then, when I've finally figured it out, I usually wonder why I thought it was difficult in the first place."
+            - img [ref=e456]
+            - text: If you're interested, isolate the "heightMap" function, then comment things out, etc. Also, look up hexagonal partitioning, etc, and you'll see that it's just a few simple steps.
+        - generic [ref=e457]:
+          - img [ref=e459]
+          - generic [ref=e460]:
+            - link "Yusef28" [ref=e461] [cursor=pointer]:
+              - /url: /user/Yusef28
+            - text: ", 2016-08-13"
+            - text: This is a real eye-catching beauty, nice work.
+        - generic [ref=e462]:
+          - img [ref=e464]
+          - generic [ref=e465]:
+            - link "Shane" [ref=e466] [cursor=pointer]:
+              - /url: /user/Shane
+            - text: ", 2016-08-13"
+            - text: "@Fabrice Regarding why you'd bother raymarching this, as opposed to bump mapping, etc: It's an interesting question. A while back, I was trying to make a really pronounced looking bump map from a 2D pattern, then realized that with a few extra calls, I could raymarch it front-on and get all the extra benefits that go with 3D. In this case, I'm using 32 iterations just to be sure, but I'd imagine nowhere near all are needed. In fact, a lot of the times, I can get away with as few as 8, with the average function calls per pixel being fewer than that. Of course, I'm ignoring normal calculations and so forth, but it's still a very simple and cheap process, which makes it a worthwhile. In fact, I barely bother bump mapping 2D images at all anymore. Because of the way this is stylized, the 3D isn't as noticeable here, but it does subtly affect the way the light bounces around. My \"Bioorganic Wall\" shader is probably a better example. On a side note, this process would look pretty interesting applied to your \"escher-like 2\" shader, and a lot of your other ones."
+        - generic [ref=e467]:
+          - img [ref=e469]
+          - generic [ref=e470]:
+            - link "aiekick" [ref=e471] [cursor=pointer]:
+              - /url: /user/aiekick
+            - text: ", 2016-08-13"
+            - img [ref=e472]
+        - generic [ref=e473]:
+          - img [ref=e475]
+          - generic [ref=e476]:
+            - link "shau" [ref=e477] [cursor=pointer]:
+              - /url: /user/shau
+            - text: ", 2016-08-12"
+            - text: Really pretty Truchet. Nice and Shiny
+            - img [ref=e478]
+        - generic [ref=e479]:
+          - img [ref=e481]
+          - generic [ref=e482]:
+            - link "coyote" [ref=e483] [cursor=pointer]:
+              - /url: /user/coyote
+            - text: ", 2016-08-12"
+            - text: Beautiful!
+            - img [ref=e484]
+        - generic [ref=e485]:
+          - img [ref=e487]
+          - generic [ref=e488]:
+            - link "Dave_Hoskins" [ref=e489] [cursor=pointer]:
+              - /url: /user/Dave_Hoskins
+            - text: ", 2016-08-12"
+            - text: Fantastic! It feels almost Indian, in a jeweled sense.
+        - generic [ref=e490]:
+          - img [ref=e492]
+          - generic [ref=e493]:
+            - link "cubby208" [ref=e494] [cursor=pointer]:
+              - /url: /user/cubby208
+            - text: ", 2016-08-12"
+            - text: How much does it cost to install this on my floor per square ft? Awesome shader!
+        - generic [ref=e495]:
+          - img [ref=e497]
+          - generic [ref=e498]:
+            - link "dila" [ref=e499] [cursor=pointer]:
+              - /url: /user/dila
+            - text: ", 2016-08-12"
+            - text: very nice Truchet, i have no idea how its done
+        - generic [ref=e500]:
+          - img [ref=e502]
+          - generic [ref=e503]:
+            - link "Duke" [ref=e504] [cursor=pointer]:
+              - /url: /user/Duke
+            - text: ", 2016-08-12"
+            - text: Cool!
+        - generic [ref=e505]:
+          - img [ref=e507]
+          - generic [ref=e508]:
+            - link "mattz" [ref=e509] [cursor=pointer]:
+              - /url: /user/mattz
+            - text: ", 2016-08-12"
+            - text: Looks great! Looking forward to your embellishment of rainbow spaghetti
+            - link "https://www.shadertoy.com/view/lsjGRV" [ref=e510] [cursor=pointer]:
+              - /url: https://www.shadertoy.com/view/lsjGRV
+        - generic [ref=e511]:
+          - img [ref=e513]
+          - generic [ref=e514]:
+            - link "FabriceNeyret2" [ref=e515] [cursor=pointer]:
+              - /url: /user/FabriceNeyret2
+            - text: ", 2016-08-12"
+            - text: "Hello truchet ! :-) NB: why do you need ray-marching at all, here ? Oh yes, I see a bit of parallax. But then it would be fun to let the mouse change the view angle and see the details as displacement :-)"
+  - generic [ref=e121]:
+    - generic [ref=e122]:
+      - text: Community Forums
+      - list [ref=e123]:
+        - listitem [ref=e124]:
+          - link "Official Events" [ref=e125] [cursor=pointer]:
+            - /url: /events
+        - listitem [ref=e126]:
+          - link "In Facebook (english)" [ref=e127] [cursor=pointer]:
+            - /url: https://www.facebook.com/groups/147749602472741
+        - listitem [ref=e128]:
+          - link "In Facebook (korean)" [ref=e129] [cursor=pointer]:
+            - /url: https://www.facebook.com/groups/1339783682699494
+        - listitem [ref=e130]:
+          - link "In Discord" [ref=e131] [cursor=pointer]:
+            - /url: https://discord.gg/XtmMN6E
+          - text: (
+          - link "direct link" [ref=e132] [cursor=pointer]:
+            - /url: https://discordapp.com/channels/578696555612209173/579531723348639754
+          - text: )
+    - generic [ref=e133]:
+      - text: Feedback and Support
+      - list [ref=e134]:
+        - listitem [ref=e135]:
+          - link "Facebook" [ref=e136] [cursor=pointer]:
+            - /url: https://www.facebook.com/Shadertoy
+        - listitem [ref=e137]:
+          - link "Twitter" [ref=e138] [cursor=pointer]:
+            - /url: https://twitter.com/shadertoy
+        - listitem [ref=e139]:
+          - link "Patreon" [ref=e140] [cursor=pointer]:
+            - /url: https://www.patreon.com/shadertoy
+        - listitem [ref=e141]:
+          - link "Roadmap" [ref=e142] [cursor=pointer]:
+            - /url: https://trello.com/b/5hM0CjId
+    - generic [ref=e143]:
+      - text: Shadertoy
+      - list [ref=e144]:
+        - listitem [ref=e145]:
+          - link "Store" [ref=e146] [cursor=pointer]:
+            - /url: /store
+        - listitem [ref=e147]:
+          - link "Documentation" [ref=e148] [cursor=pointer]:
+            - /url: /howto
+        - listitem [ref=e149]:
+          - link "Terms & Privacy" [ref=e150] [cursor=pointer]:
+            - /url: /terms
+        - listitem [ref=e151]:
+          - link "About" [ref=e152] [cursor=pointer]:
+            - /url: /about
+    - generic [ref=e153]:
+      - text: Apps and Plugins
+      - list [ref=e154]:
+        - listitem [ref=e155]:
+          - link "Official iPhone App" [ref=e156] [cursor=pointer]:
+            - /url: https://itunes.apple.com/us/app/shadertoy/id717961814
+          - text: by
+          - link "Reinder" [ref=e157] [cursor=pointer]:
+            - /url: /user/reinder
+        - listitem [ref=e158]:
+          - link "Screensaver" [ref=e159] [cursor=pointer]:
+            - /url: https://steamcommunity.com/sharedfiles/filedetails/?id=1726697188
+          - text: by
+          - link "Kosro" [ref=e160] [cursor=pointer]:
+            - /url: /user/kosro
+        - listitem [ref=e161]:
+          - link "Shadertoy plugin" [ref=e162] [cursor=pointer]:
+            - /url: https://chrome.google.com/webstore/detail/shadertoy-unofficial-plug/ohicbclhdmkhoabobgppffepcopomhgl
+          - text: by
+          - link "Patu" [ref=e163] [cursor=pointer]:
+            - /url: /user/patu
+    - generic [ref=e164]:
+      - text: Tutorials
+      - list [ref=e165]:
+        - listitem [ref=e166]:
+          - link "Shader coding intro" [ref=e167] [cursor=pointer]:
+            - /url: https://www.youtube.com/watch?v=0ifChJ0nJfM
+          - text: by
+          - link "iq" [ref=e168] [cursor=pointer]:
+            - /url: /user/iq
+        - listitem [ref=e169]:
+          - link "Shadertoy Unofficial" [ref=e170] [cursor=pointer]:
+            - /url: https://shadertoyunofficial.wordpress.com/
+          - text: by
+          - link "FabriceNeyret2" [ref=e171] [cursor=pointer]:
+            - /url: /user/FabriceNeyret2
+  - generic [ref=e172]:
+    - generic [ref=e173]:
+      - text: We use cookies to give you the best experience on our website. If you continue using Shadertoy, we'll assume that you are happy to receive all cookies on this website. For more information, please review our
+      - link "Terms & Privacy" [ref=e174] [cursor=pointer]:
+        - /url: /terms
+      - text: .
+    - button "Accept" [ref=e176]

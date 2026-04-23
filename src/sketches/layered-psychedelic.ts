@@ -59,6 +59,7 @@ export async function createLayeredPsychedelic(
         uSatInjectionMul: { value: anim.satInjectionMul ?? 0.35 },
         uGlowPulseFloor: { value: anim.glowPulseFloor ?? 0.0 },
         uLumExponent: { value: anim.lumExponent ?? 1.0 },
+        uValueLift: { value: anim.valueLift ?? 0 },
         uDepthNorm: { value: (layerConfig.meanDepth ?? 128) / 255 },
         uParallaxScale: { value: config.effects?.parallax?.scale ?? 0 },
         uHazeIntensity: { value: config.effects?.haze?.intensity ?? 0 },

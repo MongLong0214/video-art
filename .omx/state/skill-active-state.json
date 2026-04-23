@@ -5,7 +5,16 @@
   "keyword": "parallel",
   "phase": "executing",
   "activated_at": "2026-03-30T03:27:36.179Z",
-  "updated_at": "2026-04-10T00:54:43.577Z",
+  "updated_at": "2026-04-23T08:23:31.302Z",
   "source": "keyword-detector",
-  "input_lock": null
+  "input_lock": null,
+  "active_skills": [
+    {
+      "skill": "ultrawork",
+      "phase": "executing",
+      "active": true,
+      "activated_at": "2026-03-30T03:27:36.179Z",
+      "updated_at": "2026-04-10T00:54:43.577Z"
+    }
+  ]
 }

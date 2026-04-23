@@ -55,6 +55,7 @@ const animationSchema = z.object({
   satInjectionMul: z.number().default(0.35),
   glowPulseFloor: z.number().default(0.0),
   lumExponent: z.number().default(1.0),
+  valueLift: z.number().min(0).max(1).default(0),
   hueKey: z.number().min(0).default(0),
   hueSpeed: z.number().default(1),
   breath: z

@@ -1,0 +1,549 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - link "Shadertoy" [ref=e4] [cursor=pointer]:
+        - /url: /
+      - searchbox "Search..." [ref=e7]
+    - generic [ref=e8]:
+      - link "Browse" [ref=e9] [cursor=pointer]:
+        - /url: /browse
+      - link "New" [ref=e10] [cursor=pointer]:
+        - /url: /new
+      - link "Sign In" [ref=e11] [cursor=pointer]:
+        - /url: /signin
+  - generic [ref=e13]:
+    - generic [ref=e14]:
+      - generic [ref=e17]:
+        - generic [ref=e18]:
+          - generic "Reset time (<ALT>+<DownArrow>)" [ref=e19] [cursor=pointer]
+          - generic "Pause/Resume (<ALT>+<UpArrow>)" [ref=e20] [cursor=pointer]
+        - generic [ref=e21]:
+          - generic [ref=e22]: "12.14"
+          - generic [ref=e23]: 144.1 fps
+          - generic [ref=e24]: 420 x 236
+        - generic [ref=e25]:
+          - generic "Record (<ALT>+<R>)" [ref=e26] [cursor=pointer]
+          - generic "Volume" [ref=e27] [cursor=pointer]
+          - generic "Go fullscreen" [ref=e28] [cursor=pointer]
+      - generic [ref=e29]:
+        - generic [ref=e30]:
+          - generic [ref=e31]: The Way of Light
+          - generic [ref=e32]:
+            - img "share this shader" [ref=e33] [cursor=pointer]
+            - img [ref=e34]
+            - text: "19"
+          - generic [ref=e35]:
+            - text: "Views: 652"
+            - text: ", Tags:"
+            - generic [ref=e175]:
+              - link "3d" [ref=e176] [cursor=pointer]:
+                - /url: /results?query=tag%3D3d
+              - text: ","
+              - link "fractal" [ref=e177] [cursor=pointer]:
+                - /url: /results?query=tag%3Dfractal
+              - text: ","
+              - link "tunnel" [ref=e178] [cursor=pointer]:
+                - /url: /results?query=tag%3Dtunnel
+              - text: ","
+              - link "transparent" [ref=e179] [cursor=pointer]:
+                - /url: /results?query=tag%3Dtransparent
+          - generic [ref=e36]:
+            - text: Created by
+            - link "derSchamane" [ref=e181] [cursor=pointer]:
+              - /url: /user/derSchamane
+            - text: in 2022-11-28
+          - generic [ref=e183]:
+            - text: Forked from
+            - link "MK Alpha Renderer Base" [ref=e184] [cursor=pointer]:
+              - /url: /view/mdXXWH
+        - generic [ref=e185]: "An experiment with a 3D transparent type of raymarcher. Results in a chain of constantly morphing kaleidoscopic menger cubes looking kind of sacred. Rotate view by dragging mouse. substance reference: DPT (Dipropyltryptamine)"
+    - generic [ref=e37]:
+      - generic [ref=e38] [cursor=pointer]:
+        - combobox [ref=e187]:
+          - option "Sound"
+          - option "Buffer A"
+          - option "Buffer B"
+          - option "Buffer C"
+          - option "Buffer D"
+          - option "Cubemap A"
+        - generic [ref=e188]:
+          - img [ref=e189]
+          - generic [ref=e190]: Common
+          - img [ref=e191]
+        - generic [ref=e192]:
+          - img [ref=e193]
+          - generic [ref=e194]: Image
+      - generic [ref=e40] [cursor=pointer]:
+        - generic [ref=e41]: Shader Inputs
+        - generic [ref=e44]:
+          - text: uniform vec3 iResolution; // viewport resolution (in pixels)
+          - text: uniform float iTime; // shader playback time (in seconds)
+          - text: uniform float iTimeDelta; // render time (in seconds)
+          - text: uniform float iFrameRate; // shader frame rate
+          - text: uniform int iFrame; // shader playback frame
+          - text: uniform float iChannelTime[4]; // channel playback time (in seconds)
+          - text: uniform vec3 iChannelResolution[4]; // channel resolution (in pixels)
+          - text: "uniform vec4 iMouse; // mouse pixel coords. xy: current (if MLB down), zw: click"
+          - text: uniform samplerXX iChannel0..3; // input channel. XX = 2D/Cube
+          - text: uniform vec4 iDate; // (year, month, day, time in seconds)
+          - text: uniform float iSampleRate; // sound sample rate (i.e., 44100)
+      - generic [ref=e46]:
+        - textbox [ref=e47]
+        - generic [ref=e50]:
+          - generic [ref=e200]:
+            - generic [ref=e201]: "1"
+            - text: // = The Way of Light =
+          - generic [ref=e202]:
+            - generic [ref=e203]: "2"
+            - text: // by Maximilian Knape ·∑>| 2022
+          - generic [ref=e204]:
+            - generic [ref=e205]: "3"
+            - text: // -----------------------------------------------------------
+          - generic [ref=e206]:
+            - generic [ref=e207]: "4"
+            - text: // This work is licensed under a Creative Commons Attribution-
+          - generic [ref=e208]:
+            - generic [ref=e209]: "5"
+            - text: // NonCommercial-ShareAlike 3.0 Unported License
+          - generic [ref=e211]: "6"
+          - generic [ref=e212]:
+            - generic [ref=e213]: "7"
+            - text: "#define GAMMA vec3(1) //vec3(.4545)"
+          - generic [ref=e215]: "8"
+          - generic [ref=e216]:
+            - generic [ref=e217]: "9"
+            - text: "#define MAX_STEPS 300"
+          - generic [ref=e218]:
+            - generic [ref=e219]: "10"
+            - text: "#define MAX_DIST 500."
+          - generic [ref=e220]:
+            - generic [ref=e221]: "11"
+            - text: "#define MIN_DIST 10."
+          - generic [ref=e222]:
+            - generic [ref=e223]: "12"
+            - text: "#define STEP_FAC 5."
+          - generic [ref=e225]: "13"
+          - generic [ref=e226]:
+            - generic [ref=e227]: "14"
+            - text: "#define SURF_DIST .001"
+          - generic [ref=e228]:
+            - generic [ref=e229]: "15"
+            - text: "#define SURF_MUL 1000."
+          - generic [ref=e230]:
+            - generic [ref=e231]: "16"
+            - text: "#define SURF_EXP 5."
+          - generic [ref=e233]: "17"
+          - generic [ref=e234]:
+            - generic [ref=e235]: "18"
+            - text: "#define PP_ACES 0."
+          - generic [ref=e236]:
+            - generic [ref=e237]: "19"
+            - text: "#define PP_CONT 0.8"
+          - generic [ref=e238]:
+            - generic [ref=e239]: "20"
+            - text: "#define PP_VIGN 2.0"
+          - generic [ref=e241]: "21"
+          - generic [ref=e242]:
+            - generic [ref=e243]: "22"
+            - text: "#define iTime iTime*1.0"
+          - generic [ref=e244]:
+            - generic [ref=e245]: "23"
+            - text: "#define PI 3.14159265358979"
+          - generic [ref=e246]:
+            - generic [ref=e247]: "24"
+            - text: "#define TAU 6.28318530717958"
+          - generic [ref=e248]:
+            - generic [ref=e249]: "25"
+            - text: "#define S(x,y,t) smoothstep(x,y,t)"
+          - generic [ref=e251]: "26"
+          - generic [ref=e252]:
+            - generic [ref=e253]: "27"
+            - text: vec2 Map(vec3 p)
+          - generic [ref=e254]:
+            - generic:
+              - generic [ref=e255]: "28"
+              - generic [ref=e257] [cursor=pointer]: ▾
+            - text: "{"
+          - generic [ref=e258]:
+            - generic [ref=e259]: "29"
+            - text: float d = MAX_DIST, col = 0.;
+          - generic [ref=e260]:
+            - generic [ref=e261]: "30"
+            - text: vec3 op = p;
+          - generic [ref=e263]: "31"
+          - generic [ref=e264]:
+            - generic [ref=e265]: "32"
+            - text: float s = 22.; //size
+          - generic [ref=e266]:
+            - generic [ref=e267]: "33"
+            - text: float sp = iTime*5.; //speed
+          - generic [ref=e269]: "34"
+          - generic [ref=e271]: "35"
+          - generic [ref=e272]:
+            - generic [ref=e273]: "36"
+            - text: p.z = mod(abs(s*2. - mod(p.z + sp, s*4.)), s*4.); //mirror
+          - generic [ref=e274]:
+            - generic [ref=e275]: "37"
+            - text: p.xy += normalize(p.xy) * (S(0., MAX_DIST, op.z)*40. - S(0., MAX_DIST, -op.z)*30.); //xy size
+          - generic [ref=e276]:
+            - generic [ref=e277]: "38"
+            - text: p.xy *= Rot(PI/4. * step(0., sin(PI*(op.z + sp) / (8.*s)))); //rotator
+          - generic [ref=e279]: "39"
+          - generic [ref=e280]:
+            - generic [ref=e281]: "40"
+            - text: float cy = length(op.xy);
+          - generic [ref=e282]:
+            - generic [ref=e283]: "41"
+            - text: if (cy < s*5.) //bounding cylinder
+          - generic [ref=e284]:
+            - generic:
+              - generic [ref=e285]: "42"
+              - generic [ref=e287] [cursor=pointer]: ▾
+            - text: "{"
+          - generic [ref=e288]:
+            - generic [ref=e289]: "43"
+            - text: vec2 glow = sdKMC( //light fractal
+          - generic [ref=e290]:
+            - generic [ref=e291]: "44"
+            - text: p/8., 3, vec3(pow(sin(iTime/32. + op.z/s*.1), 3.)*2.),
+          - generic [ref=e292]:
+            - generic [ref=e293]: "45"
+            - text: vec3(pow(sin(iTime/42. + op.z/s*.01), 3.)*PI/4.),
+          - generic [ref=e294]:
+            - generic [ref=e295]: "46"
+            - text: vec4(1,3,5,5));
+          - generic [ref=e297]: "47"
+          - generic [ref=e298]:
+            - generic [ref=e299]: "48"
+            - text: float split = 30. + sin(iTime/13.)*10.; //two colors/materials
+          - generic [ref=e301]: "49"
+          - generic [ref=e302]:
+            - generic [ref=e303]: "50"
+            - text: glow.x = pow(glow.x, 1.5 + step(split, glow.y) * (sin(iTime - op.z/s)-1.)*.3); //color waves
+          - generic [ref=e304]:
+            - generic [ref=e305]: "51"
+            - text: glow.x -= (pow(sin(-(op.z + sp) / s), 2.) - step(split, glow.y))*.001; //thickness
+          - generic [ref=e307]: "52"
+          - generic [ref=e308]:
+            - generic [ref=e309]: "53"
+            - text: col = mix(col, 1.0 - step(glow.y, split), step(glow.x, d)); //color
+          - generic [ref=e310]:
+            - generic [ref=e311]: "54"
+            - text: d = min(glow.x, d);
+          - generic [ref=e312]:
+            - generic [ref=e313]: "55"
+            - text: "}"
+          - generic [ref=e314]:
+            - generic [ref=e315]: "56"
+            - text: else d = min(d, cy - s*7.);
+          - generic [ref=e317]: "57"
+          - generic [ref=e318]:
+            - generic [ref=e319]: "58"
+            - text: return vec2(d, col);
+          - generic [ref=e320]:
+            - generic [ref=e321]: "59"
+            - text: "}"
+          - generic [ref=e323]: "60"
+          - generic [ref=e324]:
+            - generic [ref=e325]: "61"
+            - text: vec3 Palette(int index, float depth)
+          - generic [ref=e326]:
+            - generic:
+              - generic [ref=e327]: "62"
+              - generic [ref=e329] [cursor=pointer]: ▾
+            - text: "{"
+          - generic [ref=e330]:
+            - generic [ref=e331]: "63"
+            - text: switch (index)
+          - generic [ref=e332]:
+            - generic:
+              - generic [ref=e333]: "64"
+              - generic [ref=e335] [cursor=pointer]: ▾
+            - text: "{"
+          - generic [ref=e336]:
+            - generic [ref=e337]: "65"
+            - text: "case 0: return vec3(1., 1., 1.)*.8;"
+          - generic [ref=e338]:
+            - generic [ref=e339]: "66"
+            - text: "case 1: return hsv2rgb_smooth(vec3(fract(depth), .9, 1.));"
+          - generic [ref=e340]:
+            - generic [ref=e341]: "67"
+            - text: "}"
+          - generic [ref=e342]:
+            - generic [ref=e343]: "68"
+            - text: return vec3(0.);
+          - generic [ref=e344]:
+            - generic [ref=e345]: "69"
+            - text: "}"
+          - generic [ref=e347]: "70"
+          - generic [ref=e348]:
+            - generic [ref=e349]: "71"
+            - text: vec3 RTM(vec3 ro, vec3 rd)
+          - generic [ref=e350]:
+            - generic:
+              - generic [ref=e351]: "72"
+              - generic [ref=e353] [cursor=pointer]: ▾
+            - text: "{"
+          - generic [ref=e354]:
+            - generic [ref=e355]: "73"
+            - text: int steps;
+          - generic [ref=e356]:
+            - generic [ref=e357]: "74"
+            - text: float sum = 0.;
+          - generic [ref=e358]:
+            - generic [ref=e359]: "75"
+            - text: float s = 1.;
+          - generic [ref=e360]:
+            - generic [ref=e361]: "76"
+            - text: float d = MIN_DIST;
+          - generic [ref=e362]:
+            - generic [ref=e363]: "77"
+            - text: const float a = 1. / float(MAX_STEPS);
+          - generic [ref=e364]:
+            - generic [ref=e365]: "78"
+            - text: vec3 p = vec3(0), col = vec3(1);
+          - generic [ref=e367]: "79"
+          - generic [ref=e368]:
+            - generic [ref=e369]: "80"
+            - text: for(int i = 0; i < MAX_STEPS; i++)
+          - generic [ref=e370]:
+            - generic:
+              - generic [ref=e371]: "81"
+              - generic [ref=e373] [cursor=pointer]: ▾
+            - text: "{"
+          - generic [ref=e374]:
+            - generic [ref=e375]: "82"
+            - text: float sd = (SURF_DIST * (pow(d/MAX_DIST, SURF_EXP)*SURF_MUL+1.)); //can be DOF
+          - generic [ref=e376]:
+            - generic [ref=e377]: "83"
+            - text: if (s < sd || d > MAX_DIST) break;
+          - generic [ref=e379]: "84"
+          - generic [ref=e380]:
+            - generic [ref=e381]: "85"
+            - text: steps = i;
+          - generic [ref=e382]:
+            - generic [ref=e383]: "86"
+            - text: p = ro + rd*d;
+          - generic [ref=e385]: "87"
+          - generic [ref=e386]:
+            - generic [ref=e387]: "88"
+            - text: vec2 map = Map(p);
+          - generic [ref=e388]:
+            - generic [ref=e389]: "89"
+            - text: col = mix(col, Palette(int(floor(map.y)), (p.z-iTime*5.)/MAX_DIST*.5), .02 * (1.-sum)); //color overlap
+          - generic [ref=e391]: "90"
+          - generic [ref=e392]:
+            - generic [ref=e393]: "91"
+            - text: s = max(abs(map.x), 2. * sd);
+          - generic [ref=e394]:
+            - generic [ref=e395]: "92"
+            - text: d += s * STEP_FAC * (1.1 - fract(map.y));
+      - generic [ref=e57]:
+        - generic [ref=e58]:
+          - img "Compile (<ALT>+<ENTER>)" [ref=e59] [cursor=pointer]
+          - link "Compiled in 0.1 secs" [ref=e396] [cursor=pointer]:
+            - /url: "#"
+        - generic [ref=e60]: 2468 / 3833 chars
+        - generic [ref=e61]:
+          - combobox "Change font size (<ALT>+<+/->)" [ref=e63]:
+            - option "XS"
+            - option "S" [selected]
+            - option "M"
+            - option "L"
+            - option "XL"
+            - option "XXL"
+          - img "Show GLSL help" [ref=e64] [cursor=pointer]
+      - generic [ref=e65]:
+        - generic [ref=e66]:
+          - generic [ref=e67]:
+            - generic:
+              - text: Filter
+              - combobox "Pixel filtering mode" [ref=e69]:
+                - option "nearest" [selected]
+                - option "linear"
+                - option "mipmap"
+              - text: Wrap
+              - combobox "Pixel filtering mode" [ref=e70]:
+                - option "clamp" [selected]
+                - option "repeat"
+              - generic [ref=e72]:
+                - text: VFlip
+                - checkbox "VFlip" [ref=e73]
+          - generic [ref=e75]: iChannel0
+        - generic [ref=e78]:
+          - generic [ref=e79]:
+            - generic:
+              - text: Filter
+              - combobox "Pixel filtering mode" [ref=e81]:
+                - option "nearest" [selected]
+                - option "linear"
+                - option "mipmap"
+              - text: Wrap
+              - combobox "Pixel filtering mode" [ref=e82]:
+                - option "clamp" [selected]
+                - option "repeat"
+              - generic [ref=e84]:
+                - text: VFlip
+                - checkbox "VFlip" [ref=e85]
+          - generic [ref=e87]: iChannel1
+        - generic [ref=e90]:
+          - generic [ref=e91]:
+            - generic:
+              - text: Filter
+              - combobox "Pixel filtering mode" [ref=e93]:
+                - option "nearest" [selected]
+                - option "linear"
+                - option "mipmap"
+              - text: Wrap
+              - combobox "Pixel filtering mode" [ref=e94]:
+                - option "clamp" [selected]
+                - option "repeat"
+              - generic [ref=e96]:
+                - text: VFlip
+                - checkbox "VFlip" [ref=e97]
+          - generic [ref=e99]: iChannel2
+        - generic [ref=e102]:
+          - generic [ref=e103]:
+            - generic:
+              - text: Filter
+              - combobox "Pixel filtering mode" [ref=e105]:
+                - option "nearest" [selected]
+                - option "linear"
+                - option "mipmap"
+              - text: Wrap
+              - combobox "Pixel filtering mode" [ref=e106]:
+                - option "clamp" [selected]
+                - option "repeat"
+              - generic [ref=e108]:
+                - text: VFlip
+                - checkbox "VFlip" [ref=e109]
+          - generic [ref=e111]: iChannel3
+    - generic [ref=e115]:
+      - text: Comments (4)
+      - generic [ref=e116]:
+        - link "Sign in" [ref=e118] [cursor=pointer]:
+          - /url: /signin
+        - text: to post a comment.
+      - generic [ref=e397]:
+        - generic [ref=e398]:
+          - img [ref=e400]
+          - generic [ref=e401]:
+            - link "derSchamane" [ref=e402] [cursor=pointer]:
+              - /url: /user/derSchamane
+            - text: ", 2022-12-06"
+            - text: I think CEVs/OEVs are a bit like magic, sometimes reproducable. Thus, a shader which produces a complex image out of seemingly nothing, is magic for me too. Therefore, these fields are quite close to each other, but the communication about this connection(perhaps due to legal circumstances and socialization?) is mostly hidden. For my experience the fact, that I can reproduce "psychonautical" visuals with mathematics, is mindblowing. So maybe different psychedelic experiences can reveal a human cognition the underliying mathematical structure of the universe in which we live in. So I agree, it's still worth watching and learning from. Mh, I never explicitly tried astral projection, but have been researching lucid dreaming for a number of years and had sometimes out of body experiences close to the descriptions of APs. I'm looking forward to your AP-Shader
+            - img [ref=e403]
+        - generic [ref=e404]:
+          - img [ref=e406]
+          - generic [ref=e407]:
+            - link "derSchamane" [ref=e408] [cursor=pointer]:
+              - /url: /user/derSchamane
+            - text: ", 2022-12-04"
+            - text: jep, I think in NY there is a church where they use it. Crazy to think about how they "work" with the substance in practice and also legally. My research with this substance showed me a kind of soft geometric dark and colored light pattern, fractal in its nature and slowly moving and evolving. There was some anxiety involved, I agree. But in the end, I don't have high-dose experiences with just the substance itself. But it's interestingt, that this molecule is orally active (without a MAOI)... To me, acid is a bit more geometric and brighter than this one and has six axes of symmetry instead of eight. One day I will try to code it. But right, this one is really close =)
+        - generic [ref=e409]:
+          - img [ref=e411]
+          - generic [ref=e412]:
+            - link "derSchamane" [ref=e413] [cursor=pointer]:
+              - /url: /user/derSchamane
+            - text: ", 2022-12-04"
+            - text: "@all thanks <3 @stb Not that I know of... It is a psychedelic entheogen belonging to the tryptamine family.. Sometimes it's called \"The Light\" and some believe it's the physical manifestation of God. So it's more healing and mind opening than scary. ...like this shader, hopefully. ^^"
+        - generic [ref=e414]:
+          - img [ref=e416]
+          - generic [ref=e417]:
+            - link "magician0809" [ref=e418] [cursor=pointer]:
+              - /url: /user/magician0809
+            - text: ", 2022-11-29"
+            - text: cool!
+  - generic [ref=e119]:
+    - generic [ref=e120]:
+      - text: Community Forums
+      - list [ref=e121]:
+        - listitem [ref=e122]:
+          - link "Official Events" [ref=e123] [cursor=pointer]:
+            - /url: /events
+        - listitem [ref=e124]:
+          - link "In Facebook (english)" [ref=e125] [cursor=pointer]:
+            - /url: https://www.facebook.com/groups/147749602472741
+        - listitem [ref=e126]:
+          - link "In Facebook (korean)" [ref=e127] [cursor=pointer]:
+            - /url: https://www.facebook.com/groups/1339783682699494
+        - listitem [ref=e128]:
+          - link "In Discord" [ref=e129] [cursor=pointer]:
+            - /url: https://discord.gg/XtmMN6E
+          - text: (
+          - link "direct link" [ref=e130] [cursor=pointer]:
+            - /url: https://discordapp.com/channels/578696555612209173/579531723348639754
+          - text: )
+    - generic [ref=e131]:
+      - text: Feedback and Support
+      - list [ref=e132]:
+        - listitem [ref=e133]:
+          - link "Facebook" [ref=e134] [cursor=pointer]:
+            - /url: https://www.facebook.com/Shadertoy
+        - listitem [ref=e135]:
+          - link "Twitter" [ref=e136] [cursor=pointer]:
+            - /url: https://twitter.com/shadertoy
+        - listitem [ref=e137]:
+          - link "Patreon" [ref=e138] [cursor=pointer]:
+            - /url: https://www.patreon.com/shadertoy
+        - listitem [ref=e139]:
+          - link "Roadmap" [ref=e140] [cursor=pointer]:
+            - /url: https://trello.com/b/5hM0CjId
+    - generic [ref=e141]:
+      - text: Shadertoy
+      - list [ref=e142]:
+        - listitem [ref=e143]:
+          - link "Store" [ref=e144] [cursor=pointer]:
+            - /url: /store
+        - listitem [ref=e145]:
+          - link "Documentation" [ref=e146] [cursor=pointer]:
+            - /url: /howto
+        - listitem [ref=e147]:
+          - link "Terms & Privacy" [ref=e148] [cursor=pointer]:
+            - /url: /terms
+        - listitem [ref=e149]:
+          - link "About" [ref=e150] [cursor=pointer]:
+            - /url: /about
+    - generic [ref=e151]:
+      - text: Apps and Plugins
+      - list [ref=e152]:
+        - listitem [ref=e153]:
+          - link "Official iPhone App" [ref=e154] [cursor=pointer]:
+            - /url: https://itunes.apple.com/us/app/shadertoy/id717961814
+          - text: by
+          - link "Reinder" [ref=e155] [cursor=pointer]:
+            - /url: /user/reinder
+        - listitem [ref=e156]:
+          - link "Screensaver" [ref=e157] [cursor=pointer]:
+            - /url: https://steamcommunity.com/sharedfiles/filedetails/?id=1726697188
+          - text: by
+          - link "Kosro" [ref=e158] [cursor=pointer]:
+            - /url: /user/kosro
+        - listitem [ref=e159]:
+          - link "Shadertoy plugin" [ref=e160] [cursor=pointer]:
+            - /url: https://chrome.google.com/webstore/detail/shadertoy-unofficial-plug/ohicbclhdmkhoabobgppffepcopomhgl
+          - text: by
+          - link "Patu" [ref=e161] [cursor=pointer]:
+            - /url: /user/patu
+    - generic [ref=e162]:
+      - text: Tutorials
+      - list [ref=e163]:
+        - listitem [ref=e164]:
+          - link "Shader coding intro" [ref=e165] [cursor=pointer]:
+            - /url: https://www.youtube.com/watch?v=0ifChJ0nJfM
+          - text: by
+          - link "iq" [ref=e166] [cursor=pointer]:
+            - /url: /user/iq
+        - listitem [ref=e167]:
+          - link "Shadertoy Unofficial" [ref=e168] [cursor=pointer]:
+            - /url: https://shadertoyunofficial.wordpress.com/
+          - text: by
+          - link "FabriceNeyret2" [ref=e169] [cursor=pointer]:
+            - /url: /user/FabriceNeyret2
+  - generic [ref=e170]:
+    - generic [ref=e171]:
+      - text: We use cookies to give you the best experience on our website. If you continue using Shadertoy, we'll assume that you are happy to receive all cookies on this website. For more information, please review our
+      - link "Terms & Privacy" [ref=e172] [cursor=pointer]:
+        - /url: /terms
+      - text: .
+    - button "Accept" [ref=e174]

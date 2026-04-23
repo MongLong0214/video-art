@@ -33,6 +33,7 @@ uniform float uSatBlendHigh;
 uniform float uSatInjectionMul;
 uniform float uGlowPulseFloor;
 uniform float uLumExponent;
+uniform float uValueLift;
 
 // Breathing / morphing
 uniform float uBreathAmp;
@@ -365,7 +366,7 @@ void main() {
   hsv.y = clamp(mix(injectedSat, boostedSat, blend), 0.0, 1.0);
   hsv.y *= 1.0 + nSat * uNoiseAmount * 0.8;
 
-  hsv.z = originalVal;
+  hsv.z = max(originalVal, uValueLift * (1.0 - originalVal));
   hsv.y *= max(0.0, 1.0 - uHazeIntensity * (1.0 - uDepthNorm));
 
   vec3 rgb = hsv2rgb(hsv);

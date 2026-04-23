@@ -31,17 +31,19 @@ function getSketchShader(name: string): string {
 
 // --- URL params ---
 const params = new URLSearchParams(window.location.search);
-const MODE = params.get("mode"); // "layered" or null
+const MODE = params.get("mode"); // "layered" | "dmt" | null
 const SKETCH_NAME = params.get("sketch") || "psychedelic";
 const SCENE_URL = params.get("scene") || "/scene.json";
+const DMT_CONFIG_URL = params.get("dmt") || "/dmt-config.json";
 
 // --- config ---
 const IS_LAYERED = MODE === "layered";
+const IS_DMT = MODE === "dmt";
 const sketchConfig = getSketchConfig(SKETCH_NAME);
-let WIDTH = IS_LAYERED ? 1080 : sketchConfig.width;
-let HEIGHT = IS_LAYERED ? 1080 : sketchConfig.height;
+let WIDTH = IS_LAYERED || IS_DMT ? 1080 : sketchConfig.width;
+let HEIGHT = IS_LAYERED || IS_DMT ? 1080 : sketchConfig.height;
 const FPS = sketchConfig.fps;
-let LOOP_DUR = IS_LAYERED ? 20.0 : sketchConfig.loopDuration; // overridden by sceneConfig in init()
+let LOOP_DUR = IS_LAYERED || IS_DMT ? 20.0 : sketchConfig.loopDuration; // overridden by config in init()
 
 // --- renderer ---
 const renderer = new THREE.WebGLRenderer({
@@ -51,7 +53,7 @@ const renderer = new THREE.WebGLRenderer({
 renderer.setSize(WIDTH, HEIGHT);
 renderer.setPixelRatio(1);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
-renderer.toneMapping = IS_LAYERED ? THREE.ACESFilmicToneMapping : getToneMapping(sketchConfig);
+renderer.toneMapping = IS_LAYERED || IS_DMT ? THREE.ACESFilmicToneMapping : getToneMapping(sketchConfig);
 renderer.toneMappingExposure = 1.0;
 document.body.appendChild(renderer.domElement);
 
@@ -102,6 +104,10 @@ async function loadSketch(): Promise<Sketch> {
     );
     return createLayeredPsychedelic(SCENE_URL);
   }
+  if (IS_DMT) {
+    const { createDmtTunnel } = await import("@/sketches/dmt-tunnel");
+    return createDmtTunnel(DMT_CONFIG_URL);
+  }
   // Custom sketches with FBO or bespoke logic
   if (SKETCH_NAME === "cellular") {
     const { createCellularSketch } = await import("@/sketches/cellular");
@@ -134,6 +140,16 @@ async function init() {
     renderer.setSize(WIDTH, HEIGHT);
   }
 
+  if (IS_DMT) {
+    const dmtSketch = sketch as import("@/sketches/dmt-tunnel").DmtSketch;
+    LOOP_DUR = dmtSketch.dmtConfig.duration;
+    const [w, h] = dmtSketch.dmtConfig.resolution;
+    WIDTH = w;
+    HEIGHT = h;
+    renderer.setSize(WIDTH, HEIGHT);
+    dmtSketch.resize(w, h);
+  }
+
   // --- post-processing ---
   let composerRender: () => void;
   let updatePostUniforms: (time: number) => void;
@@ -151,6 +167,60 @@ async function init() {
     );
     composerRender = () => composer.render();
     updatePostUniforms = (time: number) => composer.setTime(time);
+  } else if (IS_DMT) {
+    const dmtSketch = sketch as import("@/sketches/dmt-tunnel").DmtSketch;
+    const dc = dmtSketch.dmtConfig;
+    const composer = new EffectComposer(renderer);
+    composer.addPass(new RenderPass(sketch.scene, sketch.camera));
+
+    const bloomPass = new UnrealBloomPass(
+      new THREE.Vector2(WIDTH, HEIGHT),
+      dc.bloomStrength,
+      dc.bloomRadius,
+      dc.bloomThreshold,
+    );
+    composer.addPass(bloomPass);
+
+    const dmtPostShader = {
+      uniforms: {
+        tDiffuse: { value: null },
+        uTime: { value: 0 },
+        uCA: { value: dc.caOffset },
+        uVignette: { value: dc.vignetteIntensity },
+        uContrast: { value: dc.contrast },
+      },
+      vertexShader: postVertexShader,
+      fragmentShader: `
+        uniform sampler2D tDiffuse;
+        uniform float uTime;
+        uniform float uCA;
+        uniform float uVignette;
+        uniform float uContrast;
+        varying vec2 vUv;
+        void main() {
+          vec2 uv = vUv;
+          vec2 c = uv - 0.5;
+          float d = length(c);
+          vec3 col;
+          col.r = texture2D(tDiffuse, uv + c * uCA * 0.5).r;
+          col.g = texture2D(tDiffuse, uv).g;
+          col.b = texture2D(tDiffuse, uv - c * uCA * 0.5).b;
+          // vignette
+          float vig = 1.0 - uVignette * pow(d * 1.6, 2.2);
+          col *= max(vig, 0.0);
+          // contrast
+          col = (col - 0.5) * uContrast + 0.5;
+          col = clamp(col, 0.0, 1.0);
+          gl_FragColor = vec4(col, 1.0);
+        }
+      `,
+    };
+    composer.addPass(new ShaderPass(dmtPostShader));
+
+    composerRender = () => composer.render();
+    updatePostUniforms = (time: number) => {
+      dmtPostShader.uniforms.uTime.value = time;
+    };
   } else if (sketchConfig.postProcessing === "none") {
     composerRender = () => renderer.render(sketch.scene, sketch.camera);
     updatePostUniforms = () => {};
@@ -264,7 +334,7 @@ async function init() {
       info.textContent = "● REC (press R to stop)";
       info.classList.add("recording");
     } else {
-      const label = IS_LAYERED ? "layered" : SKETCH_NAME;
+      const label = IS_LAYERED ? "layered" : IS_DMT ? "dmt" : SKETCH_NAME;
       info.textContent = `[${label}] press R to record`;
       info.classList.remove("recording");
     }
@@ -277,7 +347,7 @@ async function init() {
   const TYPING_SPEED = TYPING_TEXT.length / (LOOP_DUR - 1.5);
 
   const updateTyping = (time: number) => {
-    if (!typingEl || IS_LAYERED || SKETCH_NAME !== "psychedelic") {
+    if (!typingEl || IS_LAYERED || IS_DMT || SKETCH_NAME !== "psychedelic") {
       if (typingEl) typingEl.textContent = "";
       return;
     }

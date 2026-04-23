@@ -13,7 +13,7 @@ const WORK_DIR = "_work";
 // Pipeline types
 // ---------------------------------------------------------------------------
 
-export type Pipeline = "blueprint" | "layered" | "audio";
+export type Pipeline = "blueprint" | "layered" | "audio" | "dmt";
 
 // ---------------------------------------------------------------------------
 // RunContext — per-run isolated work directory + archive directory

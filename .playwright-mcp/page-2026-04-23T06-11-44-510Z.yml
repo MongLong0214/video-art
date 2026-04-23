@@ -1,0 +1,447 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - link "Shadertoy" [ref=e4] [cursor=pointer]:
+        - /url: /
+      - searchbox "Search..." [ref=e7]
+    - generic [ref=e8]:
+      - link "Browse" [ref=e9] [cursor=pointer]:
+        - /url: /browse
+      - link "New" [ref=e10] [cursor=pointer]:
+        - /url: /new
+      - link "Sign In" [ref=e11] [cursor=pointer]:
+        - /url: /signin
+  - generic [ref=e13]:
+    - generic [ref=e14]:
+      - generic [ref=e17]:
+        - generic [ref=e18]:
+          - generic "Reset time (<ALT>+<DownArrow>)" [ref=e19] [cursor=pointer]
+          - generic "Pause/Resume (<ALT>+<UpArrow>)" [ref=e20] [cursor=pointer]
+        - generic [ref=e21]:
+          - generic [ref=e22]: "11.01"
+          - generic [ref=e23]: 143.9 fps
+          - generic [ref=e24]: 420 x 236
+        - generic [ref=e25]:
+          - generic "Record (<ALT>+<R>)" [ref=e26] [cursor=pointer]
+          - generic "Volume" [ref=e27] [cursor=pointer]
+          - generic "Go fullscreen" [ref=e28] [cursor=pointer]
+      - generic [ref=e29]:
+        - generic [ref=e30]:
+          - generic [ref=e31]: Log Moebius Transfo psychedelic
+          - generic [ref=e32]:
+            - img "share this shader" [ref=e33] [cursor=pointer]
+            - img [ref=e34]
+            - text: "52"
+          - generic [ref=e35]:
+            - text: "Views: 3800"
+            - text: ", Tags:"
+            - generic [ref=e175]:
+              - link "zoom" [ref=e176] [cursor=pointer]:
+                - /url: /results?query=tag%3Dzoom
+              - text: ","
+              - link "spiral" [ref=e177] [cursor=pointer]:
+                - /url: /results?query=tag%3Dspiral
+              - text: ","
+              - link "mobius" [ref=e178] [cursor=pointer]:
+                - /url: /results?query=tag%3Dmobius
+              - text: ","
+              - link "bug" [ref=e179] [cursor=pointer]:
+                - /url: /results?query=tag%3Dbug
+              - text: ","
+              - link "transform" [ref=e180] [cursor=pointer]:
+                - /url: /results?query=tag%3Dtransform
+              - text: ","
+              - link "logarithm" [ref=e181] [cursor=pointer]:
+                - /url: /results?query=tag%3Dlogarithm
+              - text: ","
+              - link "golf" [ref=e182] [cursor=pointer]:
+                - /url: /results?query=tag%3Dgolf
+          - generic [ref=e36]:
+            - text: Created by
+            - link "FabriceNeyret2" [ref=e184] [cursor=pointer]:
+              - /url: /user/FabriceNeyret2
+            - text: in 2016-06-25
+        - generic [ref=e185]: variant of https://www.shadertoy.com/view/4sGXDK compact version of https://www.shadertoy.com/view/4dcSWs
+    - generic [ref=e37]:
+      - generic [ref=e38] [cursor=pointer]:
+        - combobox [ref=e187]:
+          - option "Common"
+          - option "Sound"
+          - option "Buffer A"
+          - option "Buffer B"
+          - option "Buffer C"
+          - option "Buffer D"
+          - option "Cubemap A"
+        - generic [ref=e188]:
+          - img [ref=e189]
+          - generic [ref=e190]: Image
+      - generic [ref=e40] [cursor=pointer]:
+        - generic [ref=e41]: Shader Inputs
+        - generic [ref=e44]:
+          - text: uniform vec3 iResolution; // viewport resolution (in pixels)
+          - text: uniform float iTime; // shader playback time (in seconds)
+          - text: uniform float iTimeDelta; // render time (in seconds)
+          - text: uniform float iFrameRate; // shader frame rate
+          - text: uniform int iFrame; // shader playback frame
+          - text: uniform float iChannelTime[4]; // channel playback time (in seconds)
+          - text: uniform vec3 iChannelResolution[4]; // channel resolution (in pixels)
+          - text: "uniform vec4 iMouse; // mouse pixel coords. xy: current (if MLB down), zw: click"
+          - text: uniform samplerXX iChannel0..3; // input channel. XX = 2D/Cube
+          - text: uniform vec4 iDate; // (year, month, day, time in seconds)
+          - text: uniform float iSampleRate; // sound sample rate (i.e., 44100)
+      - generic [ref=e46]:
+        - textbox [ref=e47]
+        - generic [ref=e50]:
+          - generic [ref=e191]:
+            - generic [ref=e192]: "1"
+            - text: // variant of https://www.shadertoy.com/view/4sGXDK
+          - generic [ref=e193]:
+            - generic [ref=e194]: "2"
+            - text: // compact version of https://www.shadertoy.com/view/4dcSWs
+          - generic [ref=e196]: "3"
+          - generic [ref=e197]:
+            - generic:
+              - generic [ref=e198]: "4"
+              - generic [ref=e200] [cursor=pointer]: ▾
+            - text: "void mainImage(out vec4 O, vec2 U){"
+          - generic [ref=e202]: "5"
+          - generic [ref=e203]:
+            - generic [ref=e204]: "6"
+            - text: vec2 z = iResolution.xy; // normalized coordinates
+          - generic [ref=e205]:
+            - generic [ref=e206]: "7"
+            - text: U = (U+U - z) / z.y;
+          - generic [ref=e208]: "8"
+          - generic [ref=e209]:
+            - generic [ref=e210]: "9"
+            - text: z = U - vec2(-1,0); U.x -= .5; // Moebius transform
+          - generic [ref=e211]:
+            - generic [ref=e212]: "10"
+            - text: U *= mat2(z,-z.y,z.x) / dot(U,U);
+          - generic [ref=e213]:
+            - generic [ref=e214]: "11"
+            - text: U+=.5; // offset. not included as length(U+=.5) because of an ATI bug
+          - generic [ref=e216]: "12"
+          - generic [ref=e217]:
+            - generic [ref=e218]: "13"
+            - text: // spiral, zoom phase // spiraling
+          - generic [ref=e219]:
+            - generic [ref=e220]: "14"
+            - text: U = log(length(U))*vec2(.5, -.5) + iTime/8.
+          - generic [ref=e221]:
+            - generic [ref=e222]: "15"
+            - text: + atan(U.y, U.x)/6.3 * vec2(5, 1);
+          - generic [ref=e223]:
+            - generic [ref=e224]: "16"
+            - text: // n
+          - generic [ref=e225]:
+            - generic [ref=e226]: "17"
+            - text: //O += length(fract(U*3.)) -O;
+          - generic [ref=e227]:
+            - generic [ref=e228]: "18"
+            - text: //O = texture(iChannel0, fract(U*3.)); // U*1. is also nice
+          - generic [ref=e229]:
+            - generic [ref=e230]: "19"
+            - text: //O += length(sin(U*30.)) -O;
+          - generic [ref=e231]:
+            - generic [ref=e232]: "20"
+            - text: O = .5+.5*sin(6.*3.14*U.y+vec4(0,2.1,-2.1,0));
+          - generic [ref=e233]:
+            - generic [ref=e234]: "21"
+            - text: // try also U.x
+          - generic [ref=e235]:
+            - generic [ref=e236]: "22"
+            - text: //O /= max(O.x,max(O.y,O.z)); // saturates the rainbow
+          - generic [ref=e237]:
+            - generic [ref=e238]: "23"
+            - text: "}"
+      - generic [ref=e57]:
+        - generic [ref=e58]:
+          - img "Compile (<ALT>+<ENTER>)" [ref=e59] [cursor=pointer]
+          - link "Compiled in 0.1 secs" [ref=e239] [cursor=pointer]:
+            - /url: "#"
+        - generic [ref=e60]: 240 chars
+        - generic [ref=e61]:
+          - combobox "Change font size (<ALT>+<+/->)" [ref=e63]:
+            - option "XS"
+            - option "S" [selected]
+            - option "M"
+            - option "L"
+            - option "XL"
+            - option "XXL"
+          - img "Show GLSL help" [ref=e64] [cursor=pointer]
+      - generic [ref=e65]:
+        - generic [ref=e66]:
+          - generic [ref=e67]:
+            - generic:
+              - text: Filter
+              - combobox "Pixel filtering mode" [ref=e69]:
+                - option "nearest" [selected]
+                - option "linear"
+                - option "mipmap"
+              - text: Wrap
+              - combobox "Pixel filtering mode" [ref=e70]:
+                - option "clamp" [selected]
+                - option "repeat"
+              - generic [ref=e72]:
+                - text: VFlip
+                - checkbox "VFlip" [ref=e73]
+          - generic [ref=e75]: iChannel0
+        - generic [ref=e78]:
+          - generic [ref=e79]:
+            - generic:
+              - text: Filter
+              - combobox "Pixel filtering mode" [ref=e81]:
+                - option "nearest" [selected]
+                - option "linear"
+                - option "mipmap"
+              - text: Wrap
+              - combobox "Pixel filtering mode" [ref=e82]:
+                - option "clamp" [selected]
+                - option "repeat"
+              - generic [ref=e84]:
+                - text: VFlip
+                - checkbox "VFlip" [ref=e85]
+          - generic [ref=e87]: iChannel1
+        - generic [ref=e90]:
+          - generic [ref=e91]:
+            - generic:
+              - text: Filter
+              - combobox "Pixel filtering mode" [ref=e93]:
+                - option "nearest" [selected]
+                - option "linear"
+                - option "mipmap"
+              - text: Wrap
+              - combobox "Pixel filtering mode" [ref=e94]:
+                - option "clamp" [selected]
+                - option "repeat"
+              - generic [ref=e96]:
+                - text: VFlip
+                - checkbox "VFlip" [ref=e97]
+          - generic [ref=e99]: iChannel2
+        - generic [ref=e102]:
+          - generic [ref=e103]:
+            - generic:
+              - text: Filter
+              - combobox "Pixel filtering mode" [ref=e105]:
+                - option "nearest" [selected]
+                - option "linear"
+                - option "mipmap"
+              - text: Wrap
+              - combobox "Pixel filtering mode" [ref=e106]:
+                - option "clamp" [selected]
+                - option "repeat"
+              - generic [ref=e108]:
+                - text: VFlip
+                - checkbox "VFlip" [ref=e109]
+          - generic [ref=e111]: iChannel3
+    - generic [ref=e115]:
+      - text: Comments (15)
+      - generic [ref=e116]:
+        - link "Sign in" [ref=e118] [cursor=pointer]:
+          - /url: /signin
+        - text: to post a comment.
+      - generic [ref=e240]:
+        - generic [ref=e241]:
+          - img [ref=e243]
+          - generic [ref=e244]:
+            - link "jcponcemath" [ref=e245] [cursor=pointer]:
+              - /url: /user/jcponcemath
+            - text: ", 2026-03-11"
+            - text: Oh! You have been doing domain coloring for a long time. This is awesome!
+        - generic [ref=e246]:
+          - img [ref=e248]
+          - generic [ref=e249]:
+            - link "samerce" [ref=e250] [cursor=pointer]:
+              - /url: /user/samerce
+            - text: ", 2022-01-23"
+            - text: "@FabriceNeyret2 great!!! thank you! i will add it to my profile once it's launched."
+            - img [ref=e251]
+        - generic [ref=e252]:
+          - img [ref=e254]
+          - generic [ref=e255]:
+            - link "FabriceNeyret2" [ref=e256] [cursor=pointer]:
+              - /url: /user/FabriceNeyret2
+            - text: ", 2022-01-23"
+            - text: "if it's for personal use, go ahead ! ( url ? . or better: populate your empty profile ;-) )"
+        - generic [ref=e257]:
+          - img [ref=e259]
+          - generic [ref=e260]:
+            - link "samerce" [ref=e261] [cursor=pointer]:
+              - /url: /user/samerce
+            - text: ", 2022-01-23"
+            - text: "@FabriceNeyret2 i'd like to use it as a full-screen backdrop. it would be my personal site, to showcase my portfolio. i'd like to use shaders as backdrops for my work. the site itself is not commercial. the code is also creative commons - share alike. this is definitely my favorite of the ones that i'd like to use, so i could even pay you a little, if you like!"
+        - generic [ref=e262]:
+          - img [ref=e264]
+          - generic [ref=e265]:
+            - link "FabriceNeyret2" [ref=e266] [cursor=pointer]:
+              - /url: /user/FabriceNeyret2
+            - text: ", 2022-01-23"
+            - text: "@samerce: what do you mean by \"use it on my portfolio site\" ? ( which site, doing what, with which kind of use ? )"
+        - generic [ref=e267]:
+          - img [ref=e269]
+          - generic [ref=e270]:
+            - link "samerce" [ref=e271] [cursor=pointer]:
+              - /url: /user/samerce
+            - text: ", 2022-01-22"
+            - text: this is just my favorite thing to get lost in. thank you! may i please use it on my portfolio site?
+        - generic [ref=e272]:
+          - img [ref=e274]
+          - generic [ref=e275]:
+            - link "FabriceNeyret2" [ref=e276] [cursor=pointer]:
+              - /url: /user/FabriceNeyret2
+            - text: ", 2021-01-09"
+            - text: "golfed down to 174 chars here:"
+            - link "https://www.shadertoy.com/view/3sl3zs" [ref=e277] [cursor=pointer]:
+              - /url: https://www.shadertoy.com/view/3sl3zs
+        - generic [ref=e278]:
+          - img [ref=e280]
+          - generic [ref=e281]:
+            - link "flockaroo" [ref=e282] [cursor=pointer]:
+              - /url: /user/flockaroo
+            - text: ", 2016-06-30"
+            - text: ok, now perfectly symmetrical (with just +1 char). hopefully just a bad driver-release. ill keep my eye on this next time i update drivers
+            - img [ref=e283]
+        - generic [ref=e284]:
+          - img [ref=e286]
+          - generic [ref=e287]:
+            - link "FabriceNeyret2" [ref=e288] [cursor=pointer]:
+              - /url: /user/FabriceNeyret2
+            - text: ", 2016-06-30"
+            - text: "Other ATI users: I'm interested in your experience: what happen if you comment line 11, and in line 14 replace length(U) by length(U+=.5) ? (please mention your GPU, OS (+angle or opengl if windows), brower). thanks !"
+        - generic [ref=e289]:
+          - img [ref=e291]
+          - generic [ref=e292]:
+            - link "FabriceNeyret2" [ref=e293] [cursor=pointer]:
+              - /url: /user/FabriceNeyret2
+            - text: ", 2016-06-30"
+            - text: "ok, I put U+.5 upstream. But them you must have tons of shaders not working correctly. ( this standard is not about glsl, it is exactly like in all the other languages: C C++ java js php etc). Indeed I suspect it only occurs with one board or driver version or coupling, for it's the first time I see a glsl bug specific to ATI."
+        - generic [ref=e294]:
+          - img [ref=e296]
+          - generic [ref=e297]:
+            - link "flockaroo" [ref=e298] [cursor=pointer]:
+              - /url: /user/flockaroo
+            - text: ", 2016-06-30"
+            - text: yes its non symmetric. i guess that can be considered a bug in the ati-driver.i dont know much about standard glsl compiler specifications, or if this is specifid anyway, but that behaviour seems intuitively wrong.
+        - generic [ref=e299]:
+          - img [ref=e301]
+          - generic [ref=e302]:
+            - link "FabriceNeyret2" [ref=e303] [cursor=pointer]:
+              - /url: /user/FabriceNeyret2
+            - text: ", 2016-06-27"
+            - text: ...so it's not at all symetric for you. Wow, I would have think only Angle (on windows) could do such incorect compilation, not linux / OpenGL ! :-/
+        - generic [ref=e304]:
+          - img [ref=e306]
+          - generic [ref=e307]:
+            - link "flockaroo" [ref=e308] [cursor=pointer]:
+              - /url: /user/flockaroo
+            - text: ", 2016-06-27"
+            - text: i just noticed that the U+=.5 in the length() is not evaluated properly for the atan on my system (ATI R9-285X - linux). the atan still uses the old U.
+        - generic [ref=e309]:
+          - img [ref=e311]
+          - generic [ref=e312]:
+            - link "flockaroo" [ref=e313] [cursor=pointer]:
+              - /url: /user/flockaroo
+            - text: ", 2016-06-26"
+            - text: ah, it hurts the eyes! ...in a good way
+            - img [ref=e314]
+        - generic [ref=e315]:
+          - img [ref=e317]
+          - generic [ref=e318]:
+            - link "Shane" [ref=e319] [cursor=pointer]:
+              - /url: /user/Shane
+            - text: ", 2016-06-26"
+            - text: It's a nice mix. I like the saturated version too.
+  - generic [ref=e119]:
+    - generic [ref=e120]:
+      - text: Community Forums
+      - list [ref=e121]:
+        - listitem [ref=e122]:
+          - link "Official Events" [ref=e123] [cursor=pointer]:
+            - /url: /events
+        - listitem [ref=e124]:
+          - link "In Facebook (english)" [ref=e125] [cursor=pointer]:
+            - /url: https://www.facebook.com/groups/147749602472741
+        - listitem [ref=e126]:
+          - link "In Facebook (korean)" [ref=e127] [cursor=pointer]:
+            - /url: https://www.facebook.com/groups/1339783682699494
+        - listitem [ref=e128]:
+          - link "In Discord" [ref=e129] [cursor=pointer]:
+            - /url: https://discord.gg/XtmMN6E
+          - text: (
+          - link "direct link" [ref=e130] [cursor=pointer]:
+            - /url: https://discordapp.com/channels/578696555612209173/579531723348639754
+          - text: )
+    - generic [ref=e131]:
+      - text: Feedback and Support
+      - list [ref=e132]:
+        - listitem [ref=e133]:
+          - link "Facebook" [ref=e134] [cursor=pointer]:
+            - /url: https://www.facebook.com/Shadertoy
+        - listitem [ref=e135]:
+          - link "Twitter" [ref=e136] [cursor=pointer]:
+            - /url: https://twitter.com/shadertoy
+        - listitem [ref=e137]:
+          - link "Patreon" [ref=e138] [cursor=pointer]:
+            - /url: https://www.patreon.com/shadertoy
+        - listitem [ref=e139]:
+          - link "Roadmap" [ref=e140] [cursor=pointer]:
+            - /url: https://trello.com/b/5hM0CjId
+    - generic [ref=e141]:
+      - text: Shadertoy
+      - list [ref=e142]:
+        - listitem [ref=e143]:
+          - link "Store" [ref=e144] [cursor=pointer]:
+            - /url: /store
+        - listitem [ref=e145]:
+          - link "Documentation" [ref=e146] [cursor=pointer]:
+            - /url: /howto
+        - listitem [ref=e147]:
+          - link "Terms & Privacy" [ref=e148] [cursor=pointer]:
+            - /url: /terms
+        - listitem [ref=e149]:
+          - link "About" [ref=e150] [cursor=pointer]:
+            - /url: /about
+    - generic [ref=e151]:
+      - text: Apps and Plugins
+      - list [ref=e152]:
+        - listitem [ref=e153]:
+          - link "Official iPhone App" [ref=e154] [cursor=pointer]:
+            - /url: https://itunes.apple.com/us/app/shadertoy/id717961814
+          - text: by
+          - link "Reinder" [ref=e155] [cursor=pointer]:
+            - /url: /user/reinder
+        - listitem [ref=e156]:
+          - link "Screensaver" [ref=e157] [cursor=pointer]:
+            - /url: https://steamcommunity.com/sharedfiles/filedetails/?id=1726697188
+          - text: by
+          - link "Kosro" [ref=e158] [cursor=pointer]:
+            - /url: /user/kosro
+        - listitem [ref=e159]:
+          - link "Shadertoy plugin" [ref=e160] [cursor=pointer]:
+            - /url: https://chrome.google.com/webstore/detail/shadertoy-unofficial-plug/ohicbclhdmkhoabobgppffepcopomhgl
+          - text: by
+          - link "Patu" [ref=e161] [cursor=pointer]:
+            - /url: /user/patu
+    - generic [ref=e162]:
+      - text: Tutorials
+      - list [ref=e163]:
+        - listitem [ref=e164]:
+          - link "Shader coding intro" [ref=e165] [cursor=pointer]:
+            - /url: https://www.youtube.com/watch?v=0ifChJ0nJfM
+          - text: by
+          - link "iq" [ref=e166] [cursor=pointer]:
+            - /url: /user/iq
+        - listitem [ref=e167]:
+          - link "Shadertoy Unofficial" [ref=e168] [cursor=pointer]:
+            - /url: https://shadertoyunofficial.wordpress.com/
+          - text: by
+          - link "FabriceNeyret2" [ref=e169] [cursor=pointer]:
+            - /url: /user/FabriceNeyret2
+  - generic [ref=e170]:
+    - generic [ref=e171]:
+      - text: We use cookies to give you the best experience on our website. If you continue using Shadertoy, we'll assume that you are happy to receive all cookies on this website. For more information, please review our
+      - link "Terms & Privacy" [ref=e172] [cursor=pointer]:
+        - /url: /terms
+      - text: .
+    - button "Accept" [ref=e174]
