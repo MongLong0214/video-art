@@ -2,7 +2,7 @@
 
 Date: 2026-04-24
 Branch: `experiment/shader-dev-maximal`
-Status: IG reference study completed, LSD trip v78 continuous-suction rendered as the current creative lead
+Status: IG reference study completed, LSD trip v79 reference-prism rendered as the current creative lead
 Canonical research base: `docs/research/MASTERPIECE-SYNTHESIS.md`
 
 This document is the current handover for the DMT tunnel work. It supersedes the earlier v46-v63 notes. The old 3D Apollonian / cathedral direction is now historical context only; the live production direction is a fast, loop-safe, log-polar tunnel shader with two active variants:
@@ -21,13 +21,14 @@ This document is the current handover for the DMT tunnel work. It supersedes the
 - `trip-v75`: seam-safe smooth branch; fixed the left-center angular seam artifact
 - `trip-v76`: hypercolor experiment; kept for color intensity reference only
 - `trip-v77`: bright-prism experiment; removed black/navy fields but colors felt too fragmented
-- `trip-v78`: current lead; cohesive continuous-gradient color with stronger suction
+- `trip-v78`: previous lead; cohesive continuous-gradient color with stronger suction
+- `trip-v79`: current lead; DUtm4sck3eY-derived reference-prism palette with smoother suction focus
 
 ---
 
 ## 0. Current Outcome
 
-The project now has fifteen rendered DMT outputs. The current lead is `trip-v78` because it keeps the successful tunnel-line structure, preserves the v75 seam fix, replaces stepped color changes with a continuous gradient, and increases suction speed without returning to harsh post effects.
+The project now has sixteen rendered DMT outputs. The current lead is `trip-v79` because it keeps the successful tunnel-line structure, preserves the v75 seam fix, uses only the newly analyzed DUtm4sck3eY prism color anchors, replaces stepped color changes with overlapping smooth palette weights, and narrows the upper/lower distortion field so the center suction reads more strongly.
 
 ### 0.1 Reference Study Output
 
@@ -350,7 +351,7 @@ Why v77 is not the current lead:
 
 ### 0.15 LSD Trip Output v78 Continuous Suction
 
-Current best render:
+Previous best render:
 
 ```text
 out/dmt/2026-04-24_lsd-trip-v78-continuous-suction-bd4f74d6/lsd-trip-v78-continuous-suction.mp4
@@ -366,7 +367,7 @@ Verified format:
 - bitrate about 20.88 Mbps
 - size about 39.8 MB
 
-Why v78 supersedes v77:
+Why v78 superseded v77:
 
 - replaces stepped palette stops with a continuous HSV gradient curve
 - narrows the palette into a more cohesive magenta/violet/cyan family
@@ -374,6 +375,45 @@ Why v78 supersedes v77:
 - raises suction speed to `zoomLoops: 7.5` while staying loop-safe
 - lifts dark/green gaps into colored shadow fields
 - preserves the existing tunnel lines, v75 seam fix, and no-cross rule
+
+### 0.16 LSD Trip Output v79 Reference Prism
+
+Current best render:
+
+```text
+out/dmt/2026-04-24_lsd-trip-v79-reference-prism-5b4d8dc1/lsd-trip-v79-reference-prism.mp4
+```
+
+New color reference:
+
+```text
+docs/research/references/ig-DUtm4sck3eY-reel.mp4
+```
+
+Extracted reference palette:
+
+```text
+#dd591e #ecac1f #f7f250 #d8f8d0 #39e4f3 #10adf3 #086ff2 #041fe4 #1b0484 #0b0138 #7206b8 #af226e
+```
+
+Verified format:
+
+- 1080x1920
+- 16.00s
+- 60fps
+- 960 frames
+- H.264 High
+- bitrate about 20.93 Mbps
+- size about 40 MB
+
+Why v79 supersedes v78:
+
+- replaces the v78 synthetic HSV curve with the DUtm4sck3eY extracted prism palette
+- uses overlapping smooth palette weights instead of segmented color stops
+- preserves the existing tunnel/ring line family and avoids adding new ring geometry
+- increases suction to `zoomLoops: 8` while staying loop-safe
+- applies v79-only calm masks to upper/lower field deformation, procedural noise, and final color grade
+- keeps deep violet only as thin contrast structure instead of a broad black/navy field
 
 User verdict:
 
@@ -383,8 +423,8 @@ Working interpretation:
 
 - The reference is no longer the ceiling.
 - The reference is now the structural seed.
-- The `trip-v78` continuous-suction variant is the current creative lead.
-- Future color work should avoid stepped color-stop palettes; use continuous palette functions and preserve line geometry unless the user explicitly asks for a new shot family.
+- The `trip-v79` reference-prism variant is the current creative lead.
+- Future color work should avoid stepped color-stop palettes; tune continuous palette weights and preserve line geometry unless the user explicitly asks for a new shot family.
 
 ---
 
@@ -527,6 +567,7 @@ public/dmt-config-trip-v75.json
 public/dmt-config-trip-v76.json
 public/dmt-config-trip-v77.json
 public/dmt-config-trip-v78.json
+public/dmt-config-trip-v79.json
 ```
 
 ### 3.2 Shader Version
@@ -534,7 +575,7 @@ public/dmt-config-trip-v78.json
 Current shader header:
 
 ```text
-v78 - Kluver Tunnel Form I + seam-safe continuous-gradient branch
+v79 - Kluver Tunnel Form I + Instagram-derived smooth prism branch
 ```
 
 The shader uses one source file with branch behavior controlled by `uPaletteMode`.
@@ -556,6 +597,7 @@ Active modes:
 - `paletteMode: 14` -> v76 hypercolor-only polish
 - `paletteMode: 15` -> v77 bright-prism no-black/navy branch
 - `paletteMode: 16` -> v78 cohesive continuous-gradient suction branch
+- `paletteMode: 17` -> v79 DUtm4sck3eY-derived smooth prism suction branch
 
 The branch is intentionally done inside one shader so the `trip` version inherits the stable tunnel structure from the successful IG study.
 
