@@ -1018,11 +1018,57 @@ Export:
 npm run export:dmt -- --title lsd-trip-v78-continuous-suction --variant trip-v78 --fps 60
 ```
 
+### 4.8 LSD Trip Config v79
+
+File:
+
+```text
+public/dmt-config-trip-v79.json
+```
+
+Current values:
+
+```json
+{
+  "duration": 16,
+  "fps": 60,
+  "resolution": [1080, 1920],
+  "symmetry": 22,
+  "zoomLoops": 8,
+  "cameraLoops": 4,
+  "foldScale": 1,
+  "paletteMode": 17,
+  "hueSpeed": 2,
+  "glow": 1.12,
+  "bloomStrength": 0.18,
+  "bloomRadius": 0.78,
+  "bloomThreshold": 0.68,
+  "caOffset": 0.03,
+  "vignetteIntensity": 0.26,
+  "contrast": 1.06
+}
+```
+
+Use this as the current creative lead for the DUtm4sck3eY reference-prism palette, smooth gradient flow, and stronger center suction with calmer upper/lower distortion.
+
+Preview:
+
+```bash
+npm run dev
+# http://localhost:5173/?mode=dmt&dmt=/dmt-config-trip-v79.json
+```
+
+Export:
+
+```bash
+npm run export:dmt -- --title lsd-trip-v79-reference-prism --variant trip-v79 --fps 60
+```
+
 ---
 
 ## 5. Verification State
 
-Latest verification after `trip-v78` implementation:
+Latest verification after `trip-v79` implementation:
 
 ```text
 npm test
