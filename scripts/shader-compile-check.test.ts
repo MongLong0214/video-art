@@ -18,6 +18,23 @@ describe("shader-compile-check: constants", () => {
     expect(names).toContain("sketch-volumetric");
     expect(names).toContain("sketch-particles");
     expect(names).toContain("sketch-fractal-cave");
+    expect(names).toContain("mode-dmt");
+    expect(names).toContain("mode-dmt-ig");
+    expect(names).toContain("mode-dmt-trip");
+    expect(names).toContain("mode-dmt-trip-v66");
+    expect(names).toContain("mode-dmt-trip-v67");
+    expect(names).toContain("mode-dmt-trip-v68");
+    expect(names).toContain("mode-dmt-trip-v69");
+    expect(names).toContain("mode-dmt-trip-v70");
+    expect(names).toContain("mode-dmt-trip-v71");
+    expect(names).toContain("mode-dmt-trip-v72");
+    expect(names).toContain("mode-dmt-trip-v73");
+    expect(names).toContain("mode-dmt-trip-v74");
+    expect(names).toContain("mode-dmt-trip-v75");
+    expect(names).toContain("mode-dmt-trip-v76");
+    expect(names).toContain("mode-dmt-trip-v77");
+    expect(names).toContain("mode-dmt-trip-v78");
+    expect(names).toContain("mode-dmt-trip-v79");
     expect(MODES.length).toBeGreaterThanOrEqual(7);
   });
 

@@ -189,15 +189,35 @@ async function init() {
         tDiffuse: { value: null },
         uTime: { value: 0 },
         uContrast: { value: dc.contrast },
+        uCaOffset: { value: dc.caOffset },
+        uVignetteIntensity: { value: dc.vignetteIntensity },
       },
       vertexShader: postVertexShader,
       fragmentShader: `
         uniform sampler2D tDiffuse;
         uniform float uTime;
         uniform float uContrast;
+        uniform float uCaOffset;
+        uniform float uVignetteIntensity;
         varying vec2 vUv;
         void main() {
-          vec3 col = texture2D(tDiffuse, vUv).rgb;
+          vec2 p = vUv - 0.5;
+          float d = length(p);
+          vec2 dir = p / max(d, 0.0001);
+          vec2 ca = dir * uCaOffset * 0.0045 * smoothstep(0.05, 0.82, d);
+          vec3 col;
+          col.r = texture2D(tDiffuse, vUv + ca * 1.20).r;
+          col.g = texture2D(tDiffuse, vUv).g;
+          col.b = texture2D(tDiffuse, vUv - ca * 1.45).b;
+          vec3 soft = (
+            texture2D(tDiffuse, vUv + ca * 2.25).rgb +
+            texture2D(tDiffuse, vUv - ca * 2.25).rgb +
+            texture2D(tDiffuse, vUv + ca.yx * vec2(1.0, -1.0) * 1.70).rgb +
+            texture2D(tDiffuse, vUv - ca.yx * vec2(1.0, -1.0) * 1.70).rgb
+          ) * 0.25;
+          col = mix(col, soft, 0.10 * smoothstep(0.08, 0.80, d));
+          float vig = 1.0 - uVignetteIntensity * 0.13 * pow(d * 1.45, 2.0);
+          col *= clamp(vig, 0.78, 1.0);
           // Mild final contrast lift (shader already did primary grade)
           col = (col - 0.5) * uContrast + 0.5;
           col = clamp(col, 0.0, 1.0);

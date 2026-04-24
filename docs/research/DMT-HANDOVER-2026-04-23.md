@@ -1,212 +1,1442 @@
-# DMT Shader Production — Session Handover
+# DMT / LSD Tunnel Production Handover
 
-Date: 2026-04-23
+Date: 2026-04-24
 Branch: `experiment/shader-dev-maximal`
-Status: v62 쉐이더 기본 구조 확정, 렌더 검증 대기
+Status: IG reference study completed, LSD trip v78 continuous-suction rendered as the current creative lead
+Canonical research base: `docs/research/MASTERPIECE-SYNTHESIS.md`
+
+This document is the current handover for the DMT tunnel work. It supersedes the earlier v46-v63 notes. The old 3D Apollonian / cathedral direction is now historical context only; the live production direction is a fast, loop-safe, log-polar tunnel shader with two active variants:
+
+- `ig`: reference-matched Instagram reel study
+- `trip`: stronger LSD-inspired, fully procedural trip cut
+- `trip-v66`: directed masterpiece pass with controlled cyan/violet/lime color hierarchy
+- `trip-v67`: cooler jewel-eye refinement with stronger red suppression and Instagram compression comfort
+- `trip-v68`: more psychedelic UV-magenta / acid-lime color pass
+- `trip-v69`: stronger suction-depth and dizziness pass with UV/acid afterimages
+- `trip-v70`: hard-trip delivery with stronger UV-magenta, acid-lime, and chromatic pressure
+- `trip-v71`: inward color cascade experiment, kept as an intensity reference but not the current lead
+- `trip-v72`: smooth no-cross color cascade; solved cross-shaped color spread
+- `trip-v73`: dramatic color branch; kept as a color-intensity reference
+- `trip-v74`: dramatic color variation with existing lines preserved
+- `trip-v75`: seam-safe smooth branch; fixed the left-center angular seam artifact
+- `trip-v76`: hypercolor experiment; kept for color intensity reference only
+- `trip-v77`: bright-prism experiment; removed black/navy fields but colors felt too fragmented
+- `trip-v78`: current lead; cohesive continuous-gradient color with stronger suction
 
 ---
 
-## 1. 최종 결정된 방향
+## 0. Current Outcome
 
-**Shot Family A: Masterpiece Synthesis (v47 recipe 구현)**
+The project now has fifteen rendered DMT outputs. The current lead is `trip-v78` because it keeps the successful tunnel-line structure, preserves the v75 seam fix, replaces stepped color changes with a continuous gradient, and increases suction speed without returning to harsh post effects.
 
-Isaac 승인: 비상업 개인 사용 → Shadertoy NC-SA 레퍼런스 직접 참고 OK, 단 코드 직접 임베드는 재구현 원칙 유지.
+### 0.1 Reference Study Output
 
-핵심 레퍼런스 문서 (a~z 100% 숙지 완료):
-- `docs/research/MASTERPIECE-SYNTHESIS.md` (2746줄, §1306-2019 DMT Art Code/Math Deep Dive 15개 포함)
-- `docs/research/dmt-infinite-loop-reference-bank-2026-04-23.md`
-- `docs/research/dmt-masterpiece-artwork-canon-2026-04-23.md`
+Reference source:
 
-### 1.1 구현 재료 (라이선스 상태)
-
-| 재료 | 라이선스 | 상태 |
-|---|---|---|
-| IQ Apollonian map (`4ds3zn`/`4sX3Rn`) | MIT | 코드 사용 |
-| IQ cosine palette | MIT | 코드 사용 |
-| IQ Mandelbulb DE (`ltfSWn`) | 제한적 | 수식만 재구현 OK |
-| IQ Rainforest exp fog (`4ttSWf`) | 제한적 | 공식만 재구현 OK |
-| AgX tonemap (iolite) | Public | 코드 사용 |
-| Sun & Wang thin-film (§13) | Academic | 수식 재구현 |
-| Way of Light volumetric (`cdsSRf`) | CC BY-NC-SA | 기법만, 비상업 개인 사용 |
-| mrange smoothKaleidoscope (`7lKSWW`) | 혼합 | 현재 제거 (죽은 코드였음) |
-| Log-Moebius (`XdyXD3`) | Unknown | 수식만 재구현 |
-
----
-
-## 2. 반복 실패 히스토리 (v46 → v61)
-
-| 버전 | 시도 | 실패 원인 | 학습 |
-|---|---|---|---|
-| v46 | sine swirl 4-iter | 프랙탈 아님 | 진짜 프랙탈 필요 |
-| v47 | 10 effect 스택 | 섞여서 평평해짐 | 레이어 legibility 필요 |
-| v48 | iq Apollonian 순수 | 흰 배경 + 저채도 | DMT void + 하이퍼크로매틱 필요 |
-| v49 | + 8-fold 카레이도+브리딩+CA | "52% 만족" — 지루 | 스케일 랜드마크 없음 |
-| v50 | log-spherical Droste | 선버스트만 남음 | Droste wrap만으론 프랙탈 소실 |
-| v52 | 2D log-polar Kali | "61% 방향은 맞음" | 3D + 엔티티 공간 깊이 필요 |
-| v53-54 | 3-layer 파라랙스 | 오버익스포저 | screen blend × glow 주의 |
-| v55 | Bressloff V1 cortex | 줌아웃처럼 보임 | 드리프트 방향 검증 |
-| v56 | inward drift | + 중앙 과밝음 → 지루 | Abyss 필요 |
-| v57 | Family A Cathedral 시도 | 링 단조로움 | 아키텍처 디테일 필요 |
-| v58 | 옥타브별 페탈 count | 중앙 hex 밀집, 녹/마젠타만 | corona + RGB 위상 |
-| v60 | v47 Recipe 1차 | 스크린 카레이도 + thin-film ×1.25 → 시임, 블로아웃 | 구조적 3D fold 필요 |
-| v61 | 3D xy-fold + thin-film ×0.5 | 수평 시임, 여전히 블로아웃 | 카메라 안전거리, 클램프 |
-| v62 | 코드 리뷰 반영 + 전면 수정 | **렌더 검증 대기** | — |
-
-### 사용자 명시 불만족 기준
-- "줌아웃되는 느낌" ← 드리프트 방향 중요
-- "균일한 빨려들어가는 느낌" ← 속도/펄스 제거, 연속 드리프트
-- "지루하다" ← 스케일 랜드마크, mid-scale 디테일 필요
-- "전혀 LSD/DMT스럽지 않음" ← 하이퍼크로매틱 + 만다라 대칭 + 블랙 보이드
-- "속도 더 빨라야" ← 옥타브/loop 증가
-
----
-
-## 3. v62 현재 구현 상태 (`src/shaders/dmt-tunnel.frag`)
-
-### 6-Pass 아키텍처
-```
-Pass 0: IQ Apollonian + 4ch orbit trap (구조적 N-fold 내장)
-Pass 1: Breathing fractal s = uFoldScale + 0.15*cos(uZoomLoops * time)
-Pass 2: Sun & Wang thin-film iridescence (§13 공식)
-Pass 3: Volumetric accumulation (coeff 0.008, pre-AgX clamp 4.0)
-Pass 4: Background core + halo + palette tint
-Pass 5: Exp fog (IQ Rainforest) + AgX + S-curve + CA + breathing vignette
+```text
+docs/research/references/ig-DV_6YBZk293-reel.mp4
 ```
 
-### 유니폼
-- `uTime` (normalized [0,1])
-- `uResolution`
-- `uSymmetry` (N-fold mandala, 기본 8)
-- `uZoomLoops` (정수, 브리딩 사이클/loop)
-- `uCameraLoops` (정수, 카메라 오빗 사이클/loop)
-- `uFoldScale` (Apollonian s base)
-- `uPaletteMode` (0|1|2|3)
-- `uHueSpeed`
-- `uGlow`
+Final study render:
 
-### 팔레트 모드 (0/1/2/3)
-- 0: Sacred Neon (magenta/cyan/gold) — Android Jones/Luke Brown
-- 1: Old-Master Visionary (glazed gold/ruby/ultramarine) — Fuchs/Klarwein
-- 2: Fractal Cinema (blues/metallic gold) — Horsthuis/Trumbull
-- 3: Belson Cosmic (soft blue/amber/void)
+```text
+out/dmt/2026-04-24_ig-dv_6ybzk293-study-v3-77011aed/ig-dv_6ybzk293-study-v3.mp4
+```
 
-### 구조적 N-fold
-`foldSymmetry(vec3 p, float n)` → `apollonian()` 시작점에서 xy-plane에 SABS-style smooth fold 적용.
-- **경고**: 3D xy-fold + 카메라 축 정렬 시 뷰어가 fold plane과 평행할 때 수평 시임 아티팩트 가능.
-- **해결 후보**: 테트라 fold(§4) 교체 또는 카메라 경로 제약.
+Verified format:
+
+- 1080x1920
+- 16.00s
+- 60fps
+- 960 frames
+- H.264 High, Level 4.2
+- bitrate about 20.9 Mbps
+
+Purpose:
+
+- Match the reference's fixed-center neon tunnel grammar.
+- Preserve the source reel's main structure: concentric jagged rings, cyan/green dominance, dark blue gaps, central eye.
+- Serve as a stable baseline before pushing beyond the reference.
+
+### 0.2 LSD Trip Output v1
+
+First trip render:
+
+```text
+out/dmt/2026-04-24_lsd-trip-tunnel-v1-b6bc421c/lsd-trip-tunnel-v1.mp4
+```
+
+Verified format:
+
+- 1080x1920
+- 16.00s
+- 60fps
+- 960 frames
+- H.264 High, Level 4.2
+- bitrate about 20.9 Mbps
+
+### 0.3 LSD Trip Output v66
+
+Previous best render:
+
+```text
+out/dmt/2026-04-24_lsd-trip-v66-a9c3e7a1/lsd-trip-v66.mp4
+```
+
+Verified format:
+
+- 1080x1920
+- 16.00s
+- 60fps
+- 960 frames
+- H.264 High, Level 4.2
+- bitrate about 20.95 Mbps
+
+Why v66 supersedes v1:
+
+- more deliberate color hierarchy
+- less flat red/orange posterization
+- stronger cyan/violet/lime identity
+- tighter central eye authority
+- loop-safe macro density breathing
+- restrained post stack for social-video recompression
+
+### 0.4 LSD Trip Output v67
+
+Previous best render:
+
+```text
+out/dmt/2026-04-24_lsd-trip-v67-98219bba/lsd-trip-v67.mp4
+```
+
+Verified format:
+
+- 1080x1920
+- 16.00s
+- 60fps
+- 960 frames
+- H.264 High
+- bitrate about 20.89 Mbps
+- size about 40 MB
+
+Why v67 supersedes v66:
+
+- preserves the v66 speed and log-polar tunnel authority
+- reduces crimson/red slabs into cobalt/violet shadow accents
+- makes the palette cooler and more compression-stable
+- gives the central eye a cleaner jewel-like read across the full loop
+- raises lime/jade contrast so the frame is not only blue/cyan
+
+### 0.5 LSD Trip Output v68
+
+Previous best render:
+
+```text
+out/dmt/2026-04-24_lsd-trip-v68-b0c11b7a/lsd-trip-v68.mp4
+```
+
+Verified format:
+
+- 1080x1920
+- 16.00s
+- 60fps
+- 960 frames
+- H.264 High
+- bitrate about 20.96 Mbps
+- size about 40 MB
+
+Why v68 supersedes v67:
+
+- keeps v67's red-control discipline and central tunnel authority
+- increases UV-magenta and acid-lime edge highlights
+- raises hue cycling to 3 loop-safe cycles
+- keeps the output social-video friendly while reading more psychedelic
+
+### 0.6 LSD Trip Output v69
+
+Previous best render:
+
+```text
+out/dmt/2026-04-24_lsd-trip-v69-ac14b798/lsd-trip-v69.mp4
+```
+
+Verified format:
+
+- 1080x1920
+- 16.00s
+- 60fps
+- 960 frames
+- H.264 High
+- bitrate about 20.89 Mbps
+- size about 40 MB
+
+Why v69 supersedes v68:
+
+- increases the "falling into it" read through stronger center suction
+- adds counter-spin and secondary log-radius ghost layers
+- makes the outer field more dizzy/liquid without losing the fixed center
+- raises loop-safe speed to `zoomLoops: 6.5`
+- adds UV-magenta and acid-lime afterimage veins while keeping red/orange slab suppression
+
+### 0.7 LSD Trip Output v70 Hard
+
+Previous hard-trip render:
+
+```text
+out/dmt/2026-04-24_lsd-trip-v70-hard-96ae95a6/lsd-trip-v70-hard.mp4
+```
+
+Verified format:
+
+- 1080x1920
+- 16.00s
+- 60fps
+- 960 frames
+- H.264 High
+- bitrate about 20.88 Mbps
+- size about 40 MB
+
+Why v70 hard superseded v69 for the hard-trip branch:
+
+- keeps v69 suction and counter-spin as the structural base
+- pushes UV-magenta and acid-lime much harder
+- raises loop-safe speed to `zoomLoops: 7.5`
+- raises hue cycle pressure to `hueSpeed: 5`
+- adds harder chromatic afterimage veins around the center rings
+- preserves the red/orange guard by keeping warm energy as thin ring detail, not flat slabs
+
+### 0.8 LSD Trip Output v71 Cascade
+
+Intermediate render:
+
+```text
+out/dmt/2026-04-24_lsd-trip-v71-cascade-2e179df0/lsd-trip-v71-cascade.mp4
+```
+
+Verified format:
+
+- 1080x1920
+- 16.00s
+- 60fps
+- 960 frames
+- H.264 High
+- bitrate about 20.92 Mbps
+- size about 40 MB
+
+Why v71 is not the current lead:
+
+- it proved that inward color cascade can improve the DMT-art feel
+- it was too rough in color transitions and particle/ring texture
+- it introduced visible cross/spoke-like color spread near the center
+- the next pass had to keep the same line structure and change color only
+
+### 0.9 LSD Trip Output v72 Smooth No-Cross
+
+Previous no-cross render:
+
+```text
+out/dmt/2026-04-24_lsd-trip-v72-smooth-dfe072c8/lsd-trip-v72-smooth.mp4
+```
+
+Verified format:
+
+- 1080x1920
+- 16.00s
+- 60fps
+- 960 frames
+- H.264 High
+- bitrate about 20.91 Mbps
+- size about 40 MB
+
+Why v72 supersedes v71:
+
+- removes the cross-shaped color spread by muting spoke/counter-spoke/shard afterimage color contributions
+- preserves the existing tunnel rings and line geometry instead of adding new line families
+- moves color variation onto circular depth progression through the tunnel
+- smooths saturation, bloom, chromatic offset, and palette transitions for a more polished viewing state
+- keeps the hypnotic center, suction depth, and DMT palette pressure without the distracting cross artifact
+
+### 0.10 LSD Trip Output v73 Dramatic
+
+Intermediate render:
+
+```text
+out/dmt/2026-04-24_lsd-trip-v73-dramatic-e63f8468/lsd-trip-v73-dramatic.mp4
+```
+
+Verified format:
+
+- 1080x1920
+- 16.00s
+- 60fps
+- 960 frames
+- H.264 High
+- bitrate about 20.95 Mbps
+- size about 40 MB
+
+Why v73 is not the current lead:
+
+- it made the color variation dramatically more visible than v72
+- it still risked reading as new colored ring behavior because color was injected through ring/line masks
+- the user clarified that existing lines must not be changed and no heterogeneous ring behavior should appear
+
+### 0.11 LSD Trip Output v74 Color-Grade Only
+
+Current best render:
+
+```text
+out/dmt/2026-04-24_lsd-trip-v74-grade-27660e1a/lsd-trip-v74-grade.mp4
+```
+
+Verified format:
+
+- 1080x1920
+- 16.00s
+- 60fps
+- 960 frames
+- H.264 High
+- bitrate about 20.92 Mbps
+- size about 40 MB
+
+Why v74 supersedes v73:
+
+- preserves the existing tunnel rings and line structure
+- applies dramatic palette variation as a luminance-preserving final color grade
+- avoids `hotBand`, `thinLine`, `edgeMask`, or `ringWave` color injection for the v74 pass
+- keeps the no-cross rule from v72
+- shows clear magenta/green/cyan/blue temporal variation across the 16-second contact sheet
+
+### 0.12 LSD Trip Output v75 Smooth Seam-Safe
+
+Seam-safe smooth render:
+
+```text
+out/dmt/2026-04-24_lsd-trip-v75-smooth-5e843405/lsd-trip-v75-smooth.mp4
+```
+
+Why v75 mattered:
+
+- replaced seam-prone angular FBM with periodic angular sampling
+- removed the left horizontal-center artifact
+- softened palette and post transitions
+- preserved the existing line/ring geometry
+
+### 0.13 LSD Trip Output v76 Hypercolor
+
+Intermediate render:
+
+```text
+public/dmt-config-trip-v76.json
+```
+
+Why v76 is not the current lead:
+
+- proved that v75 could accept a brighter color branch without new line geometry
+- still left large black/navy fields and felt too aquatic rather than high-end trip art
+
+### 0.14 LSD Trip Output v77 Bright Prism
+
+Bright-prism render:
+
+```text
+out/dmt/2026-04-24_lsd-trip-v77-bright-prism-9b465d67/lsd-trip-v77-bright-prism.mp4
+```
+
+Why v77 is not the current lead:
+
+- removed black/navy fields by lifting dark gaps into bright color shadows
+- produced strong hot-pink/lime/cyan frames
+- colors still felt too segmented and fought the tunnel structure
+
+### 0.15 LSD Trip Output v78 Continuous Suction
+
+Current best render:
+
+```text
+out/dmt/2026-04-24_lsd-trip-v78-continuous-suction-bd4f74d6/lsd-trip-v78-continuous-suction.mp4
+```
+
+Verified format:
+
+- 1080x1920
+- 16.00s
+- 60fps
+- 960 frames
+- H.264 High
+- bitrate about 20.88 Mbps
+- size about 39.8 MB
+
+Why v78 supersedes v77:
+
+- replaces stepped palette stops with a continuous HSV gradient curve
+- narrows the palette into a more cohesive magenta/violet/cyan family
+- keeps lime as a subtle accent instead of a dominant color block
+- raises suction speed to `zoomLoops: 7.5` while staying loop-safe
+- lifts dark/green gaps into colored shadow fields
+- preserves the existing tunnel lines, v75 seam fix, and no-cross rule
+
+User verdict:
+
+> "만든 영상이 레퍼런스보다 더 좋아. 이걸 계속 고도화시키고 싶어."
+
+Working interpretation:
+
+- The reference is no longer the ceiling.
+- The reference is now the structural seed.
+- The `trip-v78` continuous-suction variant is the current creative lead.
+- Future color work should avoid stepped color-stop palettes; use continuous palette functions and preserve line geometry unless the user explicitly asks for a new shot family.
 
 ---
 
-## 4. 코드 리뷰 수정 완료 (6/6)
+## 1. Active Creative Direction
 
-이전 리뷰어 findings 모두 반영됨:
+### 1.1 What Works Now
 
-1. ✅ **uZoomLoops/uCameraLoops 연결** — 유니폼 선언 + `main()`에서 `cos(camN*time)` 사용
-2. ✅ **라이선스 헤더 정정** — "STUDY/NON-COMMERCIAL, rights not cleared"로 변경
-3. ✅ **paletteMode 타입** — `0|1` → `0|1|2|3` (`src/sketches/dmt-config.ts:9`)
-4. ✅ **shader-compile-check** — `mode-dmt` 추가 (`scripts/shader-compile-check.ts:37`)
-5. ✅ **smoothKaleidoscope 죽은 코드** — 전체 블록 제거 (foldSymmetry만 유지)
-6. ✅ **중복 post 제거** — `src/main.ts:184` dmtPostShader에서 CA/vignette 제거, contrast만 경미하게 유지 (셰이더가 primary grade 담당)
+The current best direction is:
 
-### 검증
-- `npx tsc --noEmit` ✓
-- `npm run check:shaders` → **8/8 PASS** (mode-dmt 포함)
+- fixed central tunnel / eye
+- fast inward/outward log-polar travel
+- dense concentric rings in log-radius
+- jagged ring edges, not smooth mandala petals
+- cyan/green/violet outlines for readability
+- full-frame motion, no empty black background
+- saturated psychedelic palette
+- loop-safe integer time terms
+- procedural shader only, no texture sampling from the reference
+
+The `trip` variant improves on the reference by adding:
+
+- stronger spiral warp
+- full-spectrum color instability
+- radial ghost rings
+- controlled phosphene energy without cross-shaped color spread in the current v72 branch
+- outer-field liquid smear
+- more aggressive chromatic afterimage
+- stronger viewer-lock through the fixed center
+- smooth color progression as the viewer is pulled inward
+
+### 1.2 Current North Star
+
+The next target is not "more random color." It is a polished, high-intensity trip video with controlled perceptual hierarchy:
+
+1. Center: hypnotic anchor, readable eye, never fully lost.
+2. Mid-rings: dense oscillation, strongest depth pull.
+3. Outer field: liquid hallucination, fast shimmer, color flame.
+4. Whole frame: unstable but composed, not noisy mud.
+5. Loop: no visible first/last jump.
+
+The current v78 constraint is important: keep the existing rings and line grammar, then vary color through a continuous cohesive gradient. Do not reintroduce cross-like chroma blooms, heterogeneous color rings, stepped palette stops, or new line geometry unless the user explicitly asks for a new shot family.
+
+The right phrase is:
+
+```text
+reference grammar + stronger LSD perceptual overload + controlled art direction
+```
 
 ---
 
-## 5. 즉시 다음 작업
+## 2. Reference Analysis
 
-### 5.1 v62a 렌더 실행
+### 2.1 Reference File
+
+```text
+docs/research/references/ig-DV_6YBZk293-reel.mp4
+```
+
+Observed metadata:
+
+- 1080x1920
+- about 16.07s
+- 60fps
+- vertical reel format
+
+Local analysis frames/contact sheets were generated under:
+
+```text
+/tmp/video-art-ref-ig-DV_6YBZk293/
+```
+
+Useful files from the analysis pass:
+
+- `ref-frame0.png`
+- `ref-first-8s.jpg`
+- `generated-v3-first-8s.jpg`
+- `lsd-trip-v1-first-8s.jpg`
+- `lsd-trip-v66-first-8s.jpg`
+- `lsd-trip-v67-first-16s.jpg`
+- `lsd-trip-v68-first-16s.jpg`
+- `lsd-trip-v69-first-16s.jpg`
+- `lsd-trip-v70-hard-first-16s.jpg`
+
+### 2.2 Reference Visual Grammar
+
+The reference is not a 3D fractal scene. It is effectively a 2D log-polar tunnel.
+
+Core traits:
+
+- pure concentric rings
+- no explicit kaleidoscope mandala symmetry
+- no cathedral/entity/architectural forms
+- fixed central eye
+- fast radial flow
+- wavy/zigzag ring boundaries
+- cyan/green dominant bands
+- magenta/violet secondary accents
+- dark blue/green gaps
+- chunky, compressed-looking neon texture
+- no clean vector-line look
+
+### 2.3 Corrected Lesson
+
+Earlier assumptions were wrong for this specific reference.
+
+| Old assumption | Current finding |
+| --- | --- |
+| 3D Apollonian tunnel needed | Not for this reference; 2D log-polar is stronger |
+| Cathedral / mandala / entity motifs needed | Distracting for this target |
+| Black abyss center | Reference has a readable blue/cyan eye |
+| Perfect smooth rings | Wrong; rings need torn, noisy edges |
+| Heavy raymarch depth | Unnecessary; speed and ring grammar matter more |
+| Palette should stay narrow | For `trip`, broader spectrum is now desirable |
+
+---
+
+## 3. Current Implementation
+
+### 3.1 Core Files
+
+```text
+src/shaders/dmt-tunnel.frag
+src/sketches/dmt-tunnel.ts
+src/sketches/dmt-config.ts
+src/main.ts
+scripts/export-dmt.ts
+scripts/shader-compile-check.ts
+public/dmt-config-ig.json
+public/dmt-config-trip.json
+public/dmt-config-trip-v66.json
+public/dmt-config-trip-v67.json
+public/dmt-config-trip-v68.json
+public/dmt-config-trip-v69.json
+public/dmt-config-trip-v70.json
+public/dmt-config-trip-v71.json
+public/dmt-config-trip-v72.json
+public/dmt-config-trip-v73.json
+public/dmt-config-trip-v74.json
+public/dmt-config-trip-v75.json
+public/dmt-config-trip-v76.json
+public/dmt-config-trip-v77.json
+public/dmt-config-trip-v78.json
+```
+
+### 3.2 Shader Version
+
+Current shader header:
+
+```text
+v78 - Kluver Tunnel Form I + seam-safe continuous-gradient branch
+```
+
+The shader uses one source file with branch behavior controlled by `uPaletteMode`.
+
+Active modes:
+
+- `paletteMode: 0` -> IG reference study branch
+- `paletteMode: 3` -> LSD trip branch
+- `paletteMode: 4` -> v66 directed masterpiece branch
+- `paletteMode: 5` -> v67 cooler jewel-eye branch
+- `paletteMode: 6` -> v68 psychedelic color branch
+- `paletteMode: 7` -> v69 suction-depth dizzy trip branch
+- `paletteMode: 8` -> v70 hard-trip branch
+- `paletteMode: 9` -> v71 inward chroma cascade branch
+- `paletteMode: 10` -> v72 smooth no-cross color cascade branch
+- `paletteMode: 11` -> v73 dramatic color branch
+- `paletteMode: 12` -> v74 luminance-preserving color-grade-only branch
+- `paletteMode: 13` -> v75 seam-safe smooth color-grade branch
+- `paletteMode: 14` -> v76 hypercolor-only polish
+- `paletteMode: 15` -> v77 bright-prism no-black/navy branch
+- `paletteMode: 16` -> v78 cohesive continuous-gradient suction branch
+
+The branch is intentionally done inside one shader so the `trip` version inherits the stable tunnel structure from the successful IG study.
+
+### 3.3 Shader Architecture
+
+Current architecture:
+
+1. Normalize screen coordinates.
+2. Convert to polar/log-polar coordinates.
+3. Apply loop-safe radial drift:
+
+```glsl
+u = log(r);
+u -= t * uZoomLoops;
+```
+
+4. Add angular triangular waves for jagged ring edges.
+5. Add edge-localized FBM, grain, stitch, and chunk noise.
+6. Build ring bands from log-radius cells.
+7. Mix cyan, green, blue, violet, and magenta bands.
+8. Keep the central eye readable.
+9. Add final saturation, contrast, and vignette.
+10. For `paletteMode: 3`, add trip-only:
+
+- loop-safe radial breathing
+- spiral perception warp
+- ghost rings
+- phosphene spokes
+- rainbow hue drift
+- red plate correction toward violet/magenta
+
+For `paletteMode: 7`, it also adds:
+
+- stronger loop-safe radial speed
+- counter-spin angular perturbation
+- secondary log-radius ghost rings
+- depth rake lines
+- UV-magenta and acid-lime afterimage veins
+
+For `paletteMode: 8`, it inherits v69 and further adds:
+
+- harder UV-magenta and acid-lime palette stops
+- extra angular/radial perturbation
+- stronger central chroma pressure
+- hard afterimage veins
+- higher loop-safe hue and zoom attack
+
+For `paletteMode: 9`, it adds:
+
+- inward color cascade across tunnel depth
+- stronger chroma attack and higher symmetry
+- useful intensity reference, but too rough and too cross-like for the current lead
+
+For `paletteMode: 10`, it returns to the v69 structural base and further adds:
+
+- smooth color-only cascade through log-radius depth
+- muted spoke/counter-spoke/shard/afterimage color contributions
+- no new line geometry
+- lower bloom/chromatic offset than v71 for a cleaner, less abrasive trip
+- saturation target reduced from v71's hard push to a smoother polished look
+
+For `paletteMode: 11`, it increases color drama, but remains an intermediate branch because mask-based color intensity can read as new colored ring behavior.
+
+For `paletteMode: 12`, it:
+
+- preserves the v69/v72 line structure and no-cross constraints
+- applies dramatic color variation as a luminance-preserving final grade
+- avoids color injection through `hotBand`, `thinLine`, `edgeMask`, or `ringWave`
+- uses broad smooth outer/mid/inner palette zones plus temporal palette cycling
+
+### 3.4 Post Processing
+
+`src/main.ts` now uses the DMT config's post controls:
+
+- bloom strength/radius/threshold
+- `caOffset`
+- `vignetteIntensity`
+- `contrast`
+
+This is important because the `trip` version needs a small afterimage/smear layer, while the `ig` version needs restraint.
+
+### 3.5 Exporter
+
+`scripts/export-dmt.ts` now preserves requested FPS instead of forcing 30fps.
+
+Important encode behavior:
+
+- `-framerate <fps>`
+- `-r <fps>`
+- H.264 Level 4.2 for fps > 30
+- GOP = `fps * 2`
+
+This is required because the user explicitly reverted to 60fps.
+
+---
+
+## 4. Active Configs
+
+### 4.1 IG Reference Config
+
+File:
+
+```text
+public/dmt-config-ig.json
+```
+
+Current values:
+
+```json
+{
+  "duration": 16,
+  "fps": 60,
+  "resolution": [1080, 1920],
+  "symmetry": 32,
+  "zoomLoops": 4.0,
+  "cameraLoops": 2,
+  "foldScale": 1.0,
+  "paletteMode": 0,
+  "hueSpeed": 1.0,
+  "glow": 1.18,
+  "bloomStrength": 0.26,
+  "bloomRadius": 0.62,
+  "bloomThreshold": 0.54,
+  "caOffset": 0.038,
+  "vignetteIntensity": 0.45,
+  "contrast": 1.07
+}
+```
+
+Use this when preserving the reference-like look.
+
+Preview:
+
 ```bash
-npx tsx scripts/export-dmt.ts --variant a --title v62a-fixed
+npm run dev
+# http://localhost:5173/?mode=dmt&dmt=/dmt-config-ig.json
 ```
-실제 유저가 중단한 지점. 렌더 후 프레임 추출 → 시각 검증.
 
-### 5.2 기대 개선
-- 브리딩/카메라 사이클이 config 반영됨 (dmt-config-a.json: zoomLoops 2.0, cameraLoops 2)
-- Pre-AgX clamp로 블로아웃 방지
-- thin-film ×0.5로 에지 이리데센스 순화
-- Composer CA/vignette 제거로 중복 보정 없음 (셰이더 원본 의도 보존)
+Export:
 
-### 5.3 v62 검증 체크리스트
-- [ ] 중앙 abyss 유지 (DMT void)
-- [ ] 3D Apollonian 디테일 가시
-- [ ] 만다라 대칭 (N-fold 구조적)
-- [ ] 블로아웃 없음 (f04 타입)
-- [ ] 수평 시임 없음 (f02 타입)
-- [ ] 외향 흐름 (sucked-in 감각)
-- [ ] 시작/끝 프레임 일치 (seamless loop)
-
-### 5.4 v62 검증 후 양산
-b/c/d 변종 렌더:
 ```bash
-npx tsx scripts/export-dmt.ts --variant b --title v62b-amber
-npx tsx scripts/export-dmt.ts --variant c --title v62c-petrol
-npx tsx scripts/export-dmt.ts --variant d --title v62d-cosmic
+npm run export:dmt -- --title ig-DV_6YBZk293-study --variant ig --fps 60
 ```
 
-각 variant config 확인 위치:
-- `public/dmt-config-a.json` — Sacred Neon
-- `public/dmt-config-b.json` — Old-Master
-- `public/dmt-config-c.json` — Petrol
-- `public/dmt-config-d.json` — Cosmic
+### 4.2 LSD Trip Config v1
+
+File:
+
+```text
+public/dmt-config-trip.json
+```
+
+Current values:
+
+```json
+{
+  "duration": 16,
+  "fps": 60,
+  "resolution": [1080, 1920],
+  "symmetry": 18,
+  "zoomLoops": 5.0,
+  "cameraLoops": 3,
+  "foldScale": 1.0,
+  "paletteMode": 3,
+  "hueSpeed": 2.0,
+  "glow": 1.26,
+  "bloomStrength": 0.32,
+  "bloomRadius": 0.70,
+  "bloomThreshold": 0.50,
+  "caOffset": 0.064,
+  "vignetteIntensity": 0.38,
+  "contrast": 1.06
+}
+```
+
+Use this as the preserved first trip cut.
+
+Preview:
+
+```bash
+npm run dev
+# http://localhost:5173/?mode=dmt&dmt=/dmt-config-trip.json
+```
+
+Export:
+
+```bash
+npm run export:dmt -- --title lsd-trip-tunnel-v1 --variant trip --fps 60
+```
+
+### 4.3 LSD Trip Config v66
+
+File:
+
+```text
+public/dmt-config-trip-v66.json
+```
+
+Current values:
+
+```json
+{
+  "duration": 16,
+  "fps": 60,
+  "resolution": [1080, 1920],
+  "symmetry": 18,
+  "zoomLoops": 5.0,
+  "cameraLoops": 3,
+  "foldScale": 1.0,
+  "paletteMode": 4,
+  "hueSpeed": 2.0,
+  "glow": 1.20,
+  "bloomStrength": 0.26,
+  "bloomRadius": 0.70,
+  "bloomThreshold": 0.60,
+  "caOffset": 0.050,
+  "vignetteIntensity": 0.34,
+  "contrast": 1.12
+}
+```
+
+Use this as the preserved v66 baseline.
+
+Preview:
+
+```bash
+npm run dev
+# http://localhost:5173/?mode=dmt&dmt=/dmt-config-trip-v66.json
+```
+
+Export:
+
+```bash
+npm run export:dmt -- --title lsd-trip-v66 --variant trip-v66 --fps 60
+```
+
+### 4.4 LSD Trip Config v67
+
+File:
+
+```text
+public/dmt-config-trip-v67.json
+```
+
+Current values:
+
+```json
+{
+  "duration": 16,
+  "fps": 60,
+  "resolution": [1080, 1920],
+  "symmetry": 18,
+  "zoomLoops": 5.0,
+  "cameraLoops": 3,
+  "foldScale": 1.0,
+  "paletteMode": 5,
+  "hueSpeed": 2.0,
+  "glow": 1.14,
+  "bloomStrength": 0.22,
+  "bloomRadius": 0.68,
+  "bloomThreshold": 0.64,
+  "caOffset": 0.044,
+  "vignetteIntensity": 0.36,
+  "contrast": 1.14
+}
+```
+
+Use this as the preserved v67 clean-color baseline.
+
+Preview:
+
+```bash
+npm run dev
+# http://localhost:5173/?mode=dmt&dmt=/dmt-config-trip-v67.json
+```
+
+Export:
+
+```bash
+npm run export:dmt -- --title lsd-trip-v67 --variant trip-v67 --fps 60
+```
+
+### 4.5 LSD Trip Config v68
+
+File:
+
+```text
+public/dmt-config-trip-v68.json
+```
+
+Current values:
+
+```json
+{
+  "duration": 16,
+  "fps": 60,
+  "resolution": [1080, 1920],
+  "symmetry": 18,
+  "zoomLoops": 5.0,
+  "cameraLoops": 3,
+  "foldScale": 1.0,
+  "paletteMode": 6,
+  "hueSpeed": 3.0,
+  "glow": 1.18,
+  "bloomStrength": 0.24,
+  "bloomRadius": 0.70,
+  "bloomThreshold": 0.62,
+  "caOffset": 0.047,
+  "vignetteIntensity": 0.35,
+  "contrast": 1.15
+}
+```
+
+Use this as the previous v68 psychedelic color baseline.
+
+Preview:
+
+```bash
+npm run dev
+# http://localhost:5173/?mode=dmt&dmt=/dmt-config-trip-v68.json
+```
+
+Export:
+
+```bash
+npm run export:dmt -- --title lsd-trip-v68 --variant trip-v68 --fps 60
+```
+
+### 4.6 LSD Trip Config v69
+
+File:
+
+```text
+public/dmt-config-trip-v69.json
+```
+
+Current values:
+
+```json
+{
+  "duration": 16,
+  "fps": 60,
+  "resolution": [1080, 1920],
+  "symmetry": 20,
+  "zoomLoops": 6.5,
+  "cameraLoops": 4,
+  "foldScale": 1.0,
+  "paletteMode": 7,
+  "hueSpeed": 4.0,
+  "glow": 1.28,
+  "bloomStrength": 0.28,
+  "bloomRadius": 0.70,
+  "bloomThreshold": 0.61,
+  "caOffset": 0.052,
+  "vignetteIntensity": 0.36,
+  "contrast": 1.16
+}
+```
+
+Use this as the preserved suction/dizziness baseline.
+
+Preview:
+
+```bash
+npm run dev
+# http://localhost:5173/?mode=dmt&dmt=/dmt-config-trip-v69.json
+```
+
+Export:
+
+```bash
+npm run export:dmt -- --title lsd-trip-v69 --variant trip-v69 --fps 60
+```
+
+### 4.7 LSD Trip Config v78
+
+File:
+
+```text
+public/dmt-config-trip-v78.json
+```
+
+Current values:
+
+```json
+{
+  "duration": 16,
+  "fps": 60,
+  "resolution": [1080, 1920],
+  "symmetry": 22,
+  "zoomLoops": 7.5,
+  "cameraLoops": 4,
+  "foldScale": 1.0,
+  "paletteMode": 16,
+  "hueSpeed": 2.0,
+  "glow": 1.14,
+  "bloomStrength": 0.19,
+  "bloomRadius": 0.78,
+  "bloomThreshold": 0.67,
+  "caOffset": 0.032,
+  "vignetteIntensity": 0.29,
+  "contrast": 1.07
+}
+```
+
+Use this as the current creative lead for cohesive continuous-gradient suction while preserving existing lines.
+
+Preview:
+
+```bash
+npm run dev
+# http://localhost:5173/?mode=dmt&dmt=/dmt-config-trip-v78.json
+```
+
+Export:
+
+```bash
+npm run export:dmt -- --title lsd-trip-v78-continuous-suction --variant trip-v78 --fps 60
+```
 
 ---
 
-## 6. 남은 이슈/리스크
+## 5. Verification State
 
-### 6.1 구조적 N-fold 시임 리스크
-3D xy-fold + 카메라 축 정렬 시 수평 밴드. 관찰되면 대안:
-- **옵션 A**: 테트라 fold (§4 tetraFold, MASTERPIECE-SYNTHESIS line 1467)
-- **옵션 B**: 카메라 path 제약 (y 축 변조 증가 → fold plane과 비평행)
-- **옵션 C**: fold를 앞단에서 z축으로도 추가 (진정 3D 대칭)
+Latest verification after `trip-v78` implementation:
 
-### 6.2 volumetric vs surface 충돌
-Way of Light volumetric과 surface BRDF가 `mix(col, rr.volCol*1.5, 0.32)`로 결합. 비중 조정이 감각 톤 결정.
+```text
+npm test
+```
 
-### 6.3 thin-film thickness 범위
-현재 380~500nm. 특정 각도에서 3채널 peak 정렬 가능. 더 안전한 접근: `thickness * ndotv`를 `sin(angle)` 기반으로 변조.
+Result:
 
-### 6.4 아직 활용 안 한 마스터피스 요소
-- Central entity pareidolia (Android Jones/Luke Brown)
-- Tibetan 4-fold 카디널 gates (실제로 구현 안 됨 — N-fold만)
-- Point mandala (Whitney Lapis)
-- Slit-scan 스트릭 (Trumbull Stargate)
-- Gallimore orthogonal seams (불가능한 깊이)
-- Schnörkel filigree (에지 나선 장식)
+```text
+27 files passed
+324 tests passed
+```
 
-이 중 어느 것을 v63+에서 추가할지 사용자 판단 대기.
+```text
+npm run check:shaders
+```
+
+Result:
+
+```text
+23/23 PASS
+```
+
+Covered modes:
+
+- `layered-default`
+- `layered-baseline`
+- `sketch-psychedelic`
+- `sketch-cellular`
+- `sketch-volumetric`
+- `sketch-particles`
+- `sketch-fractal-cave`
+- `mode-dmt`
+- `mode-dmt-ig`
+- `mode-dmt-trip`
+- `mode-dmt-trip-v66`
+- `mode-dmt-trip-v67`
+- `mode-dmt-trip-v68`
+- `mode-dmt-trip-v69`
+- `mode-dmt-trip-v70`
+- `mode-dmt-trip-v71`
+- `mode-dmt-trip-v72`
+- `mode-dmt-trip-v73`
+- `mode-dmt-trip-v74`
+- `mode-dmt-trip-v75`
+- `mode-dmt-trip-v76`
+- `mode-dmt-trip-v77`
+- `mode-dmt-trip-v78`
+
+```text
+npm run build
+```
+
+Result:
+
+```text
+pass
+```
+
+Build still emits the existing Vite chunk-size warning for the main bundle. This is not caused by the DMT change.
+
+Format verification with `ffprobe`:
+
+- `ig-dv_6ybzk293-study-v3.mp4`: 1080x1920, 60fps, 960 frames
+- `lsd-trip-tunnel-v1.mp4`: 1080x1920, 60fps, 960 frames
+- `lsd-trip-v66.mp4`: 1080x1920, 60fps, 960 frames
+- `lsd-trip-v67.mp4`: 1080x1920, 60fps, 960 frames
+- `lsd-trip-v68.mp4`: 1080x1920, 60fps, 960 frames
+- `lsd-trip-v69.mp4`: 1080x1920, 60fps, 960 frames
+- `lsd-trip-v70-hard.mp4`: 1080x1920, 60fps, 960 frames
+- `lsd-trip-v71-cascade.mp4`: 1080x1920, 60fps, 960 frames
+- `lsd-trip-v72-smooth.mp4`: 1080x1920, 60fps, 960 frames
+- `lsd-trip-v73-dramatic.mp4`: 1080x1920, 60fps, 960 frames
+- `lsd-trip-v74-grade.mp4`: 1080x1920, 60fps, 960 frames
+- `lsd-trip-v75-smooth.mp4`: 1080x1920, 60fps, 960 frames
+- `lsd-trip-v77-bright-prism.mp4`: 1080x1920, 60fps, 960 frames
+- `lsd-trip-v78-continuous-suction.mp4`: 1080x1920, 60fps, 960 frames
+
+Visual verdict state:
+
+```text
+.omx/state/visual-verdict/ralph-progress.json
+```
+
+Latest v78 score:
+
+```text
+94 / pass
+```
 
 ---
 
-## 7. 파일 참조
+## 6. Development History Summary
 
-### 핵심 파일
-- `src/shaders/dmt-tunnel.frag` — v62 shader
-- `src/sketches/dmt-tunnel.ts` — Three.js runner
-- `src/sketches/dmt-config.ts` — config schema (paletteMode 0|1|2|3)
-- `src/main.ts` — 모드 라우팅 + composer (CA/vignette 제거됨)
-- `scripts/export-dmt.ts` — Puppeteer 캡처 + ffmpeg 인코딩
-- `scripts/shader-compile-check.ts` — 스모크 (mode-dmt 포함)
-- `public/dmt-config-{a,b,c,d}.json` — 4 variants
+### 6.1 Historical v46-v62 Direction
 
-### 아카이브
-- `out/dmt/2026-04-23_v{버전}-*/` — 각 렌더 output
-- `docs/research/dmt-shaders/` — 19개 로컬 shader 레퍼런스 (MIT/CC0/NC-SA 혼합)
+Earlier versions tried:
 
-### 레퍼런스 문서
-- `docs/research/MASTERPIECE-SYNTHESIS.md` ← **single source of truth**
-- `docs/research/dmt-infinite-loop-reference-bank-2026-04-23.md`
-- `docs/research/dmt-masterpiece-artwork-canon-2026-04-23.md`
+- sine swirl
+- 2D Kali
+- 3D Apollonian
+- cathedral / entity portal direction
+- thin-film iridescence
+- volumetric accumulation
+- N-fold mandala structures
+- heavy post effects
+
+Main failure pattern:
+
+- too slow
+- too dark or too blown out
+- too architectural
+- too unrelated to the actual reference
+- too much generic "shader art," not enough tunnel hypnosis
+
+### 6.2 v63-v64 Reset
+
+The major breakthrough was abandoning the 3D cathedral assumption and rebuilding around:
+
+- log-polar rings
+- fixed central eye
+- jagged edge modulation
+- reference palette hierarchy
+- 60fps vertical reel format
+
+### 6.3 v65 Trip Breakthrough
+
+The user preferred the procedural result over the reference and asked for a stronger trip video.
+
+The `trip` branch added:
+
+- stronger spiral warp
+- loop-safe breathing
+- ghost rings
+- spoke phosphenes
+- wider hue cycling
+- chromatic smear
+- full-frame color instability
+
+This is now the main high-potential direction.
 
 ---
 
-## 8. 컨텍스트 재개 프로토콜
+## 7. Known Risks
 
-새 세션에서:
-1. 이 파일 Read → 현재 상태 파악
-2. `docs/research/MASTERPIECE-SYNTHESIS.md` 필요시 참조 (필독 아님 — 이 파일에 요약됨)
-3. `src/shaders/dmt-tunnel.frag` Read → 최신 v62 shader 확인
-4. `git status` → 로컬 변경사항 확인 (현재 commit 안 됨)
-5. 바로 `npx tsx scripts/export-dmt.ts --variant a --title v62a-fixed` 실행 → 검증
-6. 프레임 추출 후 (§5.3 체크리스트) 평가 → 사용자 피드백 대기
+### 7.1 Over-Saturation
+
+The `trip` branch can easily become flat red/orange plates or clipped white center bloom. Current shader includes a red-plate correction toward violet/magenta, but future changes should watch this carefully.
+
+Guardrails:
+
+- keep center readable
+- avoid pure white center
+- avoid broad red/orange sheets
+- preserve cyan/violet/green contour structure
+
+### 7.2 Too Much Noise
+
+`MASTERPIECE-SYNTHESIS.md` is clear: noise should reinforce structure, not replace it.
+
+Good:
+
+- edge-localized fray
+- stitch modulation
+- ring-bound chatter
+- ghost rings aligned with log-radius
+
+Bad:
+
+- full-frame FBM fog
+- random plasma over everything
+- texture that hides the tunnel pull
+
+### 7.3 Loop Drift
+
+Major time terms should remain integer-loop-safe over normalized `uTime`.
+
+Current important loop values:
+
+- `ig`: `ringFreq * zoomLoops = 6 * 4 = 24`
+- `trip`: `ringFreq * zoomLoops = 6 * 5 = 30`
+- `trip-v68`: `ringFreq * zoomLoops = 6 * 5 = 30`
+- `trip-v69`: `ringFreq * zoomLoops = 6 * 6.5 = 39`
+- `trip.hueSpeed = 2`
+- `trip-v69.hueSpeed = 4`
+- `trip-v69.cameraLoops = 4`
+
+If future edits introduce new time multipliers, prefer integer cycles or visually closed periodic functions.
+
+### 7.4 Reference Rights
+
+Do not sample, trace, crop, texture-project, or frame-copy the Instagram reference. Current implementation is procedural and should remain that way.
+
+Allowed:
+
+- study motion grammar
+- study palette hierarchy
+- study composition
+- recreate with original shader math
+
+Blocked:
+
+- direct image/video sampling
+- using reference frames as textures
+- copying someone else's shader code without license clearance
+
+---
+
+## 8. Next Development Roadmap
+
+The user wants to keep evolving the `trip` result. Recommended sequence:
+
+### 8.1 v67: v66 Refinement Pass - Complete
+
+Goal:
+
+Refine `lsd-trip-v66` without losing its stronger color hierarchy.
+
+Edits:
+
+- make center eye pulse even more jewel-like without white bloom
+- make outer flame field breathe in density, not just brightness
+- reduce any remaining crimson slabs while preserving contrast
+- tune bloom for Instagram compression after upload tests
+- add a slightly darker alternate cut for long viewing comfort
+
+Acceptance:
+
+- complete in `out/dmt/2026-04-24_lsd-trip-v67-98219bba/lsd-trip-v67.mp4`
+- first frame and last frame visually close
+- no white-center blowout
+- no muddy full-frame noise
+- still feels stronger than reference
+- visual verdict: 91 / pass
+
+### 8.2 v68: Psychedelic Color Pass - Complete
+
+Goal:
+
+Make v67 more psychedelic without losing compression safety.
+
+Completed techniques:
+
+- added paletteMode 6
+- added UV-magenta / acid-lime palette stops
+- raised hue cycling to 3 loop-safe cycles
+- added controlled acid/UV edge highlights
+- kept v67 red-to-cobalt suppression active
+
+Acceptance:
+
+- complete in `out/dmt/2026-04-24_lsd-trip-v68-b0c11b7a/lsd-trip-v68.mp4`
+- no red slab regression
+- central eye still stable
+- metadata matches 1080x1920 / 60fps / 960 frames
+- visual verdict: 92 / pass
+
+### 8.3 v69: Perceptual Depth + Signature Identity Pass - Complete
+
+Goal:
+
+Increase the "falling into it" feeling and give the sequence a repeatable visual identity.
+
+Completed techniques:
+
+- added paletteMode 7
+- increased radial speed to `zoomLoops: 6.5` while keeping loop closure
+- added counter-spin angular perturbation
+- added secondary log-radius ghost rings and depth rake lines
+- reinforced the center suction glow
+- added UV-magenta and acid-lime chroma afterimages
+
+Acceptance:
+
+- complete in `out/dmt/2026-04-24_lsd-trip-v69-ac14b798/lsd-trip-v69.mp4`
+- metadata matches 1080x1920 / 60fps / 960 frames
+- shader smoke check: 14/14 PASS
+- visual verdict: 92 / pass
+
+### 8.4 v70: Delivery Variants
+
+Make multiple export presets:
+
+- `trip-soft`: less red, more dreamy
+- `trip-hard`: current intensity, faster visual attack
+- `trip-dark`: more DMT void, less white/cyan center
+- `trip-neon`: Instagram-first, higher cyan/magenta contrast
+
+Each variant should be a config file, not a forked shader, unless the branch becomes genuinely different.
+
+---
+
+## 9. Practical Commands
+
+### Preview IG
+
+```bash
+npm run dev
+# open http://localhost:5173/?mode=dmt&dmt=/dmt-config-ig.json
+```
+
+### Preview Trip
+
+```bash
+npm run dev
+# open http://localhost:5173/?mode=dmt&dmt=/dmt-config-trip.json
+```
+
+### Export IG
+
+```bash
+npm run export:dmt -- --title ig-DV_6YBZk293-study --variant ig --fps 60
+```
+
+### Export Trip
+
+```bash
+npm run export:dmt -- --title lsd-trip-tunnel-v1 --variant trip --fps 60
+```
+
+### Export Trip v66
+
+```bash
+npm run export:dmt -- --title lsd-trip-v66 --variant trip-v66 --fps 60
+```
+
+### Export Trip v67
+
+```bash
+npm run export:dmt -- --title lsd-trip-v67 --variant trip-v67 --fps 60
+```
+
+### Export Trip v68
+
+```bash
+npm run export:dmt -- --title lsd-trip-v68 --variant trip-v68 --fps 60
+```
+
+### Export Trip v69
+
+```bash
+npm run export:dmt -- --title lsd-trip-v69 --variant trip-v69 --fps 60
+```
+
+### Export Trip v78
+
+```bash
+npm run export:dmt -- --title lsd-trip-v78-continuous-suction --variant trip-v78 --fps 60
+```
+
+### Verify
+
+```bash
+npm test
+npm run check:shaders
+npm run build
+```
+
+### Check Render Metadata
+
+```bash
+ffprobe -hide_banner -select_streams v:0 \
+  -show_entries stream=width,height,avg_frame_rate,r_frame_rate,nb_frames,codec_name,profile,level \
+  -show_entries format=duration,size,bit_rate \
+  -of default=noprint_wrappers=1 \
+  out/dmt/<run>/<file>.mp4
+```
+
+---
+
+## 10. Current File Map
+
+### Shader / runtime
+
+- `src/shaders/dmt-tunnel.frag` - current v78 continuous-gradient tunnel shader
+- `src/sketches/dmt-tunnel.ts` - Three.js full-screen shader runner
+- `src/sketches/dmt-config.ts` - config interface/defaults
+- `src/main.ts` - DMT mode routing and post-processing
+
+### Configs
+
+- `public/dmt-config-ig.json` - reference study
+- `public/dmt-config-trip.json` - preserved v1 trip cut
+- `public/dmt-config-trip-v66.json` - preserved v66 baseline
+- `public/dmt-config-trip-v67.json` - preserved v67 clean-color baseline
+- `public/dmt-config-trip-v68.json` - preserved v68 psychedelic color baseline
+- `public/dmt-config-trip-v69.json` - current creative lead
+- `public/dmt-config-{a,b,c,d}.json` - older variants, not the current priority
+
+### Export / tests
+
+- `scripts/export-dmt.ts` - Puppeteer frame capture and ffmpeg encode
+- `scripts/export-dmt.test.ts` - FPS export regression
+- `scripts/shader-compile-check.ts` - browser shader smoke check
+- `scripts/shader-compile-check.test.ts`
+- `src/shaders/dmt-tunnel-frag.test.ts`
+- `src/sketches/dmt-config.test.ts`
+
+### Research
+
+- `docs/research/MASTERPIECE-SYNTHESIS.md` - canonical visual/research system
+- `docs/research/DMT-HANDOVER-2026-04-23.md` - this handover
+- `docs/research/references/ig-DV_6YBZk293-reel.mp4` - reference study source
+
+---
+
+## 11. Resume Protocol
+
+When resuming this work:
+
+1. Read this file first.
+2. Run `git status --short` because the working tree may contain uncommitted generated/state changes.
+3. Inspect `src/shaders/dmt-tunnel.frag` and `public/dmt-config-trip.json`.
+4. Keep `ig` stable unless the user explicitly asks to revise the reference study.
+5. Continue from `trip-v69` as the main creative branch.
+6. Before editing visuals, update `.omx/state/visual-verdict/ralph-progress.json`.
+7. After each visual iteration:
+   - capture preview
+   - compare against the current creative target
+   - update visual verdict
+   - only then render final MP4
+8. Verify with:
+
+```bash
+npm test
+npm run check:shaders
+npm run build
+ffprobe ...
+```
+
+Stop only when:
+
+- MP4 exists
+- metadata matches 1080x1920 / 60fps / 960 frames
+- shader smoke check passes
+- the visual verdict is at least 90 or the user explicitly accepts the result
+
+---
+
+## 12. Immediate Next Best Task
+
+The next productive task is:
+
+```text
+Build v70 delivery variants or a stricter signature refinement from v69.
+```
+
+Suggested concrete first edit:
+
+- Keep `public/dmt-config-trip-v69.json` as the baseline.
+- Add v70 configs only when the variant has a clear viewing purpose.
+- Prefer config-level tuning unless the shader needs a genuinely new visual layer.
+- Tune:
+  - stricter magenta/acid balance
+  - center eye intensity versus comfort
+  - suction speed versus Instagram compression
+  - outer liquid flame readability
+  - darker long-viewing cut versus harder trip cut
+
+Do not return to the old v46-v62 3D cathedral route unless the user asks for a separate shot family.

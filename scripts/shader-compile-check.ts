@@ -35,6 +35,22 @@ export const MODES: CheckMode[] = [
   { name: "sketch-particles", url: "/?sketch=particles", required: true },
   { name: "sketch-fractal-cave", url: "/?sketch=fractal-cave", required: true },
   { name: "mode-dmt", url: "/?mode=dmt", required: true },
+  { name: "mode-dmt-ig", url: "/?mode=dmt&dmt=/dmt-config-ig.json", required: true },
+  { name: "mode-dmt-trip", url: "/?mode=dmt&dmt=/dmt-config-trip.json", required: true },
+  { name: "mode-dmt-trip-v66", url: "/?mode=dmt&dmt=/dmt-config-trip-v66.json", required: true },
+  { name: "mode-dmt-trip-v67", url: "/?mode=dmt&dmt=/dmt-config-trip-v67.json", required: true },
+  { name: "mode-dmt-trip-v68", url: "/?mode=dmt&dmt=/dmt-config-trip-v68.json", required: true },
+  { name: "mode-dmt-trip-v69", url: "/?mode=dmt&dmt=/dmt-config-trip-v69.json", required: true },
+  { name: "mode-dmt-trip-v70", url: "/?mode=dmt&dmt=/dmt-config-trip-v70.json", required: true },
+  { name: "mode-dmt-trip-v71", url: "/?mode=dmt&dmt=/dmt-config-trip-v71.json", required: true },
+  { name: "mode-dmt-trip-v72", url: "/?mode=dmt&dmt=/dmt-config-trip-v72.json", required: true },
+  { name: "mode-dmt-trip-v73", url: "/?mode=dmt&dmt=/dmt-config-trip-v73.json", required: true },
+  { name: "mode-dmt-trip-v74", url: "/?mode=dmt&dmt=/dmt-config-trip-v74.json", required: true },
+  { name: "mode-dmt-trip-v75", url: "/?mode=dmt&dmt=/dmt-config-trip-v75.json", required: true },
+  { name: "mode-dmt-trip-v76", url: "/?mode=dmt&dmt=/dmt-config-trip-v76.json", required: true },
+  { name: "mode-dmt-trip-v77", url: "/?mode=dmt&dmt=/dmt-config-trip-v77.json", required: true },
+  { name: "mode-dmt-trip-v78", url: "/?mode=dmt&dmt=/dmt-config-trip-v78.json", required: true },
+  { name: "mode-dmt-trip-v79", url: "/?mode=dmt&dmt=/dmt-config-trip-v79.json", required: true },
 ];
 
 export const ERROR_PATTERNS: RegExp[] = [

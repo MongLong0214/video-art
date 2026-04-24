@@ -79,6 +79,152 @@ npm run dev
 npm run export:sketch -- --sketch ocean-wave --title ocean-wave
 ```
 
+### 3. DMT tunnel 모드 — 레퍼런스 릴스 스타일
+
+`docs/research/references/ig-DV_6YBZk293-reel.mp4`처럼 중앙 고정점으로 빨려 들어가는 네온 톱니 링 영상을 만든다.
+
+```bash
+npm run dev
+# → http://localhost:5173/?mode=dmt&dmt=/dmt-config-ig.json
+
+npm run export:dmt -- --title ig-DV_6YBZk293-study --variant ig --fps 60
+```
+
+더 강한 LSD trip 변형:
+
+```bash
+npm run dev
+# → http://localhost:5173/?mode=dmt&dmt=/dmt-config-trip.json
+
+npm run export:dmt -- --title lsd-trip-tunnel --variant trip --fps 60
+```
+
+v66 masterpiece pass:
+
+```bash
+npm run dev
+# → http://localhost:5173/?mode=dmt&dmt=/dmt-config-trip-v66.json
+
+npm run export:dmt -- --title lsd-trip-v66 --variant trip-v66 --fps 60
+```
+
+v67 jewel-eye refinement:
+
+```bash
+npm run dev
+# → http://localhost:5173/?mode=dmt&dmt=/dmt-config-trip-v67.json
+
+npm run export:dmt -- --title lsd-trip-v67 --variant trip-v67 --fps 60
+```
+
+v68 psychedelic color refinement:
+
+```bash
+npm run dev
+# → http://localhost:5173/?mode=dmt&dmt=/dmt-config-trip-v68.json
+
+npm run export:dmt -- --title lsd-trip-v68 --variant trip-v68 --fps 60
+```
+
+v69 suction / dizziness refinement:
+
+```bash
+npm run dev
+# → http://localhost:5173/?mode=dmt&dmt=/dmt-config-trip-v69.json
+
+npm run export:dmt -- --title lsd-trip-v69 --variant trip-v69 --fps 60
+```
+
+v70 hard trip:
+
+```bash
+npm run dev
+# → http://localhost:5173/?mode=dmt&dmt=/dmt-config-trip-v70.json
+
+npm run export:dmt -- --title lsd-trip-v70-hard --variant trip-v70 --fps 60
+```
+
+v71 inward color cascade:
+
+```bash
+npm run dev
+# → http://localhost:5173/?mode=dmt&dmt=/dmt-config-trip-v71.json
+
+npm run export:dmt -- --title lsd-trip-v71-cascade --variant trip-v71 --fps 60
+```
+
+v72 smooth no-cross color cascade:
+
+```bash
+npm run dev
+# → http://localhost:5173/?mode=dmt&dmt=/dmt-config-trip-v72.json
+
+npm run export:dmt -- --title lsd-trip-v72-smooth --variant trip-v72 --fps 60
+```
+
+v73 dramatic no-cross depth color:
+
+```bash
+npm run dev
+# → http://localhost:5173/?mode=dmt&dmt=/dmt-config-trip-v73.json
+
+npm run export:dmt -- --title lsd-trip-v73-dramatic --variant trip-v73 --fps 60
+```
+
+v74 dramatic color-grade only, existing lines preserved:
+
+```bash
+npm run dev
+# → http://localhost:5173/?mode=dmt&dmt=/dmt-config-trip-v74.json
+
+npm run export:dmt -- --title lsd-trip-v74-grade --variant trip-v74 --fps 60
+```
+
+v75 smooth seam-safe suction cut:
+
+```bash
+npm run dev
+# → http://localhost:5173/?mode=dmt&dmt=/dmt-config-trip-v75.json
+
+npm run export:dmt -- --title lsd-trip-v75-smooth --variant trip-v75 --fps 60
+```
+
+v76 smooth hypercolor polish, same lines as v75:
+
+```bash
+npm run dev
+# → http://localhost:5173/?mode=dmt&dmt=/dmt-config-trip-v76.json
+
+npm run export:dmt -- --title lsd-trip-v76-hypercolor --variant trip-v76 --fps 60
+```
+
+v77 bright-prism polish, no black/navy shadow field:
+
+```bash
+npm run dev
+# → http://localhost:5173/?mode=dmt&dmt=/dmt-config-trip-v77.json
+
+npm run export:dmt -- --title lsd-trip-v77-bright-prism --variant trip-v77 --fps 60
+```
+
+v78 cohesive continuous-gradient suction cut:
+
+```bash
+npm run dev
+# → http://localhost:5173/?mode=dmt&dmt=/dmt-config-trip-v78.json
+
+npm run export:dmt -- --title lsd-trip-v78-continuous-suction --variant trip-v78 --fps 60
+```
+
+v79 Instagram-derived smooth prism suction cut:
+
+```bash
+npm run dev
+# → http://localhost:5173/?mode=dmt&dmt=/dmt-config-trip-v79.json
+
+npm run export:dmt -- --title lsd-trip-v79-reference-prism --variant trip-v79 --fps 60
+```
+
 ---
 
 ## Prerequisites
