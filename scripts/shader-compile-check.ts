@@ -51,6 +51,16 @@ export const MODES: CheckMode[] = [
   { name: "mode-dmt-trip-v77", url: "/?mode=dmt&dmt=/dmt-config-trip-v77.json", required: true },
   { name: "mode-dmt-trip-v78", url: "/?mode=dmt&dmt=/dmt-config-trip-v78.json", required: true },
   { name: "mode-dmt-trip-v79", url: "/?mode=dmt&dmt=/dmt-config-trip-v79.json", required: true },
+  { name: "mode-dmt-trip-v80", url: "/?mode=dmt&dmt=/dmt-config-trip-v80.json", required: true },
+  { name: "mode-dmt-trip-v81", url: "/?mode=dmt&dmt=/dmt-config-trip-v81.json", required: true },
+  { name: "mode-dmt-trip-v82", url: "/?mode=dmt&dmt=/dmt-config-trip-v82.json", required: true },
+  { name: "mode-dmt-trip-v83", url: "/?mode=dmt&dmt=/dmt-config-trip-v83.json", required: true },
+  { name: "mode-dmt-trip-v84", url: "/?mode=dmt&dmt=/dmt-config-trip-v84.json", required: true },
+  { name: "mode-dmt-trip-v85", url: "/?mode=dmt&dmt=/dmt-config-trip-v85.json", required: true },
+  { name: "mode-dmt-trip-v86", url: "/?mode=dmt&dmt=/dmt-config-trip-v86.json", required: true },
+  { name: "mode-dmt-trip-v88", url: "/?mode=dmt&dmt=/dmt-config-trip-v88.json", required: true },
+  { name: "mode-dmt-trip-v88-20s", url: "/?mode=dmt&dmt=/dmt-config-trip-v88-20s.json", required: true },
+  { name: "mode-dmt-trip-v89-core-breath-20s", url: "/?mode=dmt&dmt=/dmt-config-trip-v89-core-breath-20s.json", required: true },
 ];
 
 export const ERROR_PATTERNS: RegExp[] = [

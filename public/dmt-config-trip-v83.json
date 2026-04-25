@@ -1,0 +1,18 @@
+{
+  "duration": 16,
+  "fps": 60,
+  "resolution": [1080, 1920],
+  "symmetry": 22,
+  "zoomLoops": 12,
+  "cameraLoops": 4,
+  "foldScale": 1,
+  "paletteMode": 21,
+  "hueSpeed": 1,
+  "glow": 1.04,
+  "bloomStrength": 0.11,
+  "bloomRadius": 0.86,
+  "bloomThreshold": 0.76,
+  "caOffset": 0.018,
+  "vignetteIntensity": 0.2,
+  "contrast": 1.03
+}

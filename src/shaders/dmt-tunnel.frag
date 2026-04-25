@@ -1,7 +1,7 @@
 precision highp float;
 
 // =============================================================================
-// v79 - Kluver Tunnel Form I + Instagram-derived smooth prism branch
+// v84 - Kluver Tunnel Form I + v81 commercial look with dense center suction
 //
 // Target: docs/research/references/ig-DV_6YBZk293-reel.mp4
 //
@@ -35,6 +35,14 @@ precision highp float;
 //   - paletteMode 15 adds v77 bright-prism grade with no black/navy shadow field
 //   - paletteMode 16 adds v78 continuous color-gradient flow with no palette steps
 //   - paletteMode 17 adds v79 DUtm4sck3eY-derived smooth prism suction
+//   - paletteMode 18 adds v80 classic LSD poster color and ink-contour grading
+//   - paletteMode 19 adds v81 commercial trip master polish
+//   - paletteMode 20 adds v82 smooth suction gradient flow
+//   - paletteMode 21 adds v83 narrow no-white dramatic suction
+//   - paletteMode 22 adds v84 dense ring suction on the v81 commercial look
+//   - paletteMode 23 adds v85 persistent central ink anchor rings
+//   - paletteMode 24 adds v88 first-frame stabilized dense suction with no horizontal seam
+//   - paletteMode 25 adds v89 persistent cyan core-breath spill for the 20s cut
 //
 // STUDY / NON-COMMERCIAL use only.
 // Ingredients: IQ cosine palette (MIT), Klüver form constant math (public).
@@ -447,6 +455,125 @@ vec3 v79Palette(float t) {
   return pow(clamp(col, 0.0, 1.0), vec3(0.90));
 }
 
+vec3 v80Palette(float t) {
+  float p = fract(t);
+  vec3 c0 = vec3(1.000, 0.945, 0.290); // lemon poster ink
+  vec3 c1 = vec3(1.000, 0.540, 0.105); // orange
+  vec3 c2 = vec3(1.000, 0.180, 0.455); // hot rose
+  vec3 c3 = vec3(0.895, 0.000, 0.980); // fuchsia
+  vec3 c4 = vec3(0.380, 0.000, 1.000); // violet
+  vec3 c5 = vec3(0.000, 0.250, 1.000); // electric blue
+  vec3 c6 = vec3(0.000, 0.890, 1.000); // cyan
+  vec3 c7 = vec3(0.350, 1.000, 0.205); // acid green
+  vec3 c8 = vec3(1.000, 0.975, 0.700); // cream highlight
+  float w0 = smoothPaletteWeight(p, 0.000, 0.170);
+  float w1 = smoothPaletteWeight(p, 0.105, 0.160);
+  float w2 = smoothPaletteWeight(p, 0.215, 0.165);
+  float w3 = smoothPaletteWeight(p, 0.330, 0.165);
+  float w4 = smoothPaletteWeight(p, 0.455, 0.170);
+  float w5 = smoothPaletteWeight(p, 0.585, 0.170);
+  float w6 = smoothPaletteWeight(p, 0.715, 0.165);
+  float w7 = smoothPaletteWeight(p, 0.845, 0.170);
+  float w8 = smoothPaletteWeight(p, 0.940, 0.150);
+  vec3 col = c0 * w0 + c1 * w1 + c2 * w2 + c3 * w3 + c4 * w4
+    + c5 * w5 + c6 * w6 + c7 * w7 + c8 * w8;
+  float sumW = max(w0 + w1 + w2 + w3 + w4 + w5 + w6 + w7 + w8, 0.0001);
+  col /= sumW;
+  vec3 paper = mix(c8, c0, 0.38);
+  col = mix(col, paper, 0.035 + 0.020 * sin(TAU * (p * 2.0 + 0.17)));
+  col.g = max(col.g, min(col.r, col.b) * 0.22);
+  return pow(clamp(col, 0.0, 1.0), vec3(0.88));
+}
+
+vec3 v81Palette(float t) {
+  float p = fract(t);
+  vec3 c0 = vec3(1.000, 0.965, 0.360); // lucid lemon
+  vec3 c1 = vec3(1.000, 0.610, 0.180); // clean orange
+  vec3 c2 = vec3(1.000, 0.255, 0.390); // coral red
+  vec3 c3 = vec3(0.980, 0.060, 0.820); // premium magenta
+  vec3 c4 = vec3(0.500, 0.040, 1.000); // ultraviolet
+  vec3 c5 = vec3(0.020, 0.165, 0.960); // saturated cobalt
+  vec3 c6 = vec3(0.000, 0.780, 1.000); // clean cyan
+  vec3 c7 = vec3(0.210, 1.000, 0.610); // mint acid
+  vec3 c8 = vec3(0.820, 1.000, 0.230); // chartreuse
+  vec3 c9 = vec3(1.000, 0.940, 0.720); // pearl paper
+  float w0 = smoothPaletteWeight(p, 0.000, 0.155);
+  float w1 = smoothPaletteWeight(p, 0.095, 0.150);
+  float w2 = smoothPaletteWeight(p, 0.205, 0.150);
+  float w3 = smoothPaletteWeight(p, 0.315, 0.155);
+  float w4 = smoothPaletteWeight(p, 0.440, 0.160);
+  float w5 = smoothPaletteWeight(p, 0.565, 0.165);
+  float w6 = smoothPaletteWeight(p, 0.690, 0.160);
+  float w7 = smoothPaletteWeight(p, 0.810, 0.155);
+  float w8 = smoothPaletteWeight(p, 0.905, 0.145);
+  float w9 = smoothPaletteWeight(p, 0.970, 0.130);
+  vec3 col = c0 * w0 + c1 * w1 + c2 * w2 + c3 * w3 + c4 * w4
+    + c5 * w5 + c6 * w6 + c7 * w7 + c8 * w8 + c9 * w9;
+  float sumW = max(w0 + w1 + w2 + w3 + w4 + w5 + w6 + w7 + w8 + w9, 0.0001);
+  col /= sumW;
+  vec3 pearl = mix(c9, c0, 0.34);
+  col = mix(col, pearl, 0.028 + 0.018 * sin(TAU * (p * 2.0 + 0.11)));
+  col.r *= 0.96;
+  col.g *= 1.02;
+  col.b *= 1.04;
+  return pow(clamp(col, 0.0, 1.0), vec3(0.92));
+}
+
+vec3 v82Palette(float t) {
+  float p = fract(t);
+  vec3 c0 = vec3(0.740, 1.000, 0.260); // acid lime
+  vec3 c1 = vec3(0.185, 1.000, 0.680); // mint
+  vec3 c2 = vec3(0.000, 0.860, 1.000); // cyan
+  vec3 c3 = vec3(0.050, 0.320, 1.000); // blue
+  vec3 c4 = vec3(0.420, 0.060, 1.000); // violet
+  vec3 c5 = vec3(0.960, 0.040, 0.900); // magenta
+  vec3 c6 = vec3(1.000, 0.330, 0.500); // rose
+  vec3 c7 = vec3(1.000, 0.680, 0.240); // amber
+  vec3 c8 = vec3(1.000, 0.955, 0.620); // pearled yellow
+  float w0 = smoothPaletteWeight(p, 0.000, 0.235);
+  float w1 = smoothPaletteWeight(p, 0.110, 0.235);
+  float w2 = smoothPaletteWeight(p, 0.235, 0.240);
+  float w3 = smoothPaletteWeight(p, 0.360, 0.240);
+  float w4 = smoothPaletteWeight(p, 0.485, 0.245);
+  float w5 = smoothPaletteWeight(p, 0.615, 0.245);
+  float w6 = smoothPaletteWeight(p, 0.745, 0.240);
+  float w7 = smoothPaletteWeight(p, 0.875, 0.235);
+  float w8 = smoothPaletteWeight(p, 0.955, 0.220);
+  vec3 col = c0 * w0 + c1 * w1 + c2 * w2 + c3 * w3 + c4 * w4
+    + c5 * w5 + c6 * w6 + c7 * w7 + c8 * w8;
+  float sumW = max(w0 + w1 + w2 + w3 + w4 + w5 + w6 + w7 + w8, 0.0001);
+  col /= sumW;
+  vec3 pearl = mix(c8, c2, 0.18);
+  col = mix(col, pearl, 0.020 + 0.012 * sin(TAU * (p * 2.0 + 0.08)));
+  col.r *= 0.94;
+  col.g *= 1.04;
+  col.b *= 1.03;
+  return pow(clamp(col, 0.0, 1.0), vec3(0.96));
+}
+
+vec3 v83Palette(float t) {
+  float p = fract(t);
+  vec3 c0 = vec3(0.000, 0.790, 0.900); // cyan
+  vec3 c1 = vec3(0.000, 0.300, 0.880); // electric blue
+  vec3 c2 = vec3(0.260, 0.020, 0.740); // deep violet
+  vec3 c3 = vec3(0.740, 0.000, 0.700); // magenta
+  vec3 c4 = vec3(0.060, 0.840, 0.520); // narrow green accent
+  float w0 = smoothPaletteWeight(p, 0.000, 0.310);
+  float w1 = smoothPaletteWeight(p, 0.210, 0.300);
+  float w2 = smoothPaletteWeight(p, 0.430, 0.305);
+  float w3 = smoothPaletteWeight(p, 0.650, 0.305);
+  float w4 = smoothPaletteWeight(p, 0.860, 0.285);
+  vec3 col = c0 * w0 + c1 * w1 + c2 * w2 + c3 * w3 + c4 * w4;
+  float sumW = max(w0 + w1 + w2 + w3 + w4, 0.0001);
+  col /= sumW;
+  vec3 deep = vec3(0.020, 0.000, 0.120);
+  col = mix(col, deep, 0.045 + 0.018 * sin(TAU * (p + 0.13)));
+  col.r *= 0.92;
+  col.g *= 0.98;
+  col.b *= 1.02;
+  return pow(clamp(col, 0.0, 0.94), vec3(0.98));
+}
+
 vec3 tunnelPalette(float t, int mode) {
   // Mode 0: Neon green/magenta/cyan (reference-matched)
   if (mode == 0) return refPalette(t);
@@ -495,7 +622,23 @@ vec3 tunnelPalette(float t, int mode) {
   // Mode 16: v78 continuous-gradient branch without palette stepping
   if (mode == 16) return v78Palette(t);
   // Mode 17: v79 reference-derived smooth prism branch
-  return v79Palette(t);
+  if (mode == 17) return v79Palette(t);
+  // Mode 18: v80 classic LSD poster branch
+  if (mode == 18) return v80Palette(t);
+  // Mode 19: v81 commercial trip master branch
+  if (mode == 19) return v81Palette(t);
+  // Mode 20: v82 smooth suction gradient branch
+  if (mode == 20) return v82Palette(t);
+  // Mode 21: v83 narrow no-white suction branch
+  if (mode == 21) return v83Palette(t);
+  // Mode 22: v84 dense suction branch keeps the v81 commercial palette
+  if (mode == 22) return v81Palette(t);
+  // Mode 23: v85 persistent center-anchor branch keeps the v81 palette
+  if (mode == 23) return v81Palette(t);
+  // Mode 24: v88 stabilized commercial dense suction branch
+  if (mode == 24) return v81Palette(t);
+  // Mode 25: v89 cyan core-breath branch keeps the v81 commercial palette
+  return v81Palette(t);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -518,17 +661,31 @@ void main() {
   float v77Mode = uPaletteMode == 15 ? 1.0 : 0.0;
   float v78Mode = uPaletteMode == 16 ? 1.0 : 0.0;
   float v79Mode = uPaletteMode == 17 ? 1.0 : 0.0;
-  float seamSafeMode = max(max(max(max(v75Mode, v76Mode), v77Mode), v78Mode), v79Mode);
-  float noCrossColorMode = max(max(max(max(max(max(max(v72Mode, v73Mode), v74Mode), v75Mode), v76Mode), v77Mode), v78Mode), v79Mode);
+  float v80Mode = uPaletteMode == 18 ? 1.0 : 0.0;
+  float v81Mode = uPaletteMode == 19 ? 1.0 : 0.0;
+  float v82Mode = uPaletteMode == 20 ? 1.0 : 0.0;
+  float v83Mode = uPaletteMode == 21 ? 1.0 : 0.0;
+  float v84Mode = uPaletteMode == 22 ? 1.0 : 0.0;
+  float v85Mode = uPaletteMode == 23 ? 1.0 : 0.0;
+  float v88Mode = uPaletteMode == 24 ? 1.0 : 0.0;
+  float v89Mode = uPaletteMode == 25 ? 1.0 : 0.0;
+  v88Mode = max(v88Mode, v89Mode);
+  v84Mode = max(v84Mode, max(v85Mode, v88Mode));
+  v81Mode = max(v81Mode, v84Mode);
+  float premiumTripMode = max(max(max(v80Mode, v81Mode), v82Mode), v83Mode);
+  float smoothPrismMode = max(v79Mode, premiumTripMode);
+  float seamSafeMode = max(max(max(max(v75Mode, v76Mode), v77Mode), v78Mode), smoothPrismMode);
+  float noCrossColorMode = max(max(max(max(max(max(max(v72Mode, v73Mode), v74Mode), v75Mode), v76Mode), v77Mode), v78Mode), smoothPrismMode);
   v70Mode = max(v70Mode, v71Mode);
   v69Mode = max(v69Mode, max(v70Mode, noCrossColorMode));
   v68Mode = max(v68Mode, v69Mode);
   v67Mode = max(v67Mode, v68Mode);
   float masterMode = max(v66Mode, v67Mode);
-  float tripMode = (uPaletteMode == 3 || uPaletteMode == 4 || uPaletteMode == 5 || uPaletteMode == 6 || uPaletteMode == 7 || uPaletteMode == 8 || uPaletteMode == 9 || uPaletteMode == 10 || uPaletteMode == 11 || uPaletteMode == 12 || uPaletteMode == 13 || uPaletteMode == 14 || uPaletteMode == 15 || uPaletteMode == 16 || uPaletteMode == 17) ? 1.0 : 0.0;
+  float tripMode = (uPaletteMode == 3 || uPaletteMode == 4 || uPaletteMode == 5 || uPaletteMode == 6 || uPaletteMode == 7 || uPaletteMode == 8 || uPaletteMode == 9 || uPaletteMode == 10 || uPaletteMode == 11 || uPaletteMode == 12 || uPaletteMode == 13 || uPaletteMode == 14 || uPaletteMode == 15 || uPaletteMode == 16 || uPaletteMode == 17 || uPaletteMode == 18 || uPaletteMode == 19 || uPaletteMode == 20 || uPaletteMode == 21 || uPaletteMode == 22 || uPaletteMode == 23 || uPaletteMode == 24 || uPaletteMode == 25) ? 1.0 : 0.0;
   float crossMute = 1.0 - noCrossColorMode;
   float macro = 0.5 + 0.5 * sin(TAU * t);
   float peak = smoothstep(0.18, 0.88, macro);
+  peak = mix(peak, max(peak, 0.96), v88Mode);
 
   // Screen coord, aspect-correct
   vec2 uv = (vUv - 0.5) * 2.0;
@@ -536,9 +693,12 @@ void main() {
 
   float r = length(uv);
   float theta = atan(uv.y, uv.x);
+  float v88AxisSoft = v88Mode * (1.0 - smoothstep(0.0, 0.042, abs(uv.y))) * smoothstep(0.05, 0.96, r);
+  float v88SeamCore = v88Mode * (1.0 - smoothstep(0.0, 0.016, abs(uv.y))) * smoothstep(0.12, 0.94, r);
+  float v88SeamSafeTheta = 0.16 * sin(theta) + 0.08 * sin(2.0 * theta);
   float baseR = r;
   float baseTheta = theta;
-  float v79VerticalCalm = v79Mode * smoothstep(0.42, 0.92, abs(uv.y)) * smoothstep(0.26, 0.98, r);
+  float v79VerticalCalm = smoothPrismMode * smoothstep(0.42, 0.92, abs(uv.y)) * smoothstep(0.26, 0.98, r);
   float preLog = log(max(r, 1e-6));
   float tripBreath = 0.5 + 0.5 * sin(TAU * t * 2.0);
   float eyePulse = 0.5 + 0.5 * sin(TAU * (t * 2.0 + 0.08));
@@ -575,11 +735,40 @@ void main() {
     0.034 * sin(TAU * (r * 4.0 + t * 2.0))
   );
   r *= 1.0 + v78Mode * 0.040 * sin(TAU * (preLog * 0.82 + t * 3.0)) * smoothstep(0.06, 0.94, r);
-  theta += v79Mode * smoothstep(0.03, 0.78, r) * (
+  theta += smoothPrismMode * smoothstep(0.03, 0.78, r) * (
     0.070 * sin(TAU * (preLog * 0.50 - t * 3.0)) +
     0.026 * sin(TAU * (r * 3.0 + t * 2.0))
   );
-  r *= 1.0 + v79Mode * 0.030 * sin(TAU * (preLog * 0.72 + t * 3.0)) * smoothstep(0.04, 0.78, r);
+  r *= 1.0 + smoothPrismMode * 0.030 * sin(TAU * (preLog * 0.72 + t * 3.0)) * smoothstep(0.04, 0.78, r);
+  theta += premiumTripMode * smoothstep(0.05, 0.86, r) * (
+    0.040 * sin(TAU * (preLog * 0.42 + theta / TAU * 2.0 + t * 2.0)) +
+    0.022 * sin(TAU * (r * 4.0 - t * 2.0))
+  );
+  float premiumRadialTheta = mix(theta / TAU * 1.5, v88SeamSafeTheta, v88Mode);
+  r *= 1.0 + premiumTripMode * 0.016 * sin(TAU * (preLog * 0.64 - t * 2.0 + premiumRadialTheta)) * smoothstep(0.06, 0.84, r);
+  theta += v81Mode * smoothstep(0.04, 0.82, r) * (
+    0.024 * sin(TAU * (preLog * 0.78 - t * 4.0 + theta / TAU * 1.0)) +
+    0.016 * sin(TAU * (r * 5.0 + t * 3.0))
+  );
+  r *= 1.0 + v81Mode * 0.010 * sin(TAU * (preLog * 0.92 + t * 4.0)) * smoothstep(0.04, 0.82, r);
+  theta += v82Mode * smoothstep(0.025, 0.84, r) * (
+    0.018 * sin(TAU * (preLog * 0.54 - t * 3.0)) +
+    0.010 * sin(TAU * (r * 3.5 + t * 2.0))
+  );
+  r *= 1.0 + v82Mode * 0.006 * sin(TAU * (preLog * 0.70 + t * 3.0)) * smoothstep(0.04, 0.82, r);
+  theta += v83Mode * smoothstep(0.020, 0.86, r) * (
+    0.030 * sin(TAU * (preLog * 0.44 - t * 3.0)) +
+    0.014 * sin(TAU * (r * 3.0 + t * 2.0))
+  );
+  r *= 1.0 + v83Mode * 0.005 * sin(TAU * (preLog * 0.58 + t * 3.0)) * smoothstep(0.035, 0.82, r);
+  float v84ThetaTerm = mix(theta / TAU * 0.8, v88SeamSafeTheta, v88Mode);
+  theta += v84Mode * smoothstep(0.018, 0.88, r) * (
+    0.034 * sin(TAU * (preLog * 0.56 - t * 3.6 + v84ThetaTerm)) +
+    0.012 * sin(TAU * (r * 4.0 + t * 2.0))
+  );
+  r *= 1.0 + v84Mode * 0.006 * sin(TAU * (preLog * 0.74 + t * 3.8)) * smoothstep(0.030, 0.84, r);
+  theta = mix(theta, baseTheta, 0.62 * v88AxisSoft);
+  r = mix(r, baseR, 0.46 * v88AxisSoft);
   theta = mix(theta, baseTheta, 0.74 * v79VerticalCalm);
   r = mix(r, baseR, 0.58 * v79VerticalCalm);
 
@@ -629,6 +818,30 @@ void main() {
   smear = mix(smear, 0.5, 0.62 * v79VerticalCalm);
   stitch = mix(stitch, 0.5, 0.42 * v79VerticalCalm);
   dream = mix(dream, 0.5, 0.46 * v79VerticalCalm);
+  float v82FluidCalm = v82Mode * smoothstep(0.035, 0.96, r);
+  rough = mix(rough, 0.5, 0.22 * v82FluidCalm);
+  grain = mix(grain, 0.5, 0.26 * v82FluidCalm);
+  brush = mix(brush, 0.5, 0.34 * v82FluidCalm);
+  chunk = mix(chunk, 0.5, 0.40 * v82FluidCalm);
+  smear = mix(smear, 0.5, 0.42 * v82FluidCalm);
+  stitch = mix(stitch, 0.5, 0.36 * v82FluidCalm);
+  dream = mix(dream, 0.5, 0.30 * v82FluidCalm);
+  float v83FluidCalm = v83Mode * smoothstep(0.030, 0.98, r);
+  rough = mix(rough, 0.5, 0.34 * v83FluidCalm);
+  grain = mix(grain, 0.5, 0.40 * v83FluidCalm);
+  brush = mix(brush, 0.5, 0.48 * v83FluidCalm);
+  chunk = mix(chunk, 0.5, 0.56 * v83FluidCalm);
+  smear = mix(smear, 0.5, 0.58 * v83FluidCalm);
+  stitch = mix(stitch, 0.5, 0.48 * v83FluidCalm);
+  dream = mix(dream, 0.5, 0.42 * v83FluidCalm);
+  float v84FluidCalm = v84Mode * smoothstep(0.030, 0.98, r);
+  rough = mix(rough, 0.5, 0.18 * v84FluidCalm);
+  grain = mix(grain, 0.5, 0.22 * v84FluidCalm);
+  brush = mix(brush, 0.5, 0.28 * v84FluidCalm);
+  chunk = mix(chunk, 0.5, 0.32 * v84FluidCalm);
+  smear = mix(smear, 0.5, 0.34 * v84FluidCalm);
+  stitch = mix(stitch, 0.5, 0.24 * v84FluidCalm);
+  dream = mix(dream, 0.5, 0.22 * v84FluidCalm);
 
   float wavePrimary = (tri(theta01 * 32.0 + t * 2.0 + (rough - 0.5) * 0.35) - 0.5) * 0.032;
   float waveSecondary = (tri(theta01 * 16.0 - t * 2.0 + u) - 0.5) * 0.024;
@@ -654,8 +867,12 @@ void main() {
     0.014 * (tri(theta01 * max(uSymmetry, 6.0) * 2.35 - u * 1.8 + t * 7.0) - 0.5)
   ) * smoothstep(0.08, 0.94, r);
   wave *= 1.0 - 0.68 * v79VerticalCalm;
+  wave *= 1.0 - 0.28 * v82FluidCalm;
+  wave *= 1.0 - 0.40 * v83FluidCalm;
+  wave *= 1.0 - 0.16 * v84FluidCalm;
   // Subtle global pulse, one cycle per loop.
-  wave *= 1.0 + 0.20 * cos(time);
+  wave *= mix(1.0 + 0.20 * cos(time), 1.0 + 0.04 * cos(time), v88Mode);
+  wave *= 1.0 - 0.42 * v88AxisSoft;
   float u_wavy = u + wave;
 
   // ─── RING PATTERN ───────────────────────────────────────────────────
@@ -672,7 +889,15 @@ void main() {
     * (0.24 + 0.76 * radialOuter);
   ringCoord += v71Mode * 0.090 * sin(TAU * (u * 1.85 - theta01 * 12.0 + t * 9.0 + dream * 0.42))
     * (0.20 + 0.80 * radialOuter);
+  ringCoord += v84Mode * (
+    0.030 * sin(TAU * (u * 0.36 - t * 2.0)) +
+    0.018 * sin(TAU * (theta01 * 2.0 + u * 0.18 - t * 1.0))
+  ) * smoothstep(0.025, 0.92, r);
   ringCoord = mix(ringCoord, v79CalmRingCoord, 0.72 * v79VerticalCalm);
+  ringCoord = mix(ringCoord, v79CalmRingCoord, v82Mode * (0.18 + 0.26 * smoothstep(0.04, 0.86, r)));
+  ringCoord = mix(ringCoord, v79CalmRingCoord, v83Mode * (0.32 + 0.36 * smoothstep(0.035, 0.90, r)));
+  ringCoord = mix(ringCoord, v79CalmRingCoord, v84Mode * (0.10 + 0.12 * smoothstep(0.035, 0.90, r)));
+  ringCoord = mix(ringCoord, v79CalmRingCoord, 0.68 * v88AxisSoft);
   float ringCell = fract(ringCoord);
   float ringWave = 0.5 + 0.5 * cos(TAU * ringCoord);
   float dCyan = cellDist(ringCell, 0.22 + (rough - 0.5) * 0.040);
@@ -695,6 +920,35 @@ void main() {
     * smoothstep(0.06, 0.90, r);
   ghostRing *= mix(1.0, mix(0.62 + 0.62 * peak, 0.54 + 0.56 * peak, v67Mode), masterMode);
   spoke *= mix(1.0, mix(0.48 + 0.78 * peak, 0.62 + 0.62 * peak, v67Mode), masterMode);
+  cyanBand *= mix(1.0, 0.72, v82Mode);
+  greenBand *= mix(1.0, 0.70, v82Mode);
+  blueBand *= mix(1.0, 0.56, v82Mode);
+  magBand *= mix(1.0, 0.54, v82Mode);
+  thinLine *= mix(1.0, 0.08, v82Mode);
+  ghostRing *= mix(1.0, 0.54, v82Mode);
+  depthGhost *= mix(1.0, 0.48, v82Mode);
+  counterSpoke *= mix(1.0, 0.36, v82Mode);
+  cyanBand *= mix(1.0, 0.66, v83Mode);
+  greenBand *= mix(1.0, 0.58, v83Mode);
+  blueBand *= mix(1.0, 0.50, v83Mode);
+  magBand *= mix(1.0, 0.50, v83Mode);
+  thinLine *= mix(1.0, 0.045, v83Mode);
+  ghostRing *= mix(1.0, 0.42, v83Mode);
+  depthGhost *= mix(1.0, 0.36, v83Mode);
+  counterSpoke *= mix(1.0, 0.30, v83Mode);
+  cyanBand *= mix(1.0, 1.04, v84Mode);
+  greenBand *= mix(1.0, 0.96, v84Mode);
+  blueBand *= mix(1.0, 0.96, v84Mode);
+  magBand *= mix(1.0, 1.00, v84Mode);
+  thinLine *= mix(1.0, 1.35, v84Mode);
+  ghostRing *= mix(1.0, 0.76, v84Mode);
+  depthGhost *= mix(1.0, 0.70, v84Mode);
+  counterSpoke *= mix(1.0, 0.44, v84Mode);
+  float v88AxisLineMute = clamp(0.52 * v88AxisSoft + 0.36 * v88SeamCore, 0.0, 1.0);
+  thinLine *= 1.0 - 0.68 * v88AxisLineMute;
+  ghostRing *= 1.0 - 0.42 * v88AxisLineMute;
+  depthGhost *= 1.0 - 0.46 * v88AxisLineMute;
+  counterSpoke *= 1.0 - 0.42 * v88AxisLineMute;
 
   // Edge-only chatter. This keeps the MASTERPIECE rule: intensity without
   // muddy noise, because noise roughens structure instead of replacing it.
@@ -728,7 +982,14 @@ void main() {
   float spokeColor = spoke * crossMute;
   float counterSpokeColor = counterSpoke * crossMute;
   float hotBand = clamp(cyanBand + blueBand + magBand + greenBand + thinLine * 0.22 + ghostRing * 0.30 + spokeColor * 0.18 + depthGhost * 0.22 + counterSpokeColor * 0.16, 0.0, 1.0);
+  hotBand = mix(hotBand, clamp(hotBand + 0.24 + 0.12 * radialOuter, 0.0, 1.0), v82Mode);
+  hotBand = mix(hotBand, clamp(hotBand + 0.30 + 0.14 * radialOuter, 0.0, 1.0), v83Mode);
+  hotBand = mix(hotBand, clamp(hotBand + 0.12 + 0.10 * radialOuter, 0.0, 1.0), v84Mode);
   float darkGap = pow(1.0 - hotBand, 1.45);
+  darkGap *= mix(1.0, 0.26, v82Mode);
+  darkGap *= mix(1.0, 0.18, v83Mode);
+  darkGap *= mix(1.0, 0.52, v84Mode);
+  darkGap *= 1.0 - 0.82 * v88AxisLineMute;
   float edgeBoost = edgeMask * (0.34 + 0.38 * grain + 0.26 * tear);
   float phosphene = tripMode * smoothstep(0.50, 0.92, dream + stitch * 0.25) * (0.34 + 0.66 * edgeMask);
 
@@ -839,6 +1100,38 @@ void main() {
   vec3 v79GradeCol = v79Palette(v79Flow);
   vec3 v79AccentCol = v79Palette(v79Flow + 0.095);
   vec3 v79UnifiedCol = mix(v79GradeCol, v79AccentCol, 0.14 + 0.10 * v79Depth);
+  float v80Depth = pow(1.0 - smoothstep(0.018, 1.0, r), 0.60);
+  float v80PosterWave = 0.5 + 0.5 * sin(TAU * (theta01 * 2.0 + v80Depth * 0.82 + t * 2.0));
+  float v80Flow = t + v80Depth * 0.80
+    + 0.028 * sin(TAU * (t + v80Depth * 0.44))
+    + 0.016 * sin(TAU * (t * 2.0 - theta01 * 3.0));
+  vec3 v80GradeCol = v80Palette(v80Flow + 0.035 * v80PosterWave);
+  vec3 v80AccentCol = v80Palette(v80Flow + 0.125 + 0.018 * ringWave);
+  vec3 v80UnifiedCol = mix(v80GradeCol, v80AccentCol, 0.20 + 0.12 * v80Depth);
+  float v81Depth = pow(1.0 - smoothstep(0.016, 1.0, r), 0.58);
+  float v81PosterWave = 0.5 + 0.5 * sin(TAU * (theta01 * 2.0 + v81Depth * 0.76 + t * 2.0));
+  float v81Flow = t + v81Depth * 0.86
+    + 0.022 * sin(TAU * (t + v81Depth * 0.42))
+    + 0.012 * sin(TAU * (t * 2.0 - theta01 * 2.0));
+  float v88StableFlow = 0.25 + 0.090 * sin(TAU * t) + v81Depth * 0.86
+    + 0.018 * sin(TAU * (t + v81Depth * 0.42))
+    + 0.006 * sin(TAU * (t * 2.0 - theta01 * 2.0));
+  v81Flow = mix(v81Flow, v88StableFlow, v88Mode);
+  vec3 v81GradeCol = v81Palette(v81Flow + 0.026 * v81PosterWave);
+  vec3 v81AccentCol = v81Palette(v81Flow + 0.112 + 0.012 * ringWave);
+  vec3 v81UnifiedCol = mix(v81GradeCol, v81AccentCol, 0.18 + 0.10 * v81Depth);
+  float v82Depth = pow(1.0 - smoothstep(0.012, 1.02, r), 0.50);
+  float v82Flow = t + v82Depth * 1.08
+    + 0.014 * sin(TAU * (t + v82Depth * 0.36));
+  vec3 v82GradeCol = v82Palette(v82Flow);
+  vec3 v82AccentCol = v82Palette(v82Flow + 0.060 + 0.004 * ringWave);
+  vec3 v82UnifiedCol = mix(v82GradeCol, v82AccentCol, 0.11 + 0.08 * v82Depth);
+  float v83Depth = pow(1.0 - smoothstep(0.010, 1.04, r), 0.46);
+  float v83Flow = t + v83Depth * 1.26
+    + 0.010 * sin(TAU * (t + v83Depth * 0.32));
+  vec3 v83GradeCol = v83Palette(v83Flow);
+  vec3 v83AccentCol = v83Palette(v83Flow + 0.045 + 0.003 * ringWave);
+  vec3 v83UnifiedCol = mix(v83GradeCol, v83AccentCol, 0.10 + 0.06 * v83Depth);
   cyanCol = mix(cyanCol, v78Palette(v78Flow + 0.000), v78Mode);
   greenCol = mix(greenCol, v78Palette(v78Flow + 0.045), v78Mode);
   blueCol = mix(blueCol, v78Palette(v78Flow + 0.090), v78Mode);
@@ -849,6 +1142,26 @@ void main() {
   blueCol = mix(blueCol, v79Palette(v79Flow + 0.285), v79Mode);
   magCol = mix(magCol, v79Palette(v79Flow + 0.565), v79Mode);
   violetCol = mix(violetCol, v79Palette(v79Flow + 0.455), v79Mode);
+  cyanCol = mix(cyanCol, v80Palette(v80Flow + 0.700), v80Mode);
+  greenCol = mix(greenCol, v80Palette(v80Flow + 0.850), v80Mode);
+  blueCol = mix(blueCol, v80Palette(v80Flow + 0.560), v80Mode);
+  magCol = mix(magCol, v80Palette(v80Flow + 0.300), v80Mode);
+  violetCol = mix(violetCol, v80Palette(v80Flow + 0.430), v80Mode);
+  cyanCol = mix(cyanCol, v81Palette(v81Flow + 0.685), v81Mode);
+  greenCol = mix(greenCol, v81Palette(v81Flow + 0.820), v81Mode);
+  blueCol = mix(blueCol, v81Palette(v81Flow + 0.550), v81Mode);
+  magCol = mix(magCol, v81Palette(v81Flow + 0.315), v81Mode);
+  violetCol = mix(violetCol, v81Palette(v81Flow + 0.440), v81Mode);
+  cyanCol = mix(cyanCol, v82Palette(v82Flow + 0.015), v82Mode);
+  greenCol = mix(greenCol, v82Palette(v82Flow + 0.055), v82Mode);
+  blueCol = mix(blueCol, v82Palette(v82Flow + 0.105), v82Mode);
+  magCol = mix(magCol, v82Palette(v82Flow + 0.155), v82Mode);
+  violetCol = mix(violetCol, v82Palette(v82Flow + 0.205), v82Mode);
+  cyanCol = mix(cyanCol, v83Palette(v83Flow + 0.010), v83Mode);
+  greenCol = mix(greenCol, v83Palette(v83Flow + 0.035), v83Mode);
+  blueCol = mix(blueCol, v83Palette(v83Flow + 0.065), v83Mode);
+  magCol = mix(magCol, v83Palette(v83Flow + 0.095), v83Mode);
+  violetCol = mix(violetCol, v83Palette(v83Flow + 0.125), v83Mode);
   vec3 rainbowA = tunnelPalette(palPhase + dream * 0.28 + t * 1.5, uPaletteMode);
   vec3 rainbowB = tunnelPalette(palPhase + 0.37 + ringCoord * 0.05 - t * 2.0, uPaletteMode);
   rainbowA = mix(rainbowA, rainbowA.gbr, tripMode * 0.18);
@@ -861,6 +1174,14 @@ void main() {
   rainbowB.gb *= mix(vec2(1.0), mix(vec2(1.06, 1.10), mix(vec2(1.10, 1.18), vec2(1.13, 1.22), v67Mode), masterMode), tripMode);
   rainbowA = mix(rainbowA, v79Palette(v79Flow + 0.180 + dream * 0.045), v79Mode);
   rainbowB = mix(rainbowB, v79Palette(v79Flow + 0.505 + ringWave * 0.018), v79Mode);
+  rainbowA = mix(rainbowA, v80Palette(v80Flow + 0.240 + dream * 0.055), v80Mode);
+  rainbowB = mix(rainbowB, v80Palette(v80Flow + 0.610 + ringWave * 0.022), v80Mode);
+  rainbowA = mix(rainbowA, v81Palette(v81Flow + 0.220 + dream * 0.045), v81Mode);
+  rainbowB = mix(rainbowB, v81Palette(v81Flow + 0.590 + ringWave * 0.016), v81Mode);
+  rainbowA = mix(rainbowA, v82Palette(v82Flow + 0.040 + dream * 0.018), v82Mode);
+  rainbowB = mix(rainbowB, v82Palette(v82Flow + 0.125 + ringWave * 0.006), v82Mode);
+  rainbowA = mix(rainbowA, v83Palette(v83Flow + 0.025 + dream * 0.012), v83Mode);
+  rainbowB = mix(rainbowB, v83Palette(v83Flow + 0.080 + ringWave * 0.004), v83Mode);
 
   // Mix layers: saturated bands, electric transition edges, colored gaps.
   vec3 col = (vec3(0.000, 0.054, 0.035) + blueCol * 0.030 + violetCol * 0.020) * (0.62 + 0.62 * rough);
@@ -871,6 +1192,18 @@ void main() {
   vec3 v79InkCol = mix(vec3(0.043, 0.004, 0.220), vec3(0.106, 0.016, 0.518), 0.55 + 0.45 * sin(TAU * (v79Flow + 0.19)));
   vec3 v79ShadowCol = mix(v79InkCol, v79UnifiedCol, 0.62);
   col = mix(col, max(col, v79ShadowCol * (0.38 + 0.18 * radialOuter)), v79Mode);
+  vec3 v80InkCol = mix(vec3(0.090, 0.000, 0.220), vec3(0.360, 0.000, 0.360), 0.50 + 0.50 * sin(TAU * (v80Flow + 0.21)));
+  vec3 v80ShadowCol = mix(v80InkCol, v80UnifiedCol, 0.66);
+  col = mix(col, max(col, v80ShadowCol * (0.40 + 0.20 * radialOuter)), v80Mode);
+  vec3 v81InkCol = mix(vec3(0.045, 0.000, 0.180), vec3(0.190, 0.000, 0.330), 0.50 + 0.50 * sin(TAU * (v81Flow + 0.21)));
+  vec3 v81ShadowCol = mix(v81InkCol, v81UnifiedCol, 0.64);
+  col = mix(col, max(col, v81ShadowCol * (0.38 + 0.18 * radialOuter)), v81Mode);
+  vec3 v82InkCol = mix(vec3(0.080, 0.028, 0.245), vec3(0.160, 0.060, 0.360), 0.50 + 0.50 * sin(TAU * (v82Flow + 0.18)));
+  vec3 v82ShadowCol = mix(v82InkCol, v82UnifiedCol, 0.88);
+  col = mix(col, max(col, v82ShadowCol * (0.36 + 0.16 * radialOuter)), v82Mode);
+  vec3 v83InkCol = mix(vec3(0.020, 0.000, 0.120), vec3(0.060, 0.010, 0.220), 0.50 + 0.50 * sin(TAU * (v83Flow + 0.18)));
+  vec3 v83ShadowCol = mix(v83InkCol, v83UnifiedCol, 0.86);
+  col = mix(col, max(col, v83ShadowCol * (0.36 + 0.16 * radialOuter)), v83Mode);
   col += cyanCol * cyanBand * mix(1.12, 1.20, v67Mode);
   col += greenCol * greenBand * mix(0.82, 0.96, v67Mode);
   col += blueCol * blueBand * mix(0.36, 0.32, v67Mode);
@@ -883,9 +1216,17 @@ void main() {
   col *= mix(1.0 - 0.105 * darkGap, 1.0 - 0.020 * darkGap, v77Mode);
   col *= mix(1.0, 1.0 - 0.012 * darkGap, v78Mode);
   col *= mix(1.0, 1.0 - 0.010 * darkGap * edgeMask, v79Mode);
+  col *= mix(1.0, 1.0 - 0.008 * darkGap * edgeMask, v80Mode);
+  col *= mix(1.0, 1.0 - 0.012 * darkGap * edgeMask, v81Mode);
+  col *= mix(1.0, 1.0 - 0.006 * darkGap * edgeMask, v82Mode);
+  col *= mix(1.0, 1.0 - 0.004 * darkGap * edgeMask, v83Mode);
   col = mix(col, max(col, v77ShadowCol * (0.14 + 0.10 * darkGap)), v77Mode);
   col = mix(col, max(col, v78ShadowCol * (0.36 + 0.18 * darkGap)), v78Mode);
   col = mix(col, max(col, v79ShadowCol * (0.34 + 0.18 * darkGap * edgeMask)), v79Mode);
+  col = mix(col, max(col, v80ShadowCol * (0.36 + 0.20 * darkGap * edgeMask)), v80Mode);
+  col = mix(col, max(col, v81ShadowCol * (0.34 + 0.16 * darkGap * edgeMask)), v81Mode);
+  col = mix(col, max(col, v82ShadowCol * (0.38 + 0.12 * darkGap * edgeMask)), v82Mode);
+  col = mix(col, max(col, v83ShadowCol * (0.42 + 0.10 * darkGap * edgeMask)), v83Mode);
   col += vec3(0.0, 0.090, 0.050) * hotBand * (0.35 + 0.28 * rough);
   col += (cyanCol * 0.070 + greenCol * 0.060 + blueCol * 0.030) * (1.0 - hotBand) * (0.30 + 0.52 * rough);
   col += cyanCol * smoothstep(0.62, 0.90, brush + rough * 0.25 + tear * 0.12) * outerMask * 0.14;
@@ -978,6 +1319,10 @@ void main() {
   pupilCol = mix(pupilCol, vec3(0.54, 0.00, 0.80), v77Mode);
   pupilCol = mix(pupilCol, v78Palette(v78Flow + 0.24) * 0.56, v78Mode);
   pupilCol = mix(pupilCol, mix(v79InkCol, v79Palette(v79Flow + 0.48), 0.22), v79Mode);
+  pupilCol = mix(pupilCol, mix(v80InkCol, v80Palette(v80Flow + 0.46), 0.24), v80Mode);
+  pupilCol = mix(pupilCol, mix(v81InkCol, v81Palette(v81Flow + 0.46), 0.20), v81Mode);
+  pupilCol = mix(pupilCol, mix(v82InkCol, v82Palette(v82Flow + 0.08), 0.16), v82Mode);
+  pupilCol = mix(pupilCol, mix(v83InkCol, v83Palette(v83Flow + 0.06), 0.12), v83Mode);
   float coreOuter = mix(0.078, mix(0.066, 0.058, v67Mode), masterMode);
   float pupilOuter = mix(0.026, mix(0.022, 0.019, v67Mode), masterMode);
   float coreMask = 1.0 - smoothstep(0.016, coreOuter, r);
@@ -992,6 +1337,26 @@ void main() {
   col += mix(cyanCol, violetCol, 0.36 + 0.16 * eyePulse) * outerIrisRing * 0.28;
   col += tripMode * tunnelPalette(theta01 * 2.0 + u_wavy * 0.4 + t * 2.0, uPaletteMode)
     * pow(1.0 - smoothstep(0.0, 0.36, r), 2.0) * mix(0.024, mix(0.014, 0.010, v67Mode), masterMode);
+  float v89CoreHalo = smoothstep(0.036, 0.080, r) * (1.0 - smoothstep(0.205, 0.330, r));
+  float v89InnerMist = pow(1.0 - smoothstep(0.035, 0.310, r), 1.55);
+  float v89OutwardBreath = pow(0.5 + 0.5 * sin(TAU * (t * 4.0 - r * 1.18 + 0.10)), 2.2);
+  float v89AlwaysOn = 0.42 + 0.58 * v89OutwardBreath;
+  float v89RingCarry = 0.66 + 0.34 * ringWave;
+  float v89CoreBreath = v89Mode * clamp(v89CoreHalo * v89AlwaysOn * v89RingCarry + v89InnerMist * 0.13, 0.0, 1.0);
+  float v89ColorPhase = v81Flow + 0.18 * sin(TAU * (t * 3.0 + v81Depth * 0.42)) + ringWave * 0.020;
+  vec3 v89BreathCol = v81Palette(v89ColorPhase + 0.36);
+  vec3 v89CoolCycle = mix(
+    mix(vec3(0.00, 0.98, 0.86), vec3(0.14, 1.00, 0.30), 0.5 + 0.5 * sin(TAU * (t * 2.0 + 0.08))),
+    mix(vec3(0.00, 0.44, 1.00), vec3(0.30, 0.00, 1.00), 0.5 + 0.5 * sin(TAU * (t * 3.0 + 0.31))),
+    0.5 + 0.5 * sin(TAU * (t * 4.0 - r * 0.82 + 0.22))
+  );
+  v89BreathCol = mix(v89BreathCol, v89CoolCycle, 0.62);
+  v89BreathCol.r *= 0.58;
+  v89BreathCol.g = max(v89BreathCol.g, v89BreathCol.b * 0.34);
+  v89BreathCol.b = max(v89BreathCol.b, v89BreathCol.g * 0.48);
+  col = mix(col, max(col, v89BreathCol * max(dot(col, vec3(0.299, 0.587, 0.114)), 0.36)), v89CoreBreath * 0.38);
+  col += v89BreathCol * v89CoreBreath * (0.11 + 0.10 * smoothstep(0.040, 0.150, r));
+  col.r *= 1.0 - 0.11 * v89CoreBreath;
   col += v69Mode * mix(cyanCol, blueCol, 0.65) * pow(1.0 - smoothstep(0.0, 0.62, r), 3.0)
     * (0.030 + 0.020 * dizzyPulse);
   col += v70Mode * mix(violetCol, magCol, 0.62) * pow(1.0 - smoothstep(0.0, 0.58, r), 3.0)
@@ -1002,6 +1367,17 @@ void main() {
     * (0.020 + 0.016 * psychPulse);
   col += v73Mode * dramaticCascadeCol * pow(1.0 - smoothstep(0.0, 0.56, r), 2.6)
     * (0.060 + 0.040 * psychPulse);
+  float v85CenterMask = v85Mode * smoothstep(0.030, 0.070, r) * (1.0 - smoothstep(0.500, 0.740, r));
+  float v85RoundCoord = ringCoord + 0.008 * sin(TAU * (theta01 * uSymmetry * 0.18 + t * 0.5));
+  float v85FlowLine = pow(1.0 - abs(cos(TAU * v85RoundCoord)), 13.0);
+  float v85CoreAnchor = 1.0 - smoothstep(0.0, 0.014, abs(r - (0.090 + (grain - 0.5) * 0.004)));
+  float v85AnchorA = 1.0 - smoothstep(0.0, 0.018, abs(r - (0.165 + (rough - 0.5) * 0.008)));
+  float v85AnchorB = 1.0 - smoothstep(0.0, 0.020, abs(r - (0.285 + (smear - 0.5) * 0.010)));
+  float v85AnchorC = 1.0 - smoothstep(0.0, 0.021, abs(r - (0.400 + (brush - 0.5) * 0.012)));
+  float v85CenterInk = clamp(max(max(v85FlowLine * 0.82, v85CoreAnchor), max(v85AnchorA, max(v85AnchorB * 0.94, v85AnchorC * 0.82))) * v85CenterMask, 0.0, 1.0);
+  vec3 v85InkCol = vec3(0.006, 0.000, 0.026);
+  col = mix(col, v85InkCol, v85CenterInk * 0.94);
+  col *= 1.0 - v85CenterInk * 0.14;
 
   // Mid-zone brightness boost (keeps whole frame full-color, no black void)
   float midBoost = smoothstep(0.08, 0.35, r) * (1.0 - smoothstep(0.35, 0.9, r));
@@ -1011,6 +1387,11 @@ void main() {
   col *= 1.0 + v70Mode * pow(1.0 - smoothstep(0.03, 0.88, r), 2.4) * 0.08;
   col *= 1.0 + v78Mode * pow(1.0 - smoothstep(0.02, 0.90, r), 2.0) * 0.18;
   col *= 1.0 + v79Mode * pow(1.0 - smoothstep(0.018, 0.84, r), 2.1) * 0.24;
+  col *= 1.0 + v80Mode * pow(1.0 - smoothstep(0.018, 0.84, r), 2.0) * 0.22;
+  col *= 1.0 + v81Mode * pow(1.0 - smoothstep(0.018, 0.82, r), 2.05) * 0.18;
+  col *= 1.0 + v82Mode * pow(1.0 - smoothstep(0.014, 0.84, r), 2.18) * 0.26;
+  col *= 1.0 + v83Mode * pow(1.0 - smoothstep(0.010, 0.86, r), 2.35) * 0.34;
+  col *= 1.0 + v84Mode * pow(1.0 - smoothstep(0.012, 0.86, r), 2.30) * 0.20;
 
   // ─── Saturation + contrast ──────────────────────────────────────────
   float lum = dot(col, vec3(0.299, 0.587, 0.114));
@@ -1026,6 +1407,11 @@ void main() {
   sat = mix(sat, 1.96, v77Mode);
   sat = mix(sat, 1.62, v78Mode);
   sat = mix(sat, 1.86, v79Mode);
+  sat = mix(sat, 1.90, v80Mode);
+  sat = mix(sat, 1.72, v81Mode);
+  sat = mix(sat, 1.44, v82Mode);
+  sat = mix(sat, 1.36, v83Mode);
+  sat = mix(sat, 1.76, v84Mode);
   col = mix(vec3(lum), col, sat);
 
   // Mild S-curve (already vivid — don't crush)
@@ -1147,7 +1533,128 @@ void main() {
   vec3 v79CalmCol = v79Palette(v79Flow + 0.060 + ringWave * 0.006);
   float v79CalmLum = max(dot(v79CalmCol, vec3(0.299, 0.587, 0.114)), 0.001);
   vec3 v79CalmGrade = v79CalmCol * (max(v79LiftedLum, 0.50) / v79CalmLum);
-  col = mix(col, mix(vec3(max(v79LiftedLum, 0.50)), v79CalmGrade, 1.08), 0.42 * v79VerticalCalm);
+  col = mix(col, mix(vec3(max(v79LiftedLum, 0.50)), v79CalmGrade, 1.08), 0.42 * v79VerticalCalm * v79Mode);
+  float v80Lum = max(dot(col, vec3(0.299, 0.587, 0.114)), 0.001);
+  float v80RibbonPhase = v80Flow + ringWave * 0.018
+    + 0.020 * sin(TAU * (theta01 * 2.0 + t * 2.0 + v80Depth * 0.60));
+  vec3 v80RibbonCol = v80Palette(v80RibbonPhase);
+  float v80RibbonLum = max(dot(v80RibbonCol, vec3(0.299, 0.587, 0.114)), 0.001);
+  float v80LiftedLum = mix(v80Lum, max(v80Lum, 0.56), 0.72);
+  vec3 v80ColorGrade = v80RibbonCol * (v80LiftedLum / v80RibbonLum);
+  vec3 v80PosterGrade = mix(vec3(v80LiftedLum), v80ColorGrade, 1.30);
+  col = mix(col, v80PosterGrade, v80Mode * (0.88 + 0.08 * v80Depth));
+  float v80LineContrast = v80Mode * pow(darkGap, 1.62) * (0.24 + 0.76 * edgeMask) * (0.32 + 0.68 * thinLine);
+  col = mix(col, mix(v80InkCol, v80RibbonCol, 0.32) * max(v80LiftedLum, 0.24), v80LineContrast * 0.34);
+  float v80PostLum = dot(col, vec3(0.299, 0.587, 0.114));
+  float v80WideDark = v80Mode * (1.0 - smoothstep(0.28, 0.54, v80PostLum)) * (1.0 - edgeMask * 0.68);
+  col = mix(col, max(col, v80RibbonCol * 0.50), v80WideDark * 0.70);
+  float v80WarmPlate = v80Mode
+    * smoothstep(0.12, 0.36, col.r - max(col.g, col.b))
+    * smoothstep(0.08, 0.94, r);
+  vec3 v80RoseGuard = vec3(col.r, max(col.g, col.r * 0.30), max(col.b, col.r * 0.60));
+  col = mix(col, v80RoseGuard, v80WarmPlate * 0.30);
+  vec3 v80CalmCol = v80Palette(v80Flow + 0.070 + ringWave * 0.008);
+  float v80CalmLum = max(dot(v80CalmCol, vec3(0.299, 0.587, 0.114)), 0.001);
+  vec3 v80CalmGrade = v80CalmCol * (max(v80LiftedLum, 0.52) / v80CalmLum);
+  col = mix(col, mix(vec3(max(v80LiftedLum, 0.52)), v80CalmGrade, 1.10), 0.38 * v79VerticalCalm * v80Mode);
+  float v81Lum = max(dot(col, vec3(0.299, 0.587, 0.114)), 0.001);
+  float v81RibbonPhase = v81Flow + ringWave * 0.014
+    + 0.016 * sin(TAU * (theta01 * 2.0 + t * 2.0 + v81Depth * 0.58));
+  vec3 v81RibbonCol = v81Palette(v81RibbonPhase);
+  float v81RibbonLum = max(dot(v81RibbonCol, vec3(0.299, 0.587, 0.114)), 0.001);
+  float v81LiftedLum = mix(v81Lum, max(v81Lum, 0.52), 0.62);
+  vec3 v81ColorGrade = v81RibbonCol * (v81LiftedLum / v81RibbonLum);
+  vec3 v81PremiumGrade = mix(vec3(v81LiftedLum), v81ColorGrade, 1.18);
+  col = mix(col, v81PremiumGrade, v81Mode * (0.82 + 0.08 * v81Depth));
+  float v81LineContrast = v81Mode * pow(darkGap, 1.78) * (0.28 + 0.72 * edgeMask) * (0.40 + 0.60 * thinLine);
+  col = mix(col, mix(v81InkCol, v81RibbonCol, 0.26) * max(v81LiftedLum, 0.22), v81LineContrast * 0.30);
+  float v81PostLum = dot(col, vec3(0.299, 0.587, 0.114));
+  float v81WideDark = v81Mode * (1.0 - smoothstep(0.28, 0.56, v81PostLum)) * (1.0 - edgeMask * 0.72);
+  col = mix(col, max(col, v81RibbonCol * 0.42), v81WideDark * 0.58);
+  float v81HotPlate = v81Mode
+    * smoothstep(0.10, 0.30, col.r - max(col.g, col.b))
+    * smoothstep(0.08, 0.94, r);
+  vec3 v81HotGuard = vec3(col.r * 0.94, max(col.g, col.r * 0.26), max(col.b, col.r * 0.70));
+  col = mix(col, v81HotGuard, v81HotPlate * 0.42);
+  float v81PeakGuard = v81Mode * smoothstep(0.88, 1.08, max(max(col.r, col.g), col.b));
+  col = mix(col, mix(col, vec3(v81PostLum), 0.12), v81PeakGuard * 0.38);
+  vec3 v81CalmCol = v81Palette(v81Flow + 0.065 + ringWave * 0.006);
+  float v81CalmLum = max(dot(v81CalmCol, vec3(0.299, 0.587, 0.114)), 0.001);
+  vec3 v81CalmGrade = v81CalmCol * (max(v81LiftedLum, 0.50) / v81CalmLum);
+  col = mix(col, mix(vec3(max(v81LiftedLum, 0.50)), v81CalmGrade, 1.02), 0.44 * v79VerticalCalm * v81Mode);
+  float v84Chroma = max(max(col.r, col.g), col.b) - min(min(col.r, col.g), col.b);
+  float v84PaleMask = v84Mode
+    * smoothstep(0.86, 1.05, max(max(col.r, col.g), col.b))
+    * (1.0 - smoothstep(0.16, 0.34, v84Chroma));
+  col = mix(col, v81Palette(v81Flow + 0.18) * max(v81PostLum, 0.48), v84PaleMask * 0.28);
+  float v82Lum = max(dot(col, vec3(0.299, 0.587, 0.114)), 0.001);
+  float v82RibbonPhase = v82Flow + ringWave * 0.004
+    + 0.010 * sin(TAU * (t + v82Depth * 0.52));
+  vec3 v82RibbonCol = v82Palette(v82RibbonPhase);
+  float v82RibbonLum = max(dot(v82RibbonCol, vec3(0.299, 0.587, 0.114)), 0.001);
+  float v82LiftedLum = mix(v82Lum, max(v82Lum, 0.66), 0.86);
+  vec3 v82ColorGrade = v82RibbonCol * (v82LiftedLum / v82RibbonLum);
+  vec3 v82FluidGrade = mix(vec3(v82LiftedLum), v82ColorGrade, 0.94);
+  col = mix(col, v82FluidGrade, v82Mode * (0.96 + 0.03 * v82Depth));
+  float v82LineSoft = v82Mode * pow(darkGap, 2.50) * (0.18 + 0.82 * edgeMask) * (0.18 + 0.82 * thinLine);
+  col = mix(col, mix(v82ShadowCol, v82RibbonCol, 0.62) * max(v82LiftedLum, 0.34), v82LineSoft * 0.025);
+  float v82PostLum = dot(col, vec3(0.299, 0.587, 0.114));
+  float v82WideDark = v82Mode * (1.0 - smoothstep(0.26, 0.56, v82PostLum)) * (1.0 - edgeMask * 0.76);
+  col = mix(col, max(col, v82RibbonCol * 0.46), v82WideDark * 0.28);
+  float v82HotPlate = v82Mode
+    * smoothstep(0.08, 0.24, col.r - max(col.g, col.b))
+    * smoothstep(0.08, 0.94, r);
+  vec3 v82HotGuard = vec3(col.r * 0.90, max(col.g, col.r * 0.30), max(col.b, col.r * 0.76));
+  col = mix(col, v82HotGuard, v82HotPlate * 0.52);
+  float v82PeakGuard = v82Mode * smoothstep(0.82, 1.02, max(max(col.r, col.g), col.b));
+  col = mix(col, mix(col, vec3(v82PostLum), 0.16), v82PeakGuard * 0.48);
+  vec3 v82CalmCol = v82Palette(v82Flow + 0.032 + ringWave * 0.002);
+  float v82CalmLum = max(dot(v82CalmCol, vec3(0.299, 0.587, 0.114)), 0.001);
+  vec3 v82CalmGrade = v82CalmCol * (max(v82LiftedLum, 0.52) / v82CalmLum);
+  col = mix(col, mix(vec3(max(v82LiftedLum, 0.58)), v82CalmGrade, 0.90), 0.65 * v79VerticalCalm * v82Mode);
+  float v83Lum = max(dot(col, vec3(0.299, 0.587, 0.114)), 0.001);
+  float v83RibbonPhase = v83Flow + ringWave * 0.002
+    + 0.008 * sin(TAU * (t + v83Depth * 0.48));
+  vec3 v83RibbonCol = v83Palette(v83RibbonPhase);
+  float v83RibbonLum = max(dot(v83RibbonCol, vec3(0.299, 0.587, 0.114)), 0.001);
+  float v83LiftedLum = mix(v83Lum, max(v83Lum, 0.50), 0.76);
+  vec3 v83ColorGrade = v83RibbonCol * (v83LiftedLum / v83RibbonLum);
+  vec3 v83FluidGrade = mix(vec3(v83LiftedLum), v83ColorGrade, 1.06);
+  col = mix(col, v83FluidGrade, v83Mode * (0.96 + 0.03 * v83Depth));
+  float v83LineSoft = v83Mode * pow(darkGap, 2.70) * (0.16 + 0.84 * edgeMask) * (0.14 + 0.86 * thinLine);
+  col = mix(col, mix(v83ShadowCol, v83RibbonCol, 0.68) * max(v83LiftedLum, 0.26), v83LineSoft * 0.006);
+  float v83PostLum = dot(col, vec3(0.299, 0.587, 0.114));
+  float v83WideDark = v83Mode * (1.0 - smoothstep(0.22, 0.52, v83PostLum)) * (1.0 - edgeMask * 0.78);
+  col = mix(col, max(col, v83RibbonCol * 0.34), v83WideDark * 0.24);
+  float v83WarmMask = v83Mode
+    * smoothstep(0.04, 0.18, col.r - max(col.g, col.b))
+    * smoothstep(0.08, 0.94, r);
+  vec3 v83CoolGuard = vec3(col.r * 0.74, max(col.g, col.r * 0.34), max(col.b, col.r * 0.92));
+  col = mix(col, v83CoolGuard, v83WarmMask * 0.66);
+  float v83Chroma = max(max(col.r, col.g), col.b) - min(min(col.r, col.g), col.b);
+  float v83PaleMask = v83Mode
+    * smoothstep(0.38, 0.72, max(max(col.r, col.g), col.b))
+    * (1.0 - smoothstep(0.10, 0.28, v83Chroma));
+  col = mix(col, v83Palette(v83Flow + v83Depth * 0.22) * max(v83PostLum, 0.36), v83PaleMask * 0.92);
+  vec3 v83CalmCol = v83Palette(v83Flow + 0.026 + ringWave * 0.001);
+  float v83CalmLum = max(dot(v83CalmCol, vec3(0.299, 0.587, 0.114)), 0.001);
+  vec3 v83CalmGrade = v83CalmCol * (max(v83LiftedLum, 0.44) / v83CalmLum);
+  col = mix(col, v83CalmGrade, 0.70 * v79VerticalCalm * v83Mode);
+  col = mix(col, min(col, vec3(0.82, 0.90, 0.94)), v83Mode);
+  float v89RedCoreMask = v89Mode * smoothstep(0.018, 0.052, r) * (1.0 - smoothstep(0.210, 0.340, r));
+  float v89RedBreath = 0.72 + 0.28 * pow(0.5 + 0.5 * sin(TAU * (t * 4.0 - r * 1.10 + 0.13)), 1.65);
+  float v89RedCarry = v89RedCoreMask * (0.62 + 0.38 * ringWave) * v89RedBreath;
+  vec3 v89RoseCol = mix(
+    mix(vec3(1.00, 0.12, 0.28), vec3(1.00, 0.34, 0.08), 0.5 + 0.5 * sin(TAU * (t * 2.0 + 0.19))),
+    mix(vec3(0.98, 0.08, 0.72), vec3(0.58, 0.00, 1.00), 0.5 + 0.5 * sin(TAU * (t * 3.0 + 0.41))),
+    0.5 + 0.5 * sin(TAU * (t * 4.0 - r * 0.74 + 0.27))
+  );
+  float v89RedLum = max(dot(col, vec3(0.299, 0.587, 0.114)), 0.34);
+  col = mix(col, v89RoseCol * max(v89RedLum, 0.46), v89RedCarry * 0.26);
+  col += v89RoseCol * v89RedCarry * 0.085;
+  col.r = max(col.r, v89RoseCol.r * v89RedCarry * 0.62);
+  col.g *= 1.0 - 0.10 * v89RedCarry;
+  col.b = max(col.b, v89RoseCol.b * v89RedCarry * 0.38);
 
   // Mild edge vignette (keep outer visible)
   vec2 vu = vUv - 0.5;
@@ -1156,6 +1663,10 @@ void main() {
   vig = mix(vig, max(vig, 0.96), v77Mode);
   vig = mix(vig, max(vig, 0.965), v78Mode);
   vig = mix(vig, max(vig, 0.970), v79Mode);
+  vig = mix(vig, max(vig, 0.970), v80Mode);
+  vig = mix(vig, max(vig, 0.965), v81Mode);
+  vig = mix(vig, max(vig, 0.970), v82Mode);
+  vig = mix(vig, max(vig, 0.972), v83Mode);
   col *= max(vig, 0.0);
 
   col = pow(clamp(col, 0.0, 1.0), vec3(0.95));

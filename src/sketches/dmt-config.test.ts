@@ -438,3 +438,289 @@ describe("dmt-config-trip-v79.json", () => {
     expect(config.contrast).toBeLessThanOrEqual(1.06);
   });
 });
+
+describe("dmt-config-trip-v80.json", () => {
+  const config = readConfig("dmt-config-trip-v80.json");
+
+  it("keeps the v80 classic LSD artwork cut in vertical 60fps delivery format", () => {
+    expect(config.duration).toBe(16);
+    expect(config.fps).toBe(60);
+    expect(config.resolution).toEqual([1080, 1920]);
+    expect(config.paletteMode).toBe(18);
+  });
+
+  it("keeps v80 loop-safe on the v79 suction timing", () => {
+    const ringFrequency = 6 * config.foldScale;
+    const loopShift = ringFrequency * config.zoomLoops;
+    expect(Math.abs(loopShift - Math.round(loopShift))).toBeLessThan(0.00001);
+    expect(config.zoomLoops).toBe(8);
+    expect(Math.abs(config.hueSpeed - Math.round(config.hueSpeed))).toBeLessThan(0.00001);
+    expect(Math.abs(config.cameraLoops - Math.round(config.cameraLoops))).toBeLessThan(0.00001);
+  });
+
+  it("keeps the classic poster color push in the shader instead of harsher post", () => {
+    expect(config.glow).toBeLessThanOrEqual(1.13);
+    expect(config.bloomStrength).toBeLessThanOrEqual(0.18);
+    expect(config.bloomThreshold).toBeGreaterThanOrEqual(0.68);
+    expect(config.caOffset).toBeLessThanOrEqual(0.03);
+    expect(config.contrast).toBeLessThanOrEqual(1.06);
+  });
+});
+
+describe("dmt-config-trip-v81.json", () => {
+  const config = readConfig("dmt-config-trip-v81.json");
+
+  it("keeps the v81 commercial trip master in vertical 60fps delivery format", () => {
+    expect(config.duration).toBe(16);
+    expect(config.fps).toBe(60);
+    expect(config.resolution).toEqual([1080, 1920]);
+    expect(config.paletteMode).toBe(19);
+  });
+
+  it("keeps v81 loop-safe while slightly increasing suction pressure", () => {
+    const ringFrequency = 6 * config.foldScale;
+    const loopShift = ringFrequency * config.zoomLoops;
+    expect(Math.abs(loopShift - Math.round(loopShift))).toBeLessThan(0.00001);
+    expect(config.zoomLoops).toBe(8.5);
+    expect(Math.abs(config.hueSpeed - Math.round(config.hueSpeed))).toBeLessThan(0.00001);
+    expect(Math.abs(config.cameraLoops - Math.round(config.cameraLoops))).toBeLessThan(0.00001);
+  });
+
+  it("uses a restrained post stack for commercial compression comfort", () => {
+    expect(config.glow).toBeLessThanOrEqual(1.1);
+    expect(config.bloomStrength).toBeLessThanOrEqual(0.16);
+    expect(config.bloomThreshold).toBeGreaterThanOrEqual(0.7);
+    expect(config.caOffset).toBeLessThanOrEqual(0.028);
+    expect(config.contrast).toBeLessThanOrEqual(1.07);
+  });
+});
+
+describe("dmt-config-trip-v82.json", () => {
+  const config = readConfig("dmt-config-trip-v82.json");
+
+  it("keeps the v82 smooth suction master in vertical 60fps delivery format", () => {
+    expect(config.duration).toBe(16);
+    expect(config.fps).toBe(60);
+    expect(config.resolution).toEqual([1080, 1920]);
+    expect(config.paletteMode).toBe(20);
+  });
+
+  it("keeps v82 loop-safe while pushing the tunnel pull harder", () => {
+    const ringFrequency = 6 * config.foldScale;
+    const loopShift = ringFrequency * config.zoomLoops;
+    expect(Math.abs(loopShift - Math.round(loopShift))).toBeLessThan(0.00001);
+    expect(config.zoomLoops).toBe(9.5);
+    expect(Math.abs(config.hueSpeed - Math.round(config.hueSpeed))).toBeLessThan(0.00001);
+    expect(Math.abs(config.cameraLoops - Math.round(config.cameraLoops))).toBeLessThan(0.00001);
+  });
+
+  it("uses restrained post so smooth gradient motion carries the trip", () => {
+    expect(config.glow).toBeLessThanOrEqual(1.07);
+    expect(config.bloomStrength).toBeLessThanOrEqual(0.14);
+    expect(config.bloomThreshold).toBeGreaterThanOrEqual(0.72);
+    expect(config.caOffset).toBeLessThanOrEqual(0.022);
+    expect(config.contrast).toBeLessThanOrEqual(1.04);
+  });
+});
+
+describe("dmt-config-trip-v83.json", () => {
+  const config = readConfig("dmt-config-trip-v83.json");
+
+  it("keeps the v83 narrow no-white suction cut in vertical 60fps format", () => {
+    expect(config.duration).toBe(16);
+    expect(config.fps).toBe(60);
+    expect(config.resolution).toEqual([1080, 1920]);
+    expect(config.paletteMode).toBe(21);
+  });
+
+  it("keeps v83 loop-safe while making the center pull more dramatic", () => {
+    const ringFrequency = 6 * config.foldScale;
+    const loopShift = ringFrequency * config.zoomLoops;
+    expect(Math.abs(loopShift - Math.round(loopShift))).toBeLessThan(0.00001);
+    expect(config.zoomLoops).toBe(12);
+    expect(Math.abs(config.hueSpeed - Math.round(config.hueSpeed))).toBeLessThan(0.00001);
+    expect(Math.abs(config.cameraLoops - Math.round(config.cameraLoops))).toBeLessThan(0.00001);
+  });
+
+  it("uses restrained post so the narrow palette avoids white highlights", () => {
+    expect(config.glow).toBeLessThanOrEqual(1.04);
+    expect(config.bloomStrength).toBeLessThanOrEqual(0.11);
+    expect(config.bloomThreshold).toBeGreaterThanOrEqual(0.76);
+    expect(config.caOffset).toBeLessThanOrEqual(0.018);
+    expect(config.contrast).toBeLessThanOrEqual(1.03);
+  });
+});
+
+describe("dmt-config-trip-v84.json", () => {
+  const config = readConfig("dmt-config-trip-v84.json");
+
+  it("keeps the v84 dense-ring commercial suction cut in vertical 60fps format", () => {
+    expect(config.duration).toBe(16);
+    expect(config.fps).toBe(60);
+    expect(config.resolution).toEqual([1080, 1920]);
+    expect(config.paletteMode).toBe(22);
+  });
+
+  it("keeps v84 loop-safe while increasing ring density and center pull", () => {
+    const ringFrequency = 6 * config.foldScale;
+    const loopShift = ringFrequency * config.zoomLoops;
+    expect(Math.abs(loopShift - Math.round(loopShift))).toBeLessThan(0.00001);
+    expect(ringFrequency).toBeCloseTo(8, 8);
+    expect(config.zoomLoops).toBe(12);
+    expect(Math.abs(config.hueSpeed - Math.round(config.hueSpeed))).toBeLessThan(0.00001);
+    expect(Math.abs(config.cameraLoops - Math.round(config.cameraLoops))).toBeLessThan(0.00001);
+  });
+
+  it("keeps the v81 commercial post feel without relying on harsh bloom", () => {
+    expect(config.glow).toBeLessThanOrEqual(1.09);
+    expect(config.bloomStrength).toBeLessThanOrEqual(0.15);
+    expect(config.bloomThreshold).toBeGreaterThanOrEqual(0.72);
+    expect(config.caOffset).toBeLessThanOrEqual(0.024);
+    expect(config.contrast).toBeLessThanOrEqual(1.06);
+  });
+});
+
+describe("dmt-config-trip-v85.json", () => {
+  const config = readConfig("dmt-config-trip-v85.json");
+
+  it("keeps the v85 center-anchor suction cut in vertical 60fps format", () => {
+    expect(config.duration).toBe(16);
+    expect(config.fps).toBe(60);
+    expect(config.resolution).toEqual([1080, 1920]);
+    expect(config.paletteMode).toBe(23);
+  });
+
+  it("keeps v85 loop-safe while preserving the dense v84 ring field", () => {
+    const ringFrequency = 6 * config.foldScale;
+    const loopShift = ringFrequency * config.zoomLoops;
+    expect(Math.abs(loopShift - Math.round(loopShift))).toBeLessThan(0.00001);
+    expect(ringFrequency).toBeCloseTo(8, 8);
+    expect(config.zoomLoops).toBe(12);
+    expect(Math.abs(config.hueSpeed - Math.round(config.hueSpeed))).toBeLessThan(0.00001);
+    expect(Math.abs(config.cameraLoops - Math.round(config.cameraLoops))).toBeLessThan(0.00001);
+  });
+
+  it("keeps the commercial v81/v84 post stack under control", () => {
+    expect(config.glow).toBeLessThanOrEqual(1.09);
+    expect(config.bloomStrength).toBeLessThanOrEqual(0.15);
+    expect(config.bloomThreshold).toBeGreaterThanOrEqual(0.72);
+    expect(config.caOffset).toBeLessThanOrEqual(0.024);
+    expect(config.contrast).toBeLessThanOrEqual(1.06);
+  });
+});
+
+describe("dmt-config-trip-v86.json", () => {
+  const config = readConfig("dmt-config-trip-v86.json");
+
+  it("keeps the v86 no-center-anchor suction cut in vertical 60fps format", () => {
+    expect(config.duration).toBe(16);
+    expect(config.fps).toBe(60);
+    expect(config.resolution).toEqual([1080, 1920]);
+    expect(config.paletteMode).toBe(22);
+  });
+
+  it("keeps v86 loop-safe while preserving the dense v84 ring field", () => {
+    const ringFrequency = 6 * config.foldScale;
+    const loopShift = ringFrequency * config.zoomLoops;
+    expect(Math.abs(loopShift - Math.round(loopShift))).toBeLessThan(0.00001);
+    expect(ringFrequency).toBeCloseTo(8, 8);
+    expect(config.zoomLoops).toBe(12);
+    expect(Math.abs(config.hueSpeed - Math.round(config.hueSpeed))).toBeLessThan(0.00001);
+    expect(Math.abs(config.cameraLoops - Math.round(config.cameraLoops))).toBeLessThan(0.00001);
+  });
+
+  it("uses the commercial v84 post stack without the v85 center anchor mode", () => {
+    expect(config.glow).toBeLessThanOrEqual(1.09);
+    expect(config.bloomStrength).toBeLessThanOrEqual(0.15);
+    expect(config.bloomThreshold).toBeGreaterThanOrEqual(0.72);
+    expect(config.caOffset).toBeLessThanOrEqual(0.024);
+    expect(config.contrast).toBeLessThanOrEqual(1.06);
+  });
+});
+
+describe("dmt-config-trip-v88.json", () => {
+  const config = readConfig("dmt-config-trip-v88.json");
+
+  it("keeps the v88 stabilized no-center-anchor cut in vertical 60fps format", () => {
+    expect(config.duration).toBe(16);
+    expect(config.fps).toBe(60);
+    expect(config.resolution).toEqual([1080, 1920]);
+    expect(config.paletteMode).toBe(24);
+  });
+
+  it("keeps v88 loop-safe while using the dense v84/v86 ring field", () => {
+    const ringFrequency = 6 * config.foldScale;
+    const loopShift = ringFrequency * config.zoomLoops;
+    expect(Math.abs(loopShift - Math.round(loopShift))).toBeLessThan(0.00001);
+    expect(ringFrequency).toBeCloseTo(8, 8);
+    expect(config.zoomLoops).toBe(12);
+    expect(Math.abs(config.hueSpeed - Math.round(config.hueSpeed))).toBeLessThan(0.00001);
+    expect(Math.abs(config.cameraLoops - Math.round(config.cameraLoops))).toBeLessThan(0.00001);
+  });
+
+  it("uses the commercial v86 post stack without the v85 center anchor mode", () => {
+    expect(config.glow).toBeLessThanOrEqual(1.09);
+    expect(config.bloomStrength).toBeLessThanOrEqual(0.15);
+    expect(config.bloomThreshold).toBeGreaterThanOrEqual(0.72);
+    expect(config.caOffset).toBeLessThanOrEqual(0.024);
+    expect(config.contrast).toBeLessThanOrEqual(1.06);
+  });
+});
+
+describe("dmt-config-trip-v88-20s.json", () => {
+  const config = readConfig("dmt-config-trip-v88-20s.json");
+
+  it("renders the v88 stabilized no-center-anchor cut as a true 20s vertical 60fps export", () => {
+    expect(config.duration).toBe(20);
+    expect(config.fps).toBe(60);
+    expect(config.resolution).toEqual([1080, 1920]);
+    expect(config.paletteMode).toBe(24);
+  });
+
+  it("keeps the 20s cut loop-safe without changing the v88 ring grammar", () => {
+    const ringFrequency = 6 * config.foldScale;
+    const loopShift = ringFrequency * config.zoomLoops;
+    expect(Math.abs(loopShift - Math.round(loopShift))).toBeLessThan(0.00001);
+    expect(ringFrequency).toBeCloseTo(8, 8);
+    expect(config.zoomLoops).toBe(12);
+    expect(Math.abs(config.hueSpeed - Math.round(config.hueSpeed))).toBeLessThan(0.00001);
+    expect(Math.abs(config.cameraLoops - Math.round(config.cameraLoops))).toBeLessThan(0.00001);
+  });
+
+  it("preserves the v88 commercial post stack for the 20s render", () => {
+    expect(config.glow).toBeLessThanOrEqual(1.09);
+    expect(config.bloomStrength).toBeLessThanOrEqual(0.15);
+    expect(config.bloomThreshold).toBeGreaterThanOrEqual(0.72);
+    expect(config.caOffset).toBeLessThanOrEqual(0.024);
+    expect(config.contrast).toBeLessThanOrEqual(1.06);
+  });
+});
+
+describe("dmt-config-trip-v89-core-breath-20s.json", () => {
+  const config = readConfig("dmt-config-trip-v89-core-breath-20s.json");
+
+  it("renders the cyan core-breath cut as a true 20s vertical 60fps export", () => {
+    expect(config.duration).toBe(20);
+    expect(config.fps).toBe(60);
+    expect(config.resolution).toEqual([1080, 1920]);
+    expect(config.paletteMode).toBe(25);
+  });
+
+  it("keeps the v89 breath loop-safe while preserving the v88 ring grammar", () => {
+    const ringFrequency = 6 * config.foldScale;
+    const loopShift = ringFrequency * config.zoomLoops;
+    expect(Math.abs(loopShift - Math.round(loopShift))).toBeLessThan(0.00001);
+    expect(ringFrequency).toBeCloseTo(8, 8);
+    expect(config.zoomLoops).toBe(12);
+    expect(Math.abs(config.hueSpeed - Math.round(config.hueSpeed))).toBeLessThan(0.00001);
+    expect(Math.abs(config.cameraLoops - Math.round(config.cameraLoops))).toBeLessThan(0.00001);
+  });
+
+  it("keeps the commercial post stack restrained for a smooth central breath", () => {
+    expect(config.glow).toBeLessThanOrEqual(1.09);
+    expect(config.bloomStrength).toBeLessThanOrEqual(0.15);
+    expect(config.bloomThreshold).toBeGreaterThanOrEqual(0.72);
+    expect(config.caOffset).toBeLessThanOrEqual(0.024);
+    expect(config.contrast).toBeLessThanOrEqual(1.06);
+  });
+});

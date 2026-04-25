@@ -35,6 +35,16 @@ describe("shader-compile-check: constants", () => {
     expect(names).toContain("mode-dmt-trip-v77");
     expect(names).toContain("mode-dmt-trip-v78");
     expect(names).toContain("mode-dmt-trip-v79");
+    expect(names).toContain("mode-dmt-trip-v80");
+    expect(names).toContain("mode-dmt-trip-v81");
+    expect(names).toContain("mode-dmt-trip-v82");
+    expect(names).toContain("mode-dmt-trip-v83");
+    expect(names).toContain("mode-dmt-trip-v84");
+    expect(names).toContain("mode-dmt-trip-v85");
+    expect(names).toContain("mode-dmt-trip-v86");
+    expect(names).toContain("mode-dmt-trip-v88");
+    expect(names).toContain("mode-dmt-trip-v88-20s");
+    expect(names).toContain("mode-dmt-trip-v89-core-breath-20s");
     expect(MODES.length).toBeGreaterThanOrEqual(7);
   });
 
