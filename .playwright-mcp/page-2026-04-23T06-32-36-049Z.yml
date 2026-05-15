@@ -1,0 +1,507 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - link "Shadertoy" [ref=e4] [cursor=pointer]:
+        - /url: /
+      - searchbox "Search..." [ref=e7]
+    - generic [ref=e8]:
+      - link "Browse" [ref=e9] [cursor=pointer]:
+        - /url: /browse
+      - link "New" [ref=e10] [cursor=pointer]:
+        - /url: /new
+      - link "Sign In" [ref=e11] [cursor=pointer]:
+        - /url: /signin
+  - generic [ref=e13]:
+    - generic [ref=e14]:
+      - generic [ref=e17]:
+        - generic [ref=e18]:
+          - generic "Reset time (<ALT>+<DownArrow>)" [ref=e19] [cursor=pointer]
+          - generic "Pause/Resume (<ALT>+<UpArrow>)" [ref=e20] [cursor=pointer]
+        - generic [ref=e21]:
+          - generic [ref=e22]: "6.65"
+          - generic [ref=e23]: 1.0 fps
+          - generic [ref=e24]: 420 x 236
+        - generic [ref=e25]:
+          - generic "Record (<ALT>+<R>)" [ref=e26] [cursor=pointer]
+          - generic "Volume" [ref=e27] [cursor=pointer]
+          - generic "Go fullscreen" [ref=e28] [cursor=pointer]
+      - generic [ref=e29]:
+        - generic [ref=e30]:
+          - generic [ref=e31]: Spiral galaxy
+          - generic [ref=e32]:
+            - img "share this shader" [ref=e33] [cursor=pointer]
+            - img [ref=e34]
+            - text: "82"
+          - generic [ref=e35]:
+            - text: "Views: 43371"
+            - text: ", Tags:"
+            - link "raytracing" [ref=e176] [cursor=pointer]:
+              - /url: /results?query=tag%3Draytracing
+          - generic [ref=e36]:
+            - text: Created by
+            - link "mrange" [ref=e178] [cursor=pointer]:
+              - /url: /user/mrange
+            - text: in 2020-05-21
+        - generic [ref=e179]: Spiral galaxy Would benefit from anti-aliasing but looks okish when I run it in fullscreen in FF Lots of random coding and little thought so the code is kind of messy
+    - generic [ref=e37]:
+      - generic [ref=e38] [cursor=pointer]:
+        - combobox [ref=e181]:
+          - option "Common"
+          - option "Sound"
+          - option "Buffer A"
+          - option "Buffer B"
+          - option "Buffer C"
+          - option "Buffer D"
+          - option "Cubemap A"
+        - generic [ref=e182]:
+          - img [ref=e183]
+          - generic [ref=e184]: Image
+      - generic [ref=e40] [cursor=pointer]:
+        - generic [ref=e41]: Shader Inputs
+        - generic [ref=e44]:
+          - text: uniform vec3 iResolution; // viewport resolution (in pixels)
+          - text: uniform float iTime; // shader playback time (in seconds)
+          - text: uniform float iTimeDelta; // render time (in seconds)
+          - text: uniform float iFrameRate; // shader frame rate
+          - text: uniform int iFrame; // shader playback frame
+          - text: uniform float iChannelTime[4]; // channel playback time (in seconds)
+          - text: uniform vec3 iChannelResolution[4]; // channel resolution (in pixels)
+          - text: "uniform vec4 iMouse; // mouse pixel coords. xy: current (if MLB down), zw: click"
+          - text: uniform samplerXX iChannel0..3; // input channel. XX = 2D/Cube
+          - text: uniform vec4 iDate; // (year, month, day, time in seconds)
+          - text: uniform float iSampleRate; // sound sample rate (i.e., 44100)
+      - generic [ref=e46]:
+        - textbox [ref=e47]
+        - generic [ref=e50]:
+          - generic [ref=e190]:
+            - generic [ref=e191]: "1"
+            - text: "// License CC0: Spiral galaxy"
+          - generic [ref=e192]:
+            - generic [ref=e193]: "2"
+            - text: // Would benefit from anti-aliasing but looks okish when I run it in fullscreen in FF
+          - generic [ref=e194]:
+            - generic [ref=e195]: "3"
+            - text: // Lots of random coding and little thought so the code is kind of messy
+          - generic [ref=e196]:
+            - generic [ref=e197]: "4"
+            - text: "#define PI 3.141592654"
+          - generic [ref=e198]:
+            - generic [ref=e199]: "5"
+            - text: "#define TAU (2.0*PI)"
+          - generic [ref=e201]: "6"
+          - generic [ref=e202]:
+            - generic [ref=e203]: "7"
+            - text: "#define TIME (iTime*0.1)"
+          - generic [ref=e205]: "8"
+          - generic [ref=e206]:
+            - generic [ref=e207]: "9"
+            - text: "#define LESS(a,b,c) mix(a,b,step(0.,c))"
+          - generic [ref=e209]: "10"
+          - generic [ref=e210]:
+            - generic [ref=e211]: "11"
+            - text: "#define SABS(x,k) LESS((.5/k)*x*x+k*.5,abs(x),abs(x)-k)"
+          - generic [ref=e213]: "12"
+          - generic [ref=e214]:
+            - generic [ref=e215]: "13"
+            - text: "#define RESOLUTION iResolution"
+          - generic [ref=e217]: "14"
+          - generic [ref=e218]:
+            - generic [ref=e219]: "15"
+            - text: const float twirly =2.5;
+          - generic [ref=e221]: "16"
+          - generic [ref=e222]:
+            - generic:
+              - generic [ref=e223]: "17"
+              - generic [ref=e225] [cursor=pointer]: ▾
+            - text: "vec2 toPolar(vec2 p) {"
+          - generic [ref=e226]:
+            - generic [ref=e227]: "18"
+            - text: return vec2(length(p), atan(p.y, p.x));
+          - generic [ref=e228]:
+            - generic [ref=e229]: "19"
+            - text: "}"
+          - generic [ref=e231]: "20"
+          - generic [ref=e232]:
+            - generic:
+              - generic [ref=e233]: "21"
+              - generic [ref=e235] [cursor=pointer]: ▾
+            - text: "vec2 toRect(vec2 p) {"
+          - generic [ref=e236]:
+            - generic [ref=e237]: "22"
+            - text: return p.x*vec2(cos(p.y), sin(p.y));
+          - generic [ref=e238]:
+            - generic [ref=e239]: "23"
+            - text: "}"
+          - generic [ref=e241]: "24"
+          - generic [ref=e242]:
+            - generic:
+              - generic [ref=e243]: "25"
+              - generic [ref=e245] [cursor=pointer]: ▾
+            - text: "vec2 mod2(inout vec2 p, vec2 size) {"
+          - generic [ref=e246]:
+            - generic [ref=e247]: "26"
+            - text: vec2 c = floor((p + size*0.5)/size);
+          - generic [ref=e248]:
+            - generic [ref=e249]: "27"
+            - text: p = mod(p + size*0.5,size) - size*0.5;
+          - generic [ref=e250]:
+            - generic [ref=e251]: "28"
+            - text: return c;
+          - generic [ref=e252]:
+            - generic [ref=e253]: "29"
+            - text: "}"
+          - generic [ref=e255]: "30"
+          - generic [ref=e256]:
+            - generic:
+              - generic [ref=e257]: "31"
+              - generic [ref=e259] [cursor=pointer]: ▾
+            - text: "float noise1(vec2 p) {"
+          - generic [ref=e260]:
+            - generic [ref=e261]: "32"
+            - text: float s = 1.0;
+          - generic [ref=e263]: "33"
+          - generic [ref=e264]:
+            - generic [ref=e265]: "34"
+            - text: p *= tanh(0.1*length(p));
+          - generic [ref=e266]:
+            - generic [ref=e267]: "35"
+            - text: float tm = TIME;
+          - generic [ref=e269]: "36"
+          - generic [ref=e270]:
+            - generic [ref=e271]: "37"
+            - text: float a = cos(p.x);
+          - generic [ref=e272]:
+            - generic [ref=e273]: "38"
+            - text: float b = cos(p.y);
+          - generic [ref=e275]: "39"
+          - generic [ref=e276]:
+            - generic [ref=e277]: "40"
+            - text: float c = cos(p.x*sqrt(3.5)+tm);
+          - generic [ref=e278]:
+            - generic [ref=e279]: "41"
+            - text: float d = cos(p.y*sqrt(1.5)+tm);
+          - generic [ref=e281]: "42"
+          - generic [ref=e282]:
+            - generic [ref=e283]: "43"
+            - text: return a*b*c*d;
+          - generic [ref=e284]:
+            - generic [ref=e285]: "44"
+            - text: "}"
+          - generic [ref=e287]: "45"
+          - generic [ref=e288]:
+            - generic:
+              - generic [ref=e289]: "46"
+              - generic [ref=e291] [cursor=pointer]: ▾
+            - text: "void rot(inout vec2 p, float a) {"
+          - generic [ref=e292]:
+            - generic [ref=e293]: "47"
+            - text: float c = cos(a);
+          - generic [ref=e294]:
+            - generic [ref=e295]: "48"
+            - text: float s = sin(a);
+          - generic [ref=e296]:
+            - generic [ref=e297]: "49"
+            - text: p = vec2(c*p.x + s*p.y, -s*p.x + c*p.y);
+          - generic [ref=e298]:
+            - generic [ref=e299]: "50"
+            - text: "}"
+          - generic [ref=e301]: "51"
+          - generic [ref=e302]:
+            - generic:
+              - generic [ref=e303]: "52"
+              - generic [ref=e305] [cursor=pointer]: ▾
+            - text: "vec2 twirl(vec2 p, float a, float z) {"
+          - generic [ref=e306]:
+            - generic [ref=e307]: "53"
+            - text: vec2 pp = toPolar(p);
+          - generic [ref=e308]:
+            - generic [ref=e309]: "54"
+            - text: pp.y += pp.x*twirly + a;
+          - generic [ref=e310]:
+            - generic [ref=e311]: "55"
+            - text: p = toRect(pp);
+          - generic [ref=e313]: "56"
+          - generic [ref=e314]:
+            - generic [ref=e315]: "57"
+            - text: p *= z;
+          - generic [ref=e317]: "58"
+          - generic [ref=e318]:
+            - generic [ref=e319]: "59"
+            - text: return p;
+          - generic [ref=e320]:
+            - generic [ref=e321]: "60"
+            - text: "}"
+          - generic [ref=e323]: "61"
+          - generic [ref=e324]:
+            - generic:
+              - generic [ref=e325]: "62"
+              - generic [ref=e327] [cursor=pointer]: ▾
+            - text: "float galaxy(vec2 p, float a, float z) {"
+          - generic [ref=e328]:
+            - generic [ref=e329]: "63"
+            - text: p = twirl(p, a, z);
+          - generic [ref=e331]: "64"
+          - generic [ref=e332]:
+            - generic [ref=e333]: "65"
+            - text: return noise1(p);
+          - generic [ref=e334]:
+            - generic [ref=e335]: "66"
+            - text: "}"
+          - generic [ref=e337]: "67"
+          - generic [ref=e338]:
+            - generic:
+              - generic [ref=e339]: "68"
+              - generic [ref=e341] [cursor=pointer]: ▾
+            - text: "float rand(vec2 co){"
+          - generic [ref=e342]:
+            - generic [ref=e343]: "69"
+            - text: return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
+          - generic [ref=e344]:
+            - generic [ref=e345]: "70"
+            - text: "}"
+          - generic [ref=e347]: "71"
+          - generic [ref=e349]: "72"
+          - generic [ref=e350]:
+            - generic [ref=e351]: "73"
+            - text: vec2 raySphere(vec3 ro, vec3 rd, vec3 center, float radius)
+          - generic [ref=e352]:
+            - generic:
+              - generic [ref=e353]: "74"
+              - generic [ref=e355] [cursor=pointer]: ▾
+            - text: "{"
+          - generic [ref=e356]:
+            - generic [ref=e357]: "75"
+            - text: //get the vector from the center of this circle to where the ray begins.
+          - generic [ref=e358]:
+            - generic [ref=e359]: "76"
+            - text: vec3 m = ro - center.xyz;
+          - generic [ref=e361]: "77"
+          - generic [ref=e362]:
+            - generic [ref=e363]: "78"
+            - text: //get the dot product of the above vector and the ray's vector
+          - generic [ref=e364]:
+            - generic [ref=e365]: "79"
+            - text: float b = dot(m, rd);
+          - generic [ref=e367]: "80"
+          - generic [ref=e368]:
+            - generic [ref=e369]: "81"
+            - text: float c = dot(m, m) - radius*radius;
+          - generic [ref=e371]: "82"
+          - generic [ref=e372]:
+            - generic [ref=e373]: "83"
+            - text: //exit if r's origin outside s (c > 0) and r pointing away from s (b > 0)
+          - generic [ref=e374]:
+            - generic [ref=e375]: "84"
+            - text: if(c > 0.0 && b > 0.0) return vec2(-1.0, -1.0);
+          - generic [ref=e377]: "85"
+          - generic [ref=e378]:
+            - generic [ref=e379]: "86"
+            - text: //calculate discriminant
+          - generic [ref=e380]:
+            - generic [ref=e381]: "87"
+            - text: float discr = b * b - c;
+          - generic [ref=e383]: "88"
+          - generic [ref=e384]:
+            - generic [ref=e385]: "89"
+            - text: //a negative discriminant corresponds to ray missing sphere
+          - generic [ref=e386]:
+            - generic [ref=e387]: "90"
+            - text: if(discr < 0.0) return vec2(-1.0);
+          - generic [ref=e389]: "91"
+          - generic [ref=e390]:
+            - generic [ref=e391]: "92"
+            - text: //ray now found to intersect sphere, compute smallest t value of intersection
+      - generic [ref=e57]:
+        - generic [ref=e58]:
+          - img "Compile (<ALT>+<ENTER>)" [ref=e59] [cursor=pointer]
+          - link "Compiled in 0.0 secs" [ref=e392] [cursor=pointer]:
+            - /url: "#"
+        - generic [ref=e60]: 4045 chars
+        - generic [ref=e61]:
+          - combobox "Change font size (<ALT>+<+/->)" [ref=e63]:
+            - option "XS"
+            - option "S" [selected]
+            - option "M"
+            - option "L"
+            - option "XL"
+            - option "XXL"
+          - img "Show GLSL help" [ref=e64] [cursor=pointer]
+      - generic [ref=e65]:
+        - generic [ref=e66]:
+          - generic [ref=e67]:
+            - generic:
+              - text: Filter
+              - combobox "Pixel filtering mode" [ref=e69]:
+                - option "nearest" [selected]
+                - option "linear"
+                - option "mipmap"
+              - text: Wrap
+              - combobox "Pixel filtering mode" [ref=e70]:
+                - option "clamp" [selected]
+                - option "repeat"
+              - generic [ref=e72]:
+                - text: VFlip
+                - checkbox "VFlip" [ref=e73]
+          - generic [ref=e75]: iChannel0
+        - generic [ref=e78]:
+          - generic [ref=e79]:
+            - generic:
+              - text: Filter
+              - combobox "Pixel filtering mode" [ref=e81]:
+                - option "nearest" [selected]
+                - option "linear"
+                - option "mipmap"
+              - text: Wrap
+              - combobox "Pixel filtering mode" [ref=e82]:
+                - option "clamp" [selected]
+                - option "repeat"
+              - generic [ref=e84]:
+                - text: VFlip
+                - checkbox "VFlip" [ref=e85]
+          - generic [ref=e87]: iChannel1
+        - generic [ref=e90]:
+          - generic [ref=e91]:
+            - generic:
+              - text: Filter
+              - combobox "Pixel filtering mode" [ref=e93]:
+                - option "nearest" [selected]
+                - option "linear"
+                - option "mipmap"
+              - text: Wrap
+              - combobox "Pixel filtering mode" [ref=e94]:
+                - option "clamp" [selected]
+                - option "repeat"
+              - generic [ref=e96]:
+                - text: VFlip
+                - checkbox "VFlip" [ref=e97]
+          - generic [ref=e99]: iChannel2
+        - generic [ref=e102]:
+          - generic [ref=e103]:
+            - generic:
+              - text: Filter
+              - combobox "Pixel filtering mode" [ref=e105]:
+                - option "nearest" [selected]
+                - option "linear"
+                - option "mipmap"
+              - text: Wrap
+              - combobox "Pixel filtering mode" [ref=e106]:
+                - option "clamp" [selected]
+                - option "repeat"
+              - generic [ref=e108]:
+                - text: VFlip
+                - checkbox "VFlip" [ref=e109]
+          - generic [ref=e111]: iChannel3
+    - generic [ref=e115]:
+      - text: Comments (2)
+      - generic [ref=e116]:
+        - link "Sign in" [ref=e118] [cursor=pointer]:
+          - /url: /signin
+        - text: to post a comment.
+      - generic [ref=e393]:
+        - generic [ref=e394]:
+          - img [ref=e396]
+          - generic [ref=e397]:
+            - link "AhnthinkgooD" [ref=e398] [cursor=pointer]:
+              - /url: /user/AhnthinkgooD
+            - text: ", 2021-06-02"
+            - text: Nice one!
+        - generic [ref=e399]:
+          - img [ref=e401]
+          - generic [ref=e402]:
+            - link "aiekick" [ref=e403] [cursor=pointer]:
+              - /url: /user/aiekick
+            - text: ", 2020-05-21"
+            - text: nice
+  - generic [ref=e119]:
+    - generic [ref=e120]:
+      - text: Community Forums
+      - list [ref=e121]:
+        - listitem [ref=e122]:
+          - link "Official Events" [ref=e123] [cursor=pointer]:
+            - /url: /events
+        - listitem [ref=e124]:
+          - link "In Facebook (english)" [ref=e125] [cursor=pointer]:
+            - /url: https://www.facebook.com/groups/147749602472741
+        - listitem [ref=e126]:
+          - link "In Facebook (korean)" [ref=e127] [cursor=pointer]:
+            - /url: https://www.facebook.com/groups/1339783682699494
+        - listitem [ref=e128]:
+          - link "In Discord" [ref=e129] [cursor=pointer]:
+            - /url: https://discord.gg/XtmMN6E
+          - text: (
+          - link "direct link" [ref=e130] [cursor=pointer]:
+            - /url: https://discordapp.com/channels/578696555612209173/579531723348639754
+          - text: )
+    - generic [ref=e131]:
+      - text: Feedback and Support
+      - list [ref=e132]:
+        - listitem [ref=e133]:
+          - link "Facebook" [ref=e134] [cursor=pointer]:
+            - /url: https://www.facebook.com/Shadertoy
+        - listitem [ref=e135]:
+          - link "Twitter" [ref=e136] [cursor=pointer]:
+            - /url: https://twitter.com/shadertoy
+        - listitem [ref=e137]:
+          - link "Patreon" [ref=e138] [cursor=pointer]:
+            - /url: https://www.patreon.com/shadertoy
+        - listitem [ref=e139]:
+          - link "Roadmap" [ref=e140] [cursor=pointer]:
+            - /url: https://trello.com/b/5hM0CjId
+    - generic [ref=e141]:
+      - text: Shadertoy
+      - list [ref=e142]:
+        - listitem [ref=e143]:
+          - link "Store" [ref=e144] [cursor=pointer]:
+            - /url: /store
+        - listitem [ref=e145]:
+          - link "Documentation" [ref=e146] [cursor=pointer]:
+            - /url: /howto
+        - listitem [ref=e147]:
+          - link "Terms & Privacy" [ref=e148] [cursor=pointer]:
+            - /url: /terms
+        - listitem [ref=e149]:
+          - link "About" [ref=e150] [cursor=pointer]:
+            - /url: /about
+    - generic [ref=e151]:
+      - text: Apps and Plugins
+      - list [ref=e152]:
+        - listitem [ref=e153]:
+          - link "Official iPhone App" [ref=e154] [cursor=pointer]:
+            - /url: https://itunes.apple.com/us/app/shadertoy/id717961814
+          - text: by
+          - link "Reinder" [ref=e155] [cursor=pointer]:
+            - /url: /user/reinder
+        - listitem [ref=e156]:
+          - link "Screensaver" [ref=e157] [cursor=pointer]:
+            - /url: https://steamcommunity.com/sharedfiles/filedetails/?id=1726697188
+          - text: by
+          - link "Kosro" [ref=e158] [cursor=pointer]:
+            - /url: /user/kosro
+        - listitem [ref=e159]:
+          - link "Shadertoy plugin" [ref=e160] [cursor=pointer]:
+            - /url: https://chrome.google.com/webstore/detail/shadertoy-unofficial-plug/ohicbclhdmkhoabobgppffepcopomhgl
+          - text: by
+          - link "Patu" [ref=e161] [cursor=pointer]:
+            - /url: /user/patu
+    - generic [ref=e162]:
+      - text: Tutorials
+      - list [ref=e163]:
+        - listitem [ref=e164]:
+          - link "Shader coding intro" [ref=e165] [cursor=pointer]:
+            - /url: https://www.youtube.com/watch?v=0ifChJ0nJfM
+          - text: by
+          - link "iq" [ref=e166] [cursor=pointer]:
+            - /url: /user/iq
+        - listitem [ref=e167]:
+          - link "Shadertoy Unofficial" [ref=e168] [cursor=pointer]:
+            - /url: https://shadertoyunofficial.wordpress.com/
+          - text: by
+          - link "FabriceNeyret2" [ref=e169] [cursor=pointer]:
+            - /url: /user/FabriceNeyret2
+  - generic [ref=e170]:
+    - generic [ref=e171]:
+      - text: We use cookies to give you the best experience on our website. If you continue using Shadertoy, we'll assume that you are happy to receive all cookies on this website. For more information, please review our
+      - link "Terms & Privacy" [ref=e172] [cursor=pointer]:
+        - /url: /terms
+      - text: .
+    - button "Accept" [ref=e174]

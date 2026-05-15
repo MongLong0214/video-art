@@ -1,0 +1,18 @@
+{
+  "duration": 20,
+  "fps": 30,
+  "resolution": [1632, 2912],
+  "symmetry": 12,
+  "zoomLoops": 5.0,
+  "cameraLoops": 5,
+  "foldScale": 1.55,
+  "paletteMode": 3,
+  "hueSpeed": 2.0,
+  "glow": 1.4,
+  "bloomStrength": 0.5,
+  "bloomRadius": 0.8,
+  "bloomThreshold": 0.5,
+  "caOffset": 0.08,
+  "vignetteIntensity": 0.5,
+  "contrast": 1.12
+}

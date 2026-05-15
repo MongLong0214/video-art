@@ -16,10 +16,58 @@ function parseArg(argv: string[], flag: string, fallback: string): string {
   return fallback;
 }
 
+// --url must be a local dev server origin. Chromium launches with --no-sandbox
+// (required for WebGL/ANGLE rendering), so we cannot let the caller point this
+// script at an arbitrary URL. Constraints: local host + http(s) + origin-only
+// (no path/query/fragment) + port in common dev-server range.
+const DEV_HOST_ALLOWLIST = new Set(["localhost", "127.0.0.1", "::1"]);
+const MIN_DEV_PORT = 1024;
+const MAX_DEV_PORT = 65535;
+
+function validateDevUrl(url: string): string {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    throw new Error(`--url must be a valid URL, got: ${url}`);
+  }
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    throw new Error(`--url protocol must be http/https, got: ${parsed.protocol}`);
+  }
+  if (!DEV_HOST_ALLOWLIST.has(parsed.hostname)) {
+    throw new Error(
+      `--url host must be local dev (localhost/127.0.0.1), got: ${parsed.hostname}`,
+    );
+  }
+  // Origin-only: reject any path/query/hash so a compromised localhost service
+  // can't be reached via this CLI with a crafted URL.
+  if (parsed.pathname !== "/" && parsed.pathname !== "") {
+    throw new Error(`--url must be origin only (no path), got pathname: ${parsed.pathname}`);
+  }
+  if (parsed.search || parsed.hash) {
+    throw new Error(`--url must not contain query/fragment, got: ${parsed.search}${parsed.hash}`);
+  }
+  if (parsed.username || parsed.password) {
+    throw new Error(`--url must not contain credentials`);
+  }
+  if (parsed.port) {
+    const port = Number(parsed.port);
+    if (!Number.isInteger(port) || port < MIN_DEV_PORT || port > MAX_DEV_PORT) {
+      throw new Error(`--url port must be in [${MIN_DEV_PORT}, ${MAX_DEV_PORT}], got: ${parsed.port}`);
+    }
+  }
+  // Return normalized origin (strips any trailing slash from pathname).
+  return parsed.origin;
+}
+
+// Sketches whose state is not phase-locked to the loop duration.
+// Disclosed in src/sketches/{cellular,particles}.ts headers.
+const NON_LOOPABLE_SKETCHES = new Set(["cellular", "particles"]);
+
 async function main() {
   const args = process.argv.slice(2);
   const sketch = parseArg(args, "--sketch", "psychedelic");
-  const devUrl = parseArg(args, "--url", "http://localhost:5173");
+  const devUrl = validateDevUrl(parseArg(args, "--url", "http://localhost:5173"));
   const cfg = getSketchConfig(sketch);
   const WIDTH = cfg.width;
   const HEIGHT = cfg.height;
@@ -58,7 +106,6 @@ async function main() {
       args: [
         `--window-size=${WIDTH},${HEIGHT}`,
         "--no-sandbox",
-        "--disable-gpu-sandbox",
         "--use-gl=angle",
         "--use-angle=metal",
       ],
@@ -124,7 +171,10 @@ async function main() {
   fs.copyFileSync(fragPath, path.join(ctx.archiveDir, `${sketch}.frag`));
 
   console.log(`\nOutput: ${path.relative(projectRoot, outputPath)}`);
-  console.log(`  ${WIDTH}x${HEIGHT} @ ${FPS}fps, ${LOOP_DUR}s seamless loop`);
+  const loopLabel = NON_LOOPABLE_SKETCHES.has(sketch)
+    ? "non-loopable (stateful simulation — frame[0] ≠ frame[last])"
+    : "seamless loop";
+  console.log(`  ${WIDTH}x${HEIGHT} @ ${FPS}fps, ${LOOP_DUR}s ${loopLabel}`);
 
   // Cleanup _work/ before listing
   ctx.cleanup();

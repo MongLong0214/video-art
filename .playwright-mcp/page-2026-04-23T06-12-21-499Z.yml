@@ -1,0 +1,596 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - link "Shadertoy" [ref=e4] [cursor=pointer]:
+        - /url: /
+      - searchbox "Search..." [ref=e7]
+    - generic [ref=e8]:
+      - link "Browse" [ref=e9] [cursor=pointer]:
+        - /url: /browse
+      - link "New" [ref=e10] [cursor=pointer]:
+        - /url: /new
+      - link "Sign In" [ref=e11] [cursor=pointer]:
+        - /url: /signin
+  - generic [ref=e13]:
+    - generic [ref=e14]:
+      - generic [ref=e17]:
+        - generic [ref=e18]:
+          - generic "Reset time (<ALT>+<DownArrow>)" [ref=e19] [cursor=pointer]
+          - generic "Pause/Resume (<ALT>+<UpArrow>)" [ref=e20] [cursor=pointer]
+        - generic [ref=e21]:
+          - generic [ref=e22]: "9.60"
+          - generic [ref=e23]: 144.0 fps
+          - generic [ref=e24]: 420 x 236
+        - generic [ref=e25]:
+          - generic "Record (<ALT>+<R>)" [ref=e26] [cursor=pointer]
+          - generic "Volume" [ref=e27] [cursor=pointer]
+          - generic "Go fullscreen" [ref=e28] [cursor=pointer]
+      - generic [ref=e29]:
+        - generic [ref=e30]:
+          - generic [ref=e31]: Menger Sponge
+          - generic [ref=e32]:
+            - img "share this shader" [ref=e33] [cursor=pointer]
+            - img [ref=e34]
+            - text: "153"
+          - generic [ref=e35]:
+            - text: "Views: 111615"
+            - text: ", Tags:"
+            - generic [ref=e175]:
+              - link "3d" [ref=e176] [cursor=pointer]:
+                - /url: /results?query=tag%3D3d
+              - text: ","
+              - link "raymarching" [ref=e177] [cursor=pointer]:
+                - /url: /results?query=tag%3Draymarching
+              - text: ","
+              - link "fractal" [ref=e178] [cursor=pointer]:
+                - /url: /results?query=tag%3Dfractal
+              - text: ","
+              - link "menger" [ref=e179] [cursor=pointer]:
+                - /url: /results?query=tag%3Dmenger
+              - text: ","
+              - link "vr" [ref=e180] [cursor=pointer]:
+                - /url: /results?query=tag%3Dvr
+          - generic [ref=e36]:
+            - text: Created by
+            - link "iq" [ref=e182] [cursor=pointer]:
+              - /url: /user/iq
+            - text: in 2013-01-14
+        - generic [ref=e183]:
+          - text: Four iterations of the famous fractal structure. See
+          - link "https://iquilezles.org/articles/menger" [ref=e184] [cursor=pointer]:
+            - /url: https://iquilezles.org/articles/menger
+          - text: for the full explanation of how this was done.
+    - generic [ref=e37]:
+      - generic [ref=e38] [cursor=pointer]:
+        - combobox [ref=e186]:
+          - option "Common"
+          - option "Sound"
+          - option "Buffer A"
+          - option "Buffer B"
+          - option "Buffer C"
+          - option "Buffer D"
+          - option "Cubemap A"
+        - generic [ref=e187]:
+          - img [ref=e188]
+          - generic [ref=e189]: Image
+      - generic [ref=e40] [cursor=pointer]:
+        - generic [ref=e41]: Shader Inputs
+        - generic [ref=e44]:
+          - text: uniform vec3 iResolution; // viewport resolution (in pixels)
+          - text: uniform float iTime; // shader playback time (in seconds)
+          - text: uniform float iTimeDelta; // render time (in seconds)
+          - text: uniform float iFrameRate; // shader frame rate
+          - text: uniform int iFrame; // shader playback frame
+          - text: uniform float iChannelTime[4]; // channel playback time (in seconds)
+          - text: uniform vec3 iChannelResolution[4]; // channel resolution (in pixels)
+          - text: "uniform vec4 iMouse; // mouse pixel coords. xy: current (if MLB down), zw: click"
+          - text: uniform samplerXX iChannel0..3; // input channel. XX = 2D/Cube
+          - text: uniform vec4 iDate; // (year, month, day, time in seconds)
+          - text: uniform float iSampleRate; // sound sample rate (i.e., 44100)
+      - generic [ref=e46]:
+        - textbox [ref=e47]
+        - generic [ref=e50]:
+          - generic [ref=e195]:
+            - generic [ref=e196]: "1"
+            - text: // The MIT License
+          - generic [ref=e197]:
+            - generic [ref=e198]: "2"
+            - text: // https://www.youtube.com/c/InigoQuilez
+          - generic [ref=e199]:
+            - generic [ref=e200]: "3"
+            - text: // https://iquilezles.org/
+          - generic [ref=e201]:
+            - generic [ref=e202]: "4"
+            - text: // Copyright © 2013 Inigo Quilez
+          - generic [ref=e203]:
+            - generic [ref=e204]: "5"
+            - text: "// Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions: The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software. THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE."
+          - generic [ref=e206]: "6"
+          - generic [ref=e207]:
+            - generic [ref=e208]: "7"
+            - text: // https://iquilezles.org/articles/menger
+          - generic [ref=e210]: "8"
+          - generic [ref=e212]: "9"
+          - generic [ref=e213]:
+            - generic [ref=e214]: "10"
+            - text: "#if HW_PERFORMANCE==0"
+          - generic [ref=e215]:
+            - generic [ref=e216]: "11"
+            - text: "#define AA 1"
+          - generic [ref=e217]:
+            - generic [ref=e218]: "12"
+            - text: "#else"
+          - generic [ref=e219]:
+            - generic [ref=e220]: "13"
+            - text: "#define AA 2"
+          - generic [ref=e221]:
+            - generic [ref=e222]: "14"
+            - text: "#endif"
+          - generic [ref=e224]: "15"
+          - generic [ref=e226]: "16"
+          - generic [ref=e227]:
+            - generic [ref=e228]: "17"
+            - text: "float maxcomp(in vec3 p ) { return max(p.x,max(p.y,p.z));}"
+          - generic [ref=e229]:
+            - generic [ref=e230]: "18"
+            - text: float sdBox( vec3 p, vec3 b )
+          - generic [ref=e231]:
+            - generic:
+              - generic [ref=e232]: "19"
+              - generic [ref=e234] [cursor=pointer]: ▾
+            - text: "{"
+          - generic [ref=e235]:
+            - generic [ref=e236]: "20"
+            - text: vec3 di = abs(p) - b;
+          - generic [ref=e237]:
+            - generic [ref=e238]: "21"
+            - text: return min(maxcomp(di),length(max(di,0.0)));
+          - generic [ref=e239]:
+            - generic [ref=e240]: "22"
+            - text: "}"
+          - generic [ref=e242]: "23"
+          - generic [ref=e243]:
+            - generic [ref=e244]: "24"
+            - text: vec2 iBox( in vec3 ro, in vec3 rd, in vec3 rad )
+          - generic [ref=e245]:
+            - generic:
+              - generic [ref=e246]: "25"
+              - generic [ref=e248] [cursor=pointer]: ▾
+            - text: "{"
+          - generic [ref=e249]:
+            - generic [ref=e250]: "26"
+            - text: vec3 m = 1.0/rd;
+          - generic [ref=e251]:
+            - generic [ref=e252]: "27"
+            - text: vec3 n = m*ro;
+          - generic [ref=e253]:
+            - generic [ref=e254]: "28"
+            - text: vec3 k = abs(m)*rad;
+          - generic [ref=e255]:
+            - generic [ref=e256]: "29"
+            - text: vec3 t1 = -n - k;
+          - generic [ref=e257]:
+            - generic [ref=e258]: "30"
+            - text: vec3 t2 = -n + k;
+          - generic [ref=e259]:
+            - generic [ref=e260]: "31"
+            - text: return vec2( max( max( t1.x, t1.y ), t1.z ),
+          - generic [ref=e261]:
+            - generic [ref=e262]: "32"
+            - text: min( min( t2.x, t2.y ), t2.z ) );
+          - generic [ref=e263]:
+            - generic [ref=e264]: "33"
+            - text: "}"
+          - generic [ref=e266]: "34"
+          - generic [ref=e267]:
+            - generic [ref=e268]: "35"
+            - text: const mat3 ma = mat3( 0.6, 0.0, 0.8,
+          - generic [ref=e269]:
+            - generic [ref=e270]: "36"
+            - text: 0.0, 1.0, 0.0,
+          - generic [ref=e271]:
+            - generic [ref=e272]: "37"
+            - text: "-0.8, 0.0, 0.6);"
+          - generic [ref=e273]:
+            - generic [ref=e274]: "38"
+            - text: vec4 map( in vec3 p )
+          - generic [ref=e275]:
+            - generic:
+              - generic [ref=e276]: "39"
+              - generic [ref=e278] [cursor=pointer]: ▾
+            - text: "{"
+          - generic [ref=e279]:
+            - generic [ref=e280]: "40"
+            - text: float d = sdBox(p,vec3(1.0));
+          - generic [ref=e281]:
+            - generic [ref=e282]: "41"
+            - text: vec4 res = vec4( d, 1.0, 0.0, 0.0 );
+          - generic [ref=e284]: "42"
+          - generic [ref=e285]:
+            - generic [ref=e286]: "43"
+            - text: float ani = smoothstep( -0.2, 0.2, -cos(0.5*iTime) );
+          - generic [ref=e287]:
+            - generic [ref=e288]: "44"
+            - text: float off = 1.5*sin( 0.01*iTime );
+          - generic [ref=e290]: "45"
+          - generic [ref=e291]:
+            - generic [ref=e292]: "46"
+            - text: float s = 1.0;
+          - generic [ref=e293]:
+            - generic [ref=e294]: "47"
+            - text: for( int m=0; m<4; m++ )
+          - generic [ref=e295]:
+            - generic:
+              - generic [ref=e296]: "48"
+              - generic [ref=e298] [cursor=pointer]: ▾
+            - text: "{"
+          - generic [ref=e299]:
+            - generic [ref=e300]: "49"
+            - text: p = mix( p, ma*(p+off), ani );
+          - generic [ref=e302]: "50"
+          - generic [ref=e303]:
+            - generic [ref=e304]: "51"
+            - text: vec3 a = mod( p*s, 2.0 )-1.0;
+          - generic [ref=e305]:
+            - generic [ref=e306]: "52"
+            - text: s *= 3.0;
+          - generic [ref=e307]:
+            - generic [ref=e308]: "53"
+            - text: vec3 r = abs(1.0 - 3.0*abs(a));
+          - generic [ref=e309]:
+            - generic [ref=e310]: "54"
+            - text: float da = max(r.x,r.y);
+          - generic [ref=e311]:
+            - generic [ref=e312]: "55"
+            - text: float db = max(r.y,r.z);
+          - generic [ref=e313]:
+            - generic [ref=e314]: "56"
+            - text: float dc = max(r.z,r.x);
+          - generic [ref=e315]:
+            - generic [ref=e316]: "57"
+            - text: float c = (min(da,min(db,dc))-1.0)/s;
+          - generic [ref=e318]: "58"
+          - generic [ref=e319]:
+            - generic [ref=e320]: "59"
+            - text: if( c>d )
+          - generic [ref=e321]:
+            - generic:
+              - generic [ref=e322]: "60"
+              - generic [ref=e324] [cursor=pointer]: ▾
+            - text: "{"
+          - generic [ref=e325]:
+            - generic [ref=e326]: "61"
+            - text: d = c;
+          - generic [ref=e327]:
+            - generic [ref=e328]: "62"
+            - text: res = vec4( d, min(res.y,0.2*da*db*dc), (1.0+float(m))/4.0, 0.0 );
+          - generic [ref=e329]:
+            - generic [ref=e330]: "63"
+            - text: "}"
+          - generic [ref=e331]:
+            - generic [ref=e332]: "64"
+            - text: "}"
+          - generic [ref=e334]: "65"
+          - generic [ref=e335]:
+            - generic [ref=e336]: "66"
+            - text: return res;
+          - generic [ref=e337]:
+            - generic [ref=e338]: "67"
+            - text: "}"
+          - generic [ref=e340]: "68"
+          - generic [ref=e341]:
+            - generic [ref=e342]: "69"
+            - text: vec4 intersect( in vec3 ro, in vec3 rd )
+          - generic [ref=e343]:
+            - generic:
+              - generic [ref=e344]: "70"
+              - generic [ref=e346] [cursor=pointer]: ▾
+            - text: "{"
+          - generic [ref=e347]:
+            - generic [ref=e348]: "71"
+            - text: vec2 bb = iBox( ro, rd, vec3(1.05) );
+          - generic [ref=e349]:
+            - generic [ref=e350]: "72"
+            - text: if( bb.y<bb.x ) return vec4(-1.0);
+          - generic [ref=e352]: "73"
+          - generic [ref=e353]:
+            - generic [ref=e354]: "74"
+            - text: float tmin = bb.x;
+          - generic [ref=e355]:
+            - generic [ref=e356]: "75"
+            - text: float tmax = bb.y;
+          - generic [ref=e358]: "76"
+          - generic [ref=e359]:
+            - generic [ref=e360]: "77"
+            - text: float t = tmin;
+          - generic [ref=e361]:
+            - generic [ref=e362]: "78"
+            - text: vec4 res = vec4(-1.0);
+          - generic [ref=e363]:
+            - generic [ref=e364]: "79"
+            - text: for( int i=0; i<64; i++ )
+          - generic [ref=e365]:
+            - generic:
+              - generic [ref=e366]: "80"
+              - generic [ref=e368] [cursor=pointer]: ▾
+            - text: "{"
+          - generic [ref=e369]:
+            - generic [ref=e370]: "81"
+            - text: vec4 h = map(ro + rd*t);
+          - generic [ref=e371]:
+            - generic [ref=e372]: "82"
+            - text: if( h.x<0.002 || t>tmax ) break;
+          - generic [ref=e373]:
+            - generic [ref=e374]: "83"
+            - text: res = vec4(t,h.yzw);
+          - generic [ref=e375]:
+            - generic [ref=e376]: "84"
+            - text: t += h.x;
+          - generic [ref=e377]:
+            - generic [ref=e378]: "85"
+            - text: "}"
+          - generic [ref=e379]:
+            - generic [ref=e380]: "86"
+            - text: if( t>tmax ) res=vec4(-1.0);
+          - generic [ref=e381]:
+            - generic [ref=e382]: "87"
+            - text: return res;
+          - generic [ref=e383]:
+            - generic [ref=e384]: "88"
+            - text: "}"
+          - generic [ref=e386]: "89"
+          - generic [ref=e387]:
+            - generic [ref=e388]: "90"
+            - text: float softshadow( in vec3 ro, in vec3 rd, float mint, float k )
+          - generic [ref=e389]:
+            - generic:
+              - generic [ref=e390]: "91"
+              - generic [ref=e392] [cursor=pointer]: ▾
+            - text: "{"
+          - generic [ref=e393]:
+            - generic [ref=e394]: "92"
+            - text: vec2 bb = iBox( ro, rd, vec3(1.05) );
+      - generic [ref=e57]:
+        - generic [ref=e58]:
+          - img "Compile (<ALT>+<ENTER>)" [ref=e59] [cursor=pointer]
+          - link "Compiled in 0.1 secs" [ref=e395] [cursor=pointer]:
+            - /url: "#"
+        - generic [ref=e60]: 3622 chars
+        - generic [ref=e61]:
+          - combobox "Change font size (<ALT>+<+/->)" [ref=e63]:
+            - option "XS"
+            - option "S" [selected]
+            - option "M"
+            - option "L"
+            - option "XL"
+            - option "XXL"
+          - img "Show GLSL help" [ref=e64] [cursor=pointer]
+      - generic [ref=e65]:
+        - generic [ref=e66]:
+          - generic [ref=e67]:
+            - generic:
+              - text: Filter
+              - combobox "Pixel filtering mode" [ref=e69]:
+                - option "nearest" [selected]
+                - option "linear"
+                - option "mipmap"
+              - text: Wrap
+              - combobox "Pixel filtering mode" [ref=e70]:
+                - option "clamp" [selected]
+                - option "repeat"
+              - generic [ref=e72]:
+                - text: VFlip
+                - checkbox "VFlip" [ref=e73]
+          - generic [ref=e75]: iChannel0
+        - generic [ref=e78]:
+          - generic [ref=e79]:
+            - generic:
+              - text: Filter
+              - combobox "Pixel filtering mode" [ref=e81]:
+                - option "nearest" [selected]
+                - option "linear"
+                - option "mipmap"
+              - text: Wrap
+              - combobox "Pixel filtering mode" [ref=e82]:
+                - option "clamp" [selected]
+                - option "repeat"
+              - generic [ref=e84]:
+                - text: VFlip
+                - checkbox "VFlip" [ref=e85]
+          - generic [ref=e87]: iChannel1
+        - generic [ref=e90]:
+          - generic [ref=e91]:
+            - generic:
+              - text: Filter
+              - combobox "Pixel filtering mode" [ref=e93]:
+                - option "nearest" [selected]
+                - option "linear"
+                - option "mipmap"
+              - text: Wrap
+              - combobox "Pixel filtering mode" [ref=e94]:
+                - option "clamp" [selected]
+                - option "repeat"
+              - generic [ref=e96]:
+                - text: VFlip
+                - checkbox "VFlip" [ref=e97]
+          - generic [ref=e99]: iChannel2
+        - generic [ref=e102]:
+          - generic [ref=e103]:
+            - generic:
+              - text: Filter
+              - combobox "Pixel filtering mode" [ref=e105]:
+                - option "nearest" [selected]
+                - option "linear"
+                - option "mipmap"
+              - text: Wrap
+              - combobox "Pixel filtering mode" [ref=e106]:
+                - option "clamp" [selected]
+                - option "repeat"
+              - generic [ref=e108]:
+                - text: VFlip
+                - checkbox "VFlip" [ref=e109]
+          - generic [ref=e111]: iChannel3
+    - generic [ref=e115]:
+      - text: Comments (9)
+      - generic [ref=e116]:
+        - link "Sign in" [ref=e118] [cursor=pointer]:
+          - /url: /signin
+        - text: to post a comment.
+      - generic [ref=e396]:
+        - generic [ref=e397]:
+          - img [ref=e399]
+          - generic [ref=e400]:
+            - link "KiO" [ref=e401] [cursor=pointer]:
+              - /url: /user/KiO
+            - text: ", 2021-01-26"
+            - text: Thanks iq! Sorry for necroing an article from 2011, but your resources are the most diverse and accessible, as well as extending into some very complex ideas, on the internet. It is a shame that raymarching, and shader-writing in general, seems to be a rather small niche of the programming world. It embodies the beauty of maths so well. A lot of your approaches integrate optimisation so heavily that I am struggling to read the logic in the code, as I am not that good at visualising mod functions yet. I can understand "iteratively subtract the cross" - I have made fractals before, but I do not understand how ... vec3 a = mod( p*s, 2.0 )-1.0; s *= 3.0; vec3 r = 1.0 - 3.0*abs(a); ... d = max(d,c); achieves the iterative subtraction of the crosses... I get why individual numbers are there - the 3 scales the cross as it gets smaller, the "1.0-" moves it into the middle of the next smaller grid. But if I try to derive these ideas from scratch myself my code does not produce what I want it to...
+        - generic [ref=e402]:
+          - img [ref=e404]
+          - generic [ref=e405]:
+            - link "iq" [ref=e406] [cursor=pointer]:
+              - /url: /user/iq
+            - text: ", 2021-01-25"
+            - text: I fixed the article. Sorry for that!
+        - generic [ref=e407]:
+          - img [ref=e409]
+          - generic [ref=e410]:
+            - link "KiO" [ref=e411] [cursor=pointer]:
+              - /url: /user/KiO
+            - text: ", 2021-01-23"
+            - text: "Thank you to iq for all the amazing tutorials about raymarching. However, for those who came here from http://www.iquilezles.org/www/articles/menger/menger.htm, please be aware that there is currently a mistake in one of the implementations of this sponge, prior to optimisations. Current code is: vec3 map( in vec3 p ) { float d = sdBox(p,vec3(1.0)); float s = 1.0; for( int m=0; m<3; m++ ) { vec3 a = mod( p*s, 2.0 )-1.0; s *= 3.0; vec3 r = 1.0 - 3.0*abs(a); float c = sdCross(r)/s; d = max(d,-c); } return vec3(d,0.0,0.0); } Note that the last line in the loop has to read d = max(d,c), without the minus. Otherwise it does not work. I will never get these two hours of my life back, but I am sure all the hair I tore out will eventually grow again... I have no clue what is happening with all the mods and abs still, but that is a different story."
+        - generic [ref=e412]:
+          - img [ref=e414]
+          - generic [ref=e415]:
+            - link "betairya" [ref=e416] [cursor=pointer]:
+              - /url: /user/betairya
+            - text: ", 2018-11-25"
+            - text: "Hello, I'm just be confused for several hours on that magic math around those lines: a = mod(p * s, 2.0) - 1.0; r = abs(1.0 - 3.0 * abs(a)) It might be some wrong with my brain, but for me it is really hard to figure out what was going on. I think the following calculation is much more clear for me: a = mod( (p + 1) * s, 2.0 ) - 1.0; r = abs(3.0 * a); and replace c by -c (c = -(min(...) / s)). Although they are equal (at least visually, I have not checked it), I think the second one is more easier to understand... ( for me lol Thanks for those brilliant works! xD"
+        - generic [ref=e417]:
+          - img [ref=e419]
+          - generic [ref=e420]:
+            - link "fb39ca4" [ref=e421] [cursor=pointer]:
+              - /url: /user/fb39ca4
+            - text: ", 2014-12-08"
+            - text: Menger fractals with iterated rotations always remind me of high rise apartment buildings.
+        - generic [ref=e422]:
+          - img [ref=e424]
+          - generic [ref=e425]:
+            - link "iq" [ref=e426] [cursor=pointer]:
+              - /url: /user/iq
+            - text: ", 2014-11-17"
+            - text: Not really, the results are different. If |a|<1/3, your formula won't spit out the right values...
+        - generic [ref=e427]:
+          - img [ref=e429]
+          - generic [ref=e430]:
+            - link "EvilRyu" [ref=e431] [cursor=pointer]:
+              - /url: /user/EvilRyu
+            - text: ", 2014-03-23"
+            - text: "For this line: vec3 r=abs(1.0-3.0*abs(a)), is the outer abs() necessary? I think 3.0*abs(a)-1.0 would suffice"
+            - img [ref=e432]
+        - generic [ref=e433]:
+          - img [ref=e435]
+          - generic [ref=e436]:
+            - link "iq" [ref=e437] [cursor=pointer]:
+              - /url: /user/iq
+            - text: ", 2013-08-20"
+            - text: Yes it is, but the titles don't match. It's the "iterative shapes" under the "fractals" section
+        - generic [ref=e438]:
+          - img [ref=e440]
+          - generic [ref=e441]:
+            - link "fb39ca4" [ref=e442] [cursor=pointer]:
+              - /url: /user/fb39ca4
+            - text: ", 2013-08-20"
+            - text: The URL should be http://www.iquilezles.org/www/articles/menger/menger.htm. Also, that particular article is not listed on the articles page of your website.
+  - generic [ref=e119]:
+    - generic [ref=e120]:
+      - text: Community Forums
+      - list [ref=e121]:
+        - listitem [ref=e122]:
+          - link "Official Events" [ref=e123] [cursor=pointer]:
+            - /url: /events
+        - listitem [ref=e124]:
+          - link "In Facebook (english)" [ref=e125] [cursor=pointer]:
+            - /url: https://www.facebook.com/groups/147749602472741
+        - listitem [ref=e126]:
+          - link "In Facebook (korean)" [ref=e127] [cursor=pointer]:
+            - /url: https://www.facebook.com/groups/1339783682699494
+        - listitem [ref=e128]:
+          - link "In Discord" [ref=e129] [cursor=pointer]:
+            - /url: https://discord.gg/XtmMN6E
+          - text: (
+          - link "direct link" [ref=e130] [cursor=pointer]:
+            - /url: https://discordapp.com/channels/578696555612209173/579531723348639754
+          - text: )
+    - generic [ref=e131]:
+      - text: Feedback and Support
+      - list [ref=e132]:
+        - listitem [ref=e133]:
+          - link "Facebook" [ref=e134] [cursor=pointer]:
+            - /url: https://www.facebook.com/Shadertoy
+        - listitem [ref=e135]:
+          - link "Twitter" [ref=e136] [cursor=pointer]:
+            - /url: https://twitter.com/shadertoy
+        - listitem [ref=e137]:
+          - link "Patreon" [ref=e138] [cursor=pointer]:
+            - /url: https://www.patreon.com/shadertoy
+        - listitem [ref=e139]:
+          - link "Roadmap" [ref=e140] [cursor=pointer]:
+            - /url: https://trello.com/b/5hM0CjId
+    - generic [ref=e141]:
+      - text: Shadertoy
+      - list [ref=e142]:
+        - listitem [ref=e143]:
+          - link "Store" [ref=e144] [cursor=pointer]:
+            - /url: /store
+        - listitem [ref=e145]:
+          - link "Documentation" [ref=e146] [cursor=pointer]:
+            - /url: /howto
+        - listitem [ref=e147]:
+          - link "Terms & Privacy" [ref=e148] [cursor=pointer]:
+            - /url: /terms
+        - listitem [ref=e149]:
+          - link "About" [ref=e150] [cursor=pointer]:
+            - /url: /about
+    - generic [ref=e151]:
+      - text: Apps and Plugins
+      - list [ref=e152]:
+        - listitem [ref=e153]:
+          - link "Official iPhone App" [ref=e154] [cursor=pointer]:
+            - /url: https://itunes.apple.com/us/app/shadertoy/id717961814
+          - text: by
+          - link "Reinder" [ref=e155] [cursor=pointer]:
+            - /url: /user/reinder
+        - listitem [ref=e156]:
+          - link "Screensaver" [ref=e157] [cursor=pointer]:
+            - /url: https://steamcommunity.com/sharedfiles/filedetails/?id=1726697188
+          - text: by
+          - link "Kosro" [ref=e158] [cursor=pointer]:
+            - /url: /user/kosro
+        - listitem [ref=e159]:
+          - link "Shadertoy plugin" [ref=e160] [cursor=pointer]:
+            - /url: https://chrome.google.com/webstore/detail/shadertoy-unofficial-plug/ohicbclhdmkhoabobgppffepcopomhgl
+          - text: by
+          - link "Patu" [ref=e161] [cursor=pointer]:
+            - /url: /user/patu
+    - generic [ref=e162]:
+      - text: Tutorials
+      - list [ref=e163]:
+        - listitem [ref=e164]:
+          - link "Shader coding intro" [ref=e165] [cursor=pointer]:
+            - /url: https://www.youtube.com/watch?v=0ifChJ0nJfM
+          - text: by
+          - link "iq" [ref=e166] [cursor=pointer]:
+            - /url: /user/iq
+        - listitem [ref=e167]:
+          - link "Shadertoy Unofficial" [ref=e168] [cursor=pointer]:
+            - /url: https://shadertoyunofficial.wordpress.com/
+          - text: by
+          - link "FabriceNeyret2" [ref=e169] [cursor=pointer]:
+            - /url: /user/FabriceNeyret2
+  - generic [ref=e170]:
+    - generic [ref=e171]:
+      - text: We use cookies to give you the best experience on our website. If you continue using Shadertoy, we'll assume that you are happy to receive all cookies on this website. For more information, please review our
+      - link "Terms & Privacy" [ref=e172] [cursor=pointer]:
+        - /url: /terms
+      - text: .
+    - button "Accept" [ref=e174]

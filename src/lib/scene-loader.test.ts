@@ -23,6 +23,36 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+describe("loadScene — URL whitelist (H4 DoS guard)", () => {
+  it("rejects scheme URLs (http://)", async () => {
+    await expect(loadScene("http://evil.com/scene.json")).rejects.toThrow(/not allowed/);
+  });
+
+  it("rejects path traversal (..)", async () => {
+    await expect(loadScene("/presets/../../../etc/passwd")).rejects.toThrow(/not allowed/);
+  });
+
+  it("rejects paths outside whitelist", async () => {
+    await expect(loadScene("/arbitrary/path.json")).rejects.toThrow(/not allowed/);
+  });
+
+  it("accepts /scene.json", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(validScene),
+    }));
+    await expect(loadScene("/scene.json")).resolves.toBeDefined();
+  });
+
+  it("accepts /presets/* paths", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(validScene),
+    }));
+    await expect(loadScene("/presets/solo/T13-baseline.json")).resolves.toBeDefined();
+  });
+});
+
 describe("loadScene", () => {
   it("should parse valid scene.json", async () => {
     vi.stubGlobal(
@@ -49,7 +79,8 @@ describe("loadScene", () => {
       }),
     );
 
-    await expect(loadScene("/missing.json")).rejects.toThrow(
+    // Use whitelisted path to exercise HTTP failure (not whitelist guard)
+    await expect(loadScene("/presets/missing.json")).rejects.toThrow(
       "Failed to load scene: 404",
     );
   });
@@ -74,7 +105,7 @@ describe("loadScene", () => {
       }),
     );
 
-    await expect(loadScene("/bad.json")).rejects.toThrow();
+    await expect(loadScene("/presets/bad.json")).rejects.toThrow();
   });
 
   it("should throw on missing required fields", async () => {
@@ -86,6 +117,6 @@ describe("loadScene", () => {
       }),
     );
 
-    await expect(loadScene("/incomplete.json")).rejects.toThrow();
+    await expect(loadScene("/presets/incomplete.json")).rejects.toThrow();
   });
 });

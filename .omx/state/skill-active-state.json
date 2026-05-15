@@ -1,11 +1,59 @@
 {
   "version": 1,
   "active": true,
-  "skill": "ultrawork",
-  "keyword": "parallel",
-  "phase": "reviewing",
+  "skill": "visual-verdict",
+  "keyword": "Analyze",
+  "phase": "executing",
   "activated_at": "2026-03-30T03:27:36.179Z",
-  "updated_at": "2026-04-03T04:29:05.042Z",
+  "updated_at": "2026-04-24T05:47:01.357Z",
   "source": "keyword-detector",
-  "input_lock": null
+  "session_id": "019dbcdb-0af8-7121-a458-f3604f548fb6",
+  "thread_id": "019dbd54-c770-7603-b67f-d28df5a6ae0f",
+  "turn_id": "019dbd54-cac3-76d2-8b00-262a8633f49f",
+  "active_skills": [
+    {
+      "skill": "ultrawork",
+      "phase": "executing",
+      "active": true,
+      "activated_at": "2026-03-30T03:27:36.179Z",
+      "updated_at": "2026-04-10T00:54:43.577Z"
+    },
+    {
+      "skill": "analyze",
+      "phase": "planning",
+      "active": true,
+      "activated_at": "2026-04-24T02:32:34.628Z",
+      "updated_at": "2026-04-24T02:33:25.783Z",
+      "session_id": "019dbcdb-0af8-7121-a458-f3604f548fb6",
+      "thread_id": "019dbd54-c770-7603-b67f-d28df5a6ae0f",
+      "turn_id": "019dbd54-cac3-76d2-8b00-262a8633f49f"
+    },
+    {
+      "skill": "autopilot",
+      "phase": "v72-smooth-cascade-no-cross",
+      "active": true,
+      "activated_at": "2026-04-24T05:47:01.357Z",
+      "updated_at": "2026-04-24T05:47:01.357Z",
+      "session_id": "019dbcdb-0af8-7121-a458-f3604f548fb6"
+    }
+  ],
+  "iteration": 1,
+  "last_turn_at": "2026-04-24T03:10:11.046Z",
+  "current_phase": "visual-verdict-v72-initial",
+  "task_description": "visual-verdict gate for v72 smooth no-cross cascade",
+  "threshold": 90,
+  "variant": "trip-v69",
+  "completed_at": "2026-04-24T14:07:00+09:00",
+  "score": 92,
+  "verdict": "pass",
+  "artifact": ".omx/state/visual-verdict/ralph-progress.json",
+  "generated_screenshot": "/tmp/video-art-ref-ig-DV_6YBZk293/generated-v69-preview.png",
+  "contact_sheet": "/tmp/video-art-ref-ig-DV_6YBZk293/lsd-trip-v69-first-16s.jpg",
+  "started_at": "2026-04-24T14:48:00+09:00",
+  "baseline": "out/dmt/2026-04-24_lsd-trip-v71-cascade-2e179df0/lsd-trip-v71-cascade.mp4",
+  "known_issues": [
+    "rough color transitions",
+    "rough particle/ring texture",
+    "cross-like color spread near center"
+  ]
 }

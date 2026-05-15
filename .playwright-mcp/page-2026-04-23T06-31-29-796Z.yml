@@ -1,0 +1,644 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - link "Shadertoy" [ref=e4] [cursor=pointer]:
+        - /url: /
+      - searchbox "Search..." [ref=e7]
+    - generic [ref=e8]:
+      - link "Browse" [ref=e9] [cursor=pointer]:
+        - /url: /browse
+      - link "New" [ref=e10] [cursor=pointer]:
+        - /url: /new
+      - link "Sign In" [ref=e11] [cursor=pointer]:
+        - /url: /signin
+  - generic [ref=e13]:
+    - generic [ref=e14]:
+      - generic [ref=e17]:
+        - generic [ref=e18]:
+          - generic "Reset time (<ALT>+<DownArrow>)" [ref=e19] [cursor=pointer]
+          - generic "Pause/Resume (<ALT>+<UpArrow>)" [ref=e20] [cursor=pointer]
+        - generic [ref=e21]:
+          - generic [ref=e22]: "6.15"
+          - generic [ref=e23]: 1.0 fps
+          - generic [ref=e24]: 420 x 236
+        - generic [ref=e25]:
+          - generic "Record (<ALT>+<R>)" [ref=e26] [cursor=pointer]
+          - generic "Volume" [ref=e27] [cursor=pointer]
+          - generic "Go fullscreen" [ref=e28] [cursor=pointer]
+      - generic [ref=e29]:
+        - generic [ref=e30]:
+          - generic [ref=e31]:
+            - text: "@Party Concert Visuals 2020"
+            - img "This shader has been Shader of the Week!" [ref=e33]
+          - generic [ref=e34]:
+            - img "share this shader" [ref=e35] [cursor=pointer]
+            - img [ref=e36]
+            - text: "153"
+          - generic [ref=e37]:
+            - text: "Views: 10720"
+            - text: ", Tags:"
+            - generic [ref=e177]:
+              - link "raymarching" [ref=e178] [cursor=pointer]:
+                - /url: /results?query=tag%3Draymarching
+              - text: ","
+              - link "4d" [ref=e179] [cursor=pointer]:
+                - /url: /results?query=tag%3D4d
+              - text: ","
+              - link "lasers" [ref=e180] [cursor=pointer]:
+                - /url: /results?query=tag%3Dlasers
+          - generic [ref=e38]:
+            - text: Created by
+            - link "blackle" [ref=e182] [cursor=pointer]:
+              - /url: /user/blackle
+            - text: in 2020-06-14
+        - generic [ref=e183]: visuals for the concert at @party online 2020, programmed in about 1 hour
+    - generic [ref=e39]:
+      - generic [ref=e40] [cursor=pointer]:
+        - combobox [ref=e185]:
+          - option "Common"
+          - option "Sound"
+          - option "Buffer A"
+          - option "Buffer B"
+          - option "Buffer C"
+          - option "Buffer D"
+          - option "Cubemap A"
+        - generic [ref=e186]:
+          - img [ref=e187]
+          - generic [ref=e188]: Image
+      - generic [ref=e42] [cursor=pointer]:
+        - generic [ref=e43]: Shader Inputs
+        - generic [ref=e46]:
+          - text: uniform vec3 iResolution; // viewport resolution (in pixels)
+          - text: uniform float iTime; // shader playback time (in seconds)
+          - text: uniform float iTimeDelta; // render time (in seconds)
+          - text: uniform float iFrameRate; // shader frame rate
+          - text: uniform int iFrame; // shader playback frame
+          - text: uniform float iChannelTime[4]; // channel playback time (in seconds)
+          - text: uniform vec3 iChannelResolution[4]; // channel resolution (in pixels)
+          - text: "uniform vec4 iMouse; // mouse pixel coords. xy: current (if MLB down), zw: click"
+          - text: uniform samplerXX iChannel0..3; // input channel. XX = 2D/Cube
+          - text: uniform vec4 iDate; // (year, month, day, time in seconds)
+          - text: uniform float iSampleRate; // sound sample rate (i.e., 44100)
+      - generic [ref=e48]:
+        - textbox [ref=e49]
+        - generic [ref=e52]:
+          - generic [ref=e194]:
+            - generic [ref=e195]: "1"
+            - text: //CC0 1.0 Universal https://creativecommons.org/publicdomain/zero/1.0/
+          - generic [ref=e196]:
+            - generic [ref=e197]: "2"
+            - text: //To the extent possible under law, Blackle Mori has waived all copyright and related or neighboring rights to this work.
+          - generic [ref=e199]: "3"
+          - generic [ref=e200]:
+            - generic:
+              - generic [ref=e201]: "4"
+              - generic [ref=e203] [cursor=pointer]: ▾
+            - text: "float comp (vec3 p) {"
+          - generic [ref=e204]:
+            - generic [ref=e205]: "5"
+            - text: p = asin(sin(p)*.9);
+          - generic [ref=e206]:
+            - generic [ref=e207]: "6"
+            - text: return length(p)-1.;
+          - generic [ref=e208]:
+            - generic [ref=e209]: "7"
+            - text: "}"
+          - generic [ref=e211]: "8"
+          - generic [ref=e212]:
+            - generic:
+              - generic [ref=e213]: "9"
+              - generic [ref=e215] [cursor=pointer]: ▾
+            - text: "vec3 erot(vec3 p, vec3 ax, float ro) {"
+          - generic [ref=e216]:
+            - generic [ref=e217]: "10"
+            - text: return mix(dot(p,ax)*ax,p,cos(ro))+sin(ro)*cross(ax,p);
+          - generic [ref=e218]:
+            - generic [ref=e219]: "11"
+            - text: "}"
+          - generic [ref=e221]: "12"
+          - generic [ref=e222]:
+            - generic:
+              - generic [ref=e223]: "13"
+              - generic [ref=e225] [cursor=pointer]: ▾
+            - text: "float smin(float a, float b, float k) {"
+          - generic [ref=e226]:
+            - generic [ref=e227]: "14"
+            - text: float h = max(0.,k-abs(b-a))/k;
+          - generic [ref=e228]:
+            - generic [ref=e229]: "15"
+            - text: return min(a,b)-h*h*h*k/6.;
+          - generic [ref=e230]:
+            - generic [ref=e231]: "16"
+            - text: "}"
+          - generic [ref=e233]: "17"
+          - generic [ref=e234]:
+            - generic:
+              - generic [ref=e235]: "18"
+              - generic [ref=e237] [cursor=pointer]: ▾
+            - text: "vec4 wrot(vec4 p) {"
+          - generic [ref=e238]:
+            - generic [ref=e239]: "19"
+            - text: return vec4(dot(p,vec4(1)), p.yzw + p.zwy - p.wyz - p.xxx)/2.;
+          - generic [ref=e240]:
+            - generic [ref=e241]: "20"
+            - text: "}"
+          - generic [ref=e243]: "21"
+          - generic [ref=e244]:
+            - generic [ref=e245]: "22"
+            - text: float d1, d2, d3;
+          - generic [ref=e246]:
+            - generic [ref=e247]: "23"
+            - text: float t;
+          - generic [ref=e248]:
+            - generic [ref=e249]: "24"
+            - text: float lazors, doodad;
+          - generic [ref=e250]:
+            - generic [ref=e251]: "25"
+            - text: vec3 p2;
+          - generic [ref=e252]:
+            - generic [ref=e253]: "26"
+            - text: float bpm = 125.;
+          - generic [ref=e254]:
+            - generic:
+              - generic [ref=e255]: "27"
+              - generic [ref=e257] [cursor=pointer]: ▾
+            - text: "float scene(vec3 p) {"
+          - generic [ref=e258]:
+            - generic [ref=e259]: "28"
+            - text: p2 = erot(p, vec3(0,1,0), t);
+          - generic [ref=e260]:
+            - generic [ref=e261]: "29"
+            - text: p2 = erot(p2, vec3(0,0,1), t/3.);
+          - generic [ref=e262]:
+            - generic [ref=e263]: "30"
+            - text: p2 = erot(p2, vec3(1,0,0), t/5.);
+          - generic [ref=e265]: "31"
+          - generic [ref=e266]:
+            - generic [ref=e267]: "32"
+            - text: float bpt = iTime/60.*bpm;
+          - generic [ref=e268]:
+            - generic [ref=e269]: "33"
+            - text: vec4 p4 = vec4(p2,0);
+          - generic [ref=e270]:
+            - generic [ref=e271]: "34"
+            - text: p4=mix(p4,wrot(p4),smoothstep(-.5,.5,sin(bpt/4.)));
+          - generic [ref=e272]:
+            - generic [ref=e273]: "35"
+            - text: p4 =abs(p4);
+          - generic [ref=e274]:
+            - generic [ref=e275]: "36"
+            - text: p4=mix(p4,wrot(p4),smoothstep(-.5,.5,sin(bpt)));
+          - generic [ref=e276]:
+            - generic [ref=e277]: "37"
+            - text: float fctr = smoothstep(-.5,.5,sin(bpt/2.));
+          - generic [ref=e278]:
+            - generic [ref=e279]: "38"
+            - text: float fctr2 = smoothstep(.9,1.,sin(bpt/16.));
+          - generic [ref=e280]:
+            - generic [ref=e281]: "39"
+            - text: doodad = length(max(abs(p4)-mix(0.05,0.07,fctr),0.)+mix(-0.1,.2,fctr))-mix(.15,.55,fctr*fctr)+fctr2;
+          - generic [ref=e282]:
+            - generic [ref=e283]: "40"
+            - text: /*
+          - generic [ref=e284]:
+            - generic [ref=e285]: "41"
+            - text: vec4 p4 = vec4(p2,0);
+          - generic [ref=e286]:
+            - generic [ref=e287]: "42"
+            - text: p4=wrot(p4);
+          - generic [ref=e288]:
+            - generic [ref=e289]: "43"
+            - text: p4 = abs(p4);
+          - generic [ref=e290]:
+            - generic [ref=e291]: "44"
+            - text: p4=mix(p4,wrot(p4),smoothstep(-.5,.5,sin(t)));
+          - generic [ref=e292]:
+            - generic [ref=e293]: "45"
+            - text: doodad = length(max(abs(p4)-0.07,0)+0.2)-.55;
+          - generic [ref=e294]:
+            - generic [ref=e295]: "46"
+            - text: "}*/"
+          - generic [ref=e297]: "47"
+          - generic [ref=e298]:
+            - generic [ref=e299]: "48"
+            - text: p.x += asin(sin(t/80.)*.99)*80.;
+          - generic [ref=e301]: "49"
+          - generic [ref=e302]:
+            - generic [ref=e303]: "50"
+            - text: lazors = length(asin(sin(erot(p,vec3(1,0,0),t*.2).yz*.5+1.))/.5)-.1;
+          - generic [ref=e304]:
+            - generic [ref=e305]: "51"
+            - text: d1 = comp(p);
+          - generic [ref=e306]:
+            - generic [ref=e307]: "52"
+            - text: d2 = comp(erot(p+5., normalize(vec3(1,3,4)),0.4));
+          - generic [ref=e308]:
+            - generic [ref=e309]: "53"
+            - text: d3 = comp(erot(p+10., normalize(vec3(3,2,1)),1.));
+          - generic [ref=e310]:
+            - generic [ref=e311]: "54"
+            - text: return min(doodad,min(lazors,.3-smin(smin(d1,d2,0.05),d3,0.05)));
+          - generic [ref=e312]:
+            - generic [ref=e313]: "55"
+            - text: "}"
+          - generic [ref=e315]: "56"
+          - generic [ref=e316]:
+            - generic:
+              - generic [ref=e317]: "57"
+              - generic [ref=e319] [cursor=pointer]: ▾
+            - text: "vec3 norm(vec3 p) {"
+          - generic [ref=e320]:
+            - generic [ref=e321]: "58"
+            - text: "float precis = length(p) < 1. ? 0.005 : 0.01;"
+          - generic [ref=e322]:
+            - generic [ref=e323]: "59"
+            - text: mat3 k = mat3(p,p,p)-mat3(precis);
+          - generic [ref=e324]:
+            - generic [ref=e325]: "60"
+            - text: return normalize(scene(p)-vec3(scene(k[0]),scene(k[1]),scene(k[2])));
+          - generic [ref=e326]:
+            - generic [ref=e327]: "61"
+            - text: "}"
+          - generic [ref=e329]: "62"
+          - generic [ref=e330]:
+            - generic [ref=e331]: "63"
+            - text: void mainImage( out vec4 fragColor, in vec2 fragCoord )
+          - generic [ref=e332]:
+            - generic:
+              - generic [ref=e333]: "64"
+              - generic [ref=e335] [cursor=pointer]: ▾
+            - text: "{"
+          - generic [ref=e336]:
+            - generic [ref=e337]: "65"
+            - text: vec2 uv = (fragCoord-.5*iResolution.xy)/iResolution.y;
+          - generic [ref=e339]: "66"
+          - generic [ref=e340]:
+            - generic [ref=e341]: "67"
+            - text: float bpt = iTime/60.*bpm;
+          - generic [ref=e342]:
+            - generic [ref=e343]: "68"
+            - text: float bp = mix(pow(sin(fract(bpt)*3.14/2.),20.)+floor(bpt), bpt,0.4);
+          - generic [ref=e344]:
+            - generic [ref=e345]: "69"
+            - text: t = bp;
+          - generic [ref=e346]:
+            - generic [ref=e347]: "70"
+            - text: vec3 cam = normalize(vec3(.8+sin(bp*3.14/4.)*.3,uv));
+          - generic [ref=e348]:
+            - generic [ref=e349]: "71"
+            - text: vec3 init = vec3(-1.5+sin(bp*3.14)*.2,0,0)+cam*.2;
+          - generic [ref=e350]:
+            - generic [ref=e351]: "72"
+            - text: init = erot(init,vec3(0,1,0),sin(bp*.2)*.4);
+          - generic [ref=e352]:
+            - generic [ref=e353]: "73"
+            - text: init = erot(init,vec3(0,0,1),cos(bp*.2)*.4);
+          - generic [ref=e354]:
+            - generic [ref=e355]: "74"
+            - text: cam = erot(cam,vec3(0,1,0),sin(bp*.2)*.4);
+          - generic [ref=e356]:
+            - generic [ref=e357]: "75"
+            - text: cam = erot(cam,vec3(0,0,1),cos(bp*.2)*.4);
+          - generic [ref=e358]:
+            - generic [ref=e359]: "76"
+            - text: vec3 p = init;
+          - generic [ref=e360]:
+            - generic [ref=e361]: "77"
+            - text: bool hit = false;
+          - generic [ref=e362]:
+            - generic [ref=e363]: "78"
+            - text: float atten = 1.;
+          - generic [ref=e364]:
+            - generic [ref=e365]: "79"
+            - text: float tlen = 0.;
+          - generic [ref=e366]:
+            - generic [ref=e367]: "80"
+            - text: float glo = 0.;
+          - generic [ref=e368]:
+            - generic [ref=e369]: "81"
+            - text: float dist;
+          - generic [ref=e370]:
+            - generic [ref=e371]: "82"
+            - text: float fog = 0.;
+          - generic [ref=e372]:
+            - generic [ref=e373]: "83"
+            - text: float dlglo = 0.;
+          - generic [ref=e374]:
+            - generic [ref=e375]: "84"
+            - text: bool trg = false;
+          - generic [ref=e376]:
+            - generic:
+              - generic [ref=e377]: "85"
+              - generic [ref=e379] [cursor=pointer]: ▾
+            - text: "for (int i = 0; i <80 && !hit; i++) {"
+          - generic [ref=e380]:
+            - generic [ref=e381]: "86"
+            - text: dist = scene(p);
+          - generic [ref=e382]:
+            - generic [ref=e383]: "87"
+            - text: hit = dist*dist < 1e-6;
+          - generic [ref=e384]:
+            - generic [ref=e385]: "88"
+            - text: glo += .2/(1.+lazors*lazors*20.)*atten;
+          - generic [ref=e386]:
+            - generic [ref=e387]: "89"
+            - text: dlglo += .2/(1.+doodad*doodad*20.)*atten;
+          - generic [ref=e388]:
+            - generic:
+              - generic [ref=e389]: "90"
+              - generic [ref=e391] [cursor=pointer]: ▾
+            - text: "if (hit && ((sin(d3*45.)<-0.4 && (dist!=doodad )) || (dist==doodad && sin(pow(length(p2*p2*p2),.3)*120.)>.4 )) && dist != lazors) {"
+          - generic [ref=e392]:
+            - generic [ref=e393]: "91"
+            - text: trg = trg || dist==doodad;
+          - generic [ref=e394]:
+            - generic [ref=e395]: "92"
+            - text: hit = false;
+      - generic [ref=e59]:
+        - generic [ref=e60]:
+          - img "Compile (<ALT>+<ENTER>)" [ref=e61] [cursor=pointer]
+          - link "Compiled in 0.0 secs" [ref=e396] [cursor=pointer]:
+            - /url: "#"
+        - generic [ref=e62]: 3097 chars
+        - generic [ref=e63]:
+          - combobox "Change font size (<ALT>+<+/->)" [ref=e65]:
+            - option "XS"
+            - option "S" [selected]
+            - option "M"
+            - option "L"
+            - option "XL"
+            - option "XXL"
+          - img "Show GLSL help" [ref=e66] [cursor=pointer]
+      - generic [ref=e67]:
+        - generic [ref=e68]:
+          - generic [ref=e69]:
+            - generic:
+              - text: Filter
+              - combobox "Pixel filtering mode" [ref=e71]:
+                - option "nearest" [selected]
+                - option "linear"
+                - option "mipmap"
+              - text: Wrap
+              - combobox "Pixel filtering mode" [ref=e72]:
+                - option "clamp" [selected]
+                - option "repeat"
+              - generic [ref=e74]:
+                - text: VFlip
+                - checkbox "VFlip" [ref=e75]
+          - generic [ref=e77]: iChannel0
+        - generic [ref=e80]:
+          - generic [ref=e81]:
+            - generic:
+              - text: Filter
+              - combobox "Pixel filtering mode" [ref=e83]:
+                - option "nearest" [selected]
+                - option "linear"
+                - option "mipmap"
+              - text: Wrap
+              - combobox "Pixel filtering mode" [ref=e84]:
+                - option "clamp" [selected]
+                - option "repeat"
+              - generic [ref=e86]:
+                - text: VFlip
+                - checkbox "VFlip" [ref=e87]
+          - generic [ref=e89]: iChannel1
+        - generic [ref=e92]:
+          - generic [ref=e93]:
+            - generic:
+              - text: Filter
+              - combobox "Pixel filtering mode" [ref=e95]:
+                - option "nearest" [selected]
+                - option "linear"
+                - option "mipmap"
+              - text: Wrap
+              - combobox "Pixel filtering mode" [ref=e96]:
+                - option "clamp" [selected]
+                - option "repeat"
+              - generic [ref=e98]:
+                - text: VFlip
+                - checkbox "VFlip" [ref=e99]
+          - generic [ref=e101]: iChannel2
+        - generic [ref=e104]:
+          - generic [ref=e105]:
+            - generic:
+              - text: Filter
+              - combobox "Pixel filtering mode" [ref=e107]:
+                - option "nearest" [selected]
+                - option "linear"
+                - option "mipmap"
+              - text: Wrap
+              - combobox "Pixel filtering mode" [ref=e108]:
+                - option "clamp" [selected]
+                - option "repeat"
+              - generic [ref=e110]:
+                - text: VFlip
+                - checkbox "VFlip" [ref=e111]
+          - generic [ref=e113]: iChannel3
+    - generic [ref=e117]:
+      - text: Comments (13)
+      - generic [ref=e118]:
+        - link "Sign in" [ref=e120] [cursor=pointer]:
+          - /url: /signin
+        - text: to post a comment.
+      - generic [ref=e397]:
+        - generic [ref=e398]:
+          - img [ref=e400]
+          - generic [ref=e401]:
+            - link "mireq" [ref=e402] [cursor=pointer]:
+              - /url: /user/mireq
+            - text: ", 2022-04-04"
+            - text: Video (4K)
+            - iframe [ref=e403]:
+              - generic "YouTube 동영상 플레이어" [ref=f13e3]:
+                - alert [ref=f13e4]:
+                  - generic [ref=f13e5]:
+                    - generic [ref=f13e6]:
+                      - img
+                    - generic [ref=f13e7]:
+                      - link "YouTube에서 동영상 보기" [ref=f13e10] [cursor=pointer]:
+                        - /url: https://www.youtube.com/watch?v=aoPT5HxgqMI&source_ve_path=MTc4NDI0
+                      - generic [ref=f13e12]:
+                        - text: 오류 153
+                        - text: 동영상 플레이어 구성 오류
+                  - link "YouTube를 방문하여 더 많은 동영상 검색" [ref=f13e13] [cursor=pointer]:
+                    - /url: https://www.youtube.com
+                    - img
+        - generic [ref=e404]:
+          - img [ref=e406]
+          - generic [ref=e407]:
+            - link "mla" [ref=e408] [cursor=pointer]:
+              - /url: /user/mla
+            - text: ", 2022-04-03"
+            - text: Intel sin and cos sometimes returns values out of [-1,1], which is a bit poor, but there you go...
+        - generic [ref=e409]:
+          - img [ref=e411]
+          - generic [ref=e412]:
+            - link "mla" [ref=e413] [cursor=pointer]:
+              - /url: /user/mla
+            - text: ", 2022-04-03"
+            - text: "Nice, I get a lot of noise on my Intel box, fixed by putting this at the top: #define asin(x) asin(clamp(x,-1.0,1.0))"
+        - generic [ref=e414]:
+          - img [ref=e416]
+          - generic [ref=e417]:
+            - link "aiekick" [ref=e418] [cursor=pointer]:
+              - /url: /user/aiekick
+            - text: ", 2022-03-31"
+            - text: nice rendering, but for me the time stepping is not cool
+        - generic [ref=e419]:
+          - img [ref=e421]
+          - generic [ref=e422]:
+            - link "Dirk" [ref=e423] [cursor=pointer]:
+              - /url: /user/Dirk
+            - text: ", 2022-03-31"
+            - text: Next Level UX Design
+        - generic [ref=e424]:
+          - img [ref=e426]
+          - generic [ref=e427]:
+            - link "ChutneyPot" [ref=e428] [cursor=pointer]:
+              - /url: /user/ChutneyPot
+            - text: ", 2022-03-29"
+            - text: I watched this without my headset and was like I have to listen to this! Now I'm sad there's no music
+            - img [ref=e429]
+            - text: Looks awesome!
+        - generic [ref=e430]:
+          - img [ref=e432]
+          - generic [ref=e433]:
+            - link "mrange" [ref=e434] [cursor=pointer]:
+              - /url: /user/mrange
+            - text: ", 2022-03-29"
+            - text: I like the color choice (among other things ofc)
+        - generic [ref=e435]:
+          - img [ref=e437]
+          - generic [ref=e438]:
+            - link "mrange" [ref=e439] [cursor=pointer]:
+              - /url: /user/mrange
+            - text: ", 2022-03-29"
+            - text: Very cool.
+        - generic [ref=e440]:
+          - img [ref=e442]
+          - generic [ref=e443]:
+            - link "newemka" [ref=e444] [cursor=pointer]:
+              - /url: /user/newemka
+            - text: ", 2022-03-29"
+            - text: Yay! A shader with a float bpm ♥
+        - generic [ref=e445]:
+          - img [ref=e447]
+          - generic [ref=e448]:
+            - link "tdhooper" [ref=e449] [cursor=pointer]:
+              - /url: /user/tdhooper
+            - text: ", 2020-06-15"
+            - text: Love how shiny this is, great blend of materials and colours.
+        - generic [ref=e450]:
+          - img [ref=e452]
+          - generic [ref=e453]:
+            - link "blackle" [ref=e454] [cursor=pointer]:
+              - /url: /user/blackle
+            - text: ", 2020-06-14"
+            - text: "@iq we had trouble during the party where the DJ's computer BSOD'd XD"
+        - generic [ref=e455]:
+          - img [ref=e457]
+          - generic [ref=e458]:
+            - link "iq" [ref=e459] [cursor=pointer]:
+              - /url: /user/iq
+            - text: ", 2020-06-14"
+            - text: Very nice! But, where's the music?
+        - generic [ref=e460]:
+          - img [ref=e462]
+          - generic [ref=e463]:
+            - link "mkellogg999" [ref=e464] [cursor=pointer]:
+              - /url: /user/mkellogg999
+            - text: ", 2020-06-14"
+            - text: This is cool!
+  - generic [ref=e121]:
+    - generic [ref=e122]:
+      - text: Community Forums
+      - list [ref=e123]:
+        - listitem [ref=e124]:
+          - link "Official Events" [ref=e125] [cursor=pointer]:
+            - /url: /events
+        - listitem [ref=e126]:
+          - link "In Facebook (english)" [ref=e127] [cursor=pointer]:
+            - /url: https://www.facebook.com/groups/147749602472741
+        - listitem [ref=e128]:
+          - link "In Facebook (korean)" [ref=e129] [cursor=pointer]:
+            - /url: https://www.facebook.com/groups/1339783682699494
+        - listitem [ref=e130]:
+          - link "In Discord" [ref=e131] [cursor=pointer]:
+            - /url: https://discord.gg/XtmMN6E
+          - text: (
+          - link "direct link" [ref=e132] [cursor=pointer]:
+            - /url: https://discordapp.com/channels/578696555612209173/579531723348639754
+          - text: )
+    - generic [ref=e133]:
+      - text: Feedback and Support
+      - list [ref=e134]:
+        - listitem [ref=e135]:
+          - link "Facebook" [ref=e136] [cursor=pointer]:
+            - /url: https://www.facebook.com/Shadertoy
+        - listitem [ref=e137]:
+          - link "Twitter" [ref=e138] [cursor=pointer]:
+            - /url: https://twitter.com/shadertoy
+        - listitem [ref=e139]:
+          - link "Patreon" [ref=e140] [cursor=pointer]:
+            - /url: https://www.patreon.com/shadertoy
+        - listitem [ref=e141]:
+          - link "Roadmap" [ref=e142] [cursor=pointer]:
+            - /url: https://trello.com/b/5hM0CjId
+    - generic [ref=e143]:
+      - text: Shadertoy
+      - list [ref=e144]:
+        - listitem [ref=e145]:
+          - link "Store" [ref=e146] [cursor=pointer]:
+            - /url: /store
+        - listitem [ref=e147]:
+          - link "Documentation" [ref=e148] [cursor=pointer]:
+            - /url: /howto
+        - listitem [ref=e149]:
+          - link "Terms & Privacy" [ref=e150] [cursor=pointer]:
+            - /url: /terms
+        - listitem [ref=e151]:
+          - link "About" [ref=e152] [cursor=pointer]:
+            - /url: /about
+    - generic [ref=e153]:
+      - text: Apps and Plugins
+      - list [ref=e154]:
+        - listitem [ref=e155]:
+          - link "Official iPhone App" [ref=e156] [cursor=pointer]:
+            - /url: https://itunes.apple.com/us/app/shadertoy/id717961814
+          - text: by
+          - link "Reinder" [ref=e157] [cursor=pointer]:
+            - /url: /user/reinder
+        - listitem [ref=e158]:
+          - link "Screensaver" [ref=e159] [cursor=pointer]:
+            - /url: https://steamcommunity.com/sharedfiles/filedetails/?id=1726697188
+          - text: by
+          - link "Kosro" [ref=e160] [cursor=pointer]:
+            - /url: /user/kosro
+        - listitem [ref=e161]:
+          - link "Shadertoy plugin" [ref=e162] [cursor=pointer]:
+            - /url: https://chrome.google.com/webstore/detail/shadertoy-unofficial-plug/ohicbclhdmkhoabobgppffepcopomhgl
+          - text: by
+          - link "Patu" [ref=e163] [cursor=pointer]:
+            - /url: /user/patu
+    - generic [ref=e164]:
+      - text: Tutorials
+      - list [ref=e165]:
+        - listitem [ref=e166]:
+          - link "Shader coding intro" [ref=e167] [cursor=pointer]:
+            - /url: https://www.youtube.com/watch?v=0ifChJ0nJfM
+          - text: by
+          - link "iq" [ref=e168] [cursor=pointer]:
+            - /url: /user/iq
+        - listitem [ref=e169]:
+          - link "Shadertoy Unofficial" [ref=e170] [cursor=pointer]:
+            - /url: https://shadertoyunofficial.wordpress.com/
+          - text: by
+          - link "FabriceNeyret2" [ref=e171] [cursor=pointer]:
+            - /url: /user/FabriceNeyret2
+  - generic [ref=e172]:
+    - generic [ref=e173]:
+      - text: We use cookies to give you the best experience on our website. If you continue using Shadertoy, we'll assume that you are happy to receive all cookies on this website. For more information, please review our
+      - link "Terms & Privacy" [ref=e174] [cursor=pointer]:
+        - /url: /terms
+      - text: .
+    - button "Accept" [ref=e176]

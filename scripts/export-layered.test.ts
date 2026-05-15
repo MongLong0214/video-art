@@ -9,24 +9,23 @@ const exportSrc = fs.readFileSync(
 );
 
 describe("export-layered encoding defaults (T4)", () => {
-  it("default ffmpeg args use CRF 15 and veryslow", () => {
-    // Default CRF: fallback is 15
-    expect(exportSrc).toContain(": 15;");
-    // Default PRESET: "veryslow"
-    expect(exportSrc).toContain('"veryslow"');
+  it("default ffmpeg args use CRF 15 and preset slow (Reels quality target)", () => {
+    // CRF 15 passed literally in ffmpeg args
+    expect(exportSrc).toContain('"-crf", "15"');
+    expect(exportSrc).toContain('"-preset", "slow"');
   });
 
-  it("uses yuv444p as default pix_fmt", () => {
-    expect(exportSrc).toContain('"yuv444p"');
+  it("uses yuv420p for web/Reels compatibility", () => {
+    // yuv420p chosen for broad player compat (Instagram Reels, TikTok, YouTube Shorts)
+    expect(exportSrc).toContain('"yuv420p"');
   });
 
   it("logs output size after encoding", () => {
-    // encodeVideo .then logs sizeMB
     expect(exportSrc).toContain("Size:");
   });
 
-  it("CRF range validation 0-51", () => {
-    expect(exportSrc).toMatch(/rawCrf\s*>=\s*0\s*&&\s*rawCrf\s*<=\s*51/);
+  it("FPS CLI input is validated to range 1..120", () => {
+    expect(exportSrc).toMatch(/val\s*>=\s*1\s*&&\s*val\s*<=\s*120/);
   });
 });
 

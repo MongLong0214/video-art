@@ -46,7 +46,147 @@ describe("layer.frag — feather uniforms & formula", () => {
   });
 
   it("feather multiplies alpha", () => {
-    expect(fragSrc).toMatch(/alpha\s*\*=\s*feather|texColor\.a\s*\*\s*uOpacity\s*\*\s*feather/);
+    expect(fragSrc).toMatch(/alpha\s*=\s*alpha\s*\*\s*uOpacity\s*\*\s*feather|alpha\s*\*=\s*feather|texColor\.a\s*\*\s*uOpacity\s*\*\s*feather/);
+  });
+});
+
+describe("layer.frag — shader-dev T1: domain-warping", () => {
+  it("declares uDomainWarp uniform", () => {
+    expect(fragSrc).toMatch(/uniform\s+float\s+uDomainWarp/);
+  });
+
+  it("uses recursive fbm (domain warping pattern)", () => {
+    // fbm call inside another fbm's argument — fbm(... fbm(... ) ...)
+    expect(fragSrc).toMatch(/fbm\([^)]*fbm\(/);
+  });
+
+  it("guards domain warp behind uDomainWarp > threshold", () => {
+    expect(fragSrc).toMatch(/uDomainWarp\s*>\s*0\.0001/);
+  });
+});
+
+describe("layer.frag — shader-dev T2: domain-repetition", () => {
+  it("declares uTileRepeat uniform", () => {
+    expect(fragSrc).toMatch(/uniform\s+float\s+uTileRepeat/);
+  });
+
+  it("uses fract-based tiling when uTileRepeat > 0", () => {
+    expect(fragSrc).toMatch(/fract\([^)]*uTileRepeat/);
+  });
+});
+
+describe("layer.frag — shader-dev T3: polar-uv-manipulation", () => {
+  it("declares uPolarTwist uniform", () => {
+    expect(fragSrc).toMatch(/uniform\s+float\s+uPolarTwist/);
+  });
+
+  it("uses atan for polar conversion of UV", () => {
+    expect(fragSrc).toMatch(/atan\(\s*\w+\.y\s*,\s*\w+\.x\s*\)/);
+  });
+});
+
+describe("layer.frag — shader-dev T4: voronoi", () => {
+  it("declares uVoronoiAmount uniform", () => {
+    expect(fragSrc).toMatch(/uniform\s+float\s+uVoronoiAmount/);
+  });
+
+  it("declares uVoronoiScale uniform", () => {
+    expect(fragSrc).toMatch(/uniform\s+float\s+uVoronoiScale/);
+  });
+
+  it("defines voronoi function", () => {
+    expect(fragSrc).toMatch(/float\s+voronoi\s*\(/);
+  });
+});
+
+describe("layer.frag — shader-dev T5: IQ cosine palette", () => {
+  it("declares uPaletteAmount uniform", () => {
+    expect(fragSrc).toMatch(/uniform\s+float\s+uPaletteAmount/);
+  });
+
+  it("declares uPaletteA/B/C/D vec3 uniforms", () => {
+    expect(fragSrc).toMatch(/uniform\s+vec3\s+uPaletteA/);
+    expect(fragSrc).toMatch(/uniform\s+vec3\s+uPaletteB/);
+    expect(fragSrc).toMatch(/uniform\s+vec3\s+uPaletteC/);
+    expect(fragSrc).toMatch(/uniform\s+vec3\s+uPaletteD/);
+  });
+
+  it("defines palette function with cos(TAU * ...)", () => {
+    expect(fragSrc).toMatch(/vec3\s+palette\s*\(/);
+    expect(fragSrc).toMatch(/cos\(\s*TAU/);
+  });
+});
+
+describe("layer.frag — shader-dev T6: procedural 2D pattern", () => {
+  it("declares uPatternType/Scale/Amount uniforms", () => {
+    expect(fragSrc).toMatch(/uniform\s+(int|float)\s+uPatternType/);
+    expect(fragSrc).toMatch(/uniform\s+float\s+uPatternScale/);
+    expect(fragSrc).toMatch(/uniform\s+float\s+uPatternAmount/);
+  });
+});
+
+describe("layer.frag — shader-dev T7: SDF-2D overlay", () => {
+  it("declares uSDFType/Scale/Amount uniforms", () => {
+    expect(fragSrc).toMatch(/uniform\s+float\s+uSDFType/);
+    expect(fragSrc).toMatch(/uniform\s+float\s+uSDFScale/);
+    expect(fragSrc).toMatch(/uniform\s+float\s+uSDFAmount/);
+  });
+
+  it("defines sdStar function", () => {
+    expect(fragSrc).toMatch(/float\s+sdStar\s*\(/);
+  });
+});
+
+describe("layer.frag — shader-dev T8: Julia fractal", () => {
+  it("declares uJuliaAmount and uJuliaC uniforms", () => {
+    expect(fragSrc).toMatch(/uniform\s+float\s+uJuliaAmount/);
+    expect(fragSrc).toMatch(/uniform\s+vec2\s+uJuliaC/);
+  });
+
+  it("uses bounded iteration loop for Julia set", () => {
+    expect(fragSrc).toMatch(/for\s*\(\s*int\s+\w+\s*=\s*0\s*;\s*\w+\s*<\s*\d+\s*;/);
+  });
+});
+
+describe("layer.frag — shader-dev T9: matrix-transform UV", () => {
+  it("declares uRotateSpeed + uScalePulse uniforms", () => {
+    expect(fragSrc).toMatch(/uniform\s+float\s+uRotateSpeed/);
+    expect(fragSrc).toMatch(/uniform\s+float\s+uScalePulse/);
+  });
+
+  it("constructs mat2 rotation from sin/cos", () => {
+    expect(fragSrc).toMatch(/mat2\(\s*cos\([^)]*\)\s*,\s*-?sin/);
+  });
+});
+
+describe("layer.frag — shader-dev T10: anti-aliasing (fwidth)", () => {
+  it("uses fwidth for derivative-based edge AA", () => {
+    expect(fragSrc).toMatch(/fwidth\s*\(/);
+  });
+
+  it("applies AA to ring edge (smoothstep with fwidth-derived bounds)", () => {
+    // Match smoothstep using derivative-derived bounds (either inline fwidth or via named var)
+    expect(fragSrc).toMatch(/smoothstep\(\s*-?\w*AAW?\s*,\s*\w*AAW?\s*,|smoothstep\([^)]*fwidth/);
+  });
+});
+
+describe("layer.frag — shader-dev T11: bicubic texture sampling", () => {
+  it("declares uBicubicFilter uniform", () => {
+    expect(fragSrc).toMatch(/uniform\s+float\s+uBicubicFilter/);
+  });
+
+  it("defines sampleBicubic function", () => {
+    expect(fragSrc).toMatch(/vec4\s+sampleBicubic\s*\(/);
+  });
+});
+
+describe("layer.frag — shader-dev T12: Worley noise (F1-F2)", () => {
+  it("declares uWorleyAmount uniform", () => {
+    expect(fragSrc).toMatch(/uniform\s+float\s+uWorleyAmount/);
+  });
+
+  it("defines worley function", () => {
+    expect(fragSrc).toMatch(/float\s+worley\s*\(/);
   });
 });
 

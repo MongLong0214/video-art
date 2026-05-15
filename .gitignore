@@ -61,3 +61,6 @@ experiment-output/
 
 # Local ad-hoc test inputs
 input/acperience1.wav
+
+# Runtime temp artifact written by scripts/gallery-render.ts (cleaned up in finally)
+public/gallery-temp.json

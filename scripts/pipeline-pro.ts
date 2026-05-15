@@ -14,6 +14,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { getToken, withRetry, enforceVersionPin } from "./lib/replicate-utils.js";
 import { parseCliArgs } from "./lib/pipeline-cli.js";
+import { MIN_RESOLUTION, TONE_PRESETS } from "./lib/scene-presets.js";
 import { getValidPeriods } from "../src/lib/scene-schema.js";
 
 const args = parseCliArgs(process.argv.slice(2));
@@ -55,11 +56,24 @@ async function main() {
 
   const replicate = new Replicate({ auth: getToken() });
 
-  const origBuf = await sharp(INPUT).png().toBuffer();
-  const meta = await sharp(origBuf).metadata();
-  const origW = meta.width!, origH = meta.height!;
+  let origBuf = await sharp(INPUT).png().toBuffer();
+  let meta = await sharp(origBuf).metadata();
+  let origW = meta.width!, origH = meta.height!;
+  console.log(`Input: ${origW}x${origH}`);
+
+  // Auto-upscale to minimum resolution (lanczos3) to keep export sharp.
+  if (origW < MIN_RESOLUTION.width || origH < MIN_RESOLUTION.height) {
+    const scale = Math.max(MIN_RESOLUTION.width / origW, MIN_RESOLUTION.height / origH);
+    const newW = Math.round(origW * scale);
+    const newH = Math.round(origH * scale);
+    console.log(`  → upscaling to ${newW}x${newH} (lanczos3, ${scale.toFixed(2)}x)`);
+    origBuf = await sharp(origBuf).resize(newW, newH, { kernel: "lanczos3" }).png().toBuffer();
+    meta = await sharp(origBuf).metadata();
+    origW = meta.width!;
+    origH = meta.height!;
+  }
   const dataUri = `data:image/png;base64,${origBuf.toString("base64")}`;
-  console.log(`Input: ${origW}x${origH}\n`);
+  console.log("");
 
   // ═══ Step 1: bria/remove-background ═══
   console.log("═══ Step 1: bria/remove-background ═══");
@@ -212,11 +226,35 @@ async function main() {
 
   await sharp(depthBuf).resize(W, H, { kernel: "lanczos3" }).grayscale().toFile(path.join(layersDir, "depth.png"));
 
-  // ═══ Step 6: Generate scene.json ═══
+  // ═══ Step 6: Generate scene.json from tone preset ═══
+  const preset = TONE_PRESETS[args.tone];
+  // Periods must align with shader-validated values (see scene-schema getValidPeriods).
   const periods = getValidPeriods(DURATION);
-  const longPeriod = periods[periods.length - 1]; // DURATION itself
+  const longPeriod = periods[periods.length - 1];
   const midPeriod = periods[Math.max(0, Math.floor(periods.length / 2))];
   const shortPeriod = periods[Math.max(0, Math.floor(periods.length / 4))];
+
+  const layer0Anim = {
+    ...preset.layer0,
+    colorCycle: { ...preset.layer0.colorCycle, period: longPeriod },
+    glow: { ...preset.layer0.glow, period: midPeriod },
+    breath: { ...preset.layer0.breath, period: midPeriod },
+    ringPeriod: midPeriod,
+  };
+  const layer1Anim = {
+    ...preset.layer1,
+    colorCycle: { ...preset.layer1.colorCycle, period: midPeriod },
+    glow: { ...preset.layer1.glow, period: shortPeriod },
+    breath: { ...preset.layer1.breath, period: shortPeriod },
+    ringPeriod: shortPeriod,
+  };
+  const layer2Anim = {
+    ...preset.layer2,
+    colorCycle: { ...preset.layer2.colorCycle, period: midPeriod },
+    glow: { ...preset.layer2.glow, period: shortPeriod },
+    breath: { ...preset.layer2.breath, period: shortPeriod },
+    ringPeriod: midPeriod,
+  };
 
   const scene = {
     version: 1,
@@ -230,23 +268,10 @@ async function main() {
         file: "layers/layer-0.png",
         zIndex: 0,
         opacity: 1,
-        blending: "screen",
+        blending: "normal",
         role: "background-plate",
         meanDepth: 50,
-        animation: {
-          colorCycle: { speed: 6, period: longPeriod, phaseOffset: 0 },
-          glow: { intensity: 0, pulse: 0, period: midPeriod },
-          saturationBoost: 3.0,
-          luminanceKey: 1,
-          satBlendLow: 0.02,
-          satBlendHigh: 0.18,
-          satInjectionMul: 0.7,
-          glowPulseFloor: 0,
-          lumExponent: 1.5,
-          hueKey: 3.0,
-          hueSpeed: 7,
-          breath: { amplitude: 0.02, frequency: 4.0, period: midPeriod },
-        },
+        animation: layer0Anim,
       },
       {
         id: "layer-1",
@@ -256,58 +281,24 @@ async function main() {
         blending: "normal",
         role: "subject",
         meanDepth: 180,
-        animation: {
-          colorCycle: { speed: 10, period: shortPeriod, phaseOffset: 180 },
-          glow: { intensity: 0, pulse: 0, period: shortPeriod },
-          saturationBoost: 3.5,
-          luminanceKey: 1,
-          satBlendLow: 0.02,
-          satBlendHigh: 0.12,
-          satInjectionMul: 0.75,
-          glowPulseFloor: 0,
-          lumExponent: 1.8,
-          hueKey: 5.0,
-          hueSpeed: 8,
-          breath: { amplitude: 0.012, frequency: 6.0, period: shortPeriod },
-        },
+        animation: layer1Anim,
       },
       {
         id: "layer-2",
         file: "layers/layer-2.png",
         zIndex: 2,
-        opacity: 0.65,
-        blending: "screen",
+        opacity: 1,
+        blending: "normal",
         role: "light-rays",
         meanDepth: 120,
-        animation: {
-          colorCycle: { speed: 3, period: shortPeriod, phaseOffset: 90 },
-          glow: { intensity: 0, pulse: 0, period: midPeriod },
-          saturationBoost: 1.2,
-          luminanceKey: 1,
-          satBlendLow: 0.02,
-          satBlendHigh: 0.1,
-          satInjectionMul: 0.4,
-          glowPulseFloor: 0,
-          lumExponent: 1.2,
-          hueKey: 2.0,
-          hueSpeed: 4,
-          breath: { amplitude: 0.015, frequency: 3.0, period: shortPeriod },
-        },
+        animation: layer2Anim,
       },
     ],
-    effects: {
-      bloom: { strength: 0, radius: 0.8, threshold: 0.9 },
-      chromaticAberration: { offset: 0, modulationOffset: 0 },
-      parallax: { scale: 0 },
-      haze: { intensity: 0 },
-      feather: { radius: 0 },
-      trails: { strength: 0 },
-      kaleidoscope: { segments: 6, blend: 0.3 },
-    },
+    effects: preset.effects,
   };
 
   fs.writeFileSync(path.join(serveDir, "scene.json"), JSON.stringify(scene, null, 2));
-  console.log("\n  scene.json written (no parallax, no haze, pure shader)");
+  console.log(`\n  scene.json written (tone: ${args.tone})`);
   console.log("\n═══ Ready to export ═══");
   console.log("Run: npx tsx scripts/export-layered.ts --title pro-pipeline --fps 30");
 }

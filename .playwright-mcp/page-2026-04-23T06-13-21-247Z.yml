@@ -1,0 +1,521 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - link "Shadertoy" [ref=e4] [cursor=pointer]:
+        - /url: /
+      - searchbox "Search..." [ref=e7]
+    - generic [ref=e8]:
+      - link "Browse" [ref=e9] [cursor=pointer]:
+        - /url: /browse
+      - link "New" [ref=e10] [cursor=pointer]:
+        - /url: /new
+      - link "Sign In" [ref=e11] [cursor=pointer]:
+        - /url: /signin
+  - generic [ref=e13]:
+    - generic [ref=e14]:
+      - generic [ref=e17]:
+        - generic [ref=e18]:
+          - generic "Reset time (<ALT>+<DownArrow>)" [ref=e19] [cursor=pointer]
+          - generic "Pause/Resume (<ALT>+<UpArrow>)" [ref=e20] [cursor=pointer]
+        - generic [ref=e21]:
+          - generic [ref=e22]: "10.13"
+          - generic [ref=e23]: 1.0 fps
+          - generic [ref=e24]: 420 x 236
+        - generic [ref=e25]:
+          - generic "Record (<ALT>+<R>)" [ref=e26] [cursor=pointer]
+          - generic "Volume" [ref=e27] [cursor=pointer]
+          - generic "Go fullscreen" [ref=e28] [cursor=pointer]
+      - generic [ref=e29]:
+        - generic [ref=e30]:
+          - generic [ref=e31]: 3D Kleinian Fractal - SDF
+          - generic [ref=e32]:
+            - img "share this shader" [ref=e33] [cursor=pointer]
+            - img [ref=e34]
+            - text: "12"
+          - generic [ref=e35]:
+            - text: "Views: 324"
+            - text: ", Tags:"
+            - generic [ref=e175]:
+              - link "3d" [ref=e176] [cursor=pointer]:
+                - /url: /results?query=tag%3D3d
+              - text: ","
+              - link "raymarching" [ref=e177] [cursor=pointer]:
+                - /url: /results?query=tag%3Draymarching
+              - text: ","
+              - link "fractal" [ref=e178] [cursor=pointer]:
+                - /url: /results?query=tag%3Dfractal
+              - text: ","
+              - link "sdf" [ref=e179] [cursor=pointer]:
+                - /url: /results?query=tag%3Dsdf
+              - text: ","
+              - link "kleinian" [ref=e180] [cursor=pointer]:
+                - /url: /results?query=tag%3Dkleinian
+          - generic [ref=e36]:
+            - text: Created by
+            - link "TheArchCoder" [ref=e182] [cursor=pointer]:
+              - /url: /user/TheArchCoder
+            - text: in 2025-02-26
+          - generic [ref=e184]:
+            - text: Forked from
+            - link "3D Lambdabulb Fractal - SDF" [ref=e185] [cursor=pointer]:
+              - /url: /view/tcj3zV
+        - generic [ref=e186]: "3D Kleinian Fractal rendered with ray marching. Use your mouse to control the fractal! (though it explodes often) Escape time algorithm by Jos Leys, I'm surprised at how fast this is. Excellent work Jos Leys and Knighty! Edit: Improved DE."
+    - generic [ref=e37]:
+      - generic [ref=e38] [cursor=pointer]:
+        - combobox [ref=e188]:
+          - option "Common"
+          - option "Sound"
+          - option "Buffer A"
+          - option "Buffer B"
+          - option "Buffer C"
+          - option "Buffer D"
+          - option "Cubemap A"
+        - generic [ref=e189]:
+          - img [ref=e190]
+          - generic [ref=e191]: Image
+      - generic [ref=e40] [cursor=pointer]:
+        - generic [ref=e41]: Shader Inputs
+        - generic [ref=e44]:
+          - text: uniform vec3 iResolution; // viewport resolution (in pixels)
+          - text: uniform float iTime; // shader playback time (in seconds)
+          - text: uniform float iTimeDelta; // render time (in seconds)
+          - text: uniform float iFrameRate; // shader frame rate
+          - text: uniform int iFrame; // shader playback frame
+          - text: uniform float iChannelTime[4]; // channel playback time (in seconds)
+          - text: uniform vec3 iChannelResolution[4]; // channel resolution (in pixels)
+          - text: "uniform vec4 iMouse; // mouse pixel coords. xy: current (if MLB down), zw: click"
+          - text: uniform samplerXX iChannel0..3; // input channel. XX = 2D/Cube
+          - text: uniform vec4 iDate; // (year, month, day, time in seconds)
+          - text: uniform float iSampleRate; // sound sample rate (i.e., 44100)
+      - generic [ref=e46]:
+        - textbox [ref=e47]
+        - generic [ref=e50]:
+          - generic [ref=e197]:
+            - generic [ref=e198]: "1"
+            - text: // By Muhammad Ahmad
+          - generic [ref=e199]:
+            - generic [ref=e200]: "2"
+            - text: // Licensed under the Unlicense license.
+          - generic [ref=e201]:
+            - generic [ref=e202]: "3"
+            - text: // Basically, You can do whatever you want with this code.
+          - generic [ref=e204]: "4"
+          - generic [ref=e205]:
+            - generic [ref=e206]: "5"
+            - text: "#define GOLDEN_RATIO 1.6180339887498948482"
+          - generic [ref=e207]:
+            - generic [ref=e208]: "6"
+            - text: "#define PI 3.14159265358979323846"
+          - generic [ref=e210]: "7"
+          - generic [ref=e211]:
+            - generic [ref=e212]: "8"
+            - text: // Ambient Occlusion
+          - generic [ref=e213]:
+            - generic [ref=e214]: "9"
+            - text: int ambient_occlusion_steps = 6;
+          - generic [ref=e215]:
+            - generic [ref=e216]: "10"
+            - text: float ambient_occlusion_radius = 0.165;
+          - generic [ref=e217]:
+            - generic [ref=e218]: "11"
+            - text: float ambient_occlusion_darkness = 0.57;
+          - generic [ref=e220]: "12"
+          - generic [ref=e221]:
+            - generic [ref=e222]: "13"
+            - text: float vignette_strength = 0.8;
+          - generic [ref=e223]:
+            - generic [ref=e224]: "14"
+            - text: float vignette_radius = 0.925;
+          - generic [ref=e226]: "15"
+          - generic [ref=e227]:
+            - generic [ref=e228]: "16"
+            - text: // Glow
+          - generic [ref=e229]:
+            - generic [ref=e230]: "17"
+            - text: float glow_intensity = 0.9;
+          - generic [ref=e231]:
+            - generic [ref=e232]: "18"
+            - text: vec3 glow_color = vec3(1.0, 1.0, 1.0);
+          - generic [ref=e233]:
+            - generic [ref=e234]: "19"
+            - text: float glow_threshold = 0.0;
+          - generic [ref=e235]:
+            - generic [ref=e236]: "20"
+            - text: float glow_falloff = 2.5;
+          - generic [ref=e237]:
+            - generic [ref=e238]: "21"
+            - text: bool super_glow = false;
+          - generic [ref=e239]:
+            - generic [ref=e240]: "22"
+            - text: bool glow = true;
+          - generic [ref=e242]: "23"
+          - generic [ref=e243]:
+            - generic [ref=e244]: "24"
+            - text: // Fog
+          - generic [ref=e245]:
+            - generic [ref=e246]: "25"
+            - text: vec3 fog_color = vec3(0.5, 0.6, 0.7);
+          - generic [ref=e247]:
+            - generic [ref=e248]: "26"
+            - text: float fog_density = 0.08;
+          - generic [ref=e249]:
+            - generic [ref=e250]: "27"
+            - text: float fog_falloff = 3.0;
+          - generic [ref=e252]: "28"
+          - generic [ref=e253]:
+            - generic [ref=e254]: "29"
+            - text: // Shadows
+          - generic [ref=e255]:
+            - generic [ref=e256]: "30"
+            - text: float self_shadow_bias = 0.02;
+          - generic [ref=e257]:
+            - generic [ref=e258]: "31"
+            - text: float shadow_darkness = 0.2;
+          - generic [ref=e259]:
+            - generic [ref=e260]: "32"
+            - text: int shadow_steps = 60;
+          - generic [ref=e261]:
+            - generic [ref=e262]: "33"
+            - text: float shadow_softness = 12.0;
+          - generic [ref=e263]:
+            - generic [ref=e264]: "34"
+            - text: float min_step_size = 0.0;
+          - generic [ref=e266]: "35"
+          - generic [ref=e267]:
+            - generic [ref=e268]: "36"
+            - text: // Lighting
+          - generic [ref=e269]:
+            - generic [ref=e270]: "37"
+            - text: float light_intensity = 3.6;
+          - generic [ref=e271]:
+            - generic [ref=e272]: "38"
+            - text: vec3 light1_position = vec3(10.0);
+          - generic [ref=e273]:
+            - generic [ref=e274]: "39"
+            - text: vec3 light2_position = vec3(-10.0);
+          - generic [ref=e275]:
+            - generic [ref=e276]: "40"
+            - text: vec3 light1_color = vec3(1.0, 1.0, 1.0);
+          - generic [ref=e277]:
+            - generic [ref=e278]: "41"
+            - text: vec3 light2_color = vec3(1.0, 1.0, 1.0);
+          - generic [ref=e280]: "42"
+          - generic [ref=e281]:
+            - generic [ref=e282]: "43"
+            - text: // Rendering
+          - generic [ref=e283]:
+            - generic [ref=e284]: "44"
+            - text: int iterations = 11;
+          - generic [ref=e285]:
+            - generic [ref=e286]: "45"
+            - text: int max_steps = 180;
+          - generic [ref=e287]:
+            - generic [ref=e288]: "46"
+            - text: float ambient_light = 0.5;
+          - generic [ref=e289]:
+            - generic [ref=e290]: "47"
+            - text: float max_distance = 20.0;
+          - generic [ref=e291]:
+            - generic [ref=e292]: "48"
+            - text: float surface_distance = 0.003; // 0.00001
+          - generic [ref=e293]:
+            - generic [ref=e294]: "49"
+            - text: float raystep_multiplier = 0.8;
+          - generic [ref=e296]: "50"
+          - generic [ref=e297]:
+            - generic [ref=e298]: "51"
+            - text: // Coloring
+          - generic [ref=e299]:
+            - generic [ref=e300]: "52"
+            - text: bool colors = true;
+          - generic [ref=e301]:
+            - generic [ref=e302]: "53"
+            - text: vec3 palette_color1 = vec3(1.0) * vec3(1.0);
+          - generic [ref=e303]:
+            - generic [ref=e304]: "54"
+            - text: vec3 palette_color2 = vec3(0.8) * vec3(1.1, 0.7, 0.3);
+          - generic [ref=e305]:
+            - generic [ref=e306]: "55"
+            - text: vec3 bg_color = vec3(0.05, 0.02, 0.01);
+          - generic [ref=e308]: "56"
+          - generic [ref=e309]:
+            - generic [ref=e310]: "57"
+            - text: // Refraction
+          - generic [ref=e311]:
+            - generic [ref=e312]: "58"
+            - text: float refraction_intensity = 1.611;
+          - generic [ref=e313]:
+            - generic [ref=e314]: "59"
+            - text: float refraction_sharpness = 2.0;
+          - generic [ref=e316]: "60"
+          - generic [ref=e317]:
+            - generic [ref=e318]: "61"
+            - text: // Fractal
+          - generic [ref=e319]:
+            - generic [ref=e320]: "62"
+            - text: float box_size_x = 1.0;
+          - generic [ref=e321]:
+            - generic [ref=e322]: "63"
+            - text: float box_size_z = 1.0;
+          - generic [ref=e323]:
+            - generic [ref=e324]: "64"
+            - text: float slice_start = -1.0;
+          - generic [ref=e325]:
+            - generic [ref=e326]: "65"
+            - text: float slice_end = 1.0;
+          - generic [ref=e327]:
+            - generic [ref=e328]: "66"
+            - text: float fractal_size = 1.1;
+          - generic [ref=e329]:
+            - generic [ref=e330]: "67"
+            - text: bool sphere_inversion = true;
+          - generic [ref=e331]:
+            - generic [ref=e332]: "68"
+            - text: vec4 inversion_sphere = vec4(1.0, 0.96, 0.0, 0.8);
+          - generic [ref=e334]: "69"
+          - generic [ref=e335]:
+            - generic:
+              - generic [ref=e336]: "70"
+              - generic [ref=e338] [cursor=pointer]: ▾
+            - text: "vec2 wrap(vec2 x, vec2 a, vec2 s){"
+          - generic [ref=e339]:
+            - generic [ref=e340]: "71"
+            - text: x -= s;
+          - generic [ref=e341]:
+            - generic [ref=e342]: "72"
+            - text: return (x - a * floor(x / a)) + s;
+          - generic [ref=e343]:
+            - generic [ref=e344]: "73"
+            - text: "}"
+          - generic [ref=e346]: "74"
+          - generic [ref=e347]:
+            - generic:
+              - generic [ref=e348]: "75"
+              - generic [ref=e350] [cursor=pointer]: ▾
+            - text: "vec2 kleinian_sdf(vec3 z) {"
+          - generic [ref=e351]:
+            - generic [ref=e352]: "76"
+            - text: float t = sin(iTime * 1.5 + 1.5) * 0.5 + 0.5;
+          - generic [ref=e353]:
+            - generic [ref=e354]: "77"
+            - text: float KleinR = mix(1.8, 1.8, t);
+          - generic [ref=e355]:
+            - generic [ref=e356]: "78"
+            - text: float KleinI = mix(0.2, 1.8, t);
+          - generic [ref=e358]: "79"
+          - generic [ref=e359]:
+            - generic:
+              - generic [ref=e360]: "80"
+              - generic [ref=e362] [cursor=pointer]: ▾
+            - text: "if (iMouse.z >= 0.0001) {"
+          - generic [ref=e363]:
+            - generic [ref=e364]: "81"
+            - text: KleinR = 1.3 + 2.0 * iMouse.x / iResolution.x;
+          - generic [ref=e365]:
+            - generic [ref=e366]: "82"
+            - text: KleinI = 2.0 * -iMouse.y / iResolution.y;
+          - generic [ref=e367]:
+            - generic [ref=e368]: "83"
+            - text: fractal_size = 0.8;
+          - generic [ref=e369]:
+            - generic [ref=e370]: "84"
+            - text: "}"
+          - generic [ref=e372]: "85"
+          - generic [ref=e373]:
+            - generic [ref=e374]: "86"
+            - text: z /= fractal_size;
+          - generic [ref=e375]:
+            - generic [ref=e376]: "87"
+            - text: z += vec3(0.9, 0.8, 0.0);
+          - generic [ref=e378]: "88"
+          - generic [ref=e379]:
+            - generic [ref=e380]: "89"
+            - text: vec3 lz = z + vec3(1.0);
+          - generic [ref=e381]:
+            - generic [ref=e382]: "90"
+            - text: vec3 llz = z + vec3(-1.0);
+          - generic [ref=e383]:
+            - generic [ref=e384]: "91"
+            - text: float d = 0.0;
+          - generic [ref=e385]:
+            - generic [ref=e386]: "92"
+            - text: float d2 = 0.0;
+      - generic [ref=e57]:
+        - generic [ref=e58]:
+          - img "Compile (<ALT>+<ENTER>)" [ref=e59] [cursor=pointer]
+          - link "Compiled in 0.1 secs" [ref=e387] [cursor=pointer]:
+            - /url: "#"
+        - generic [ref=e60]: 6526 chars
+        - generic [ref=e61]:
+          - combobox "Change font size (<ALT>+<+/->)" [ref=e63]:
+            - option "XS"
+            - option "S" [selected]
+            - option "M"
+            - option "L"
+            - option "XL"
+            - option "XXL"
+          - img "Show GLSL help" [ref=e64] [cursor=pointer]
+      - generic [ref=e65]:
+        - generic [ref=e66]:
+          - generic [ref=e67]:
+            - generic:
+              - text: Filter
+              - combobox "Pixel filtering mode" [ref=e69]:
+                - option "nearest" [selected]
+                - option "linear"
+                - option "mipmap"
+              - text: Wrap
+              - combobox "Pixel filtering mode" [ref=e70]:
+                - option "clamp" [selected]
+                - option "repeat"
+              - generic [ref=e72]:
+                - text: VFlip
+                - checkbox "VFlip" [ref=e73]
+          - generic [ref=e75]: iChannel0
+        - generic [ref=e78]:
+          - generic [ref=e79]:
+            - generic:
+              - text: Filter
+              - combobox "Pixel filtering mode" [ref=e81]:
+                - option "nearest" [selected]
+                - option "linear"
+                - option "mipmap"
+              - text: Wrap
+              - combobox "Pixel filtering mode" [ref=e82]:
+                - option "clamp" [selected]
+                - option "repeat"
+              - generic [ref=e84]:
+                - text: VFlip
+                - checkbox "VFlip" [ref=e85]
+          - generic [ref=e87]: iChannel1
+        - generic [ref=e90]:
+          - generic [ref=e91]:
+            - generic:
+              - text: Filter
+              - combobox "Pixel filtering mode" [ref=e93]:
+                - option "nearest" [selected]
+                - option "linear"
+                - option "mipmap"
+              - text: Wrap
+              - combobox "Pixel filtering mode" [ref=e94]:
+                - option "clamp" [selected]
+                - option "repeat"
+              - generic [ref=e96]:
+                - text: VFlip
+                - checkbox "VFlip" [ref=e97]
+          - generic [ref=e99]: iChannel2
+        - generic [ref=e102]:
+          - generic [ref=e103]:
+            - generic:
+              - text: Filter
+              - combobox "Pixel filtering mode" [ref=e105]:
+                - option "nearest" [selected]
+                - option "linear"
+                - option "mipmap"
+              - text: Wrap
+              - combobox "Pixel filtering mode" [ref=e106]:
+                - option "clamp" [selected]
+                - option "repeat"
+              - generic [ref=e108]:
+                - text: VFlip
+                - checkbox "VFlip" [ref=e109]
+          - generic [ref=e111]: iChannel3
+    - generic [ref=e115]:
+      - text: Comments (0)
+      - generic [ref=e116]:
+        - link "Sign in" [ref=e118] [cursor=pointer]:
+          - /url: /signin
+        - text: to post a comment.
+  - generic [ref=e119]:
+    - generic [ref=e120]:
+      - text: Community Forums
+      - list [ref=e121]:
+        - listitem [ref=e122]:
+          - link "Official Events" [ref=e123] [cursor=pointer]:
+            - /url: /events
+        - listitem [ref=e124]:
+          - link "In Facebook (english)" [ref=e125] [cursor=pointer]:
+            - /url: https://www.facebook.com/groups/147749602472741
+        - listitem [ref=e126]:
+          - link "In Facebook (korean)" [ref=e127] [cursor=pointer]:
+            - /url: https://www.facebook.com/groups/1339783682699494
+        - listitem [ref=e128]:
+          - link "In Discord" [ref=e129] [cursor=pointer]:
+            - /url: https://discord.gg/XtmMN6E
+          - text: (
+          - link "direct link" [ref=e130] [cursor=pointer]:
+            - /url: https://discordapp.com/channels/578696555612209173/579531723348639754
+          - text: )
+    - generic [ref=e131]:
+      - text: Feedback and Support
+      - list [ref=e132]:
+        - listitem [ref=e133]:
+          - link "Facebook" [ref=e134] [cursor=pointer]:
+            - /url: https://www.facebook.com/Shadertoy
+        - listitem [ref=e135]:
+          - link "Twitter" [ref=e136] [cursor=pointer]:
+            - /url: https://twitter.com/shadertoy
+        - listitem [ref=e137]:
+          - link "Patreon" [ref=e138] [cursor=pointer]:
+            - /url: https://www.patreon.com/shadertoy
+        - listitem [ref=e139]:
+          - link "Roadmap" [ref=e140] [cursor=pointer]:
+            - /url: https://trello.com/b/5hM0CjId
+    - generic [ref=e141]:
+      - text: Shadertoy
+      - list [ref=e142]:
+        - listitem [ref=e143]:
+          - link "Store" [ref=e144] [cursor=pointer]:
+            - /url: /store
+        - listitem [ref=e145]:
+          - link "Documentation" [ref=e146] [cursor=pointer]:
+            - /url: /howto
+        - listitem [ref=e147]:
+          - link "Terms & Privacy" [ref=e148] [cursor=pointer]:
+            - /url: /terms
+        - listitem [ref=e149]:
+          - link "About" [ref=e150] [cursor=pointer]:
+            - /url: /about
+    - generic [ref=e151]:
+      - text: Apps and Plugins
+      - list [ref=e152]:
+        - listitem [ref=e153]:
+          - link "Official iPhone App" [ref=e154] [cursor=pointer]:
+            - /url: https://itunes.apple.com/us/app/shadertoy/id717961814
+          - text: by
+          - link "Reinder" [ref=e155] [cursor=pointer]:
+            - /url: /user/reinder
+        - listitem [ref=e156]:
+          - link "Screensaver" [ref=e157] [cursor=pointer]:
+            - /url: https://steamcommunity.com/sharedfiles/filedetails/?id=1726697188
+          - text: by
+          - link "Kosro" [ref=e158] [cursor=pointer]:
+            - /url: /user/kosro
+        - listitem [ref=e159]:
+          - link "Shadertoy plugin" [ref=e160] [cursor=pointer]:
+            - /url: https://chrome.google.com/webstore/detail/shadertoy-unofficial-plug/ohicbclhdmkhoabobgppffepcopomhgl
+          - text: by
+          - link "Patu" [ref=e161] [cursor=pointer]:
+            - /url: /user/patu
+    - generic [ref=e162]:
+      - text: Tutorials
+      - list [ref=e163]:
+        - listitem [ref=e164]:
+          - link "Shader coding intro" [ref=e165] [cursor=pointer]:
+            - /url: https://www.youtube.com/watch?v=0ifChJ0nJfM
+          - text: by
+          - link "iq" [ref=e166] [cursor=pointer]:
+            - /url: /user/iq
+        - listitem [ref=e167]:
+          - link "Shadertoy Unofficial" [ref=e168] [cursor=pointer]:
+            - /url: https://shadertoyunofficial.wordpress.com/
+          - text: by
+          - link "FabriceNeyret2" [ref=e169] [cursor=pointer]:
+            - /url: /user/FabriceNeyret2
+  - generic [ref=e170]:
+    - generic [ref=e171]:
+      - text: We use cookies to give you the best experience on our website. If you continue using Shadertoy, we'll assume that you are happy to receive all cookies on this website. For more information, please review our
+      - link "Terms & Privacy" [ref=e172] [cursor=pointer]:
+        - /url: /terms
+      - text: .
+    - button "Accept" [ref=e174]

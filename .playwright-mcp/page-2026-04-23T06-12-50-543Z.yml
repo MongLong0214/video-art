@@ -1,0 +1,1257 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - link "Shadertoy" [ref=e4] [cursor=pointer]:
+        - /url: /
+      - searchbox "Search..." [ref=e7]
+    - generic [ref=e8]:
+      - link "Browse" [ref=e9] [cursor=pointer]:
+        - /url: /browse
+      - link "New" [ref=e10] [cursor=pointer]:
+        - /url: /new
+      - link "Sign In" [ref=e11] [cursor=pointer]:
+        - /url: /signin
+  - generic [ref=e13]:
+    - generic [ref=e14]:
+      - generic [ref=e17]:
+        - generic [ref=e18]:
+          - generic "Reset time (<ALT>+<DownArrow>)" [ref=e19] [cursor=pointer]
+          - generic "Pause/Resume (<ALT>+<UpArrow>)" [ref=e20] [cursor=pointer]
+        - generic [ref=e21]:
+          - generic [ref=e22]: "10.87"
+          - generic [ref=e23]: 1.0 fps
+          - generic [ref=e24]: 420 x 236
+        - generic [ref=e25]:
+          - generic "Record (<ALT>+<R>)" [ref=e26] [cursor=pointer]
+          - generic "Volume" [ref=e27] [cursor=pointer]
+          - generic "Go fullscreen" [ref=e28] [cursor=pointer]
+      - generic [ref=e29]:
+        - generic [ref=e30]:
+          - generic [ref=e31]:
+            - text: Protean clouds
+            - img "This shader has been Shader of the Week!" [ref=e33]
+          - generic [ref=e34]:
+            - img "share this shader" [ref=e35] [cursor=pointer]
+            - img [ref=e36]
+            - text: "1654"
+          - generic [ref=e37]:
+            - text: "Views: 157461"
+            - text: ", Tags:"
+            - generic [ref=e177]:
+              - link "procedural" [ref=e178] [cursor=pointer]:
+                - /url: /results?query=tag%3Dprocedural
+              - text: ","
+              - link "3d" [ref=e179] [cursor=pointer]:
+                - /url: /results?query=tag%3D3d
+              - text: ","
+              - link "fast" [ref=e180] [cursor=pointer]:
+                - /url: /results?query=tag%3Dfast
+              - text: ","
+              - link "volumetric" [ref=e181] [cursor=pointer]:
+                - /url: /results?query=tag%3Dvolumetric
+          - generic [ref=e38]:
+            - text: Created by
+            - link "nimitz" [ref=e183] [cursor=pointer]:
+              - /url: /user/nimitz
+            - text: in 2019-05-27
+        - generic [ref=e184]: Fully procedural 3D animated volume with three evaluations per step (for shading) running fast enough for 1080p rendering. Featuring simple mouse interaction.
+    - generic [ref=e39]:
+      - generic [ref=e40] [cursor=pointer]:
+        - combobox [ref=e186]:
+          - option "Common"
+          - option "Sound"
+          - option "Buffer A"
+          - option "Buffer B"
+          - option "Buffer C"
+          - option "Buffer D"
+          - option "Cubemap A"
+        - generic [ref=e187]:
+          - img [ref=e188]
+          - generic [ref=e189]: Image
+      - generic [ref=e42] [cursor=pointer]:
+        - generic [ref=e43]: Shader Inputs
+        - generic [ref=e46]:
+          - text: uniform vec3 iResolution; // viewport resolution (in pixels)
+          - text: uniform float iTime; // shader playback time (in seconds)
+          - text: uniform float iTimeDelta; // render time (in seconds)
+          - text: uniform float iFrameRate; // shader frame rate
+          - text: uniform int iFrame; // shader playback frame
+          - text: uniform float iChannelTime[4]; // channel playback time (in seconds)
+          - text: uniform vec3 iChannelResolution[4]; // channel resolution (in pixels)
+          - text: "uniform vec4 iMouse; // mouse pixel coords. xy: current (if MLB down), zw: click"
+          - text: uniform samplerXX iChannel0..3; // input channel. XX = 2D/Cube
+          - text: uniform vec4 iDate; // (year, month, day, time in seconds)
+          - text: uniform float iSampleRate; // sound sample rate (i.e., 44100)
+      - generic [ref=e48]:
+        - textbox [ref=e49]
+        - generic [ref=e52]:
+          - generic [ref=e195]:
+            - generic [ref=e196]: "1"
+            - text: "// Protean clouds by nimitz (twitter: @stormoid)"
+          - generic [ref=e197]:
+            - generic [ref=e198]: "2"
+            - text: // https://www.shadertoy.com/view/3l23Rh
+          - generic [ref=e199]:
+            - generic [ref=e200]: "3"
+            - text: // License Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License
+          - generic [ref=e201]:
+            - generic [ref=e202]: "4"
+            - text: // Contact the author for other licensing options
+          - generic [ref=e204]: "5"
+          - generic [ref=e205]:
+            - generic [ref=e206]: "6"
+            - text: /*
+          - generic [ref=e207]:
+            - generic [ref=e208]: "7"
+            - text: "Technical details:"
+          - generic [ref=e210]: "8"
+          - generic [ref=e211]:
+            - generic [ref=e212]: "9"
+            - text: The main volume noise is generated from a deformed periodic grid, which can produce
+          - generic [ref=e213]:
+            - generic [ref=e214]: "10"
+            - text: a large range of noise-like patterns at very cheap evalutation cost. Allowing for multiple
+          - generic [ref=e215]:
+            - generic [ref=e216]: "11"
+            - text: fetches of volume gradient computation for improved lighting.
+          - generic [ref=e218]: "12"
+          - generic [ref=e219]:
+            - generic [ref=e220]: "13"
+            - text: To further accelerate marching, since the volume is smooth, more than half the the density
+          - generic [ref=e221]:
+            - generic [ref=e222]: "14"
+            - generic [ref=e223]: information isn't used to rendering or shading but only as an underlying volume distance to
+          - generic [ref=e224]:
+            - generic [ref=e225]: "15"
+            - generic [ref=e226]: determine dynamic step size, by carefully selecting an equation (polynomial for speed) to
+          - generic [ref=e227]:
+            - generic [ref=e228]: "16"
+            - text: step as a function of overall density (not necessarily rendered) the visual results can be
+          - generic [ref=e229]:
+            - generic [ref=e230]: "17"
+            - generic [ref=e231]: the same as a naive implementation with ~40% increase in rendering performance.
+          - generic [ref=e233]: "18"
+          - generic [ref=e234]:
+            - generic [ref=e235]: "19"
+            - text: Since the dynamic marching step size is even less uniform due to steps not being rendered at all
+          - generic [ref=e236]:
+            - generic [ref=e237]: "20"
+            - text: the fog is evaluated as the difference of the fog integral at each rendered step.
+          - generic [ref=e239]: "21"
+          - generic [ref=e240]:
+            - generic [ref=e241]: "22"
+            - text: "*/"
+          - generic [ref=e243]: "23"
+          - generic [ref=e244]:
+            - generic [ref=e245]: "24"
+            - text: "mat2 rot(in float a){float c = cos(a), s = sin(a);return mat2(c,s,-s,c);}"
+          - generic [ref=e246]:
+            - generic [ref=e247]: "25"
+            - text: const mat3 m3 = mat3(0.33338, 0.56034, -0.71817, -0.87887, 0.32651, -0.15323, 0.15162, 0.69596, 0.61339)*1.93;
+          - generic [ref=e248]:
+            - generic [ref=e249]: "26"
+            - text: "float mag2(vec2 p){return dot(p,p);}"
+          - generic [ref=e250]:
+            - generic [ref=e251]: "27"
+            - text: "float linstep(in float mn, in float mx, in float x){ return clamp((x - mn)/(mx - mn), 0., 1.); }"
+          - generic [ref=e252]:
+            - generic [ref=e253]: "28"
+            - text: float prm1 = 0.;
+          - generic [ref=e254]:
+            - generic [ref=e255]: "29"
+            - text: vec2 bsMo = vec2(0);
+          - generic [ref=e257]: "30"
+          - generic [ref=e258]:
+            - generic [ref=e259]: "31"
+            - text: "vec2 disp(float t){ return vec2(sin(t*0.22)*1., cos(t*0.175)*1.)*2.; }"
+          - generic [ref=e261]: "32"
+          - generic [ref=e262]:
+            - generic [ref=e263]: "33"
+            - text: vec2 map(vec3 p)
+          - generic [ref=e264]:
+            - generic:
+              - generic [ref=e265]: "34"
+              - generic [ref=e267] [cursor=pointer]: ▾
+            - text: "{"
+          - generic [ref=e268]:
+            - generic [ref=e269]: "35"
+            - text: vec3 p2 = p;
+          - generic [ref=e270]:
+            - generic [ref=e271]: "36"
+            - text: p2.xy -= disp(p.z).xy;
+          - generic [ref=e272]:
+            - generic [ref=e273]: "37"
+            - text: p.xy *= rot(sin(p.z+iTime)*(0.1 + prm1*0.05) + iTime*0.09);
+          - generic [ref=e274]:
+            - generic [ref=e275]: "38"
+            - text: float cl = mag2(p2.xy);
+          - generic [ref=e276]:
+            - generic [ref=e277]: "39"
+            - text: float d = 0.;
+          - generic [ref=e278]:
+            - generic [ref=e279]: "40"
+            - text: p *= .61;
+          - generic [ref=e280]:
+            - generic [ref=e281]: "41"
+            - text: float z = 1.;
+          - generic [ref=e282]:
+            - generic [ref=e283]: "42"
+            - text: float trk = 1.;
+          - generic [ref=e284]:
+            - generic [ref=e285]: "43"
+            - text: float dspAmp = 0.1 + prm1*0.2;
+          - generic [ref=e286]:
+            - generic [ref=e287]: "44"
+            - text: for(int i = 0; i < 5; i++)
+          - generic [ref=e288]:
+            - generic:
+              - generic [ref=e289]: "45"
+              - generic [ref=e291] [cursor=pointer]: ▾
+            - text: "{"
+          - generic [ref=e292]:
+            - generic [ref=e293]: "46"
+            - text: p += sin(p.zxy*0.75*trk + iTime*trk*.8)*dspAmp;
+          - generic [ref=e294]:
+            - generic [ref=e295]: "47"
+            - text: d -= abs(dot(cos(p), sin(p.yzx))*z);
+          - generic [ref=e296]:
+            - generic [ref=e297]: "48"
+            - text: z *= 0.57;
+          - generic [ref=e298]:
+            - generic [ref=e299]: "49"
+            - text: trk *= 1.4;
+          - generic [ref=e300]:
+            - generic [ref=e301]: "50"
+            - text: p = p*m3;
+          - generic [ref=e302]:
+            - generic [ref=e303]: "51"
+            - text: "}"
+          - generic [ref=e304]:
+            - generic [ref=e305]: "52"
+            - text: d = abs(d + prm1*3.)+ prm1*.3 - 2.5 + bsMo.y;
+          - generic [ref=e306]:
+            - generic [ref=e307]: "53"
+            - text: return vec2(d + cl*.2 + 0.25, cl);
+          - generic [ref=e308]:
+            - generic [ref=e309]: "54"
+            - text: "}"
+          - generic [ref=e311]: "55"
+          - generic [ref=e312]:
+            - generic [ref=e313]: "56"
+            - text: vec4 render( in vec3 ro, in vec3 rd, float time )
+          - generic [ref=e314]:
+            - generic:
+              - generic [ref=e315]: "57"
+              - generic [ref=e317] [cursor=pointer]: ▾
+            - text: "{"
+          - generic [ref=e318]:
+            - generic [ref=e319]: "58"
+            - text: vec4 rez = vec4(0);
+          - generic [ref=e320]:
+            - generic [ref=e321]: "59"
+            - text: const float ldst = 8.;
+          - generic [ref=e322]:
+            - generic [ref=e323]: "60"
+            - text: vec3 lpos = vec3(disp(time + ldst)*0.5, time + ldst);
+          - generic [ref=e324]:
+            - generic [ref=e325]: "61"
+            - text: float t = 1.5;
+          - generic [ref=e326]:
+            - generic [ref=e327]: "62"
+            - text: float fogT = 0.;
+          - generic [ref=e328]:
+            - generic [ref=e329]: "63"
+            - text: for(int i=0; i<130; i++)
+          - generic [ref=e330]:
+            - generic:
+              - generic [ref=e331]: "64"
+              - generic [ref=e333] [cursor=pointer]: ▾
+            - text: "{"
+          - generic [ref=e334]:
+            - generic [ref=e335]: "65"
+            - text: if(rez.a > 0.99)break;
+          - generic [ref=e337]: "66"
+          - generic [ref=e338]:
+            - generic [ref=e339]: "67"
+            - text: vec3 pos = ro + t*rd;
+          - generic [ref=e340]:
+            - generic [ref=e341]: "68"
+            - text: vec2 mpv = map(pos);
+          - generic [ref=e342]:
+            - generic [ref=e343]: "69"
+            - text: float den = clamp(mpv.x-0.3,0.,1.)*1.12;
+          - generic [ref=e344]:
+            - generic [ref=e345]: "70"
+            - text: float dn = clamp((mpv.x + 2.),0.,3.);
+          - generic [ref=e347]: "71"
+          - generic [ref=e348]:
+            - generic [ref=e349]: "72"
+            - text: vec4 col = vec4(0);
+          - generic [ref=e350]:
+            - generic [ref=e351]: "73"
+            - text: if (mpv.x > 0.6)
+          - generic [ref=e352]:
+            - generic:
+              - generic [ref=e353]: "74"
+              - generic [ref=e355] [cursor=pointer]: ▾
+            - text: "{"
+          - generic [ref=e357]: "75"
+          - generic [ref=e358]:
+            - generic [ref=e359]: "76"
+            - text: col = vec4(sin(vec3(5.,0.4,0.2) + mpv.y*0.1 +sin(pos.z*0.4)*0.5 + 1.8)*0.5 + 0.5,0.08);
+          - generic [ref=e360]:
+            - generic [ref=e361]: "77"
+            - text: col *= den*den*den;
+          - generic [ref=e362]:
+            - generic [ref=e363]: "78"
+            - text: col.rgb *= linstep(4.,-2.5, mpv.x)*2.3;
+          - generic [ref=e364]:
+            - generic [ref=e365]: "79"
+            - text: float dif = clamp((den - map(pos+.8).x)/9., 0.001, 1. );
+          - generic [ref=e366]:
+            - generic [ref=e367]: "80"
+            - text: dif += clamp((den - map(pos+.35).x)/2.5, 0.001, 1. );
+          - generic [ref=e368]:
+            - generic [ref=e369]: "81"
+            - text: col.xyz *= den*(vec3(0.005,.045,.075) + 1.5*vec3(0.033,0.07,0.03)*dif);
+          - generic [ref=e370]:
+            - generic [ref=e371]: "82"
+            - text: "}"
+          - generic [ref=e373]: "83"
+          - generic [ref=e374]:
+            - generic [ref=e375]: "84"
+            - text: float fogC = exp(t*0.2 - 2.2);
+          - generic [ref=e376]:
+            - generic [ref=e377]: "85"
+            - text: col.rgba += vec4(0.06,0.11,0.11, 0.1)*clamp(fogC-fogT, 0., 1.);
+          - generic [ref=e378]:
+            - generic [ref=e379]: "86"
+            - text: fogT = fogC;
+          - generic [ref=e380]:
+            - generic [ref=e381]: "87"
+            - text: rez = rez + col*(1. - rez.a);
+          - generic [ref=e382]:
+            - generic [ref=e383]: "88"
+            - text: t += clamp(0.5 - dn*dn*.05, 0.09, 0.3);
+          - generic [ref=e384]:
+            - generic [ref=e385]: "89"
+            - text: "}"
+          - generic [ref=e386]:
+            - generic [ref=e387]: "90"
+            - text: return clamp(rez, 0.0, 1.0);
+          - generic [ref=e388]:
+            - generic [ref=e389]: "91"
+            - text: "}"
+          - generic [ref=e391]: "92"
+      - generic [ref=e59]:
+        - generic [ref=e60]:
+          - img "Compile (<ALT>+<ENTER>)" [ref=e61] [cursor=pointer]
+          - link "Compiled in 0.1 secs" [ref=e392] [cursor=pointer]:
+            - /url: "#"
+        - generic [ref=e62]: 2921 chars
+        - generic [ref=e63]:
+          - combobox "Change font size (<ALT>+<+/->)" [ref=e65]:
+            - option "XS"
+            - option "S" [selected]
+            - option "M"
+            - option "L"
+            - option "XL"
+            - option "XXL"
+          - img "Show GLSL help" [ref=e66] [cursor=pointer]
+      - generic [ref=e67]:
+        - generic [ref=e68]:
+          - generic [ref=e69]:
+            - generic:
+              - text: Filter
+              - combobox "Pixel filtering mode" [ref=e71]:
+                - option "nearest" [selected]
+                - option "linear"
+                - option "mipmap"
+              - text: Wrap
+              - combobox "Pixel filtering mode" [ref=e72]:
+                - option "clamp" [selected]
+                - option "repeat"
+              - generic [ref=e74]:
+                - text: VFlip
+                - checkbox "VFlip" [ref=e75]
+          - generic [ref=e77]: iChannel0
+        - generic [ref=e80]:
+          - generic [ref=e81]:
+            - generic:
+              - text: Filter
+              - combobox "Pixel filtering mode" [ref=e83]:
+                - option "nearest" [selected]
+                - option "linear"
+                - option "mipmap"
+              - text: Wrap
+              - combobox "Pixel filtering mode" [ref=e84]:
+                - option "clamp" [selected]
+                - option "repeat"
+              - generic [ref=e86]:
+                - text: VFlip
+                - checkbox "VFlip" [ref=e87]
+          - generic [ref=e89]: iChannel1
+        - generic [ref=e92]:
+          - generic [ref=e93]:
+            - generic:
+              - text: Filter
+              - combobox "Pixel filtering mode" [ref=e95]:
+                - option "nearest" [selected]
+                - option "linear"
+                - option "mipmap"
+              - text: Wrap
+              - combobox "Pixel filtering mode" [ref=e96]:
+                - option "clamp" [selected]
+                - option "repeat"
+              - generic [ref=e98]:
+                - text: VFlip
+                - checkbox "VFlip" [ref=e99]
+          - generic [ref=e101]: iChannel2
+        - generic [ref=e104]:
+          - generic [ref=e105]:
+            - generic:
+              - text: Filter
+              - combobox "Pixel filtering mode" [ref=e107]:
+                - option "nearest" [selected]
+                - option "linear"
+                - option "mipmap"
+              - text: Wrap
+              - combobox "Pixel filtering mode" [ref=e108]:
+                - option "clamp" [selected]
+                - option "repeat"
+              - generic [ref=e110]:
+                - text: VFlip
+                - checkbox "VFlip" [ref=e111]
+          - generic [ref=e113]: iChannel3
+    - generic [ref=e117]:
+      - text: Comments (102)
+      - generic [ref=e118]:
+        - link "Sign in" [ref=e120] [cursor=pointer]:
+          - /url: /signin
+        - text: to post a comment.
+      - generic [ref=e393]:
+        - generic [ref=e394]:
+          - img [ref=e396]
+          - generic [ref=e397]:
+            - link "archangel3dd" [ref=e398] [cursor=pointer]:
+              - /url: /user/archangel3dd
+            - text: ", 2026-02-01"
+            - text: Thanks to your work. Very nice. https://vt.tiktok.com/ZSaqH6JL1/
+        - generic [ref=e399]:
+          - img [ref=e401]
+          - generic [ref=e402]:
+            - link "shadertoyjiang" [ref=e403] [cursor=pointer]:
+              - /url: /user/shadertoyjiang
+            - text: ", 2025-09-27"
+            - text: We had a later adoption of computers here, and there are barriers to using them, like the English-Chinese language difference.
+        - generic [ref=e404]:
+          - img [ref=e406]
+          - generic [ref=e407]:
+            - link "FabriceNeyret2" [ref=e408] [cursor=pointer]:
+              - /url: /user/FabriceNeyret2
+            - text: ", 2025-09-27"
+            - text: "Funny: around me, seniors have computers, young people have the mobile phones ;-)"
+        - generic [ref=e409]:
+          - img [ref=e411]
+          - generic [ref=e412]:
+            - link "shadertoyjiang" [ref=e413] [cursor=pointer]:
+              - /url: /user/shadertoyjiang
+            - text: ", 2025-09-27"
+            - text: "@FabriceNeyret2 \"I find those websites are not mobile-friendly and difficult to navigate. For mobile phones, Shadertoy is the most user-friendly website I've found. Actually, quite a few people don't use computers at home, especially elderly people; some haven't even bought one. Even if they have one, they don't particularly like using it. But when it comes to mobile phones, from the elderly down to some children, everyone has one – some people even have two or three.\""
+        - generic [ref=e414]:
+          - img [ref=e416]
+          - generic [ref=e417]:
+            - link "FabriceNeyret2" [ref=e418] [cursor=pointer]:
+              - /url: /user/FabriceNeyret2
+            - text: ", 2025-09-27"
+            - text: SDF is an art and a science (many papers about that ;-) ). If done correctly, distance is never warped and you can always safely step. Rendering triangular meshes is just the opposite of how to process in fragment shader only. But if you want to play with vertex shader (procedural or from mesh) + fragment shader, you can play with
+            - link "https://shaderoo.org/" [ref=e419] [cursor=pointer]:
+              - /url: https://shaderoo.org/
+            - text: . Many additional goodies there ! ;-)
+        - generic [ref=e420]:
+          - img [ref=e422]
+          - generic [ref=e423]:
+            - link "FabriceNeyret2" [ref=e424] [cursor=pointer]:
+              - /url: /user/FabriceNeyret2
+            - text: ", 2025-09-27"
+            - text: "2184 chars slightly simplified & cleaned-up version (from 2921) unlisted here:"
+            - link "https://www.shadertoy.com/view/3cjBWy" [ref=e425] [cursor=pointer]:
+              - /url: https://www.shadertoy.com/view/3cjBWy
+        - generic [ref=e426]:
+          - img [ref=e428]
+          - generic [ref=e429]:
+            - link "shadertoyjiang" [ref=e430] [cursor=pointer]:
+              - /url: /user/shadertoyjiang
+            - text: ", 2025-09-27"
+            - text: "@FabriceNeyret2Thank you. Another issue is that constructing signed distance fields is too difficult. Some scenes containing individually warped approximate distance fields can only compress the overall traversal speed, which significantly slows things down, and some of the warping is also incorrect. So I was wondering if we could mimic the approach of triangulation for construction."
+        - generic [ref=e431]:
+          - img [ref=e433]
+          - generic [ref=e434]:
+            - link "FabriceNeyret2" [ref=e435] [cursor=pointer]:
+              - /url: /user/FabriceNeyret2
+            - text: ", 2025-09-27"
+            - text: BVH or BVS, grids, LOD, smart proceduralism... many possibilities !
+        - generic [ref=e436]:
+          - img [ref=e438]
+          - generic [ref=e439]:
+            - link "shadertoyjiang" [ref=e440] [cursor=pointer]:
+              - /url: /user/shadertoyjiang
+            - text: ", 2025-09-27"
+            - text: "@FabriceNeyret2 Besides bounding boxes, what other methods can improve the performance of complex 3D scenes? I've seen some web-based 3D models with complex graphics that still run fairly smoothly. Can Shadertoy借鉴（borrow from） their algorithms to speed things up?"
+        - generic [ref=e441]:
+          - img [ref=e443]
+          - generic [ref=e444]:
+            - link "shadertoyjiang" [ref=e445] [cursor=pointer]:
+              - /url: /user/shadertoyjiang
+            - text: ", 2025-09-27"
+            - text: Three years ago, I came across this work and was truly impressed. I even showed it off to others back then, saying, 'Look at what such short code can draw!' How time flies.
+        - generic [ref=e446]:
+          - img [ref=e448]
+          - generic [ref=e449]:
+            - link "FabriceNeyret2" [ref=e450] [cursor=pointer]:
+              - /url: /user/FabriceNeyret2
+            - text: ", 2025-09-27"
+            - text: "@shadertoyjiang: ?"
+        - generic [ref=e451]:
+          - img [ref=e453]
+          - generic [ref=e454]:
+            - link "shadertoyjiang" [ref=e455] [cursor=pointer]:
+              - /url: /user/shadertoyjiang
+            - text: ", 2025-09-27"
+            - text: 3years
+        - generic [ref=e456]:
+          - img [ref=e458]
+          - generic [ref=e459]:
+            - link "MV10" [ref=e460] [cursor=pointer]:
+              - /url: /user/MV10
+            - text: ", 2025-07-29"
+            - text: "@jlocust, try the lower-res upscaled one: https://www.shadertoy.com/view/Dt3yW8"
+        - generic [ref=e461]:
+          - img [ref=e463]
+          - generic [ref=e464]:
+            - link "jlocust" [ref=e465] [cursor=pointer]:
+              - /url: /user/jlocust
+            - text: ", 2025-06-27"
+            - text: I love it! But wow, this hammers my GPU
+        - generic [ref=e466]:
+          - img [ref=e468]
+          - generic [ref=e469]:
+            - link "kaleidoscope" [ref=e470] [cursor=pointer]:
+              - /url: /user/kaleidoscope
+            - text: ", 2024-11-15"
+            - text: this person is stealing your shader without giving credit
+            - link "https://www.reddit.com/r/LivelyWallpaper/comments/12ut52p/clouds_wallpaper_with_customization/" [ref=e471] [cursor=pointer]:
+              - /url: https://www.reddit.com/r/LivelyWallpaper/comments/12ut52p/clouds_wallpaper_with_customization/
+        - generic [ref=e472]:
+          - img [ref=e474]
+          - generic [ref=e475]:
+            - link "Elsio" [ref=e476] [cursor=pointer]:
+              - /url: /user/Elsio
+            - text: ", 2024-10-18"
+            - text: "minha tentativa de simular um túnel de nuvens: https://www.shadertoy.com/view/lfSczw"
+        - generic [ref=e477]:
+          - img [ref=e479]
+          - generic [ref=e480]:
+            - link "raizor" [ref=e481] [cursor=pointer]:
+              - /url: /user/raizor
+            - text: ", 2024-09-28"
+            - text: One of the most visually pleasing shaders I've ever seen. Just lovely <3
+        - generic [ref=e482]:
+          - img [ref=e484]
+          - generic [ref=e485]:
+            - link "Lagoochu360" [ref=e486] [cursor=pointer]:
+              - /url: /user/Lagoochu360
+            - text: ", 2024-06-08"
+            - text: dreamy
+        - generic [ref=e487]:
+          - img [ref=e489]
+          - generic [ref=e490]:
+            - link "UnchartedSystems" [ref=e491] [cursor=pointer]:
+              - /url: /user/UnchartedSystems
+            - text: ", 2024-05-01"
+            - text: Wow!
+        - generic [ref=e492]:
+          - img [ref=e494]
+          - generic [ref=e495]:
+            - link "Minstreams" [ref=e496] [cursor=pointer]:
+              - /url: /user/Minstreams
+            - text: ", 2024-01-20"
+            - text: brilliant!!!!!!
+        - generic [ref=e497]:
+          - img [ref=e499]
+          - generic [ref=e500]:
+            - link "jakedowns" [ref=e501] [cursor=pointer]:
+              - /url: /user/jakedowns
+            - text: ", 2024-01-19"
+            - text: amazing
+        - generic [ref=e502]:
+          - img [ref=e504]
+          - generic [ref=e505]:
+            - link "MV10" [ref=e506] [cursor=pointer]:
+              - /url: /user/MV10
+            - text: ", 2023-10-22"
+            - text: What's especially interesting to me about this one is that it works really well rendered to a much lower resolution then upscaled. I've rendered it as low as 512 pixels wide and upscaled to a 4K 77" OLED TV, and if you're not standing right next to the screen you'd never guess. (Technically it goes through two upscales -- my program blits from 512 to 2K, then my AVR amplifier upscales from 2K to 4K.) Rendered at 1024px wide, you
+            - emphasis [ref=e507]: can
+            - text: stand right next to the screen and it looks as good as direct 2K rendering (which the machine on my TV can't maintain at any smooth frame rate).
+        - generic [ref=e508]:
+          - img [ref=e510]
+          - generic [ref=e511]:
+            - link "newcolator" [ref=e512] [cursor=pointer]:
+              - /url: /user/newcolator
+            - text: ", 2023-08-11"
+            - text: That is incredible!
+        - generic [ref=e513]:
+          - img [ref=e515]
+          - generic [ref=e516]:
+            - link "zxy_aaron" [ref=e517] [cursor=pointer]:
+              - /url: /user/zxy_aaron
+            - text: ", 2022-07-06"
+            - text: is beautiful
+        - generic [ref=e518]:
+          - img [ref=e520]
+          - generic [ref=e521]:
+            - link "aiekick" [ref=e522] [cursor=pointer]:
+              - /url: /user/aiekick
+            - text: ", 2022-05-30"
+            - text: "@TotallyReal, if you check my alst comment, i have created a commented version with some widgets you can open and tune in NoodlesPalte. not sure if all comment are exacts by the way, but made sens to me"
+            - img [ref=e523]
+        - generic [ref=e524]:
+          - img [ref=e526]
+          - generic [ref=e527]:
+            - link "TotallyReal" [ref=e528] [cursor=pointer]:
+              - /url: /user/TotallyReal
+            - text: ", 2022-05-29"
+            - text: This is amazing. Any chance of adding a bit of documentation, or maybe just some keywords that I can search for to understand what happens here? I recognize some of the elements you are using here, but not all, and even in those that I do, I am not sure about the details. For example, in the noise computation inside the map(.) function, how did you choose the updates for p and d? Is it just some general noise function, or has something that is specific for more "cloud like" noise?
+        - generic [ref=e529]:
+          - img [ref=e531]
+          - generic [ref=e532]:
+            - link "Canta" [ref=e533] [cursor=pointer]:
+              - /url: /user/Canta
+            - text: ", 2022-04-25"
+            - text: "Hi there nimitz. I've used this shader as background for a video, here: https://www.youtube.com/watch?v=Cd6DQpOgoCg It's of course non-profit stuff, and there's a credits link in the video description, but I wanted to inform you anyways through here. Hope it's ok to use it."
+        - generic [ref=e534]:
+          - img [ref=e536]
+          - generic [ref=e537]:
+            - link "aiekick" [ref=e538] [cursor=pointer]:
+              - /url: /user/aiekick
+            - text: ", 2021-11-20"
+            - text: you have here a widgeted version for NoodlesPlate. so you have the
+            - link "code file" [ref=e539] [cursor=pointer]:
+              - /url: https://github.com/aiekick/NoodlesPlate/tree/master/ProteanCloud
+        - generic [ref=e540]:
+          - img [ref=e542]
+          - generic [ref=e543]:
+            - link "marlodamartian" [ref=e544] [cursor=pointer]:
+              - /url: /user/marlodamartian
+            - text: ", 2021-11-18"
+            - text: can you please make an API version
+        - generic [ref=e545]:
+          - img [ref=e547]
+          - generic [ref=e548]:
+            - link "Taron" [ref=e549] [cursor=pointer]:
+              - /url: /user/Taron
+            - text: ", 2021-08-22"
+            - text: I wonder, if this will for ever be the most beautiful tunnel by itself. It still most certainly is glorious!
+        - generic [ref=e550]:
+          - img [ref=e552]
+          - generic [ref=e553]:
+            - link "kkiej" [ref=e554] [cursor=pointer]:
+              - /url: /user/kkiej
+            - text: ", 2021-07-14"
+            - text: very nice!
+        - generic [ref=e555]:
+          - img [ref=e557]
+          - generic [ref=e558]:
+            - link "finofinissimo" [ref=e559] [cursor=pointer]:
+              - /url: /user/finofinissimo
+            - text: ", 2021-06-05"
+            - text: dude, this is so wicked. congrats for the thinking
+        - generic [ref=e560]:
+          - img [ref=e562]
+          - generic [ref=e563]:
+            - link "Zavie" [ref=e564] [cursor=pointer]:
+              - /url: /user/Zavie
+            - text: ", 2021-04-11"
+            - text: This is gorgeous.
+        - generic [ref=e565]:
+          - img [ref=e567]
+          - generic [ref=e568]:
+            - link "raabix" [ref=e569] [cursor=pointer]:
+              - /url: /user/raabix
+            - text: ", 2021-03-22"
+            - text: This is the most awesome and mesmerizing shaders on shadertoy. The lighting, just everything is perfect. Really well done
+        - generic [ref=e570]:
+          - img [ref=e572]
+          - generic [ref=e573]:
+            - link "jeyko" [ref=e574] [cursor=pointer]:
+              - /url: /user/jeyko
+            - text: ", 2020-12-17"
+            - text: what a weird noise
+        - generic [ref=e575]:
+          - img [ref=e577]
+          - generic [ref=e578]:
+            - link "jeyko" [ref=e579] [cursor=pointer]:
+              - /url: /user/jeyko
+            - text: ", 2020-12-17"
+            - text: what a weird noise
+        - generic [ref=e580]:
+          - img [ref=e582]
+          - generic [ref=e583]:
+            - link "xjorma" [ref=e584] [cursor=pointer]:
+              - /url: /user/xjorma
+            - text: ", 2020-10-16"
+            - text: Export in Stereo 360 https://youtu.be/LdUEJjADbMA
+        - generic [ref=e585]:
+          - img [ref=e587]
+          - generic [ref=e588]:
+            - link "yorgaraz" [ref=e589] [cursor=pointer]:
+              - /url: /user/yorgaraz
+            - text: ", 2020-10-10"
+            - text: To remove the rotating effect, make disp() return vec2(.0, .0) and comment out line 121 i can actually use this as my desktop background (may have to slightly tweak out the colors to my liking first)!
+        - generic [ref=e590]:
+          - img [ref=e592]
+          - generic [ref=e593]:
+            - link "andremichelle" [ref=e594] [cursor=pointer]:
+              - /url: /user/andremichelle
+            - text: ", 2020-10-07"
+            - text: We are using this as background visuals for a featured track on audiotool.com https://www.youtube.com/watch?v=yHkZJgEmJdM If you like different credits, please contact me. Thanks!
+        - generic [ref=e595]:
+          - img [ref=e597]
+          - generic [ref=e598]:
+            - link "j1mmie" [ref=e599] [cursor=pointer]:
+              - /url: /user/j1mmie
+            - text: ", 2020-07-01"
+            - text: "I used this for a recent experiment in Unity: https://www.reddit.com/r/Unity3D/comments/hjfl00/i_hacked_that_shadertoy_demo_from_the_other_day/"
+        - generic [ref=e600]:
+          - img [ref=e602]
+          - generic [ref=e603]:
+            - link "markuszeller" [ref=e604] [cursor=pointer]:
+              - /url: /user/markuszeller
+            - text: ", 2020-04-18"
+            - text: This needs to be my desktop background!
+        - generic [ref=e605]:
+          - img [ref=e607]
+          - generic [ref=e608]:
+            - link "saidwho12" [ref=e609] [cursor=pointer]:
+              - /url: /user/saidwho12
+            - text: ", 2020-03-20"
+            - text: انا هو الدكتور هو ,اقرا اسمي
+            - img [ref=e610]
+        - generic [ref=e611]:
+          - img [ref=e613]
+          - generic [ref=e614]:
+            - link "knighty" [ref=e615] [cursor=pointer]:
+              - /url: /user/knighty
+            - text: ", 2020-03-11"
+            - text: الدكتور هو
+        - generic [ref=e616]:
+          - img [ref=e618]
+          - generic [ref=e619]:
+            - link "knighty" [ref=e620] [cursor=pointer]:
+              - /url: /user/knighty
+            - text: ", 2020-03-11"
+            - text: الدكتور هو
+        - generic [ref=e621]:
+          - img [ref=e623]
+          - generic [ref=e624]:
+            - link "xactac" [ref=e625] [cursor=pointer]:
+              - /url: /user/xactac
+            - text: ", 2020-02-18"
+            - text: "*Doctor Who music starts playing*"
+        - generic [ref=e626]:
+          - img [ref=e628]
+          - generic [ref=e629]:
+            - link "umurgdk" [ref=e630] [cursor=pointer]:
+              - /url: /user/umurgdk
+            - text: ", 2019-12-03"
+            - text: Can you please mark your shader available to api too? So we can watch it on our devices, and apps.
+        - generic [ref=e631]:
+          - img [ref=e633]
+          - generic [ref=e634]:
+            - link "omarzonex" [ref=e635] [cursor=pointer]:
+              - /url: /user/omarzonex
+            - text: ", 2019-11-25"
+            - text: wowwwww very cooool
+        - generic [ref=e636]:
+          - img [ref=e638]
+          - generic [ref=e639]:
+            - link "nockieboy" [ref=e640] [cursor=pointer]:
+              - /url: /user/nockieboy
+            - text: ", 2019-09-23"
+            - text: Amazing- absolutely beautiful!
+        - generic [ref=e641]:
+          - img [ref=e643]
+          - generic [ref=e644]:
+            - link "Mipmap" [ref=e645] [cursor=pointer]:
+              - /url: /user/Mipmap
+            - text: ", 2019-09-13"
+            - text: Amazing!
+        - generic [ref=e646]:
+          - img [ref=e648]
+          - generic [ref=e649]:
+            - link "huseyinozkilic" [ref=e650] [cursor=pointer]:
+              - /url: /user/huseyinozkilic
+            - text: ", 2019-07-18"
+            - text: doctor who fans here?
+            - img [ref=e651]
+        - generic [ref=e652]:
+          - img [ref=e654]
+          - generic [ref=e655]:
+            - link "JKG2" [ref=e656] [cursor=pointer]:
+              - /url: /user/JKG2
+            - text: ", 2019-07-04"
+            - text: wow that looks really amazing, especially when the tone gets warm and the vortices are really interacting
+        - generic [ref=e657]:
+          - img [ref=e659]
+          - generic [ref=e660]:
+            - link "entr0cks" [ref=e661] [cursor=pointer]:
+              - /url: /user/entr0cks
+            - text: ", 2019-07-03"
+            - text: Inspiring!
+        - generic [ref=e662]:
+          - img [ref=e664]
+          - generic [ref=e665]:
+            - link "macangel" [ref=e666] [cursor=pointer]:
+              - /url: /user/macangel
+            - text: ", 2019-06-25"
+            - text: me encanta este shader , comop lo puedo descargar para usarlo con el virtual dj?
+        - generic [ref=e667]:
+          - img [ref=e669]
+          - generic [ref=e670]:
+            - link "KylBlz" [ref=e671] [cursor=pointer]:
+              - /url: /user/KylBlz
+            - text: ", 2019-06-09"
+            - text: Super nice, will study. Like right out of a Disney movie
+        - generic [ref=e672]:
+          - img [ref=e674]
+          - generic [ref=e675]:
+            - link "jt" [ref=e676] [cursor=pointer]:
+              - /url: /user/jt
+            - text: ", 2019-06-04"
+            - text: wow
+            - img [ref=e677]
+        - generic [ref=e678]:
+          - img [ref=e680]
+          - generic [ref=e681]:
+            - link "hjd3481" [ref=e682] [cursor=pointer]:
+              - /url: /user/hjd3481
+            - text: ", 2019-06-04"
+            - text: Amazing work
+        - generic [ref=e683]:
+          - img [ref=e685]
+          - generic [ref=e686]:
+            - link "TobberH" [ref=e687] [cursor=pointer]:
+              - /url: /user/TobberH
+            - text: ", 2019-06-04"
+            - text: WOW this looks amazing!!!!!
+        - generic [ref=e688]:
+          - img [ref=e690]
+          - generic [ref=e691]:
+            - link "FMS_Cat" [ref=e692] [cursor=pointer]:
+              - /url: /user/FMS_Cat
+            - text: ", 2019-06-04"
+            - text: holy aaaaaa
+        - generic [ref=e693]:
+          - img [ref=e695]
+          - generic [ref=e696]:
+            - link "rivvumevents" [ref=e697] [cursor=pointer]:
+              - /url: /user/rivvumevents
+            - text: ", 2019-06-03"
+            - text: Simply beautiful, no other words for this, would be lovely if this was available as API to work with Virtual DJ
+        - generic [ref=e698]:
+          - img [ref=e700]
+          - generic [ref=e701]:
+            - link "gongzixiaobai" [ref=e702] [cursor=pointer]:
+              - /url: /user/gongzixiaobai
+            - text: ", 2019-06-03"
+            - text: six six six
+        - generic [ref=e703]:
+          - img [ref=e705]
+          - generic [ref=e706]:
+            - link "Dave_Hoskins" [ref=e707] [cursor=pointer]:
+              - /url: /user/Dave_Hoskins
+            - text: ", 2019-06-01"
+            - text: Great mapping idea, and it looks looks amazing.
+        - generic [ref=e708]:
+          - img [ref=e710]
+          - generic [ref=e711]:
+            - link "Hadyn" [ref=e712] [cursor=pointer]:
+              - /url: /user/Hadyn
+            - text: ", 2019-06-01"
+            - text: Absolutely stunning!
+        - generic [ref=e713]:
+          - img [ref=e715]
+          - generic [ref=e716]:
+            - link "GregRostami" [ref=e717] [cursor=pointer]:
+              - /url: /user/GregRostami
+            - text: ", 2019-06-01"
+            - text: OMG!!! Gorgeous!
+        - generic [ref=e718]:
+          - img [ref=e720]
+          - generic [ref=e721]:
+            - link "patu" [ref=e722] [cursor=pointer]:
+              - /url: /user/patu
+            - text: ", 2019-05-31"
+            - strong [ref=e723]: best
+        - generic [ref=e724]:
+          - img [ref=e726]
+          - generic [ref=e727]:
+            - link "mmerchante" [ref=e728] [cursor=pointer]:
+              - /url: /user/mmerchante
+            - text: ", 2019-05-31"
+            - text: This is insanely inspirational!
+        - generic [ref=e729]:
+          - img [ref=e731]
+          - generic [ref=e732]:
+            - link "BigWIngs" [ref=e733] [cursor=pointer]:
+              - /url: /user/BigWIngs
+            - text: ", 2019-05-31"
+            - text: Wow, thats beautiful!
+        - generic [ref=e734]:
+          - img [ref=e736]
+          - generic [ref=e737]:
+            - link "polymonster" [ref=e738] [cursor=pointer]:
+              - /url: /user/polymonster
+            - text: ", 2019-05-31"
+            - text: amazing !!
+        - generic [ref=e739]:
+          - img [ref=e741]
+          - generic [ref=e742]:
+            - link "flockaroo" [ref=e743] [cursor=pointer]:
+              - /url: /user/flockaroo
+            - text: ", 2019-05-31"
+            - text: huh, excellent!!!
+        - generic [ref=e744]:
+          - img [ref=e746]
+          - generic [ref=e747]:
+            - link "Draedrus" [ref=e748] [cursor=pointer]:
+              - /url: /user/Draedrus
+            - text: ", 2019-05-31"
+            - text: This is insane nimitz !
+            - img [ref=e749]
+        - generic [ref=e750]:
+          - img [ref=e752]
+          - generic [ref=e753]:
+            - link "Raphael188" [ref=e754] [cursor=pointer]:
+              - /url: /user/Raphael188
+            - text: ", 2019-05-30"
+            - text: This is super cool
+        - generic [ref=e755]:
+          - img [ref=e757]
+          - generic [ref=e758]:
+            - link "teadrinker" [ref=e759] [cursor=pointer]:
+              - /url: /user/teadrinker
+            - text: ", 2019-05-30"
+            - text: amazing work!
+        - generic [ref=e760]:
+          - img [ref=e762]
+          - generic [ref=e763]:
+            - link "nimitz" [ref=e764] [cursor=pointer]:
+              - /url: /user/nimitz
+            - text: ", 2019-05-30"
+            - text: "Thanks everyone! it means a lot to get thumbs ups by such a remarkable collection of shader coders. Fabrice: Cleaned up the code, I like that way of setting up coordinates too, will use a variation of it, thanks!"
+        - generic [ref=e765]:
+          - img [ref=e767]
+          - generic [ref=e768]:
+            - link "Flavio" [ref=e769] [cursor=pointer]:
+              - /url: /user/Flavio
+            - text: ", 2019-05-30"
+            - text: OUTSTANDING!!!!
+        - generic [ref=e770]:
+          - img [ref=e772]
+          - generic [ref=e773]:
+            - link "mantra" [ref=e774] [cursor=pointer]:
+              - /url: /user/mantra
+            - text: ", 2019-05-30"
+            - text: Awesome
+        - generic [ref=e775]:
+          - img [ref=e777]
+          - generic [ref=e778]:
+            - link "granito" [ref=e779] [cursor=pointer]:
+              - /url: /user/granito
+            - text: ", 2019-05-30"
+            - text: "here's an attempt I made at speeding it up : https://www.shadertoy.com/view/wlSGWR"
+        - generic [ref=e780]:
+          - img [ref=e782]
+          - generic [ref=e783]:
+            - link "elenzil" [ref=e784] [cursor=pointer]:
+              - /url: /user/elenzil
+            - text: ", 2019-05-29"
+            - text: nimitz, could you save as "public + API" so it shows up in the shadertoy ios app ?
+        - generic [ref=e785]:
+          - img [ref=e787]
+          - generic [ref=e788]:
+            - link "FabriceNeyret2" [ref=e789] [cursor=pointer]:
+              - /url: /user/FabriceNeyret2
+            - text: ", 2019-05-29"
+            - text: "wow, so cool ! some remarks: rot_x , y , z functions not used ;-) mg2() unused mag2: note that overloading can be avoided using #define mag2(p) dot(p,p) why is mg2() a separate func ? coordinate normalization: I personnaly find this more easy to read:"
+            - generic [ref=e790]: "vec2 R = iResolution.xy, q = fragCoord/R, p = (fragCoord - .5*R ) / R.y, mo = iMouse.xy; mo = ( mo==vec2(0) ) ? vec2(.15) : ( mo - .5*R ) / R.y;"
+        - generic [ref=e791]:
+          - img [ref=e793]
+          - generic [ref=e794]:
+            - link "blackjero" [ref=e795] [cursor=pointer]:
+              - /url: /user/blackjero
+            - text: ", 2019-05-29"
+            - text: So short, so fast and so good... the first seconds triggered a sort of brain stimulation wave of goodness, thanks for sharing!
+        - generic [ref=e796]:
+          - img [ref=e798]
+          - generic [ref=e799]:
+            - link "saidwho12" [ref=e800] [cursor=pointer]:
+              - /url: /user/saidwho12
+            - text: ", 2019-05-28"
+            - text: Incredible!
+        - generic [ref=e801]:
+          - img [ref=e803]
+          - generic [ref=e804]:
+            - link "tehsauce" [ref=e805] [cursor=pointer]:
+              - /url: /user/tehsauce
+            - text: ", 2019-05-28"
+            - text: Beautiful work!
+        - generic [ref=e806]:
+          - img [ref=e808]
+          - generic [ref=e809]:
+            - link "iq" [ref=e810] [cursor=pointer]:
+              - /url: /user/iq
+            - text: ", 2019-05-28"
+            - text: Probably the prettiest shader in this site, especially the first 8 seconds when all is orange/yellow. So good!
+        - generic [ref=e811]:
+          - img [ref=e813]
+          - generic [ref=e814]:
+            - link "elenzil" [ref=e815] [cursor=pointer]:
+              - /url: /user/elenzil
+            - text: ", 2019-05-28"
+            - text: wow!
+        - generic [ref=e816]:
+          - img [ref=e818]
+          - generic [ref=e819]:
+            - link "TinyTexel" [ref=e820] [cursor=pointer]:
+              - /url: /user/TinyTexel
+            - text: ", 2019-05-28"
+            - text: :O
+        - generic [ref=e821]:
+          - img [ref=e823]
+          - generic [ref=e824]:
+            - link "granito" [ref=e825] [cursor=pointer]:
+              - /url: /user/granito
+            - text: ", 2019-05-28"
+            - text: amazing
+        - generic [ref=e826]:
+          - img [ref=e828]
+          - generic [ref=e829]:
+            - link "Shane" [ref=e830] [cursor=pointer]:
+              - /url: /user/Shane
+            - text: ", 2019-05-28"
+            - img [ref=e831]
+            - text: Very nice, and clever, as always.
+        - generic [ref=e832]:
+          - img [ref=e834]
+          - generic [ref=e835]:
+            - link "Klems" [ref=e836] [cursor=pointer]:
+              - /url: /user/Klems
+            - text: ", 2019-05-28"
+            - text: This is amazing!
+        - generic [ref=e837]:
+          - img [ref=e839]
+          - generic [ref=e840]:
+            - link "hornet" [ref=e841] [cursor=pointer]:
+              - /url: /user/hornet
+            - text: ", 2019-05-28"
+            - text: amazing, both artistically and technically \o/
+        - generic [ref=e842]:
+          - img [ref=e844]
+          - generic [ref=e845]:
+            - link "reinder" [ref=e846] [cursor=pointer]:
+              - /url: /user/reinder
+            - text: ", 2019-05-28"
+            - text: Super beautiful!
+        - generic [ref=e847]:
+          - img [ref=e849]
+          - generic [ref=e850]:
+            - link "aiekick" [ref=e851] [cursor=pointer]:
+              - /url: /user/aiekick
+            - text: ", 2019-05-28"
+            - text: wow wow wow
+        - generic [ref=e852]:
+          - img [ref=e854]
+          - generic [ref=e855]:
+            - link "FabriceNeyret2" [ref=e856] [cursor=pointer]:
+              - /url: /user/FabriceNeyret2
+            - text: ", 2019-05-28"
+            - text: entering Jupiter cloud layer ? ;-p
+        - generic [ref=e857]:
+          - img [ref=e859]
+          - generic [ref=e860]:
+            - link "iapafoto" [ref=e861] [cursor=pointer]:
+              - /url: /user/iapafoto
+            - text: ", 2019-05-28"
+            - text: beautiful!
+        - generic [ref=e862]:
+          - img [ref=e864]
+          - generic [ref=e865]:
+            - link "bitnenfer" [ref=e866] [cursor=pointer]:
+              - /url: /user/bitnenfer
+            - text: ", 2019-05-28"
+            - text: This is so beautiful! Even a still frame looks like an awesome painting.
+        - generic [ref=e867]:
+          - img [ref=e869]
+          - generic [ref=e870]:
+            - link "felipunkerito" [ref=e871] [cursor=pointer]:
+              - /url: /user/felipunkerito
+            - text: ", 2019-05-28"
+            - text: Shader of the week?
+        - generic [ref=e872]:
+          - img [ref=e874]
+          - generic [ref=e875]:
+            - link "PauloFalcao" [ref=e876] [cursor=pointer]:
+              - /url: /user/PauloFalcao
+            - text: ", 2019-05-28"
+            - text: One of the best shaders I've seen lately! WOW!
+        - generic [ref=e877]:
+          - img [ref=e879]
+          - generic [ref=e880]:
+            - link "belfry" [ref=e881] [cursor=pointer]:
+              - /url: /user/belfry
+            - text: ", 2019-05-27"
+            - text: Really nice!
+        - generic [ref=e882]:
+          - img [ref=e884]
+          - generic [ref=e885]:
+            - link "fizzer" [ref=e886] [cursor=pointer]:
+              - /url: /user/fizzer
+            - text: ", 2019-05-27"
+            - text: Wow!!
+        - generic [ref=e887]:
+          - img [ref=e889]
+          - generic [ref=e890]:
+            - link "shau" [ref=e891] [cursor=pointer]:
+              - /url: /user/shau
+            - text: ", 2019-05-27"
+            - text: amazing
+        - generic [ref=e892]:
+          - img [ref=e894]
+          - generic [ref=e895]:
+            - link "rez" [ref=e896] [cursor=pointer]:
+              - /url: /user/rez
+            - text: ", 2019-05-27"
+            - text: totally mindblowing, and artistically perfect! ❤️
+        - generic [ref=e897]:
+          - img [ref=e899]
+          - generic [ref=e900]:
+            - link "Duke" [ref=e901] [cursor=pointer]:
+              - /url: /user/Duke
+            - text: ", 2019-05-27"
+            - text: WOW, Very nice!
+        - generic [ref=e902]:
+          - img [ref=e904]
+          - generic [ref=e905]:
+            - link "farazfp" [ref=e906] [cursor=pointer]:
+              - /url: /user/farazfp
+            - text: ", 2019-05-27"
+            - text: This is by far one of the most beautiful shaders I've ever seen, and it's so smooth! :O
+        - generic [ref=e907]:
+          - img [ref=e909]
+          - generic [ref=e910]:
+            - link "bignobody" [ref=e911] [cursor=pointer]:
+              - /url: /user/bignobody
+            - text: ", 2019-05-27"
+            - text: Gorgeous!
+        - generic [ref=e912]:
+          - img [ref=e914]
+          - generic [ref=e915]:
+            - link "crocidb" [ref=e916] [cursor=pointer]:
+              - /url: /user/crocidb
+            - text: ", 2019-05-27"
+            - text: Astounding!
+  - generic [ref=e121]:
+    - generic [ref=e122]:
+      - text: Community Forums
+      - list [ref=e123]:
+        - listitem [ref=e124]:
+          - link "Official Events" [ref=e125] [cursor=pointer]:
+            - /url: /events
+        - listitem [ref=e126]:
+          - link "In Facebook (english)" [ref=e127] [cursor=pointer]:
+            - /url: https://www.facebook.com/groups/147749602472741
+        - listitem [ref=e128]:
+          - link "In Facebook (korean)" [ref=e129] [cursor=pointer]:
+            - /url: https://www.facebook.com/groups/1339783682699494
+        - listitem [ref=e130]:
+          - link "In Discord" [ref=e131] [cursor=pointer]:
+            - /url: https://discord.gg/XtmMN6E
+          - text: (
+          - link "direct link" [ref=e132] [cursor=pointer]:
+            - /url: https://discordapp.com/channels/578696555612209173/579531723348639754
+          - text: )
+    - generic [ref=e133]:
+      - text: Feedback and Support
+      - list [ref=e134]:
+        - listitem [ref=e135]:
+          - link "Facebook" [ref=e136] [cursor=pointer]:
+            - /url: https://www.facebook.com/Shadertoy
+        - listitem [ref=e137]:
+          - link "Twitter" [ref=e138] [cursor=pointer]:
+            - /url: https://twitter.com/shadertoy
+        - listitem [ref=e139]:
+          - link "Patreon" [ref=e140] [cursor=pointer]:
+            - /url: https://www.patreon.com/shadertoy
+        - listitem [ref=e141]:
+          - link "Roadmap" [ref=e142] [cursor=pointer]:
+            - /url: https://trello.com/b/5hM0CjId
+    - generic [ref=e143]:
+      - text: Shadertoy
+      - list [ref=e144]:
+        - listitem [ref=e145]:
+          - link "Store" [ref=e146] [cursor=pointer]:
+            - /url: /store
+        - listitem [ref=e147]:
+          - link "Documentation" [ref=e148] [cursor=pointer]:
+            - /url: /howto
+        - listitem [ref=e149]:
+          - link "Terms & Privacy" [ref=e150] [cursor=pointer]:
+            - /url: /terms
+        - listitem [ref=e151]:
+          - link "About" [ref=e152] [cursor=pointer]:
+            - /url: /about
+    - generic [ref=e153]:
+      - text: Apps and Plugins
+      - list [ref=e154]:
+        - listitem [ref=e155]:
+          - link "Official iPhone App" [ref=e156] [cursor=pointer]:
+            - /url: https://itunes.apple.com/us/app/shadertoy/id717961814
+          - text: by
+          - link "Reinder" [ref=e157] [cursor=pointer]:
+            - /url: /user/reinder
+        - listitem [ref=e158]:
+          - link "Screensaver" [ref=e159] [cursor=pointer]:
+            - /url: https://steamcommunity.com/sharedfiles/filedetails/?id=1726697188
+          - text: by
+          - link "Kosro" [ref=e160] [cursor=pointer]:
+            - /url: /user/kosro
+        - listitem [ref=e161]:
+          - link "Shadertoy plugin" [ref=e162] [cursor=pointer]:
+            - /url: https://chrome.google.com/webstore/detail/shadertoy-unofficial-plug/ohicbclhdmkhoabobgppffepcopomhgl
+          - text: by
+          - link "Patu" [ref=e163] [cursor=pointer]:
+            - /url: /user/patu
+    - generic [ref=e164]:
+      - text: Tutorials
+      - list [ref=e165]:
+        - listitem [ref=e166]:
+          - link "Shader coding intro" [ref=e167] [cursor=pointer]:
+            - /url: https://www.youtube.com/watch?v=0ifChJ0nJfM
+          - text: by
+          - link "iq" [ref=e168] [cursor=pointer]:
+            - /url: /user/iq
+        - listitem [ref=e169]:
+          - link "Shadertoy Unofficial" [ref=e170] [cursor=pointer]:
+            - /url: https://shadertoyunofficial.wordpress.com/
+          - text: by
+          - link "FabriceNeyret2" [ref=e171] [cursor=pointer]:
+            - /url: /user/FabriceNeyret2
+  - generic [ref=e172]:
+    - generic [ref=e173]:
+      - text: We use cookies to give you the best experience on our website. If you continue using Shadertoy, we'll assume that you are happy to receive all cookies on this website. For more information, please review our
+      - link "Terms & Privacy" [ref=e174] [cursor=pointer]:
+        - /url: /terms
+      - text: .
+    - button "Accept" [ref=e176]

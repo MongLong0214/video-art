@@ -1,0 +1,1613 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - link "Shadertoy" [ref=e4] [cursor=pointer]:
+        - /url: /
+      - searchbox "Search..." [ref=e7]
+    - generic [ref=e8]:
+      - link "Browse" [ref=e9] [cursor=pointer]:
+        - /url: /browse
+      - link "New" [ref=e10] [cursor=pointer]:
+        - /url: /new
+      - link "Sign In" [ref=e11] [cursor=pointer]:
+        - /url: /signin
+  - generic [ref=e13]:
+    - generic [ref=e14]:
+      - generic [ref=e17]:
+        - generic [ref=e18]:
+          - generic "Reset time (<ALT>+<DownArrow>)" [ref=e19] [cursor=pointer]
+          - generic "Pause/Resume (<ALT>+<UpArrow>)" [ref=e20] [cursor=pointer]
+        - generic [ref=e21]:
+          - generic [ref=e22]: "10.72"
+          - generic [ref=e23]: 1.0 fps
+          - generic [ref=e24]: 420 x 236
+        - generic [ref=e25]:
+          - generic "Record (<ALT>+<R>)" [ref=e26] [cursor=pointer]
+          - generic "Volume" [ref=e27] [cursor=pointer]
+          - generic "Go fullscreen" [ref=e28] [cursor=pointer]
+      - generic [ref=e29]:
+        - generic [ref=e30]:
+          - generic [ref=e31]:
+            - text: Rainforest
+            - img "This shader has been Shader of the Week!" [ref=e33]
+          - generic [ref=e34]:
+            - img "share this shader" [ref=e35] [cursor=pointer]
+            - img [ref=e36]
+            - text: "1411"
+          - generic [ref=e37]:
+            - text: "Views: 433148"
+            - text: ", Tags:"
+            - generic [ref=e38]:
+              - link "procedural" [ref=e39] [cursor=pointer]:
+                - /url: /results?query=tag%3Dprocedural
+              - text: ","
+              - link "3d" [ref=e40] [cursor=pointer]:
+                - /url: /results?query=tag%3D3d
+              - text: ","
+              - link "raymarching" [ref=e41] [cursor=pointer]:
+                - /url: /results?query=tag%3Draymarching
+              - text: ","
+              - link "reprojection" [ref=e42] [cursor=pointer]:
+                - /url: /results?query=tag%3Dreprojection
+          - generic [ref=e43]:
+            - text: Created by
+            - link "iq" [ref=e45] [cursor=pointer]:
+              - /url: /user/iq
+            - text: in 2016-12-22
+        - generic [ref=e46]:
+          - text: "Another terrain, with cheap trees made of ellipsoids and noise. It computes analytic normals for the terrain and clouds. The art composed to camera as usual. Making-of Tutorial:"
+          - link "https://www.youtube.com/watch?v=BFld4EBO2RE" [ref=e47] [cursor=pointer]:
+            - /url: https://www.youtube.com/watch?v=BFld4EBO2RE
+    - generic [ref=e48]:
+      - generic [ref=e49] [cursor=pointer]:
+        - combobox [ref=e51]:
+          - option "Common"
+          - option "Sound"
+          - option "Buffer B"
+          - option "Buffer C"
+          - option "Buffer D"
+          - option "Cubemap A"
+        - generic [ref=e52]:
+          - img [ref=e53]
+          - generic [ref=e54]: Buffer A
+          - img [ref=e55]
+        - generic [ref=e56]:
+          - img [ref=e57]
+          - generic [ref=e58]: Image
+      - generic [ref=e60] [cursor=pointer]:
+        - generic [ref=e61]: Shader Inputs
+        - generic [ref=e64]:
+          - text: uniform vec3 iResolution; // viewport resolution (in pixels)
+          - text: uniform float iTime; // shader playback time (in seconds)
+          - text: uniform float iTimeDelta; // render time (in seconds)
+          - text: uniform float iFrameRate; // shader frame rate
+          - text: uniform int iFrame; // shader playback frame
+          - text: uniform float iChannelTime[4]; // channel playback time (in seconds)
+          - text: uniform vec3 iChannelResolution[4]; // channel resolution (in pixels)
+          - text: "uniform vec4 iMouse; // mouse pixel coords. xy: current (if MLB down), zw: click"
+          - text: uniform samplerXX iChannel0..3; // input channel. XX = 2D/Cube
+          - text: uniform vec4 iDate; // (year, month, day, time in seconds)
+          - text: uniform float iSampleRate; // sound sample rate (i.e., 44100)
+      - generic [ref=e66]:
+        - textbox [ref=e67]
+        - generic [ref=e70]:
+          - generic [ref=e71]:
+            - generic [ref=e1146]: "1"
+            - text: // Copyright Inigo Quilez, 2016 - https://iquilezles.org/
+          - generic [ref=e73]:
+            - generic [ref=e1147]: "2"
+            - text: // I am the sole copyright owner of this Work. You cannot
+          - generic [ref=e75]:
+            - generic [ref=e1148]: "3"
+            - text: // host, display, distribute or share this Work neither as
+          - generic [ref=e77]:
+            - generic [ref=e1149]: "4"
+            - text: // is or altered, in any form including physical and
+          - generic [ref=e79]:
+            - generic [ref=e1150]: "5"
+            - text: // digital. You cannot use this Work in any commercial or
+          - generic [ref=e81]:
+            - generic [ref=e1151]: "6"
+            - text: // non-commercial product, website or project. You cannot
+          - generic [ref=e83]:
+            - generic [ref=e1152]: "7"
+            - text: // sell this Work and you cannot mint an NFTs of it. You
+          - generic [ref=e85]:
+            - generic [ref=e1153]: "8"
+            - text: // cannot use this Work to train AI models. I share this
+          - generic [ref=e87]:
+            - generic [ref=e1154]: "9"
+            - text: // Work for educational purposes, you can link to it as
+          - generic [ref=e89]:
+            - generic [ref=e1155]: "10"
+            - text: // an URL, proper attribution and unmodified screenshot,
+          - generic [ref=e91]:
+            - generic [ref=e1156]: "11"
+            - text: // as part of your educational material. If these
+          - generic [ref=e93]:
+            - generic [ref=e1157]: "12"
+            - text: // conditions are too restrictive please contact me.
+          - generic [ref=e1158]: "13"
+          - generic [ref=e97]:
+            - generic [ref=e1159]: "14"
+            - text: // A rainforest landscape.
+          - generic [ref=e99]:
+            - generic [ref=e1160]: "15"
+            - text: //
+          - generic [ref=e101]:
+            - generic [ref=e1161]: "16"
+            - text: "// Tutorial on Youtube : https://www.youtube.com/watch?v=BFld4EBO2RE"
+          - generic [ref=e103]:
+            - generic [ref=e1162]: "17"
+            - text: "// Tutorial on Bilibili: https://www.bilibili.com/video/BV1Da4y1q78H"
+          - generic [ref=e105]:
+            - generic [ref=e1163]: "18"
+            - text: //
+          - generic [ref=e107]:
+            - generic [ref=e1164]: "19"
+            - text: "// Buy a metal or paper print: https://www.redbubble.com/shop/ap/39843511"
+          - generic [ref=e109]:
+            - generic [ref=e1165]: "20"
+            - text: //
+          - generic [ref=e111]:
+            - generic [ref=e1166]: "21"
+            - text: // Normals are analytical (true derivatives) for the terrain and for the
+          - generic [ref=e113]:
+            - generic [ref=e1167]: "22"
+            - text: // clouds, including the noise, the fbm and the smoothsteps.
+          - generic [ref=e115]:
+            - generic [ref=e1168]: "23"
+            - text: //
+          - generic [ref=e117]:
+            - generic [ref=e1169]: "24"
+            - text: // Lighting and art composed for this shot/camera. The trees are really
+          - generic [ref=e119]:
+            - generic [ref=e1170]: "25"
+            - text: // ellipsoids with noise, but they kind of do the job in distance and low
+          - generic [ref=e121]:
+            - generic [ref=e1171]: "26"
+            - text: // image resolutions Also I used some basic reprojection technique to
+          - generic [ref=e123]:
+            - generic [ref=e1172]: "27"
+            - text: // smooth out the render.
+          - generic [ref=e125]:
+            - generic [ref=e1173]: "28"
+            - text: //
+          - generic [ref=e127]:
+            - generic [ref=e1174]: "29"
+            - text: "// See here for more info:"
+          - generic [ref=e129]:
+            - generic [ref=e1175]: "30"
+            - text: // https://iquilezles.org/articles/fbm
+          - generic [ref=e131]:
+            - generic [ref=e1176]: "31"
+            - text: // https://iquilezles.org/articles/morenoise
+          - generic [ref=e1177]: "32"
+          - generic [ref=e1178]: "33"
+          - generic [ref=e137]:
+            - generic [ref=e1179]: "34"
+            - text: void mainImage( out vec4 fragColor, in vec2 fragCoord )
+          - generic [ref=e139]:
+            - generic:
+              - generic [ref=e1180]: "35"
+              - generic [ref=e1182] [cursor=pointer]: ▾
+            - text: "{"
+          - generic [ref=e141]:
+            - generic [ref=e1183]: "36"
+            - text: vec2 p = fragCoord/iResolution.xy;
+          - generic [ref=e1184]: "37"
+          - generic [ref=e145]:
+            - generic [ref=e1185]: "38"
+            - text: vec3 col = texture( iChannel0, p ).xyz;
+          - generic [ref=e147]:
+            - generic [ref=e1186]: "39"
+            - text: //vec3 col = texelFetch( iChannel0, ivec2(fragCoord-0.5), 0 ).xyz;
+          - generic [ref=e1187]: "40"
+          - generic [ref=e151]:
+            - generic [ref=e1188]: "41"
+            - text: col *= 0.5 + 0.5*pow( 16.0*p.x*p.y*(1.0-p.x)*(1.0-p.y), 0.05 );
+          - generic [ref=e1189]: "42"
+          - generic [ref=e155]:
+            - generic [ref=e1190]: "43"
+            - text: fragColor = vec4( col, 1.0 );
+          - generic [ref=e157]:
+            - generic [ref=e1191]: "44"
+            - text: "}"
+          - generic [ref=e1192]: "45"
+      - generic [ref=e165]:
+        - generic [ref=e166]:
+          - img "Compile (<ALT>+<ENTER>)" [ref=e167] [cursor=pointer]
+          - link "Compiled in 0.3 secs" [ref=e1193] [cursor=pointer]:
+            - /url: "#"
+        - generic [ref=e169]: 200 / 14455 chars
+        - generic [ref=e170]:
+          - combobox "Change font size (<ALT>+<+/->)" [ref=e171]:
+            - option "XS"
+            - option "S" [selected]
+            - option "M"
+            - option "L"
+            - option "XL"
+            - option "XXL"
+          - img "Show GLSL help" [ref=e172] [cursor=pointer]
+      - generic [ref=e173]:
+        - generic [ref=e174]:
+          - generic [ref=e175]:
+            - img "remove input" [ref=e177] [cursor=pointer]
+            - generic:
+              - text: Filter
+              - combobox "Pixel filtering mode" [ref=e178]:
+                - option "nearest" [selected]
+                - option "linear"
+                - option "mipmap"
+              - text: Wrap
+              - combobox "Pixel filtering mode" [ref=e179]:
+                - option "clamp" [selected]
+                - option "repeat"
+              - generic [ref=e181]:
+                - text: VFlip
+                - checkbox "VFlip" [ref=e182]
+          - generic [ref=e183]:
+            - generic [ref=e184]: iChannel0
+            - img "sampler options" [ref=e186] [cursor=pointer]
+        - generic [ref=e187]:
+          - generic [ref=e188]:
+            - generic:
+              - text: Filter
+              - combobox "Pixel filtering mode" [ref=e190]:
+                - option "nearest" [selected]
+                - option "linear"
+                - option "mipmap"
+              - text: Wrap
+              - combobox "Pixel filtering mode" [ref=e191]:
+                - option "clamp" [selected]
+                - option "repeat"
+              - generic [ref=e193]:
+                - text: VFlip
+                - checkbox "VFlip" [ref=e194]
+          - generic [ref=e196]: iChannel1
+        - generic [ref=e198]:
+          - generic [ref=e199]:
+            - generic:
+              - text: Filter
+              - combobox "Pixel filtering mode" [ref=e201]:
+                - option "nearest" [selected]
+                - option "linear"
+                - option "mipmap"
+              - text: Wrap
+              - combobox "Pixel filtering mode" [ref=e202]:
+                - option "clamp" [selected]
+                - option "repeat"
+              - generic [ref=e204]:
+                - text: VFlip
+                - checkbox "VFlip" [ref=e205]
+          - generic [ref=e207]: iChannel2
+        - generic [ref=e209]:
+          - generic [ref=e210]:
+            - generic:
+              - text: Filter
+              - combobox "Pixel filtering mode" [ref=e212]:
+                - option "nearest" [selected]
+                - option "linear"
+                - option "mipmap"
+              - text: Wrap
+              - combobox "Pixel filtering mode" [ref=e213]:
+                - option "clamp" [selected]
+                - option "repeat"
+              - generic [ref=e215]:
+                - text: VFlip
+                - checkbox "VFlip" [ref=e216]
+          - generic [ref=e218]: iChannel3
+    - generic [ref=e221]:
+      - text: Comments (169)
+      - generic [ref=e222]:
+        - link "Sign in" [ref=e224] [cursor=pointer]:
+          - /url: /signin
+        - text: to post a comment.
+      - generic [ref=e225]:
+        - generic [ref=e226]:
+          - img [ref=e228]
+          - generic [ref=e229]:
+            - link "ollj" [ref=e230] [cursor=pointer]:
+              - /url: /user/ollj
+            - text: ", 2025-07-16"
+            - text: gus, i just rediscovered rasterization!
+        - generic [ref=e231]:
+          - img [ref=e233]
+          - generic [ref=e234]:
+            - link "ZJUMSJ" [ref=e235] [cursor=pointer]:
+              - /url: /user/ZJUMSJ
+            - text: ", 2025-07-04"
+            - text: Yeah, there have been many follow-up works accelerating depth sorting, including techniques that accurately sort only the top-K closest fragments (https://arxiv.org/abs/2410.08129) and methods based on OIT (Order-Independent Transparency), like Sort-free Gaussian Splatting & StochasticSplats.
+        - generic [ref=e236]:
+          - img [ref=e238]
+          - generic [ref=e239]:
+            - link "FabriceNeyret2" [ref=e240] [cursor=pointer]:
+              - /url: /user/FabriceNeyret2
+            - text: ", 2025-07-04"
+            - text: derivable → differentiable.
+        - generic [ref=e241]:
+          - img [ref=e243]
+          - generic [ref=e244]:
+            - link "FabriceNeyret2" [ref=e245] [cursor=pointer]:
+              - /url: /user/FabriceNeyret2
+            - text: ", 2025-07-04"
+            - text: "@iq: \\sacademia\\AI people\\ ;-) Note that NERFs like approaches have been progressively scrapped out of all the AI once letting true graphics people opening the magic box: anisotropic lighting is finally best represented by spherical harmonics, and classical gradient descent solvers are finally simpler and better. :-D Gaussian splat \"only with an optimization pass\": well, I don't like excessive fashion effects as well, but on this point the remark is unfair: the optimization is the whole and difficult point. Similarly, inverse derivable rendering is a thing. And close to what you suggest: mesh/brdf/texture, but automatically obtain from a set of photos."
+        - generic [ref=e246]:
+          - img [ref=e248]
+          - generic [ref=e249]:
+            - link "iq" [ref=e250] [cursor=pointer]:
+              - /url: /user/iq
+            - text: ", 2025-07-04"
+            - text: LOL Academia
+            - img [ref=e251]
+        - generic [ref=e252]:
+          - img [ref=e254]
+          - generic [ref=e255]:
+            - link "ShnitzelKiller" [ref=e256] [cursor=pointer]:
+              - /url: /user/ShnitzelKiller
+            - text: ", 2025-07-03"
+            - text: "And here's an ingeneous idea: To eliminate the depth sorting overhead for predominantly opaque content, we might store each visited primitive's depth in a \"buffer\" of sorts, so that only fragments with the closest depth are kept!"
+        - generic [ref=e257]:
+          - img [ref=e259]
+          - generic [ref=e260]:
+            - link "ShnitzelKiller" [ref=e261] [cursor=pointer]:
+              - /url: /user/ShnitzelKiller
+            - text: ", 2025-07-03"
+            - text: They're calling those billboard splats. https://david-svitov.github.io/BBSplat_project_page/
+        - generic [ref=e262]:
+          - img [ref=e264]
+          - generic [ref=e265]:
+            - link "iq" [ref=e266] [cursor=pointer]:
+              - /url: /user/iq
+            - text: ", 2025-07-03"
+            - text: Soon they'll come up with the idea of letting the model share vertices that are sufficiently close to each other. It's also a matter of time before they think of splats/triangles having a learnable "texture" (a Gabor or other) to capture high frequency detail without exploding the number of splats/triangles. It's fascinating to see them slowly go through it all, again.
+        - generic [ref=e267]:
+          - img [ref=e269]
+          - generic [ref=e270]:
+            - link "ShnitzelKiller" [ref=e271] [cursor=pointer]:
+              - /url: /user/ShnitzelKiller
+            - text: ", 2025-07-03"
+            - text: "They are already heading in that direction: https://trianglesplatting.github.io"
+        - generic [ref=e272]:
+          - img [ref=e274]
+          - generic [ref=e275]:
+            - link "iq" [ref=e276] [cursor=pointer]:
+              - /url: /user/iq
+            - text: ", 2025-07-03"
+            - text: I see gaussian splatting as a rebrand of the old school point cloud renderers of the early 2000s, only with an optimization pass to them instead of just raw scanning (traditional pointclouds) or generation from sampling a mesh (surfels). The ML folks will soon rediscover photogrammetry, then regular polygon modeling; and we'll be full circle all over again (third of forth loop).
+        - generic [ref=e277]:
+          - img [ref=e279]
+          - generic [ref=e280]:
+            - link "FabriceNeyret2" [ref=e281] [cursor=pointer]:
+              - /url: /user/FabriceNeyret2
+            - text: ", 2025-07-03"
+            - text: "Gaussian splatting would more be like bombing methods (or even Gabor noise): building complex fields by combination of many small simples ones. By the way, RBF (radial basis function and SPH (smooth particles hydrodynamics) has been around for long ;-) Here is is totally different: you have isolated ellipsoids forming kind of base shape or bounding, that is then carved with noise. Much like pretty old Perlin Hypertextures or even Reeves trees made from particle systems clamped into ellipsoids or cones."
+        - generic [ref=e282]:
+          - img [ref=e284]
+          - generic [ref=e285]:
+            - link "ZJUMSJ" [ref=e286] [cursor=pointer]:
+              - /url: /user/ZJUMSJ
+            - text: ", 2025-07-03"
+            - text: The use of ellipsoids to represent trees reminds me of 3D Gaussian Splatting. It's amazing that someone could write a shader like this back in 2016—truly a genius!
+        - generic [ref=e287]:
+          - img [ref=e289]
+          - generic [ref=e290]:
+            - link "haelequin" [ref=e291] [cursor=pointer]:
+              - /url: /user/haelequin
+            - text: ", 2025-05-01"
+            - text: My GPU immediately reach 100 degree celsius.
+            - img [ref=e292]
+        - generic [ref=e293]:
+          - img [ref=e295]
+          - generic [ref=e296]:
+            - link "LizardLover42" [ref=e297] [cursor=pointer]:
+              - /url: /user/LizardLover42
+            - text: ", 2025-04-21"
+            - text: Wow...
+        - generic [ref=e298]:
+          - img [ref=e300]
+          - generic [ref=e301]:
+            - link "garma83" [ref=e302] [cursor=pointer]:
+              - /url: /user/garma83
+            - text: ", 2025-03-31"
+            - text: it is actually fascinating that if you leave this running for hours, that it becomes very cloudy in the end
+        - generic [ref=e303]:
+          - img [ref=e305]
+          - generic [ref=e306]:
+            - link "bazylevnik0" [ref=e307] [cursor=pointer]:
+              - /url: /user/bazylevnik0
+            - text: ", 2024-12-31"
+            - text: wow
+        - generic [ref=e308]:
+          - img [ref=e310]
+          - generic [ref=e311]:
+            - link "ShnitzelKiller" [ref=e312] [cursor=pointer]:
+              - /url: /user/ShnitzelKiller
+            - text: ", 2024-12-30"
+            - text: In treesMap(), why not use the floored position for calculating the tree height? vec2 n = floor( p.xz/2.0 ); float base = terrainMap(n*2.).x; The trees seem less distorted by steep terrain this way, since each point within a "cell" isn't getting a different height.
+        - generic [ref=e313]:
+          - img [ref=e315]
+          - generic [ref=e316]:
+            - link "zs_fzx" [ref=e317] [cursor=pointer]:
+              - /url: /user/zs_fzx
+            - text: ", 2024-06-06"
+            - text: one of your video about this work led me to this wonderful world
+        - generic [ref=e318]:
+          - img [ref=e320]
+          - generic [ref=e321]:
+            - link "lemonadefr" [ref=e322] [cursor=pointer]:
+              - /url: /user/lemonadefr
+            - text: ", 2024-05-09"
+            - text: really cool, but made my graphics card cry
+        - generic [ref=e323]:
+          - img [ref=e325]
+          - generic [ref=e326]:
+            - link "ollj" [ref=e327] [cursor=pointer]:
+              - /url: /user/ollj
+            - text: ", 2024-05-01"
+            - text: its not always worse. and more consistent than doing hammer projection and its inverse.
+        - generic [ref=e328]:
+          - img [ref=e330]
+          - generic [ref=e331]:
+            - link "FabriceNeyret2" [ref=e332] [cursor=pointer]:
+              - /url: /user/FabriceNeyret2
+            - text: ", 2024-05-01"
+            - text: "@ollj: you mean, computing the image at resolution 6*1024*1024 ? ;-)"
+        - generic [ref=e333]:
+          - img [ref=e335]
+          - generic [ref=e336]:
+            - link "ollj" [ref=e337] [cursor=pointer]:
+              - /url: /user/ollj
+            - text: ", 2024-04-30"
+            - text: if you use cubemapA as buffer for reprojection, the camera could spin and rotate wildly, without having grainier borders, and only on translation-movements you have grainy-parallaxes.
+        - generic [ref=e338]:
+          - img [ref=e340]
+          - generic [ref=e341]:
+            - link "FrederickAmpsUp" [ref=e342] [cursor=pointer]:
+              - /url: /user/FrederickAmpsUp
+            - text: ", 2023-11-27"
+            - text: "@iq sorry for that last comment idk why it posted early so i can just find a \"pretty good\" step size multiplier for the terrain?"
+        - generic [ref=e343]:
+          - img [ref=e345]
+          - generic [ref=e346]:
+            - link "FrederickAmpsUp" [ref=e347] [cursor=pointer]:
+              - /url: /user/FrederickAmpsUp
+            - text: ", 2023-11-27"
+            - text: "@iq"
+        - generic [ref=e348]:
+          - img [ref=e350]
+          - generic [ref=e351]:
+            - link "iq" [ref=e352] [cursor=pointer]:
+              - /url: /user/iq
+            - text: ", 2023-11-26"
+            - text: "To prevent overshooting you need to divide your step size to the maximum derivative of the function (the slope of the terrain) in the neighborhood of the area you are sampling. You can do this properly, or just hack it a bit like I am doing here in line 557: First I consider the terrain without the cliffs, and I set a raymarching step multiplier of 0.8, which allows me to raymarch terrains of a maximum slope of 51 degrees (atan(1/0.8)), which is sufficient for this terrain. Then I need to consider the cliffs, and in this case I do not take their slope, but instead simply apply an extra slow down when we are in the neighborhood of a cliff. I extract this information as a mask (0 to 1), from the terrain building function itself, which I pass to the raymarcher in the env.y, variable."
+        - generic [ref=e353]:
+          - img [ref=e355]
+          - generic [ref=e356]:
+            - link "ollj" [ref=e357] [cursor=pointer]:
+              - /url: /user/ollj
+            - text: ", 2023-11-26"
+            - text: solving for the overshooting of .y heightmaps has fundamentally the same issues of QUICKLY finding a local minimum of f(xy), and most methods for this involve dividing by a lot of first derivatives.
+        - generic [ref=e358]:
+          - img [ref=e360]
+          - generic [ref=e361]:
+            - link "ollj" [ref=e362] [cursor=pointer]:
+              - /url: /user/ollj
+            - text: ", 2023-11-26"
+            - text: "you under-step by marching only half or quarter distance each step, and then you may need much more steps. Hopefully you add other smart things, like not caring for precision further away from the camera, to compensate for the under-stepping. This compensation may be done by a logarithmic precision of log(distanceToSurface/distanceFromCamera) :: let s=distanceToSurface AND c=DistanceToCamera :: if(s<0.01) //is a simple arbitrary distance precision. may be changed to if log(c*c/s/100000.)>0.0 or if log(c*c/s/s/1000000.)>0.5 or if log(c*c*c/s/s/100000000000.)>0.0 as in logeps() of https://www.shadertoy.com/view/tdXXzl Where the things that divide by larger numbers are better for larger distanceFields (seeing a moon at a horizon from a planet surface), and the shorter ones are better for smaller distanceFields. of courrse the precision must also be scaled to the scaling of the distanceField, which is much trickier in log() scales. logeps() tends to do just fine with 1000* as many raymarch iterations, plenty of space to understep more, because most rays overtep far away from the camera and they need a lot less less iterations that way, and only near-tangential/horizon cases need more steps. You could also estimate the local 3d derivative each step, and hope that diving by that differential will significantly/mostly normalize a skewed lipschits-constant, but so far this has never been worth it. you could also use the same derivative, to to other silly things, that have not been worth it, like https://www.shadertoy.com/view/WdfSD2, which may perform better for near-parallel-horizon cases."
+        - generic [ref=e363]:
+          - img [ref=e365]
+          - generic [ref=e366]:
+            - link "FrederickAmpsUp" [ref=e367] [cursor=pointer]:
+              - /url: /user/FrederickAmpsUp
+            - text: ", 2023-11-26"
+            - text: How do you avoid over-marching when the terrain is steep? I can't seem to figure this out in my own version and I can't do very dramatic terrain with the overshooting issues.
+        - generic [ref=e368]:
+          - img [ref=e370]
+          - generic [ref=e371]:
+            - link "FrederickAmpsUp" [ref=e372] [cursor=pointer]:
+              - /url: /user/FrederickAmpsUp
+            - text: ", 2023-11-26"
+            - text: yall i have a gtx 980 and this sits at 60fps (in 640x360)
+        - generic [ref=e373]:
+          - img [ref=e375]
+          - generic [ref=e376]:
+            - link "POSTHELIOS" [ref=e377] [cursor=pointer]:
+              - /url: /user/POSTHELIOS
+            - text: ", 2023-09-25"
+            - text: MASTER
+        - generic [ref=e378]:
+          - img [ref=e380]
+          - generic [ref=e381]:
+            - link "JosiahJack" [ref=e382] [cursor=pointer]:
+              - /url: /user/JosiahJack
+            - text: ", 2023-09-21"
+            - text: Signed up to Shadertoy just so I could like this.
+        - generic [ref=e383]:
+          - img [ref=e385]
+          - generic [ref=e386]:
+            - link "Dave_Hoskins" [ref=e387] [cursor=pointer]:
+              - /url: /user/Dave_Hoskins
+            - text: ", 2023-08-24"
+            - text: "@TinajXD Oh your poor old sad GPU! 😁"
+        - generic [ref=e388]:
+          - img [ref=e390]
+          - generic [ref=e391]:
+            - link "TinajXD" [ref=e392] [cursor=pointer]:
+              - /url: /user/TinajXD
+            - text: ", 2023-08-24"
+            - text: It looks great, it's sad that at 9 fps.
+        - generic [ref=e393]:
+          - img [ref=e395]
+          - generic [ref=e396]:
+            - link "kaihenthe" [ref=e397] [cursor=pointer]:
+              - /url: /user/kaihenthe
+            - text: ", 2023-06-26"
+            - text: not even zoomed in im averaging about 35-37 fps, im using a gtx 1650
+        - generic [ref=e398]:
+          - img [ref=e400]
+          - generic [ref=e401]:
+            - link "Juhtahel" [ref=e402] [cursor=pointer]:
+              - /url: /user/Juhtahel
+            - text: ", 2023-06-12"
+            - text: "@matthatter419 In the series he is showing he takes out a certain number of indexes, that is the filtering step. You can look up Fourier series and Fourier filtering."
+        - generic [ref=e403]:
+          - img [ref=e405]
+          - generic [ref=e406]:
+            - link "Andre" [ref=e407] [cursor=pointer]:
+              - /url: /user/Andre
+            - text: ", 2023-05-29"
+            - text: "I bought a new gaming PC for my son, so I had to test this beautifull shader again: 100fps on 1200 x 675 windowed AMD 5800X3D + Radeon 6800XT"
+        - generic [ref=e408]:
+          - img [ref=e410]
+          - generic [ref=e411]:
+            - link "matthatter419" [ref=e412] [cursor=pointer]:
+              - /url: /user/matthatter419
+            - text: ", 2023-04-16"
+            - text: "In the accompanying video (with timestamp: https://youtu.be/BFld4EBO2RE?t=1158), Inigo says we can essentially band-pass filter the landscape at synthesis time. I don't see anything in the code that does this filtering, yet the output is clearly filtered (if you remove the tree envelope, it's easy to see). Where is this filtering happening in code?"
+        - generic [ref=e413]:
+          - img [ref=e415]
+          - generic [ref=e416]:
+            - link "quantum_rose" [ref=e417] [cursor=pointer]:
+              - /url: /user/quantum_rose
+            - text: ", 2022-11-05"
+            - text: Awesome!
+        - generic [ref=e418]:
+          - img [ref=e420]
+          - generic [ref=e421]:
+            - link "xilliah" [ref=e422] [cursor=pointer]:
+              - /url: /user/xilliah
+            - text: ", 2022-09-09"
+            - text: Inspiration
+        - generic [ref=e423]:
+          - img [ref=e425]
+          - generic [ref=e426]:
+            - link "dkirkby" [ref=e427] [cursor=pointer]:
+              - /url: /user/dkirkby
+            - text: ", 2022-08-18"
+            - text: I am learning a ton from your code and accompanying video, thanks!!
+        - generic [ref=e428]:
+          - img [ref=e430]
+          - generic [ref=e431]:
+            - link "iq" [ref=e432] [cursor=pointer]:
+              - /url: /user/iq
+            - text: ", 2022-08-18"
+            - text: It was a leftover. Removed.
+        - generic [ref=e433]:
+          - img [ref=e435]
+          - generic [ref=e436]:
+            - link "dkirkby" [ref=e437] [cursor=pointer]:
+              - /url: /user/dkirkby
+            - text: ", 2022-08-17"
+            - text: Is line 308 a typo, or what is its purpose?
+        - generic [ref=e438]:
+          - img [ref=e440]
+          - generic [ref=e441]:
+            - link "Andre" [ref=e442] [cursor=pointer]:
+              - /url: /user/Andre
+            - text: ", 2022-07-15"
+            - text: On my windows machine (core i7 6700K and GTX1080ti) it does 30 fps on 1800x1013 and 60 fps on 1200x675. If I zoom to mobile mode on my 4k desktop (by zooming in with the browser) I can get it to run at 2577x1124 at around 16fps and around 10fps on 3610 x 1405 (I'm guesing it syncs to the refresh rate to a divider of 60).
+        - generic [ref=e443]:
+          - img [ref=e445]
+          - generic [ref=e446]:
+            - link "Dave_Hoskins" [ref=e447] [cursor=pointer]:
+              - /url: /user/Dave_Hoskins
+            - text: ", 2022-07-12"
+            - text: Casually, from visual tests in a shop(!) I'd guess the M1 in their iMac's is about the equivalent to my old GTX 1060, which isn't really all that bad. I have a 2017 Intel iMac (Radeon Pro 580) that does about 22fps at 1280x720 On my main dev machine, I'm getting 60fps at 1200x675. I can't get it to render any larger on Windows 10 without going full screen, I don't know why, but the text editor wants to take up a lot of the screen on Windows. This is on a 4K monitor with no DPI scaling.
+        - generic [ref=e448]:
+          - img [ref=e450]
+          - generic [ref=e451]:
+            - link "Andre" [ref=e452] [cursor=pointer]:
+              - /url: /user/Andre
+            - text: ", 2022-07-12"
+            - text: "@iq It's apple there is hardly anything to configure ;) Theoretical fp32 performance should be around 5 TFLOPS for FP32. Angle is configured to use OpenGL, I ould set it to Metal (Apple's vulkan like API) but I've had bad experience with that since the chrome support for that is lagging behind. Safari does 20-25fps on 1280x720 resolution, the M1 is an ARM processor with an IGP. There are no fans running as far as i can hear"
+        - generic [ref=e453]:
+          - img [ref=e455]
+          - generic [ref=e456]:
+            - link "FabriceNeyret2" [ref=e457] [cursor=pointer]:
+              - /url: /user/FabriceNeyret2
+            - text: ", 2022-07-12"
+            - text: I have 4.5 fps at 640x360 on my nVidia Quadro K2100M. Sometime perfs are very different on OpenGL vs Windows
+        - generic [ref=e458]:
+          - img [ref=e460]
+          - generic [ref=e461]:
+            - link "jt" [ref=e462] [cursor=pointer]:
+              - /url: /user/jt
+            - text: ", 2022-07-12"
+            - text: (in 800x450 resolution)
+        - generic [ref=e463]:
+          - img [ref=e465]
+          - generic [ref=e466]:
+            - link "jt" [ref=e467] [cursor=pointer]:
+              - /url: /user/jt
+            - text: ", 2022-07-12"
+            - text: Firefox on Linux with AMD Radeon Vega 3 Graphics (RAVEN2) 4.5 fps
+        - generic [ref=e468]:
+          - img [ref=e470]
+          - generic [ref=e471]:
+            - link "iq" [ref=e472] [cursor=pointer]:
+              - /url: /user/iq
+            - text: ", 2022-07-11"
+            - text: I don't know anything about Mac computers, but 31-38 fps is really slow, I'm getting 60 fps in my 7 years old laptop. Maybe you have hardware rendering disabled or some other thing misconfigured.
+        - generic [ref=e473]:
+          - img [ref=e475]
+          - generic [ref=e476]:
+            - link "Andre" [ref=e477] [cursor=pointer]:
+              - /url: /user/Andre
+            - text: ", 2022-07-09"
+            - text: Notebook Mac M1 Pro 16" 16-core GPU version in chrome 1280 x 720 on laptop screen between 14 and 18 fps 800 x 450 on tv screen between 31 and 38 fps
+        - generic [ref=e478]:
+          - img [ref=e480]
+          - generic [ref=e481]:
+            - link "nilrem" [ref=e482] [cursor=pointer]:
+              - /url: /user/nilrem
+            - text: ", 2022-05-13"
+            - text: "Another datapoint for 3080 12GB on debian 11 (xfce, no wayland, no overclock): Fluid 60fps in 1920x1200 in chromium, stuttery <60fps in firefox"
+        - generic [ref=e483]:
+          - img [ref=e485]
+          - generic [ref=e486]:
+            - link "ollj" [ref=e487] [cursor=pointer]:
+              - /url: /user/ollj
+            - text: ", 2022-04-29"
+            - text: "GTX 3080 benchmark: constant 60 fps in 945x531 on all browsers constant 60 fps in 1805x737 in some browsers (firefox and operaGX underperform, not having constant 60fps, MicrosoftEdge performed best in win11) easily 55 fps in 1796x1054 via MicrosoftEdge (my fullscreen resolution is lower, this is mousewheel-up oversized-canvas) 30 fps in 1710x1686 Higher resolutions still maintain 30 fps, but I can't tell the resolution due to suboptimal formatting on smaller displays."
+        - generic [ref=e488]:
+          - img [ref=e490]
+          - generic [ref=e491]:
+            - link "ollj" [ref=e492] [cursor=pointer]:
+              - /url: /user/ollj
+            - text: ", 2022-04-25"
+            - text: col *= 0.5 + 0.5*pow( 16.0*p.x*p.y*(1.0-p.x)*(1.0-p.y), 0.05 ); //is like a
+            - link "vignette" [ref=e493] [cursor=pointer]:
+              - /url: https://www.shadertoy.com/results?query=vignette
+            - text: ", darkening the border- col *= 0.5*pow( 16.0*p.x*p.y*(1.0-p.x)*(1.0-p.y), 0.55 ); //is an exaggerated variant"
+        - generic [ref=e494]:
+          - img [ref=e496]
+          - generic [ref=e497]:
+            - link "ejosiah" [ref=e498] [cursor=pointer]:
+              - /url: /user/ejosiah
+            - text: ", 2022-04-25"
+            - text: What is the post-processing you're doing on the color using the uv?
+        - generic [ref=e499]:
+          - img [ref=e501]
+          - generic [ref=e502]:
+            - link "BenVlodgi" [ref=e503] [cursor=pointer]:
+              - /url: /user/BenVlodgi
+            - text: ", 2022-04-18"
+            - text: I love these math paintings you create, and the explanation videos are excellent! Good Job!
+        - generic [ref=e504]:
+          - img [ref=e506]
+          - generic [ref=e507]:
+            - link "cxm" [ref=e508] [cursor=pointer]:
+              - /url: /user/cxm
+            - text: ", 2022-03-15"
+            - text: "[This comment has been hidden by the shader author]"
+        - generic [ref=e509]:
+          - img [ref=e511]
+          - generic [ref=e512]:
+            - link "elenzil" [ref=e513] [cursor=pointer]:
+              - /url: /user/elenzil
+            - text: ", 2022-03-14"
+            - text: stunning!
+        - generic [ref=e514]:
+          - img [ref=e516]
+          - generic [ref=e517]:
+            - link "ocb" [ref=e518] [cursor=pointer]:
+              - /url: /user/ocb
+            - text: ", 2022-03-06"
+            - text: Extraordinary shader
+        - generic [ref=e519]:
+          - img [ref=e521]
+          - generic [ref=e522]:
+            - link "lz" [ref=e523] [cursor=pointer]:
+              - /url: /user/lz
+            - text: ", 2021-06-14"
+            - text: Extremely beautiful.
+        - generic [ref=e524]:
+          - img [ref=e526]
+          - generic [ref=e527]:
+            - link "ollj" [ref=e528] [cursor=pointer]:
+              - /url: /user/ollj
+            - text: ", 2021-05-06"
+            - text: The loop counters are scalar
+        - generic [ref=e529]:
+          - img [ref=e531]
+          - generic [ref=e532]:
+            - link "Gaktan" [ref=e533] [cursor=pointer]:
+              - /url: /user/Gaktan
+            - text: ", 2021-05-06"
+            - text: "@iq I checked the difference of loop unrolling using a certain vendor shader compiler software 1. The shader is 43028 bytes with loop unrolling, but only 20120 bytes when forcing loops. Having bigger size is terrible, because it actually causes a lot of cache thrashing 2. LDS is used with loop unrolling. Not sure why it's used, but using it will introduce some waits when multiple threads access the same LDS. 3. Looks like forcing a loop increases the scalar ALU, so maybe some operator become scalar instead of vector? Very hard to say for sure though. unroll: Scalar ALU: 318 Vector ALU: 7363 force loop: Scalar ALU: 327 Vector ALU: 3223 I think the biggest win is the binary code size, which makes sense."
+        - generic [ref=e534]:
+          - img [ref=e536]
+          - generic [ref=e537]:
+            - link "Andre" [ref=e538] [cursor=pointer]:
+              - /url: /user/Andre
+            - text: ", 2021-02-23"
+            - text: Sorry for the small windoiw, i'm working on a 4k television. The UI still needs updates for smaller screens. I'm working on controls rendered by shaders so you can build synthesizer front panels with it as well. My current plan is to finish it to a complete synth builder and DAW, then seperate it into a musicians part and a programmers part. Programmers can then push their synth creations for the musicians to use, i allready bought the synthastic.com domain for the musicians part.
+        - generic [ref=e539]:
+          - img [ref=e541]
+          - generic [ref=e542]:
+            - link "FabriceNeyret2" [ref=e543] [cursor=pointer]:
+              - /url: /user/FabriceNeyret2
+            - text: ", 2021-02-22"
+            - text: cool ! but the code window is really small.
+        - generic [ref=e544]:
+          - img [ref=e546]
+          - generic [ref=e547]:
+            - link "Andre" [ref=e548] [cursor=pointer]:
+              - /url: /user/Andre
+            - text: ", 2021-02-22"
+            - text: "@FabriceNeyret & @iq What do you think of my new hobby project. https://shadersynth.com I'm making a synthesizer that runs on shaders, I got inspired by the sound shader here. You can create instruments and effects with shaders like here. It plays midi files, it currently loads \"Great gig in the Sky\" by Pink Floyd and you can start it with the \"play\" button. It doesn't have a backend yet and stores everything in local storage for now."
+        - generic [ref=e549]:
+          - img [ref=e551]
+          - generic [ref=e552]:
+            - link "FabriceNeyret2" [ref=e553] [cursor=pointer]:
+              - /url: /user/FabriceNeyret2
+            - text: ", 2021-02-22"
+            - text: thanks ! it's no longer chrome.exe --use-angle=gl ?
+        - generic [ref=e554]:
+          - img [ref=e556]
+          - generic [ref=e557]:
+            - link "Andre" [ref=e558] [cursor=pointer]:
+              - /url: /user/Andre
+            - text: ", 2021-02-22"
+            - text: I forcesd chrome to use OpenGL by setting "Choose ANGLE graphics backend" on OpenGL in chrome://flags. Compile time for both is now around 0.5 seconds and fps is also consistent around 32fps. Must be something in combination with D3D. Modern GPU's do have loop and branch support, didn't realy think about the branch predictor remark, but it does indeed make sense a GPU doesn't have any since it runs blocks of code parallel.
+        - generic [ref=e559]:
+          - img [ref=e561]
+          - generic [ref=e562]:
+            - link "FabriceNeyret2" [ref=e563] [cursor=pointer]:
+              - /url: /user/FabriceNeyret2
+            - text: ", 2021-02-22"
+            - text: "NB: all functions get inlined. There is no stack on GPU. And it seems very unlikely there is branch prediction as well."
+        - generic [ref=e564]:
+          - img [ref=e566]
+          - generic [ref=e567]:
+            - link "FabriceNeyret2" [ref=e568] [cursor=pointer]:
+              - /url: /user/FabriceNeyret2
+            - text: ", 2021-02-22"
+            - text: "@Andre: could you please force your firefox/chrome to OpenGL mode and proceed the same benches ?"
+        - generic [ref=e569]:
+          - img [ref=e571]
+          - generic [ref=e572]:
+            - link "Andre" [ref=e573] [cursor=pointer]:
+              - /url: /user/Andre
+            - text: ", 2021-02-22"
+            - text: Compile time goes from 9.2 secs to 1.6 secs on my GTX 1070 Windows 10. FPS goes from 11 to 32fps (1200 x 675). (changed define of ZERO to 0 for 1st results) Maybe the noise functions get inlined, that together with loop unrolling could lead to large code size which is maybe bigger then the GPU's fastest code cache? Branch prediction has also grown over the years so maybe the penalty for not unrolling isn't as high as it used to be.
+        - generic [ref=e574]:
+          - img [ref=e576]
+          - generic [ref=e577]:
+            - link "FabriceNeyret2" [ref=e578] [cursor=pointer]:
+              - /url: /user/FabriceNeyret2
+            - text: ", 2021-02-20"
+            - text: "@iq: 1.2x faster [by] preventing loop unrolling How strange ! is it true on OpenGL too ? Very strange, preventing unrolling generally slow things, and for good reasons. Code cache: I once add to an Nvidia tech, and it seems almost impossible to fail the code cache (of course, but with dedicated code, plus these guys don't always know how extreme our shaders are :-D ). Now, for the optimizer there seem to be windowed range, so who knows in this case. But first, I'm curious whether the gain is in the same direction in OpenGL vs Windows, or Nvidia vs else. Also, the recent Vulkan-based compilers react very differently (sometime worse perfs, sometime better). Detail: for the first minute or so the perfs oscillate really a lot, before stabilising at 8.6 fps at 640x360."
+        - generic [ref=e579]:
+          - img [ref=e581]
+          - generic [ref=e582]:
+            - link "iq" [ref=e583] [cursor=pointer]:
+              - /url: /user/iq
+            - text: ", 2021-02-20"
+            - text: Now the shader runs 1.2x faster and compiles almost 4 times faster. For the curious, all I did was preventing loop unrolling for all the fbm() functions. That lowered the compile time from 4 seconds to 1 for me. On the other hand I'm not sure why that improves performance, but it does. All I can hypothesize is that perhaps there's a code cache in the GPU to speed up instruction fetching and loops help keep the relevant code in the cache for a longer time? Regardless, it helped with a 40% speedup in my GPU. I used that extra performance to tweak the visuals and make the shader look better, while still leaving a 1.2x overall performance improvement. So, triple win.
+        - generic [ref=e584]:
+          - img [ref=e586]
+          - generic [ref=e587]:
+            - link "FabriceNeyret2" [ref=e588] [cursor=pointer]:
+              - /url: /user/FabriceNeyret2
+            - text: ", 2021-02-06"
+            - text: "@jarble: well, your depth buffer cuts the trees on the silhouette !"
+        - generic [ref=e589]:
+          - img [ref=e591]
+          - generic [ref=e592]:
+            - link "jarble" [ref=e593] [cursor=pointer]:
+              - /url: /user/jarble
+            - text: ", 2021-02-05"
+            - text: I tried
+            - link "adding a depth buffer" [ref=e594] [cursor=pointer]:
+              - /url: https://www.shadertoy.com/view/tltBWr
+            - text: to speed up the framerate. It seems to be only slightly faster.
+        - generic [ref=e595]:
+          - img [ref=e597]
+          - generic [ref=e598]:
+            - link "FabriceNeyret2" [ref=e599] [cursor=pointer]:
+              - /url: /user/FabriceNeyret2
+            - text: ", 2021-01-27"
+            - text: "again, webGL is not ADA, I doubt the norm now forbid patterns for style issue (and efficience is coder busyness). Also, the point is absolutely not about the scope: global variables are still permitted. It is only about where there initialization is done. On a compiler point of view, I don't see how init at global declaration differs to init at the beginning of main(). It could even be compiled that way."
+        - generic [ref=e600]:
+          - img [ref=e602]
+          - generic [ref=e603]:
+            - link "ollj" [ref=e604] [cursor=pointer]:
+              - /url: /user/ollj
+            - text: ", 2021-01-26"
+            - text: it is lazy bad style to have global mutable. you want short scopes for efficiency. in webgl2 you can more easily have longer lists and have more types in them, or invert large matrices, and that may just crash a lot more of parsing or runtime, if long lists have global scope, in some deconstructing ANGLE parsing.
+        - generic [ref=e605]:
+          - img [ref=e607]
+          - generic [ref=e608]:
+            - link "FabriceNeyret2" [ref=e609] [cursor=pointer]:
+              - /url: /user/FabriceNeyret2
+            - text: ", 2021-01-26"
+            - text: "Yes. My question was: what was the motivation to no longer allow this, while it was ok in webGL1: what is the constraint on compilers that suggest one should better no longer allows it."
+        - generic [ref=e610]:
+          - img [ref=e612]
+          - generic [ref=e613]:
+            - link "ollj" [ref=e614] [cursor=pointer]:
+              - /url: /user/ollj
+            - text: ", 2021-01-26"
+            - text: No global mutable outside of functions.
+        - generic [ref=e615]:
+          - img [ref=e617]
+          - generic [ref=e618]:
+            - link "FabriceNeyret2" [ref=e619] [cursor=pointer]:
+              - /url: /user/FabriceNeyret2
+            - text: ", 2021-01-26"
+            - text: "@ollj WebGL 2 obviously still does global variable. It just no longer allows their non-const global initialization at declaration. ( I wonder the motivation behind this change, though )."
+        - generic [ref=e620]:
+          - img [ref=e622]
+          - generic [ref=e623]:
+            - link "ollj" [ref=e624] [cursor=pointer]:
+              - /url: /user/ollj
+            - text: ", 2021-01-25"
+            - text: my
+            - link "compatib" [ref=e625] [cursor=pointer]:
+              - /url: https://www.shadertoy.com/results?query=compatib&sort=newest&filter=compatib
+            - text: e shaders share a [compatibility core] for WebGL 1. main issue are; no ivecN() types, no integer modulo, no inverse(), many list restrictions. WebGL 2 no longer does global variables.
+        - generic [ref=e626]:
+          - img [ref=e628]
+          - generic [ref=e629]:
+            - link "ado1928" [ref=e630] [cursor=pointer]:
+              - /url: /user/ado1928
+            - text: ", 2021-01-25"
+            - text: After managing to get the shader working with WebGL 1, I'm seeing a stable 10 FPS on 576 x 324 on a GTX 260. Works in fullscreen too, but it's, judging by eye, about 1-2 fps.
+        - generic [ref=e631]:
+          - img [ref=e633]
+          - generic [ref=e634]:
+            - link "Serg" [ref=e635] [cursor=pointer]:
+              - /url: /user/Serg
+            - text: ", 2021-01-03"
+            - text: on a 3090 its smooth at 3840x1600
+            - img [ref=e636]
+        - generic [ref=e637]:
+          - img [ref=e639]
+          - generic [ref=e640]:
+            - link "me_123" [ref=e641] [cursor=pointer]:
+              - /url: /user/me_123
+            - text: ", 2020-12-08"
+            - text: So goood
+        - generic [ref=e642]:
+          - img [ref=e644]
+          - generic [ref=e645]:
+            - link "ollj" [ref=e646] [cursor=pointer]:
+              - /url: /user/ollj
+            - text: ", 2020-11-01"
+            - text: similar, even on newer GPU this doesn't quite reach 60fps.
+        - generic [ref=e647]:
+          - img [ref=e649]
+          - generic [ref=e650]:
+            - link "camjay" [ref=e651] [cursor=pointer]:
+              - /url: /user/camjay
+            - text: ", 2020-10-01"
+            - text: Getting 25 fps on 4K fullscreen using RTX 3080 FE. Otherwise, 60 FPS.
+        - generic [ref=e652]:
+          - img [ref=e654]
+          - generic [ref=e655]:
+            - link "iq" [ref=e656] [cursor=pointer]:
+              - /url: /user/iq
+            - text: ", 2020-09-02"
+            - text: Make sure Chrome/Firefox/Edge is running on your GeForce card instead of the integrated GPU. It
+            - strong [ref=e657]: is
+            - text: a heavy shader, runs at 60 fps on my laptop but at 2 fps on my phone. I should probably take a pass at optimizing something.
+        - generic [ref=e658]:
+          - img [ref=e660]
+          - generic [ref=e661]:
+            - link "Aesthetical" [ref=e662] [cursor=pointer]:
+              - /url: /user/Aesthetical
+            - text: ", 2020-09-01"
+            - text: My iGPU is having a HORRIBLE time rendering this.
+        - generic [ref=e663]:
+          - img [ref=e665]
+          - generic [ref=e666]:
+            - link "JasonLee" [ref=e667] [cursor=pointer]:
+              - /url: /user/JasonLee
+            - text: ", 2020-03-20"
+            - text: cool
+        - generic [ref=e668]:
+          - img [ref=e670]
+          - generic [ref=e671]:
+            - link "realcyg" [ref=e672] [cursor=pointer]:
+              - /url: /user/realcyg
+            - text: ", 2020-02-08"
+            - text: says 1.1 but its much more like 0.1 fps @ 800 x 450 on my "Intel integrated" lolz
+        - generic [ref=e673]:
+          - img [ref=e675]
+          - generic [ref=e676]:
+            - link "0X800007D0" [ref=e677] [cursor=pointer]:
+              - /url: /user/0X800007D0
+            - text: ", 2019-12-08"
+            - text: I am only getting mid 40's fps with a 1070 gtx at 640x360
+        - generic [ref=e678]:
+          - img [ref=e680]
+          - generic [ref=e681]:
+            - link "Cotterzz" [ref=e682] [cursor=pointer]:
+              - /url: /user/Cotterzz
+            - text: ", 2019-09-20"
+            - text: I meant to say... 40 fps at 640x360. Went down below 10 fps at 1080x1920. pity because it's incredible at that resolution.
+        - generic [ref=e683]:
+          - img [ref=e685]
+          - generic [ref=e686]:
+            - link "Cotterzz" [ref=e687] [cursor=pointer]:
+              - /url: /user/Cotterzz
+            - text: ", 2019-09-20"
+            - text: Wowser, hovering around 40fps on my nvidia g980 win7 chrome. Reminds me of the scenery in Crysis, only better
+        - generic [ref=e688]:
+          - img [ref=e690]
+          - generic [ref=e691]:
+            - link "kinglarfy" [ref=e692] [cursor=pointer]:
+              - /url: /user/kinglarfy
+            - text: ", 2019-08-12"
+            - text: nice
+        - generic [ref=e693]:
+          - img [ref=e695]
+          - generic [ref=e696]:
+            - link "ShadowFlare" [ref=e697] [cursor=pointer]:
+              - /url: /user/ShadowFlare
+            - text: ", 2019-06-27"
+            - text: "@Teppich It works extraordinarily well. In fact, I couldn't see a difference except in speed for the rainforest when I did it. I did it in one of the raymarching loops, along with once the point is returned, before it gets rendered. Also, one other speed improvement is checking for the camera storage positions before raymarching."
+        - generic [ref=e698]:
+          - img [ref=e700]
+          - generic [ref=e701]:
+            - link "Teppich" [ref=e702] [cursor=pointer]:
+              - /url: /user/Teppich
+            - text: ", 2019-06-27"
+            - text: "@ShadowFlare I've been looking into terminating rays early when they're less than half a pixel away from an sdf 'surface'. How did you know when to discard the ray? As in, how does rasterization + comparison work for you?"
+        - generic [ref=e703]:
+          - img [ref=e705]
+          - generic [ref=e706]:
+            - link "ShadowFlare" [ref=e707] [cursor=pointer]:
+              - /url: /user/ShadowFlare
+            - text: ", 2019-06-24"
+            - text: I was also able to boost the fps to 30 on my gpu by doing a few tricks which didn't make it lose any quality, such as discarding raytracing if the pixel difference wouldn't be visible on the screen via rasterization of the points and comparing them.
+        - generic [ref=e708]:
+          - img [ref=e710]
+          - generic [ref=e711]:
+            - link "ShadowFlare" [ref=e712] [cursor=pointer]:
+              - /url: /user/ShadowFlare
+            - text: ", 2019-06-21"
+            - text: Got the river, just need to figure out why it isn't fading out properly.
+        - generic [ref=e713]:
+          - img [ref=e715]
+          - generic [ref=e716]:
+            - link "ShadowFlare" [ref=e717] [cursor=pointer]:
+              - /url: /user/ShadowFlare
+            - text: ", 2019-06-21"
+            - text: I think I'm gonna add a small river in the background, in the canyony part. Is there any way to label that part?
+        - generic [ref=e718]:
+          - img [ref=e720]
+          - generic [ref=e721]:
+            - link "Geralt_of_China" [ref=e722] [cursor=pointer]:
+              - /url: /user/Geralt_of_China
+            - text: ", 2019-05-05"
+            - text: 965M：15.5-17.9fps
+        - generic [ref=e723]:
+          - img [ref=e725]
+          - generic [ref=e726]:
+            - link "scratch13764" [ref=e727] [cursor=pointer]:
+              - /url: /user/scratch13764
+            - text: ", 2019-03-06"
+            - text: Thanks, that helps explain it. I also saw something else (I think it was by P_Malins) that helped too.
+        - generic [ref=e728]:
+          - img [ref=e730]
+          - generic [ref=e731]:
+            - link "spawner64" [ref=e732] [cursor=pointer]:
+              - /url: /user/spawner64
+            - text: ", 2019-01-31"
+            - text: "@scratch13764 He's using a small portion of the ch0's output buffer to store the current camera transform (ca[0], ca[1], ca[2]), so that he can read it in the next frame as oldCam. Then he transforms the current frag's world space position to screen space and reverts (undoes) the screen space shifting o in order to get an aligned frame (o is used to slightly shift the rendering, so that when mixing with the new frame, partial super-sampling is effectivelly achieved - this is one of the most clever and effective AA techniques I've seen). After that, he goes from screen space to raster space, samples the old frame (texLod(ch0, spos)) and mixes in the new color. The output is essentially used as a IIR history / accumulation buffer."
+        - generic [ref=e733]:
+          - img [ref=e735]
+          - generic [ref=e736]:
+            - link "scratch13764" [ref=e737] [cursor=pointer]:
+              - /url: /user/scratch13764
+            - text: ", 2019-01-16"
+            - text: Can someone explain how the old frame averaging works in this? I can see that the frame is mapped to the terrain and it's really freaking me out how it works.
+        - generic [ref=e738]:
+          - img [ref=e740]
+          - generic [ref=e741]:
+            - link "yuletian" [ref=e742] [cursor=pointer]:
+              - /url: /user/yuletian
+            - text: ", 2018-06-19"
+            - text: Amazing!
+        - generic [ref=e743]:
+          - img [ref=e745]
+          - generic [ref=e746]:
+            - link "FabriceNeyret2" [ref=e747] [cursor=pointer]:
+              - /url: /user/FabriceNeyret2
+            - text: ", 2018-05-10"
+            - text: "for mouse control camera rotation (only slow movements, please :-) : add in bufA line 834 vec2 A = 3.14*(2.*iMouse.xy/iResolution.xy-1.); #define rot(a) mat2(cos(a),-sin(a),sin(a),cos(a)) ta = vec3(0,0,1); ta.xz *= rot(A.x); ta.yz *= rot(-A.y); ta += ro;"
+        - generic [ref=e748]:
+          - img [ref=e750]
+          - generic [ref=e751]:
+            - link "FabriceNeyret2" [ref=e752] [cursor=pointer]:
+              - /url: /user/FabriceNeyret2
+            - text: ", 2018-05-10"
+            - text: looks like the sight from my living room :-)
+        - generic [ref=e753]:
+          - img [ref=e755]
+          - generic [ref=e756]:
+            - link "akhgary" [ref=e757] [cursor=pointer]:
+              - /url: /user/akhgary
+            - text: ", 2018-05-03"
+            - text: "Next project: GTA V"
+        - generic [ref=e758]:
+          - img [ref=e760]
+          - generic [ref=e761]:
+            - link "songinnight" [ref=e762] [cursor=pointer]:
+              - /url: /user/songinnight
+            - text: ", 2018-03-18"
+            - text: "It's awesome graphics!!!!! TIP: if you want to run in IE change \"textureLod\" to \"texture\""
+        - generic [ref=e763]:
+          - img [ref=e765]
+          - generic [ref=e766]:
+            - link "jpupper" [ref=e767] [cursor=pointer]:
+              - /url: /user/jpupper
+            - text: ", 2018-01-03"
+            - text: Insane. Level god.
+        - generic [ref=e768]:
+          - img [ref=e770]
+          - generic [ref=e771]:
+            - link "iq" [ref=e772] [cursor=pointer]:
+              - /url: /user/iq
+            - text: ", 2017-12-26"
+            - text: "@hammedshh, because it's raymarched, because there are no meshes, because it's running on WebGL, because your GPU is not meant to run this. In normal OpenGL this would be full framerate in HD. But this is not what Shadertoy is about"
+        - generic [ref=e773]:
+          - img [ref=e775]
+          - generic [ref=e776]:
+            - link "Dave_Hoskins" [ref=e777] [cursor=pointer]:
+              - /url: /user/Dave_Hoskins
+            - text: ", 2017-12-11"
+            - text: "@hamedshh - That's nearly a 6 year old gfx card!"
+            - img [ref=e778]
+            - text: I have a gtx680 and that's 26fps in a window...
+        - generic [ref=e779]:
+          - img [ref=e781]
+          - generic [ref=e782]:
+            - link "hamedshh" [ref=e783] [cursor=pointer]:
+              - /url: /user/hamedshh
+            - text: ", 2017-12-11"
+            - text: why is it run slowly with 8.8 fps on my PC whereas i have GT630 as Graphic card and core i5 as CPU
+        - generic [ref=e784]:
+          - img [ref=e786]
+          - generic [ref=e787]:
+            - link "ollj" [ref=e788] [cursor=pointer]:
+              - /url: /user/ollj
+            - text: ", 2017-11-08"
+            - text: i think a [foggy valley] would look good (as in, easily believable and high geometry detail) and have good performance, even when valleys are seeded noise. Fog in valleys basically replaces the occlusion that a mountain would have there otherwise. most people do distance fog poorly, by making it spherical around the camera, and not making it diminishing fog with increasing height. google image search [fog valley] for inspiration. most photos look down into valleys, because looking out of a fog is just not as characteristic. diminishing fog by height (volume marching a cloud in a valley) makes it easy to look "up" from inside a foggy valley, so you likely see birds and nearby mountain peaks. This mostly diminishes looking nearly-horizontally along or trough a foggy valley. Then you put all your high detail geometry inside a foggy valley (along rivers), where it is more realistically occluded by fog and surrounded by either mountains or more valley-fog. you can fly into valleys and over them, giving the illusion of more detail than there is per frame, from memory of what you saw there.
+        - generic [ref=e789]:
+          - img [ref=e791]
+          - generic [ref=e792]:
+            - link "jcyuan" [ref=e793] [cursor=pointer]:
+              - /url: /user/jcyuan
+            - text: ", 2017-11-08"
+            - text: so sick!! but yes, a bit heavy load.
+        - generic [ref=e794]:
+          - img [ref=e796]
+          - generic [ref=e797]:
+            - link "Uneclipsed" [ref=e798] [cursor=pointer]:
+              - /url: /user/Uneclipsed
+            - text: ", 2017-10-21"
+            - text: Looks beautiful. I just wish my GPU did better than 26fps. (1070)
+        - generic [ref=e799]:
+          - img [ref=e801]
+          - generic [ref=e802]:
+            - link "zproxy" [ref=e803] [cursor=pointer]:
+              - /url: /user/zproxy
+            - text: ", 2017-05-21"
+            - text: "[This comment has been hidden by the shader author]"
+        - generic [ref=e804]:
+          - img [ref=e806]
+          - generic [ref=e807]:
+            - link "dagelf" [ref=e808] [cursor=pointer]:
+              - /url: /user/dagelf
+            - text: ", 2017-05-20"
+            - text: I can hear the rainforest inside my laptop when this runs.... "Whooosh"
+        - generic [ref=e809]:
+          - img [ref=e811]
+          - generic [ref=e812]:
+            - link "etale_cohomology" [ref=e813] [cursor=pointer]:
+              - /url: /user/etale_cohomology
+            - text: ", 2017-04-09"
+            - text: 30fps on a Titan X (Maxwell), Ubuntu, for me. Is the 1080 simply better than the old Titan X?
+        - generic [ref=e814]:
+          - img [ref=e816]
+          - generic [ref=e817]:
+            - link "Passion" [ref=e818] [cursor=pointer]:
+              - /url: /user/Passion
+            - text: ", 2017-02-26"
+            - text: Very nice lush colors
+            - img [ref=e819]
+        - generic [ref=e820]:
+          - img [ref=e822]
+          - generic [ref=e823]:
+            - link "Damasko" [ref=e824] [cursor=pointer]:
+              - /url: /user/Damasko
+            - text: ", 2017-02-22"
+            - text: Iñigo, cada vez estoy más impresionado de tus habilidades. Increíbles tus trabajos.
+        - generic [ref=e825]:
+          - img [ref=e827]
+          - generic [ref=e828]:
+            - link "jt" [ref=e829] [cursor=pointer]:
+              - /url: /user/jt
+            - text: ", 2017-02-17"
+            - text: Wow
+            - img [ref=e830]
+        - generic [ref=e831]:
+          - img [ref=e833]
+          - generic [ref=e834]:
+            - link "mag" [ref=e835] [cursor=pointer]:
+              - /url: /user/mag
+            - text: ", 2017-02-02"
+            - text: TAA = Temporal Anti Aliasing
+        - generic [ref=e836]:
+          - img [ref=e838]
+          - generic [ref=e839]:
+            - link "SarahC" [ref=e840] [cursor=pointer]:
+              - /url: /user/SarahC
+            - text: ", 2017-02-01"
+            - text: What's TAA refer to in the source comments?
+        - generic [ref=e841]:
+          - img [ref=e843]
+          - generic [ref=e844]:
+            - link "casty" [ref=e845] [cursor=pointer]:
+              - /url: /user/casty
+            - text: ", 2016-12-30"
+            - text: "It looks like Intel is not affected by this weirdness: 5fps in chrome in both desktop and Angle modes"
+        - generic [ref=e846]:
+          - img [ref=e848]
+          - generic [ref=e849]:
+            - link "iq" [ref=e850] [cursor=pointer]:
+              - /url: /user/iq
+            - text: ", 2016-12-30"
+            - text: "Canvas: 800x450, Windows 10, GTX 980 Mobile RainForest: 23 fps Microsoft Edge RainForest: 15 fps Chrome (Angle) RainForest: 35 fps Chrome with --use-gl=desktop RainForest: 15 fps Firefox (Angle) RainForest: 28 fps Firefox with Disable.Angle (and zero compilation time) Snail: 30 fps Microsoft Edge Snail: 44 fps Chrome (Angle) Snail: 60 fps Chrome with --use-gl=desktop Snail: 34 fps Firefox (Angle) Snail: 44 fps Firefox with Disable.Angle (and zero compilation time) Clearly, Angle (Firefox and Chrome's WebGL/GLSL to DirectX/HLSL translation layer) is fucking things up quite a bit... Rainforest:"
+            - link "https://www.shadertoy.com/view/4ttSWf" [ref=e851] [cursor=pointer]:
+              - /url: https://www.shadertoy.com/view/4ttSWf
+            - text: "Snail:"
+            - link "https://www.shadertoy.com/view/ld3Gz2" [ref=e852] [cursor=pointer]:
+              - /url: https://www.shadertoy.com/view/ld3Gz2
+        - generic [ref=e853]:
+          - img [ref=e855]
+          - generic [ref=e856]:
+            - link "manolopm" [ref=e857] [cursor=pointer]:
+              - /url: /user/manolopm
+            - text: ", 2016-12-30"
+            - text: "Canvas : 800x450, Chromium, Debian Linux, GTX 1070 Snail: 60fps RainForest: 60 fps"
+        - generic [ref=e858]:
+          - img [ref=e860]
+          - generic [ref=e861]:
+            - link "Andre" [ref=e862] [cursor=pointer]:
+              - /url: /user/Andre
+            - text: ", 2016-12-30"
+            - text: "Ok, Canvas 800x450, Chrome Win 10 GTX1070 Snail: 60 fps Rainforest: 30 fps Right click, inspect in chrome and you can also read the size of the canvas in the attributes of the canvas"
+        - generic [ref=e863]:
+          - img [ref=e865]
+          - generic [ref=e866]:
+            - link "casty" [ref=e867] [cursor=pointer]:
+              - /url: /user/casty
+            - text: ", 2016-12-30"
+            - text: To those people getting 60fps in this shader with 1060/1070 Could you please test theIQ's Snail shader and tell me the fps? Please make sure you are in the 1080 layot and canvas is 800x450 (you can check the canvas size with Fabriceneyret2's iResloution shader)
+        - generic [ref=e868]:
+          - img [ref=e870]
+          - generic [ref=e871]:
+            - link "iq" [ref=e872] [cursor=pointer]:
+              - /url: /user/iq
+            - text: ", 2016-12-29"
+            - text: Thanks for the detailed info Andre. Let me know Casty how your investigations go
+        - generic [ref=e873]:
+          - img [ref=e875]
+          - generic [ref=e876]:
+            - link "Andre" [ref=e877] [cursor=pointer]:
+              - /url: /user/Andre
+            - text: ", 2016-12-28"
+            - text: 6700K and a GTX1070 here on Chrome and Win10. 60fps on smallest browser window (canvas is 500x281) 14 when i make browser window bigger (canvas is 1200x675) Edge browser gives me 20fps on largest in browser (canvas 1200x675) Firefox ~23fps varies between 20 and 28
+        - generic [ref=e878]:
+          - img [ref=e880]
+          - generic [ref=e881]:
+            - link "casty" [ref=e882] [cursor=pointer]:
+              - /url: /user/casty
+            - text: ", 2016-12-28"
+            - text: IQ, I'm getting 20fps which is way more than any Intel can do. And it is shader dependent, Snail and pool shaders do run at their theoretical speed. So it has to be something else. At least other ppl are running at 60fps so I should be able to troubleshoot it. Thanks
+        - generic [ref=e883]:
+          - img [ref=e885]
+          - generic [ref=e886]:
+            - link "Jacoby" [ref=e887] [cursor=pointer]:
+              - /url: /user/Jacoby
+            - text: ", 2016-12-28"
+            - text: "Browser seems to make a big difference: 54.1 fps in Chrome, 60.0 fps in Firefox, on a 1080 (Windows 10)."
+        - generic [ref=e888]:
+          - img [ref=e890]
+          - generic [ref=e891]:
+            - link "Jacoby" [ref=e892] [cursor=pointer]:
+              - /url: /user/Jacoby
+            - text: ", 2016-12-28"
+            - text: Absolutely incredible. Thanks for sharing!
+        - generic [ref=e893]:
+          - img [ref=e895]
+          - generic [ref=e896]:
+            - link "manolopm" [ref=e897] [cursor=pointer]:
+              - /url: /user/manolopm
+            - text: ", 2016-12-28"
+            - text: Awesome!!!. 60 Fps on 1070
+        - generic [ref=e898]:
+          - img [ref=e900]
+          - generic [ref=e901]:
+            - link "iq" [ref=e902] [cursor=pointer]:
+              - /url: /user/iq
+            - text: ", 2016-12-28"
+            - text: Also, a friend said the 1060 was balcklisted on his Chrome, he had to enable it by hand, otherwise the Intel was kicking in for him too.
+        - generic [ref=e903]:
+          - img [ref=e905]
+          - generic [ref=e906]:
+            - link "iq" [ref=e907] [cursor=pointer]:
+              - /url: /user/iq
+            - text: ", 2016-12-28"
+            - text: It should run at about 60 fps on your 1060 Casty. Are you in a laptop? You are probably using the Intel integrated card (close all browser tabs and restart Chrome with right_click + Nvidia GPU). We have tested on a 1060M, it does run full framerate. It is 16 fps on my (now old) 980M.
+        - generic [ref=e908]:
+          - img [ref=e910]
+          - generic [ref=e911]:
+            - link "casty" [ref=e912] [cursor=pointer]:
+              - /url: /user/casty
+            - text: ", 2016-12-27"
+            - text: "@834144373 I don't know why I'm getting only 20fps with my 1060, are you using the 1080 layout?"
+        - generic [ref=e913]:
+          - img [ref=e915]
+          - generic [ref=e916]:
+            - link "siuyy" [ref=e917] [cursor=pointer]:
+              - /url: /user/siuyy
+            - text: ", 2016-12-27"
+            - text: Brilliant!! Love your works so much! I hope I can code such beautiful things like all genius here. Unfortunately, I have no graphic mathematics concepts. How to learn from the beginning?
+        - generic [ref=e918]:
+          - img [ref=e920]
+          - generic [ref=e921]:
+            - link "834144373" [ref=e922] [cursor=pointer]:
+              - /url: /user/834144373
+            - text: ", 2016-12-27"
+            - text: haha... 50.5fps on GTX1060
+        - generic [ref=e923]:
+          - img [ref=e925]
+          - generic [ref=e926]:
+            - link "revers" [ref=e927] [cursor=pointer]:
+              - /url: /user/revers
+            - text: ", 2016-12-26"
+            - text: Outstanding, as always! ^^ @keelo "fbm" stands for
+            - link "\"Fractal Brownian Motion\"" [ref=e928] [cursor=pointer]:
+              - /url: https://thebookofshaders.com/13/
+        - generic [ref=e929]:
+          - img [ref=e931]
+          - generic [ref=e932]:
+            - link "Phi" [ref=e933] [cursor=pointer]:
+              - /url: /user/Phi
+            - text: ", 2016-12-25"
+            - text: Very impressive !
+        - generic [ref=e934]:
+          - img [ref=e936]
+          - generic [ref=e937]:
+            - link "public_int_i" [ref=e938] [cursor=pointer]:
+              - /url: /user/public_int_i
+            - text: ", 2016-12-24"
+            - text: I'm in awe, beautiful work.
+        - generic [ref=e939]:
+          - img [ref=e941]
+          - generic [ref=e942]:
+            - link "GregRostami" [ref=e943] [cursor=pointer]:
+              - /url: /user/GregRostami
+            - text: ", 2016-12-24"
+            - text: Please tell us you're working on a new demo. I REALLY would love to see Elevated 2.
+        - generic [ref=e944]:
+          - img [ref=e946]
+          - generic [ref=e947]:
+            - link "keelo" [ref=e948] [cursor=pointer]:
+              - /url: /user/keelo
+            - text: ", 2016-12-23"
+            - text: gorgeous! what does fbm stand for?
+        - generic [ref=e949]:
+          - img [ref=e951]
+          - generic [ref=e952]:
+            - link "flockaroo" [ref=e953] [cursor=pointer]:
+              - /url: /user/flockaroo
+            - text: ", 2016-12-23"
+            - text: padauz!! so much detail... i really like the clouds falling over the mountains
+        - generic [ref=e954]:
+          - img [ref=e956]
+          - generic [ref=e957]:
+            - link "drift" [ref=e958] [cursor=pointer]:
+              - /url: /user/drift
+            - text: ", 2016-12-23"
+            - text: Amazing. The best looking single shader terrain scene to date.
+        - generic [ref=e959]:
+          - img [ref=e961]
+          - generic [ref=e962]:
+            - link "iq" [ref=e963] [cursor=pointer]:
+              - /url: /user/iq
+            - text: ", 2016-12-23"
+            - text: Fixed, I hope!
+        - generic [ref=e964]:
+          - img [ref=e966]
+          - generic [ref=e967]:
+            - link "coyote" [ref=e968] [cursor=pointer]:
+              - /url: /user/coyote
+            - text: ", 2016-12-23"
+            - text: "@iq, in renderTerrain function out variables teShadow and teDistance are not initialised/set in all program paths. Because of the uninitialised teDistance on mac mini the sky is corrupted. I can't see the difference due to teShadow, but surely it should be initialised. btw 25 fps in smallest resolution (500x280) on mac mini with intel iris. 13 fps in 640x360."
+            - img [ref=e969]
+        - generic [ref=e970]:
+          - img [ref=e972]
+          - generic [ref=e973]:
+            - link "KylBlz" [ref=e974] [cursor=pointer]:
+              - /url: /user/KylBlz
+            - text: ", 2016-12-23"
+            - text: The sense of magnitude in this scene is great, appears far from finite!
+        - generic [ref=e975]:
+          - img [ref=e977]
+          - generic [ref=e978]:
+            - link "Draedrus" [ref=e979] [cursor=pointer]:
+              - /url: /user/Draedrus
+            - text: ", 2016-12-23"
+            - text: Wow...
+        - generic [ref=e980]:
+          - img [ref=e982]
+          - generic [ref=e983]:
+            - link "starea" [ref=e984] [cursor=pointer]:
+              - /url: /user/starea
+            - text: ", 2016-12-22"
+            - text: Beautiful, beautiful terrain running at 19 fps on my workstation!
+        - generic [ref=e985]:
+          - img [ref=e987]
+          - generic [ref=e988]:
+            - link "dila" [ref=e989] [cursor=pointer]:
+              - /url: /user/dila
+            - text: ", 2016-12-22"
+            - text: Awesome!
+        - generic [ref=e990]:
+          - img [ref=e992]
+          - generic [ref=e993]:
+            - link "BigWIngs" [ref=e994] [cursor=pointer]:
+              - /url: /user/BigWIngs
+            - text: ", 2016-12-22"
+            - text: A little slow, but looks incredible!
+        - generic [ref=e995]:
+          - img [ref=e997]
+          - generic [ref=e998]:
+            - link "Unix" [ref=e999] [cursor=pointer]:
+              - /url: /user/Unix
+            - text: ", 2016-12-22"
+            - text: Incroyable ! Are you working for the "next Avatar movie"or just preparing the next elevated 4k - 10th happy birthday ? ;-p
+        - generic [ref=e1000]:
+          - img [ref=e1002]
+          - generic [ref=e1003]:
+            - link "zproxy" [ref=e1004] [cursor=pointer]:
+              - /url: /user/zproxy
+            - text: ", 2016-12-22"
+            - text: excellent. 0.7 fps in rdp software mode
+        - generic [ref=e1005]:
+          - img [ref=e1007]
+          - generic [ref=e1008]:
+            - link "Duke" [ref=e1009] [cursor=pointer]:
+              - /url: /user/Duke
+            - text: ", 2016-12-22"
+            - img [ref=e1010]
+        - generic [ref=e1011]:
+          - img [ref=e1013]
+          - generic [ref=e1014]:
+            - link "casty" [ref=e1015] [cursor=pointer]:
+              - /url: /user/casty
+            - text: ", 2016-12-22"
+            - text: It is a bit strange, I'm getting 20 fps with the GTX1060, but the old Quadro 4000M (equivalent to GTS 450) is showing 7 fps In other shaders I get the theoretical 700% diference (Snail and Pool to name a couple)
+        - generic [ref=e1016]:
+          - img [ref=e1018]
+          - generic [ref=e1019]:
+            - link "Dave_Hoskins" [ref=e1020] [cursor=pointer]:
+              - /url: /user/Dave_Hoskins
+            - text: ", 2016-12-22"
+            - img [ref=e1021]
+            - text: the lack of aliasing! Nice clouds and backdrop too. It is very slow though.
+        - generic [ref=e1022]:
+          - img [ref=e1024]
+          - generic [ref=e1025]:
+            - link "kuvkar" [ref=e1026] [cursor=pointer]:
+              - /url: /user/kuvkar
+            - text: ", 2016-12-22"
+            - text: It's insanely good. Almost can't believe my eyes.
+        - generic [ref=e1027]:
+          - img [ref=e1029]
+          - generic [ref=e1030]:
+            - link "shau" [ref=e1031] [cursor=pointer]:
+              - /url: /user/shau
+            - text: ", 2016-12-22"
+            - text: Gobsmacked. Pure Magic!
+        - generic [ref=e1032]:
+          - img [ref=e1034]
+          - generic [ref=e1035]:
+            - link "xeronimo74" [ref=e1036] [cursor=pointer]:
+              - /url: /user/xeronimo74
+            - text: ", 2016-12-22"
+            - text: few lines?? have you missed the 'Buf A' tab? ;)
+        - generic [ref=e1037]:
+          - img [ref=e1039]
+          - generic [ref=e1040]:
+            - link "iapafoto" [ref=e1041] [cursor=pointer]:
+              - /url: /user/iapafoto
+            - text: ", 2016-12-22"
+            - text: fantastic!
+        - generic [ref=e1042]:
+          - img [ref=e1044]
+          - generic [ref=e1045]:
+            - link "PauloFalcao" [ref=e1046] [cursor=pointer]:
+              - /url: /user/PauloFalcao
+            - text: ", 2016-12-22"
+            - text: This is Incredibly Awesome! WOW!!!
+        - generic [ref=e1047]:
+          - img [ref=e1049]
+          - generic [ref=e1050]:
+            - link "Shane" [ref=e1051] [cursor=pointer]:
+              - /url: /user/Shane
+            - text: ", 2016-12-22"
+            - img [ref=e1052]
+            - text: A movie quality scene constructed with a few lines of text by one person. Utterly amazing!
+        - generic [ref=e1053]:
+          - img [ref=e1055]
+          - generic [ref=e1056]:
+            - link "mantra" [ref=e1057] [cursor=pointer]:
+              - /url: /user/mantra
+            - text: ", 2016-12-22"
+            - text: Awesome.
+        - generic [ref=e1058]:
+          - img [ref=e1060]
+          - generic [ref=e1061]:
+            - link "russ" [ref=e1062] [cursor=pointer]:
+              - /url: /user/russ
+            - text: ", 2016-12-22"
+            - text: 1fps in fullscreen on a GTX950. Totally worth it :-D
+        - generic [ref=e1063]:
+          - img [ref=e1065]
+          - generic [ref=e1066]:
+            - link "coyote" [ref=e1067] [cursor=pointer]:
+              - /url: /user/coyote
+            - text: ", 2016-12-22"
+            - text: Hell Yeah! Brilliant!
+            - img [ref=e1068]
+            - text: Can't stop watching it...
+        - generic [ref=e1069]:
+          - img [ref=e1071]
+          - generic [ref=e1072]:
+            - link "GregRostami" [ref=e1073] [cursor=pointer]:
+              - /url: /user/GregRostami
+            - text: ", 2016-12-22"
+            - text: Breathtaking!
+        - generic [ref=e1074]:
+          - img [ref=e1076]
+          - generic [ref=e1077]:
+            - link "blackjero" [ref=e1078] [cursor=pointer]:
+              - /url: /user/blackjero
+            - text: ", 2016-12-22"
+            - text: It looks stunning! quite literally as I have been staring at it for more than 20 minutes... The strokes in the clouds are intriguing, very painterly.
+        - generic [ref=e1079]:
+          - img [ref=e1081]
+          - generic [ref=e1082]:
+            - link "s23b" [ref=e1083] [cursor=pointer]:
+              - /url: /user/s23b
+            - text: ", 2016-12-22"
+            - text: This resembles a photograph. Both in realism and framerate
+            - img [ref=e1084]
+        - generic [ref=e1085]:
+          - img [ref=e1087]
+          - generic [ref=e1088]:
+            - link "xeronimo74" [ref=e1089] [cursor=pointer]:
+              - /url: /user/xeronimo74
+            - text: ", 2016-12-22"
+            - text: Amazing!
+  - generic [ref=e1090]:
+    - generic [ref=e1091]:
+      - text: Community Forums
+      - list [ref=e1092]:
+        - listitem [ref=e1093]:
+          - link "Official Events" [ref=e1094] [cursor=pointer]:
+            - /url: /events
+        - listitem [ref=e1095]:
+          - link "In Facebook (english)" [ref=e1096] [cursor=pointer]:
+            - /url: https://www.facebook.com/groups/147749602472741
+        - listitem [ref=e1097]:
+          - link "In Facebook (korean)" [ref=e1098] [cursor=pointer]:
+            - /url: https://www.facebook.com/groups/1339783682699494
+        - listitem [ref=e1099]:
+          - link "In Discord" [ref=e1100] [cursor=pointer]:
+            - /url: https://discord.gg/XtmMN6E
+          - text: (
+          - link "direct link" [ref=e1101] [cursor=pointer]:
+            - /url: https://discordapp.com/channels/578696555612209173/579531723348639754
+          - text: )
+    - generic [ref=e1102]:
+      - text: Feedback and Support
+      - list [ref=e1103]:
+        - listitem [ref=e1104]:
+          - link "Facebook" [ref=e1105] [cursor=pointer]:
+            - /url: https://www.facebook.com/Shadertoy
+        - listitem [ref=e1106]:
+          - link "Twitter" [ref=e1107] [cursor=pointer]:
+            - /url: https://twitter.com/shadertoy
+        - listitem [ref=e1108]:
+          - link "Patreon" [ref=e1109] [cursor=pointer]:
+            - /url: https://www.patreon.com/shadertoy
+        - listitem [ref=e1110]:
+          - link "Roadmap" [ref=e1111] [cursor=pointer]:
+            - /url: https://trello.com/b/5hM0CjId
+    - generic [ref=e1112]:
+      - text: Shadertoy
+      - list [ref=e1113]:
+        - listitem [ref=e1114]:
+          - link "Store" [ref=e1115] [cursor=pointer]:
+            - /url: /store
+        - listitem [ref=e1116]:
+          - link "Documentation" [ref=e1117] [cursor=pointer]:
+            - /url: /howto
+        - listitem [ref=e1118]:
+          - link "Terms & Privacy" [ref=e1119] [cursor=pointer]:
+            - /url: /terms
+        - listitem [ref=e1120]:
+          - link "About" [ref=e1121] [cursor=pointer]:
+            - /url: /about
+    - generic [ref=e1122]:
+      - text: Apps and Plugins
+      - list [ref=e1123]:
+        - listitem [ref=e1124]:
+          - link "Official iPhone App" [ref=e1125] [cursor=pointer]:
+            - /url: https://itunes.apple.com/us/app/shadertoy/id717961814
+          - text: by
+          - link "Reinder" [ref=e1126] [cursor=pointer]:
+            - /url: /user/reinder
+        - listitem [ref=e1127]:
+          - link "Screensaver" [ref=e1128] [cursor=pointer]:
+            - /url: https://steamcommunity.com/sharedfiles/filedetails/?id=1726697188
+          - text: by
+          - link "Kosro" [ref=e1129] [cursor=pointer]:
+            - /url: /user/kosro
+        - listitem [ref=e1130]:
+          - link "Shadertoy plugin" [ref=e1131] [cursor=pointer]:
+            - /url: https://chrome.google.com/webstore/detail/shadertoy-unofficial-plug/ohicbclhdmkhoabobgppffepcopomhgl
+          - text: by
+          - link "Patu" [ref=e1132] [cursor=pointer]:
+            - /url: /user/patu
+    - generic [ref=e1133]:
+      - text: Tutorials
+      - list [ref=e1134]:
+        - listitem [ref=e1135]:
+          - link "Shader coding intro" [ref=e1136] [cursor=pointer]:
+            - /url: https://www.youtube.com/watch?v=0ifChJ0nJfM
+          - text: by
+          - link "iq" [ref=e1137] [cursor=pointer]:
+            - /url: /user/iq
+        - listitem [ref=e1138]:
+          - link "Shadertoy Unofficial" [ref=e1139] [cursor=pointer]:
+            - /url: https://shadertoyunofficial.wordpress.com/
+          - text: by
+          - link "FabriceNeyret2" [ref=e1140] [cursor=pointer]:
+            - /url: /user/FabriceNeyret2
+  - generic [ref=e1141]:
+    - generic [ref=e1142]:
+      - text: We use cookies to give you the best experience on our website. If you continue using Shadertoy, we'll assume that you are happy to receive all cookies on this website. For more information, please review our
+      - link "Terms & Privacy" [ref=e1143] [cursor=pointer]:
+        - /url: /terms
+      - text: .
+    - button "Accept" [ref=e1145]

@@ -1,0 +1,720 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - link "Shadertoy" [ref=e4] [cursor=pointer]:
+        - /url: /
+      - searchbox "Search..." [ref=e7]
+    - generic [ref=e8]:
+      - link "Browse" [ref=e9] [cursor=pointer]:
+        - /url: /browse
+      - link "New" [ref=e10] [cursor=pointer]:
+        - /url: /new
+      - link "Sign In" [ref=e11] [cursor=pointer]:
+        - /url: /signin
+  - generic [ref=e13]:
+    - generic [ref=e14]:
+      - generic [ref=e17]:
+        - generic [ref=e18]:
+          - generic "Reset time (<ALT>+<DownArrow>)" [ref=e19] [cursor=pointer]
+          - generic "Pause/Resume (<ALT>+<UpArrow>)" [ref=e20] [cursor=pointer]
+        - generic [ref=e21]:
+          - generic [ref=e22]: "11.20"
+          - generic [ref=e23]: 143.9 fps
+          - generic [ref=e24]: 420 x 236
+        - generic [ref=e25]:
+          - generic "Record (<ALT>+<R>)" [ref=e26] [cursor=pointer]
+          - generic "Volume" [ref=e27] [cursor=pointer]
+          - generic "Go fullscreen" [ref=e28] [cursor=pointer]
+      - generic [ref=e29]:
+        - generic [ref=e30]:
+          - generic [ref=e31]:
+            - text: Mandelbulb - derivative
+            - img "This shader has been Shader of the Week!" [ref=e33]
+          - generic [ref=e34]:
+            - img "share this shader" [ref=e35] [cursor=pointer]
+            - img [ref=e36]
+            - text: "130"
+          - generic [ref=e37]:
+            - text: "Views: 22920"
+            - text: ", Tags:"
+            - generic [ref=e177]:
+              - link "3d" [ref=e178] [cursor=pointer]:
+                - /url: /results?query=tag%3D3d
+              - text: ","
+              - link "raymarching" [ref=e179] [cursor=pointer]:
+                - /url: /results?query=tag%3Draymarching
+              - text: ","
+              - link "fractal" [ref=e180] [cursor=pointer]:
+                - /url: /results?query=tag%3Dfractal
+              - text: ","
+              - link "distancefield" [ref=e181] [cursor=pointer]:
+                - /url: /results?query=tag%3Ddistancefield
+          - generic [ref=e38]:
+            - text: Created by
+            - link "iq" [ref=e183] [cursor=pointer]:
+              - /url: /user/iq
+            - text: in 2013-02-11
+        - generic [ref=e184]: "A Mandelbulb implementation. Two tricks worth noting: [1] it doesn't use pow() functions to compute complex number powers, but it uses algebra instead. [2] the distance estimator (DE) is analytic, not based on numerically computed gradient."
+    - generic [ref=e39]:
+      - generic [ref=e40] [cursor=pointer]:
+        - combobox [ref=e186]:
+          - option "Common"
+          - option "Sound"
+          - option "Buffer A"
+          - option "Buffer B"
+          - option "Buffer C"
+          - option "Buffer D"
+          - option "Cubemap A"
+        - generic [ref=e187]:
+          - img [ref=e188]
+          - generic [ref=e189]: Image
+      - generic [ref=e42] [cursor=pointer]:
+        - generic [ref=e43]: Shader Inputs
+        - generic [ref=e46]:
+          - text: uniform vec3 iResolution; // viewport resolution (in pixels)
+          - text: uniform float iTime; // shader playback time (in seconds)
+          - text: uniform float iTimeDelta; // render time (in seconds)
+          - text: uniform float iFrameRate; // shader frame rate
+          - text: uniform int iFrame; // shader playback frame
+          - text: uniform float iChannelTime[4]; // channel playback time (in seconds)
+          - text: uniform vec3 iChannelResolution[4]; // channel resolution (in pixels)
+          - text: "uniform vec4 iMouse; // mouse pixel coords. xy: current (if MLB down), zw: click"
+          - text: uniform samplerXX iChannel0..3; // input channel. XX = 2D/Cube
+          - text: uniform vec4 iDate; // (year, month, day, time in seconds)
+          - text: uniform float iSampleRate; // sound sample rate (i.e., 44100)
+      - generic [ref=e48]:
+        - textbox [ref=e49]
+        - generic [ref=e52]:
+          - generic [ref=e195]:
+            - generic [ref=e196]: "1"
+            - text: // Copyright Inigo Quilez, 2013 - https://iquilezles.org/
+          - generic [ref=e197]:
+            - generic [ref=e198]: "2"
+            - text: // I am the sole copyright owner of this Work. You cannot
+          - generic [ref=e199]:
+            - generic [ref=e200]: "3"
+            - text: // host, display, distribute or share this Work neither as
+          - generic [ref=e201]:
+            - generic [ref=e202]: "4"
+            - text: // is or altered, in any form including physical and
+          - generic [ref=e203]:
+            - generic [ref=e204]: "5"
+            - text: // digital. You cannot use this Work in any commercial or
+          - generic [ref=e205]:
+            - generic [ref=e206]: "6"
+            - text: // non-commercial product, website or project. You cannot
+          - generic [ref=e207]:
+            - generic [ref=e208]: "7"
+            - text: // sell this Work and you cannot mint an NFTs of it. You
+          - generic [ref=e209]:
+            - generic [ref=e210]: "8"
+            - text: // cannot use this Work to train AI models. I share this
+          - generic [ref=e211]:
+            - generic [ref=e212]: "9"
+            - text: // Work for educational purposes, you can link to it as
+          - generic [ref=e213]:
+            - generic [ref=e214]: "10"
+            - text: // an URL, proper attribution and unmodified screenshot,
+          - generic [ref=e215]:
+            - generic [ref=e216]: "11"
+            - text: // as part of your educational material. If these
+          - generic [ref=e217]:
+            - generic [ref=e218]: "12"
+            - text: // conditions are too restrictive please contact me.
+          - generic [ref=e220]: "13"
+          - generic [ref=e221]:
+            - generic [ref=e222]: "14"
+            - text: "// The source code for these videos from 2009:"
+          - generic [ref=e223]:
+            - generic [ref=e224]: "15"
+            - text: // https://www.youtube.com/watch?v=eKUh4nkmQbc
+          - generic [ref=e225]:
+            - generic [ref=e226]: "16"
+            - text: // https://www.youtube.com/watch?v=erS6SKqtXLY
+          - generic [ref=e227]:
+            - generic [ref=e228]: "17"
+            - text: //
+          - generic [ref=e229]:
+            - generic [ref=e230]: "18"
+            - text: "// More info here: https://iquilezles.org/articles/mandelbulb"
+          - generic [ref=e231]:
+            - generic [ref=e232]: "19"
+            - text: //
+          - generic [ref=e233]:
+            - generic [ref=e234]: "20"
+            - text: // See https://www.shadertoy.com/view/MdfGRr to see the Julia counterpart
+          - generic [ref=e236]: "21"
+          - generic [ref=e238]: "22"
+          - generic [ref=e239]:
+            - generic [ref=e240]: "23"
+            - text: "#if HW_PERFORMANCE==0"
+          - generic [ref=e241]:
+            - generic [ref=e242]: "24"
+            - text: "#define AA 1"
+          - generic [ref=e243]:
+            - generic [ref=e244]: "25"
+            - text: "#else"
+          - generic [ref=e245]:
+            - generic [ref=e246]: "26"
+            - text: "#define AA 2 // make AA 1 for slow machines or 3 for fast machines"
+          - generic [ref=e247]:
+            - generic [ref=e248]: "27"
+            - text: "#endif"
+          - generic [ref=e250]: "28"
+          - generic [ref=e251]:
+            - generic [ref=e252]: "29"
+            - text: // https://iquilezles.org/articles/intersectors
+          - generic [ref=e253]:
+            - generic [ref=e254]: "30"
+            - text: vec2 isphere( in vec4 sph, in vec3 ro, in vec3 rd )
+          - generic [ref=e255]:
+            - generic:
+              - generic [ref=e256]: "31"
+              - generic [ref=e258] [cursor=pointer]: ▾
+            - text: "{"
+          - generic [ref=e259]:
+            - generic [ref=e260]: "32"
+            - text: vec3 oc = ro - sph.xyz;
+          - generic [ref=e261]:
+            - generic [ref=e262]: "33"
+            - text: float b = dot(oc,rd);
+          - generic [ref=e263]:
+            - generic [ref=e264]: "34"
+            - text: float c = dot(oc,oc) - sph.w*sph.w;
+          - generic [ref=e265]:
+            - generic [ref=e266]: "35"
+            - text: float h = b*b - c;
+          - generic [ref=e267]:
+            - generic [ref=e268]: "36"
+            - text: if( h<0.0 ) return vec2(-1.0);
+          - generic [ref=e269]:
+            - generic [ref=e270]: "37"
+            - text: h = sqrt( h );
+          - generic [ref=e271]:
+            - generic [ref=e272]: "38"
+            - text: return -b + vec2(-h,h);
+          - generic [ref=e273]:
+            - generic [ref=e274]: "39"
+            - text: "}"
+          - generic [ref=e276]: "40"
+          - generic [ref=e277]:
+            - generic [ref=e278]: "41"
+            - text: // https://iquilezles.org/articles/mandelbulb
+          - generic [ref=e279]:
+            - generic [ref=e280]: "42"
+            - text: float map( in vec3 p, out vec4 resColor )
+          - generic [ref=e281]:
+            - generic:
+              - generic [ref=e282]: "43"
+              - generic [ref=e284] [cursor=pointer]: ▾
+            - text: "{"
+          - generic [ref=e285]:
+            - generic [ref=e286]: "44"
+            - text: vec3 w = p;
+          - generic [ref=e287]:
+            - generic [ref=e288]: "45"
+            - text: float m = dot(w,w);
+          - generic [ref=e290]: "46"
+          - generic [ref=e291]:
+            - generic [ref=e292]: "47"
+            - text: vec4 trap = vec4(abs(w),m);
+          - generic [ref=e293]:
+            - generic [ref=e294]: "48"
+            - text: float dz = 1.0;
+          - generic [ref=e296]: "49"
+          - generic [ref=e297]:
+            - generic [ref=e298]: "50"
+            - text: for( int i=0; i<4; i++ )
+          - generic [ref=e299]:
+            - generic:
+              - generic [ref=e300]: "51"
+              - generic [ref=e302] [cursor=pointer]: ▾
+            - text: "{"
+          - generic [ref=e303]:
+            - generic [ref=e304]: "52"
+            - text: "#if 0"
+          - generic [ref=e305]:
+            - generic [ref=e306]: "53"
+            - text: // polynomial version (no trigonometrics, but MUCH slower)
+          - generic [ref=e307]:
+            - generic [ref=e308]: "54"
+            - text: float m2 = m*m;
+          - generic [ref=e309]:
+            - generic [ref=e310]: "55"
+            - text: float m4 = m2*m2;
+          - generic [ref=e311]:
+            - generic [ref=e312]: "56"
+            - text: dz = 8.0*sqrt(m4*m2*m)*dz + 1.0;
+          - generic [ref=e314]: "57"
+          - generic [ref=e315]:
+            - generic [ref=e316]: "58"
+            - text: float x = w.x; float x2 = x*x; float x4 = x2*x2;
+          - generic [ref=e317]:
+            - generic [ref=e318]: "59"
+            - text: float y = w.y; float y2 = y*y; float y4 = y2*y2;
+          - generic [ref=e319]:
+            - generic [ref=e320]: "60"
+            - text: float z = w.z; float z2 = z*z; float z4 = z2*z2;
+          - generic [ref=e322]: "61"
+          - generic [ref=e323]:
+            - generic [ref=e324]: "62"
+            - text: float k3 = x2 + z2;
+          - generic [ref=e325]:
+            - generic [ref=e326]: "63"
+            - text: float k2 = inversesqrt( k3*k3*k3*k3*k3*k3*k3 );
+          - generic [ref=e327]:
+            - generic [ref=e328]: "64"
+            - text: float k1 = x4 + y4 + z4 - 6.0*y2*z2 - 6.0*x2*y2 + 2.0*z2*x2;
+          - generic [ref=e329]:
+            - generic [ref=e330]: "65"
+            - text: float k4 = x2 - y2 + z2;
+          - generic [ref=e332]: "66"
+          - generic [ref=e333]:
+            - generic [ref=e334]: "67"
+            - text: w.x = p.x + 64.0*x*y*z*(x2-z2)*k4*(x4-6.0*x2*z2+z4)*k1*k2;
+          - generic [ref=e335]:
+            - generic [ref=e336]: "68"
+            - text: w.y = p.y + -16.0*y2*k3*k4*k4 + k1*k1;
+          - generic [ref=e337]:
+            - generic [ref=e338]: "69"
+            - text: w.z = p.z + -8.0*y*k4*(x4*x4 - 28.0*x4*x2*z2 + 70.0*x4*z4 - 28.0*x2*z2*z4 + z4*z4)*k1*k2;
+          - generic [ref=e339]:
+            - generic [ref=e340]: "70"
+            - text: "#else"
+          - generic [ref=e341]:
+            - generic [ref=e342]: "71"
+            - text: // trigonometric version (MUCH faster than polynomial)
+          - generic [ref=e344]: "72"
+          - generic [ref=e345]:
+            - generic [ref=e346]: "73"
+            - text: // dz = 8*z^7*dz
+          - generic [ref=e347]:
+            - generic [ref=e348]: "74"
+            - text: dz = 8.0*pow(m,3.5)*dz + 1.0;
+          - generic [ref=e350]: "75"
+          - generic [ref=e351]:
+            - generic [ref=e352]: "76"
+            - text: // z = z^8+c
+          - generic [ref=e353]:
+            - generic [ref=e354]: "77"
+            - text: float r = length(w);
+          - generic [ref=e355]:
+            - generic [ref=e356]: "78"
+            - text: float b = 8.0*acos( w.y/r);
+          - generic [ref=e357]:
+            - generic [ref=e358]: "79"
+            - text: float a = 8.0*atan( w.x, w.z );
+          - generic [ref=e359]:
+            - generic [ref=e360]: "80"
+            - text: w = p + pow(r,8.0) * vec3( sin(b)*sin(a), cos(b), sin(b)*cos(a) );
+          - generic [ref=e361]:
+            - generic [ref=e362]: "81"
+            - text: "#endif"
+          - generic [ref=e364]: "82"
+          - generic [ref=e365]:
+            - generic [ref=e366]: "83"
+            - text: trap = min( trap, vec4(abs(w),m) );
+          - generic [ref=e368]: "84"
+          - generic [ref=e369]:
+            - generic [ref=e370]: "85"
+            - text: m = dot(w,w);
+          - generic [ref=e371]:
+            - generic [ref=e372]: "86"
+            - text: if( m > 256.0 )
+          - generic [ref=e373]:
+            - generic [ref=e374]: "87"
+            - text: break;
+          - generic [ref=e375]:
+            - generic [ref=e376]: "88"
+            - text: "}"
+          - generic [ref=e378]: "89"
+          - generic [ref=e379]:
+            - generic [ref=e380]: "90"
+            - text: resColor = vec4(m,trap.yzw);
+          - generic [ref=e382]: "91"
+          - generic [ref=e383]:
+            - generic [ref=e384]: "92"
+            - text: // distance estimation (through the Hubbard-Douady potential)
+      - generic [ref=e59]:
+        - generic [ref=e60]:
+          - img "Compile (<ALT>+<ENTER>)" [ref=e61] [cursor=pointer]
+          - link "Compiled in 0.1 secs" [ref=e385] [cursor=pointer]:
+            - /url: "#"
+        - generic [ref=e62]: 4198 chars
+        - generic [ref=e63]:
+          - combobox "Change font size (<ALT>+<+/->)" [ref=e65]:
+            - option "XS"
+            - option "S" [selected]
+            - option "M"
+            - option "L"
+            - option "XL"
+            - option "XXL"
+          - img "Show GLSL help" [ref=e66] [cursor=pointer]
+      - generic [ref=e67]:
+        - generic [ref=e68]:
+          - generic [ref=e69]:
+            - generic:
+              - text: Filter
+              - combobox "Pixel filtering mode" [ref=e71]:
+                - option "nearest" [selected]
+                - option "linear"
+                - option "mipmap"
+              - text: Wrap
+              - combobox "Pixel filtering mode" [ref=e72]:
+                - option "clamp" [selected]
+                - option "repeat"
+              - generic [ref=e74]:
+                - text: VFlip
+                - checkbox "VFlip" [ref=e75]
+          - generic [ref=e77]: iChannel0
+        - generic [ref=e80]:
+          - generic [ref=e81]:
+            - generic:
+              - text: Filter
+              - combobox "Pixel filtering mode" [ref=e83]:
+                - option "nearest" [selected]
+                - option "linear"
+                - option "mipmap"
+              - text: Wrap
+              - combobox "Pixel filtering mode" [ref=e84]:
+                - option "clamp" [selected]
+                - option "repeat"
+              - generic [ref=e86]:
+                - text: VFlip
+                - checkbox "VFlip" [ref=e87]
+          - generic [ref=e89]: iChannel1
+        - generic [ref=e92]:
+          - generic [ref=e93]:
+            - generic:
+              - text: Filter
+              - combobox "Pixel filtering mode" [ref=e95]:
+                - option "nearest" [selected]
+                - option "linear"
+                - option "mipmap"
+              - text: Wrap
+              - combobox "Pixel filtering mode" [ref=e96]:
+                - option "clamp" [selected]
+                - option "repeat"
+              - generic [ref=e98]:
+                - text: VFlip
+                - checkbox "VFlip" [ref=e99]
+          - generic [ref=e101]: iChannel2
+        - generic [ref=e104]:
+          - generic [ref=e105]:
+            - generic:
+              - text: Filter
+              - combobox "Pixel filtering mode" [ref=e107]:
+                - option "nearest" [selected]
+                - option "linear"
+                - option "mipmap"
+              - text: Wrap
+              - combobox "Pixel filtering mode" [ref=e108]:
+                - option "clamp" [selected]
+                - option "repeat"
+              - generic [ref=e110]:
+                - text: VFlip
+                - checkbox "VFlip" [ref=e111]
+          - generic [ref=e113]: iChannel3
+    - generic [ref=e117]:
+      - text: Comments (26)
+      - generic [ref=e118]:
+        - link "Sign in" [ref=e120] [cursor=pointer]:
+          - /url: /signin
+        - text: to post a comment.
+      - generic [ref=e386]:
+        - generic [ref=e387]:
+          - img [ref=e389]
+          - generic [ref=e390]:
+            - link "shadertoyjiang" [ref=e391] [cursor=pointer]:
+              - /url: /user/shadertoyjiang
+            - text: ", 2025-03-17"
+            - text: nature
+        - generic [ref=e392]:
+          - img [ref=e394]
+          - generic [ref=e395]:
+            - link "mclarekin" [ref=e396] [cursor=pointer]:
+              - /url: /user/mclarekin
+            - text: ", 2022-01-12"
+            - text: thanks olij, i know very little about computers so always thankful for any advice. But man!! i was using a GTX 960m and have just now switched to a RTX 2070 laptop, the frame rate increase is incredible
+            - img [ref=e397]
+            - text: I work coding formulas for Mandelbulberv2 software, i can see there is a lot for me to learn from here at shadertoy
+        - generic [ref=e398]:
+          - img [ref=e400]
+          - generic [ref=e401]:
+            - link "ollj" [ref=e402] [cursor=pointer]:
+              - /url: /user/ollj
+            - text: ", 2022-01-11"
+            - text: shadertoy sacrifices at least 50% performance for WYSIWYG and compatibility, where a proper canvas has more optimized modes, more extended hardware support, and less overhead (browsers eat way too much memory anc cache)
+        - generic [ref=e403]:
+          - img [ref=e405]
+          - generic [ref=e406]:
+            - link "mclarekin" [ref=e407] [cursor=pointer]:
+              - /url: /user/mclarekin
+            - text: ", 2022-01-11"
+            - text: cool. I am still getting slightly faster with the polynomial in openCL but there could be other openCL things going on
+            - img [ref=e408]
+            - text: With shadertoy I always need to google to find "ALT Enter" for compile
+            - img [ref=e409]
+            - text: Here is IQ pow8 polynomial with a sphere grid https://www.deviantart.com/mclarekin/art/MB-IQ-pow8-sphGrd-cxz1-s12-903556788?ga_submit_new=10%3A1641942539
+        - generic [ref=e410]:
+          - img [ref=e412]
+          - generic [ref=e413]:
+            - link "iq" [ref=e414] [cursor=pointer]:
+              - /url: /user/iq
+            - text: ", 2022-01-11"
+            - text: When I wrote the article I still used to render my fractals in the CPU, so then that held true. In the GPUs this time, the trig version is faster than the polynomial. I'll added some text to the article to clarify that.
+        - generic [ref=e415]:
+          - img [ref=e417]
+          - generic [ref=e418]:
+            - link "mclarekin" [ref=e419] [cursor=pointer]:
+              - /url: /user/mclarekin
+            - text: ", 2022-01-11"
+            - text: Thanks for checking, i should really be testing in shadertoy or Fragmentarium as there are all sort of other things going on in Mandelbulber that i have no idea of the effect on rendertime. I will soon have in Mandelbulber both trig and polynomial versions running in both c++ and openCL so i can do some more testing. https://www.iquilezles.org/www/articles/mandelbulb/mandelbulb.htm Reading this article on the mandelbulb has been great thank you. first line typo? populat Under optimizing "The result is a polynomial which has no trigonometric functions and runs much faster:" is that still correct or am i getting confused ( we now have the trig faster?)
+        - generic [ref=e420]:
+          - img [ref=e422]
+          - generic [ref=e423]:
+            - link "iq" [ref=e424] [cursor=pointer]:
+              - /url: /user/iq
+            - text: ", 2022-01-10"
+            - text: Trigonometric is still 1.4x times faster than polynomial on GeForce RTX 2080. So, I think the comment still holds true, but we'll see for how much longer.
+        - generic [ref=e425]:
+          - img [ref=e427]
+          - generic [ref=e428]:
+            - link "mclarekin" [ref=e429] [cursor=pointer]:
+              - /url: /user/mclarekin
+            - text: ", 2022-01-09"
+            - text: comments in code about what is faster between trigonometrics versus polynomial is maybe out of date? Testing using MandelbulberV2 OpenCL, I find not much difference, with polynomial being slightly faster
+        - generic [ref=e430]:
+          - img [ref=e432]
+          - generic [ref=e433]:
+            - link "fraser" [ref=e434] [cursor=pointer]:
+              - /url: /user/fraser
+            - text: ", 2021-06-06"
+            - text: For some reason on my vega FE (running in an egpu on mac, probably doesn't matter), the polynomial version gets about 40fps with the trig version down at ~30.
+        - generic [ref=e435]:
+          - img [ref=e437]
+          - generic [ref=e438]:
+            - link "iq" [ref=e439] [cursor=pointer]:
+              - /url: /user/iq
+            - text: ", 2021-03-17"
+            - text: yonatan, sqrt(m) and length(w) are never equal to each other, their difference is huge, especially near the Mandelbrot set. If you are not sure of the maths, you can easily assert or falsify your hypothesis by testing it right in the code.
+        - generic [ref=e440]:
+          - img [ref=e442]
+          - generic [ref=e443]:
+            - link "ollj" [ref=e444] [cursor=pointer]:
+              - /url: /user/ollj
+            - text: ", 2021-03-16"
+            - text: yes, you can skip the sqrt(a) of length(a)=sqrt(dot(a,a)), but only if a ~=1 the precision loss is aquatically exponential.
+        - generic [ref=e445]:
+          - img [ref=e447]
+          - generic [ref=e448]:
+            - link "ollj" [ref=e449] [cursor=pointer]:
+              - /url: /user/ollj
+            - text: ", 2021-03-16"
+            - text: length(a)~=sqrt(dot(a,a)) for any a !=NaN length(a)==1.0/inversesqrt(dot(a,a)) for any a !=NaN ; length(0)==0 where ever normalized quaternions/vectors are used intelligently, you expect the quaternion/vector to lose a little bit of precision, after every ROTATION, but not change its length much. lets assume an initial quaternion/vector of length(a)=1, which is a reasonable default form. to increase quaternion/vector precision, you want to normalize() the quaternion/vector roughly every 4 rotations, BUT you do not need to normalize(a)==a/length(a), because length(a)=1 is asserted to be (and stay) VERY close to 1. Because of this assertion, repeated quaternion/vector "normalization" (of an already normalized vector), for the sole purpose of avoiding cumulative precision loss, simplifies to normalizeQuaternion(a)==a/dot(a,a), but only if length(a)~=1
+        - generic [ref=e450]:
+          - img [ref=e452]
+          - generic [ref=e453]:
+            - link "yonatan" [ref=e454] [cursor=pointer]:
+              - /url: /user/yonatan
+            - text: ", 2021-03-15"
+            - text: "Are sqrt(m) and length(w) always equal in the transcendental inner loop? If they are you can do something like: float r = sqrt(m); dz = 8.0*pow(r,7.0)*dz + 1.0; and save a length() call."
+        - generic [ref=e455]:
+          - img [ref=e457]
+          - generic [ref=e458]:
+            - link "playbyan1453" [ref=e459] [cursor=pointer]:
+              - /url: /user/playbyan1453
+            - text: ", 2021-03-13"
+            - text: Hey man, I followed the instruction that you made. But how do i change the power of the mandelbulb.
+        - generic [ref=e460]:
+          - img [ref=e462]
+          - generic [ref=e463]:
+            - link "Zi7ar21" [ref=e464] [cursor=pointer]:
+              - /url: /user/Zi7ar21
+            - text: ", 2021-01-25"
+            - text: Hey IQ, I am really sorry for that comment. I don't know what came across me and I actually really admire you. I hope I didn't hurt your feelings too much and I'd just like to say sorry...
+        - generic [ref=e465]:
+          - img [ref=e467]
+          - generic [ref=e468]:
+            - link "michaelzfreeman" [ref=e469] [cursor=pointer]:
+              - /url: /user/michaelzfreeman
+            - text: ", 2021-01-23"
+            - text: Always loving mandelbulb's
+            - img [ref=e470]
+            - text: ... Just made my first ever forked edit on shadertoy
+            - img [ref=e471]
+            - text: "- https://www.shadertoy.com/view/3tyczc ... experimenting with chroma keying so this could be keyed over the top of a background video. I notice the license is non-commercial. What if I wanted to use this commercially ?"
+        - generic [ref=e472]:
+          - img [ref=e474]
+          - generic [ref=e475]:
+            - link "jorge2017a1" [ref=e476] [cursor=pointer]:
+              - /url: /user/jorge2017a1
+            - text: ", 2021-01-22"
+            - text: Well I recognize that the result of the mandebulb is excellent, difficult to do better .... well I try, but it is difficult, so this fractal is very good !!!! Nice work IQ.
+            - img [ref=e477]
+            - img [ref=e478]
+            - img [ref=e479]
+            - img [ref=e480]
+            - text: .......... Bueno reconozco que es excelente el resultado del mandebulb, dificil de hacer mejor .... bueno lo intento, pero es dificil, asi que es muy bueno este fractal !!!! Buen trabajo IQ.
+        - generic [ref=e481]:
+          - img [ref=e483]
+          - generic [ref=e484]:
+            - link "Zi7ar21" [ref=e485] [cursor=pointer]:
+              - /url: /user/Zi7ar21
+            - text: ", 2021-01-21"
+            - text: Oh… Sorry, I didn't know that, I guess I came off as rude… Thanks for telling us how it is determined
+        - generic [ref=e486]:
+          - img [ref=e488]
+          - generic [ref=e489]:
+            - link "iq" [ref=e490] [cursor=pointer]:
+              - /url: /user/iq
+            - text: ", 2021-01-21"
+            - text: I've had 3 Shaders of the Week in the last 2 and a half years. That's close to one shader a year on average. That's feel far from your claim "All of them seem to be his". If you look all the way to 8 years back, a lot of shaders were mine and of a small group of users since the community was way smaller then and the random Shader picker had more chances to pick up one of ours, naturally. I guess what is misleading you is the fact that the "Shader of the Week" is not "Shader of this Week", meaning, it's not the best shader of the current week. Instead, "Shader of the Week" is a shader (selected from Shadertoy's history - 8 years at the moment) that represents the website for a whole week. Basically, having had the most impressive shader on a given week doesn't mean you get priority over the other hundreds of shaders.
+        - generic [ref=e491]:
+          - img [ref=e493]
+          - generic [ref=e494]:
+            - link "Zi7ar21" [ref=e495] [cursor=pointer]:
+              - /url: /user/Zi7ar21
+            - text: ", 2021-01-20"
+            - img [ref=e496]
+            - text: All of the shaders of the week seem to be IQ's stuff from years ago I mean I get he is really good at it but there is other amazing stuff here too and it's kinda sus that IQ is an admin and all of them seem to be his... Michael0884 has made some lit stuff, he deserves a shader of the week. Specifically his latest one where he ported Marble Marcher...
+            - link "https://www.shadertoy.com/view/3lKyDR" [ref=e497] [cursor=pointer]:
+              - /url: https://www.shadertoy.com/view/3lKyDR
+        - generic [ref=e498]:
+          - img [ref=e500]
+          - generic [ref=e501]:
+            - link "olealgo" [ref=e502] [cursor=pointer]:
+              - /url: /user/olealgo
+            - text: ", 2021-01-20"
+            - text: LoL @ previous comment
+        - generic [ref=e503]:
+          - img [ref=e505]
+          - generic [ref=e506]:
+            - link "Zi7ar21" [ref=e507] [cursor=pointer]:
+              - /url: /user/Zi7ar21
+            - text: ", 2021-01-20"
+            - text: Ingio determining shader of the week
+            - link [ref=e508] [cursor=pointer]:
+              - /url: https://media.discordapp.net/attachments/618733445786501120/801297329516052510/e33.png
+              - img [ref=e509]
+        - generic [ref=e510]:
+          - img [ref=e512]
+          - generic [ref=e513]:
+            - link "movax20h" [ref=e514] [cursor=pointer]:
+              - /url: /user/movax20h
+            - text: ", 2020-05-29"
+            - text: Nice. It is interesting that you only need 4 iterations to get really decent idea of the asymptotic behavior and good results.
+        - generic [ref=e515]:
+          - img [ref=e517]
+          - generic [ref=e518]:
+            - link "Plento" [ref=e519] [cursor=pointer]:
+              - /url: /user/Plento
+            - text: ", 2018-11-02"
+            - text: so beautiful
+        - generic [ref=e520]:
+          - img [ref=e522]
+          - generic [ref=e523]:
+            - link "ollj" [ref=e524] [cursor=pointer]:
+              - /url: /user/ollj
+            - text: ", 2018-09-29"
+            - text: why orange-grey and not orange-teal?
+        - generic [ref=e525]:
+          - img [ref=e527]
+          - generic [ref=e528]:
+            - link "Phi" [ref=e529] [cursor=pointer]:
+              - /url: /user/Phi
+            - text: ", 2016-05-06"
+            - text: Beautiful !
+  - generic [ref=e121]:
+    - generic [ref=e122]:
+      - text: Community Forums
+      - list [ref=e123]:
+        - listitem [ref=e124]:
+          - link "Official Events" [ref=e125] [cursor=pointer]:
+            - /url: /events
+        - listitem [ref=e126]:
+          - link "In Facebook (english)" [ref=e127] [cursor=pointer]:
+            - /url: https://www.facebook.com/groups/147749602472741
+        - listitem [ref=e128]:
+          - link "In Facebook (korean)" [ref=e129] [cursor=pointer]:
+            - /url: https://www.facebook.com/groups/1339783682699494
+        - listitem [ref=e130]:
+          - link "In Discord" [ref=e131] [cursor=pointer]:
+            - /url: https://discord.gg/XtmMN6E
+          - text: (
+          - link "direct link" [ref=e132] [cursor=pointer]:
+            - /url: https://discordapp.com/channels/578696555612209173/579531723348639754
+          - text: )
+    - generic [ref=e133]:
+      - text: Feedback and Support
+      - list [ref=e134]:
+        - listitem [ref=e135]:
+          - link "Facebook" [ref=e136] [cursor=pointer]:
+            - /url: https://www.facebook.com/Shadertoy
+        - listitem [ref=e137]:
+          - link "Twitter" [ref=e138] [cursor=pointer]:
+            - /url: https://twitter.com/shadertoy
+        - listitem [ref=e139]:
+          - link "Patreon" [ref=e140] [cursor=pointer]:
+            - /url: https://www.patreon.com/shadertoy
+        - listitem [ref=e141]:
+          - link "Roadmap" [ref=e142] [cursor=pointer]:
+            - /url: https://trello.com/b/5hM0CjId
+    - generic [ref=e143]:
+      - text: Shadertoy
+      - list [ref=e144]:
+        - listitem [ref=e145]:
+          - link "Store" [ref=e146] [cursor=pointer]:
+            - /url: /store
+        - listitem [ref=e147]:
+          - link "Documentation" [ref=e148] [cursor=pointer]:
+            - /url: /howto
+        - listitem [ref=e149]:
+          - link "Terms & Privacy" [ref=e150] [cursor=pointer]:
+            - /url: /terms
+        - listitem [ref=e151]:
+          - link "About" [ref=e152] [cursor=pointer]:
+            - /url: /about
+    - generic [ref=e153]:
+      - text: Apps and Plugins
+      - list [ref=e154]:
+        - listitem [ref=e155]:
+          - link "Official iPhone App" [ref=e156] [cursor=pointer]:
+            - /url: https://itunes.apple.com/us/app/shadertoy/id717961814
+          - text: by
+          - link "Reinder" [ref=e157] [cursor=pointer]:
+            - /url: /user/reinder
+        - listitem [ref=e158]:
+          - link "Screensaver" [ref=e159] [cursor=pointer]:
+            - /url: https://steamcommunity.com/sharedfiles/filedetails/?id=1726697188
+          - text: by
+          - link "Kosro" [ref=e160] [cursor=pointer]:
+            - /url: /user/kosro
+        - listitem [ref=e161]:
+          - link "Shadertoy plugin" [ref=e162] [cursor=pointer]:
+            - /url: https://chrome.google.com/webstore/detail/shadertoy-unofficial-plug/ohicbclhdmkhoabobgppffepcopomhgl
+          - text: by
+          - link "Patu" [ref=e163] [cursor=pointer]:
+            - /url: /user/patu
+    - generic [ref=e164]:
+      - text: Tutorials
+      - list [ref=e165]:
+        - listitem [ref=e166]:
+          - link "Shader coding intro" [ref=e167] [cursor=pointer]:
+            - /url: https://www.youtube.com/watch?v=0ifChJ0nJfM
+          - text: by
+          - link "iq" [ref=e168] [cursor=pointer]:
+            - /url: /user/iq
+        - listitem [ref=e169]:
+          - link "Shadertoy Unofficial" [ref=e170] [cursor=pointer]:
+            - /url: https://shadertoyunofficial.wordpress.com/
+          - text: by
+          - link "FabriceNeyret2" [ref=e171] [cursor=pointer]:
+            - /url: /user/FabriceNeyret2
+  - generic [ref=e172]:
+    - generic [ref=e173]:
+      - text: We use cookies to give you the best experience on our website. If you continue using Shadertoy, we'll assume that you are happy to receive all cookies on this website. For more information, please review our
+      - link "Terms & Privacy" [ref=e174] [cursor=pointer]:
+        - /url: /terms
+      - text: .
+    - button "Accept" [ref=e176]

@@ -654,6 +654,47 @@ describe("sceneSchema audio field", () => {
   });
 });
 
+describe("scene-schema — T-A1 multipassFeedback effect", () => {
+  const minimal = {
+    version: 1,
+    source: "x.png",
+    resolution: [720, 1280] as [number, number],
+    duration: 20,
+    fps: 30,
+    layers: [
+      {
+        id: "l0",
+        file: "layers/layer-0.png",
+        zIndex: 0,
+      },
+    ],
+  };
+
+  it("accepts scene without multipassFeedback (backward compat)", () => {
+    const r = sceneSchema.safeParse(minimal);
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.effects.multipassFeedback.strength).toBe(0);
+    }
+  });
+
+  it("multipassFeedback max strength is 0.95", () => {
+    const r = sceneSchema.safeParse({
+      ...minimal,
+      effects: { multipassFeedback: { strength: 1.0 } },
+    });
+    expect(r.success).toBe(false);
+  });
+
+  it("multipassFeedback defaults warp=0.2, decay=0.9, hueShift=0", () => {
+    const r = sceneSchema.parse(minimal);
+    const mf = r.effects.multipassFeedback;
+    expect(mf.warp).toBe(0.2);
+    expect(mf.decay).toBe(0.9);
+    expect(mf.hueShift).toBe(0);
+  });
+});
+
 describe("LayerRole schema", () => {
   const VALID_ROLES: LayerRole[] = [
     "background-plate",

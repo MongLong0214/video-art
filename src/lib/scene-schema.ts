@@ -55,6 +55,7 @@ const animationSchema = z.object({
   satInjectionMul: z.number().default(0.35),
   glowPulseFloor: z.number().default(0.0),
   lumExponent: z.number().default(1.0),
+  valueLift: z.number().min(0).max(1).default(0),
   hueKey: z.number().min(0).default(0),
   hueSpeed: z.number().default(1),
   breath: z
@@ -67,6 +68,29 @@ const animationSchema = z.object({
   noiseScale: z.number().min(0).max(20).default(0),
   noiseSpeed: z.number().min(0).max(10).default(1),
   noiseAmount: z.number().min(0).max(1).default(0),
+  domainWarp: z.number().min(0).max(3).default(0),
+  tileRepeat: z.number().min(0).max(20).default(0),
+  polarTwist: z.number().min(-10).max(10).default(0),
+  voronoiScale: z.number().min(0).max(50).default(8),
+  voronoiAmount: z.number().min(0).max(2).default(0),
+  paletteAmount: z.number().min(0).max(1).default(0),
+  paletteA: z.tuple([z.number(), z.number(), z.number()]).default([0.5, 0.5, 0.5]),
+  paletteB: z.tuple([z.number(), z.number(), z.number()]).default([0.5, 0.5, 0.5]),
+  paletteC: z.tuple([z.number(), z.number(), z.number()]).default([1.0, 1.0, 1.0]),
+  paletteD: z.tuple([z.number(), z.number(), z.number()]).default([0.0, 0.33, 0.67]),
+  patternType: z.number().min(0).max(3).default(0),
+  patternScale: z.number().min(0).max(200).default(20),
+  patternAmount: z.number().min(0).max(1).default(0),
+  sdfType: z.number().min(0).max(3).default(0),
+  sdfScale: z.number().min(0).max(20).default(2),
+  sdfAmount: z.number().min(0).max(1).default(0),
+  juliaAmount: z.number().min(0).max(1).default(0),
+  juliaC: z.tuple([z.number(), z.number()]).default([-0.7, 0.27015]),
+  rotateSpeed: z.number().min(-5).max(5).default(0),
+  scalePulse: z.number().min(0).max(0.5).default(0),
+  bicubicFilter: z.boolean().default(false),
+  worleyScale: z.number().min(0).max(50).default(8),
+  worleyAmount: z.number().min(0).max(1).default(0),
   rimIntensity: z.number().min(0).max(2).default(0),
   rimHueShift: z.number().min(-2).max(2).default(0.1),
   rimWidth: z.number().min(0).max(0.05).default(0.004),
@@ -85,26 +109,7 @@ const layerSchema = z.object({
   blending: blendModeSchema,
   role: layerRoleSchema.optional(),
   meanDepth: z.number().min(0).max(255).optional(),
-  animation: animationSchema.default({
-    saturationBoost: 2.5,
-    luminanceKey: 0.6,
-    satBlendLow: 0.1,
-    satBlendHigh: 0.4,
-    satInjectionMul: 0.35,
-    glowPulseFloor: 0.0,
-    lumExponent: 1.0,
-    hueKey: 0,
-    hueSpeed: 1,
-    noiseScale: 0,
-    noiseSpeed: 1,
-    noiseAmount: 0,
-    rimIntensity: 0,
-    rimHueShift: 0.1,
-    rimWidth: 0.004,
-    ringIntensity: 0,
-    ringFreq: 30,
-    ringPeriod: 10,
-  }),
+  animation: animationSchema.default(() => animationSchema.parse({})),
 });
 
 const bloomSchema = z.object({
@@ -166,6 +171,20 @@ const mandalaEffectSchema = z.object({
   hueSpeed: z.number().min(0).max(2).default(0.05),
 });
 
+const multipassFeedbackSchema = z.object({
+  strength: z.number().min(0).max(0.95).default(0),
+  warp: z.number().min(0).max(1).default(0.2),
+  decay: z.number().min(0).max(1).default(0.9),
+  hueShift: z.number().min(0).max(1).default(0),
+});
+
+const lensDistortionSchema = z.object({
+  barrel: z.number().min(-0.5).max(0.5).default(0),
+  chromatic: z.number().min(0).max(2).default(0),
+  dof: z.number().min(0).max(1).default(0),
+  vignetteRadius: z.number().min(0.5).max(1).default(1),
+});
+
 const filmGradeEffectSchema = z.object({
   grain: z.number().min(0).max(0.3).default(0),
   vignetteIntensity: z.number().min(0).max(1).default(0),
@@ -189,6 +208,8 @@ const effectsSchema = z.object({
   aura: auraEffectSchema.default({ intensity: 0, radius: 0.04, hueSpeed: 0.1, samples: 16 }),
   mandala: mandalaEffectSchema.default({ opacity: 0, segments: 12, rings: 8, rotationSpeed: 0.08, breathSpeed: 0.4, hueSpeed: 0.05 }),
   filmGrade: filmGradeEffectSchema.default({ grain: 0, vignetteIntensity: 0, vignetteRadius: 0.9, vignetteTintR: 0.12, vignetteTintG: 0.05, vignetteTintB: 0.25, contrast: 1, sCurve: 0 }),
+  multipassFeedback: multipassFeedbackSchema.default({ strength: 0, warp: 0.2, decay: 0.9, hueShift: 0 }),
+  lensDistortion: lensDistortionSchema.default({ barrel: 0, chromatic: 0, dof: 0, vignetteRadius: 1 }),
 });
 
 const audioSchema = z.object({
@@ -215,7 +236,10 @@ export const sceneSchema = z
   .object({
     version: z.literal(1),
     source: z.string(),
-    resolution: z.tuple([z.number().positive(), z.number().positive()]),
+    // Resolution capped to prevent client-side DoS via arbitrary-size ?scene= URLs.
+    // 7680 (8K) is the practical upper bound for modern GPUs; layered pipeline produces
+    // 9:16 Reels content in 1080×1920 normally.
+    resolution: z.tuple([z.number().positive().max(7680), z.number().positive().max(7680)]),
     duration: z.number().int().positive().max(300).default(20),
     fps: z.number().positive().default(60),
     layers: z.array(layerSchema).min(1),
@@ -231,6 +255,8 @@ export const sceneSchema = z
       aura: { intensity: 0, radius: 0.04, hueSpeed: 0.1, samples: 16 },
       mandala: { opacity: 0, segments: 12, rings: 8, rotationSpeed: 0.08, breathSpeed: 0.4, hueSpeed: 0.05 },
       filmGrade: { grain: 0, vignetteIntensity: 0, vignetteRadius: 0.9, vignetteTintR: 0.12, vignetteTintG: 0.05, vignetteTintB: 0.25, contrast: 1, sCurve: 0 },
+      multipassFeedback: { strength: 0, warp: 0.2, decay: 0.9, hueShift: 0 },
+      lensDistortion: { barrel: 0, chromatic: 0, dof: 0, vignetteRadius: 1 },
     }),
     audio: audioSchema.optional(),
   })

@@ -71,6 +71,101 @@ const blitFragmentShader = `
   }
 `;
 
+// Lens Distortion — Brown distortion (barrel/pincushion) + chromatic + DoF radial blur + vignette (T-A2)
+const lensDistortionFragmentShader = `
+  uniform sampler2D inputBuffer;
+  uniform float uBarrelAmount;
+  uniform float uLensChromatic;
+  uniform float uLensDoF;
+  uniform float uLensVignetteRadius;
+  varying vec2 vUv;
+
+  vec2 distort(vec2 uv, float k) {
+    vec2 c = uv - 0.5;
+    float r2 = dot(c, c);
+    return 0.5 + c * (1.0 + k * r2);
+  }
+
+  void main() {
+    float k = uBarrelAmount;
+    float ch = uLensChromatic * 0.02;
+    vec2 uvR = distort(vUv, k * (1.0 + ch));
+    vec2 uvG = distort(vUv, k);
+    vec2 uvB = distort(vUv, k * (1.0 - ch));
+    vec4 sR = texture2D(inputBuffer, clamp(uvR, 0.0, 1.0));
+    vec4 sG = texture2D(inputBuffer, clamp(uvG, 0.0, 1.0));
+    vec4 sB = texture2D(inputBuffer, clamp(uvB, 0.0, 1.0));
+    vec3 col = vec3(sR.r, sG.g, sB.b);
+
+    // Radial DoF (5-tap ring blur proportional to distance from center)
+    float d = length(vUv - 0.5);
+    float blurAmt = uLensDoF * smoothstep(0.0, 0.7, d);
+    if (blurAmt > 0.0001) {
+      vec3 acc = col;
+      float ring = max(blurAmt * 0.02, 0.001);
+      for (int i = 0; i < 5; i++) {
+        float a = float(i) * 1.2566370614; // TAU/5
+        vec2 off = vec2(cos(a), sin(a)) * ring;
+        acc += texture2D(inputBuffer, clamp(distort(vUv + off, k), 0.0, 1.0)).rgb;
+      }
+      col = acc / 6.0;
+    }
+
+    // Soft vignette
+    float vig = smoothstep(uLensVignetteRadius, uLensVignetteRadius * 0.5, d);
+    col *= mix(1.0, vig, step(0.999, uLensVignetteRadius) == 1.0 ? 0.0 : 1.0);
+
+    gl_FragColor = vec4(col, sG.a);
+  }
+`;
+
+// Multipass feedback — reads prev frame with radial warp, decay, hue-shift,
+// accumulates into current. Extends trails with warped trail effect. (T-A1)
+const multipassFeedbackFragmentShader = `
+  uniform sampler2D inputBuffer;
+  uniform sampler2D uPrevFrame;
+  uniform float uFeedbackStrength;
+  uniform float uFeedbackWarp;
+  uniform float uFeedbackDecay;
+  uniform float uFeedbackHueShift;
+  varying vec2 vUv;
+
+  #define TAU 6.28318530718
+
+  vec3 rgb2hsv(vec3 c) {
+    vec4 K = vec4(0.0, -1.0/3.0, 2.0/3.0, -1.0);
+    vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
+    vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
+    float d = q.x - min(q.w, q.y);
+    float e = 1.0e-10;
+    return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
+  }
+  vec3 hsv2rgb(vec3 c) {
+    vec4 K = vec4(1.0, 2.0/3.0, 1.0/3.0, 3.0);
+    vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
+    return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
+  }
+
+  void main() {
+    vec4 cur = texture2D(inputBuffer, vUv);
+    if (uFeedbackStrength < 0.001) { gl_FragColor = cur; return; }
+    // Radial warp — spiral sample of prev
+    vec2 c = vUv - 0.5;
+    float r = length(c);
+    float a = atan(c.y, c.x) + uFeedbackWarp * r;
+    vec2 warpUv = 0.5 + vec2(cos(a), sin(a)) * r;
+    vec3 prev = texture2D(uPrevFrame, warpUv).rgb * uFeedbackDecay;
+    // Optional hue shift on prev
+    if (uFeedbackHueShift > 0.001) {
+      vec3 hsv = rgb2hsv(prev);
+      hsv.x = fract(hsv.x + uFeedbackHueShift);
+      prev = hsv2rgb(hsv);
+    }
+    vec3 accum = cur.rgb + prev * uFeedbackStrength;
+    gl_FragColor = vec4(clamp(accum, 0.0, 1.2), cur.a);
+  }
+`;
+
 // Radial volumetric god-rays (NVIDIA GPU Gems 3 Ch.13 pattern)
 const godRaysFragmentShader = `
   uniform sampler2D inputBuffer;
@@ -277,8 +372,11 @@ export function createComposer(
 
   const trailStrength = effects.trails?.strength ?? 0;
   const hasTrails = trailStrength > 0;
+  const mf = effects.multipassFeedback;
+  const hasMultipass = mf && mf.strength > 0;
+  const needsFeedback = hasTrails || hasMultipass;
 
-  if (hasTrails) {
+  if (needsFeedback) {
     composer.autoRenderToScreen = false;
   }
 
@@ -423,14 +521,18 @@ export function createComposer(
       : null;
   if (filmGradeMaterial) composer.addPass(new ShaderPass(filmGradeMaterial, "inputBuffer"));
 
-  // --- Trails feedback ---
+  // --- Feedback infrastructure (shared by trails + multipassFeedback) ---
   let feedbackTarget: THREE.WebGLRenderTarget | null = null;
-  if (hasTrails) {
+  if (needsFeedback) {
     feedbackTarget = new THREE.WebGLRenderTarget(resolution[0], resolution[1], {
       type: THREE.HalfFloatType,
       minFilter: THREE.LinearFilter,
       magFilter: THREE.LinearFilter,
     });
+  }
+
+  // Trails pass (simple mix with prev)
+  if (hasTrails && feedbackTarget) {
     const trailsMaterial = new THREE.ShaderMaterial({
       uniforms: {
         inputBuffer: { value: null },
@@ -441,6 +543,41 @@ export function createComposer(
       fragmentShader: trailsFragmentShader,
     });
     composer.addPass(new ShaderPass(trailsMaterial, "inputBuffer"));
+  }
+
+  // Lens distortion pass (T-A2) — inserted after multipass, before kaleidoscope
+  const ld = effects.lensDistortion;
+  const hasLens = ld && (Math.abs(ld.barrel) > 0.001 || ld.chromatic > 0.001 || ld.dof > 0.001 || ld.vignetteRadius < 0.999);
+  if (hasLens) {
+    const lensMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        inputBuffer: { value: null },
+        uBarrelAmount: { value: ld.barrel },
+        uLensChromatic: { value: ld.chromatic },
+        uLensDoF: { value: ld.dof },
+        uLensVignetteRadius: { value: ld.vignetteRadius },
+      },
+      vertexShader: fullscreenVertexShader,
+      fragmentShader: lensDistortionFragmentShader,
+    });
+    composer.addPass(new ShaderPass(lensMaterial, "inputBuffer"));
+  }
+
+  // Multipass feedback pass (warp + decay + hue-shift, shares feedbackTarget) (T-A1)
+  if (hasMultipass && feedbackTarget) {
+    const multipassMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        inputBuffer: { value: null },
+        uPrevFrame: { value: feedbackTarget.texture },
+        uFeedbackStrength: { value: mf.strength },
+        uFeedbackWarp: { value: mf.warp },
+        uFeedbackDecay: { value: mf.decay },
+        uFeedbackHueShift: { value: mf.hueShift },
+      },
+      vertexShader: fullscreenVertexShader,
+      fragmentShader: multipassFeedbackFragmentShader,
+    });
+    composer.addPass(new ShaderPass(multipassMaterial, "inputBuffer"));
   }
 
   // Blit quad for feedback copy
@@ -467,7 +604,7 @@ export function createComposer(
     render(delta?: number) {
       originalRender(delta);
 
-      if (hasTrails) {
+      if (needsFeedback) {
         const resultTexture = composer.outputBuffer.texture;
         blitMat.uniforms.inputBuffer.value = resultTexture;
         if (feedbackTarget) {

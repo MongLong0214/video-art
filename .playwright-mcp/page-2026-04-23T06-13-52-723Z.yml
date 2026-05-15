@@ -1,0 +1,299 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - link "Shadertoy" [ref=e4] [cursor=pointer]:
+        - /url: /
+      - searchbox "Search..." [ref=e7]
+    - generic [ref=e8]:
+      - link "Browse" [ref=e9] [cursor=pointer]:
+        - /url: /browse
+      - link "New" [ref=e10] [cursor=pointer]:
+        - /url: /new
+      - link "Sign In" [ref=e11] [cursor=pointer]:
+        - /url: /signin
+  - generic [ref=e13]:
+    - generic [ref=e14]:
+      - generic [ref=e17]:
+        - generic [ref=e18]:
+          - generic "Reset time (<ALT>+<DownArrow>)" [ref=e19] [cursor=pointer]
+          - generic "Pause/Resume (<ALT>+<UpArrow>)" [ref=e20] [cursor=pointer]
+        - generic [ref=e21]:
+          - generic [ref=e22]: "7.47"
+          - generic [ref=e23]: 1.0 fps
+          - generic [ref=e24]: 420 x 236
+        - generic [ref=e25]:
+          - generic "Record (<ALT>+<R>)" [ref=e26] [cursor=pointer]
+          - generic "Volume" [ref=e27] [cursor=pointer]
+          - generic "Go fullscreen" [ref=e28] [cursor=pointer]
+      - generic [ref=e29]:
+        - generic [ref=e30]:
+          - generic [ref=e31]: IFS Menger Sponge Fold
+          - generic [ref=e32]:
+            - img "share this shader" [ref=e33] [cursor=pointer]
+            - img [ref=e34]
+            - text: "0"
+          - generic [ref=e35]:
+            - text: "Views: 94"
+            - text: ", Tags:"
+            - generic [ref=e175]:
+              - link "ifs" [ref=e176] [cursor=pointer]:
+                - /url: /results?query=tag%3Difs
+              - text: ","
+              - link "fold" [ref=e177] [cursor=pointer]:
+                - /url: /results?query=tag%3Dfold
+              - text: ","
+              - link "mengersponge" [ref=e178] [cursor=pointer]:
+                - /url: /results?query=tag%3Dmengersponge
+          - generic [ref=e36]:
+            - text: Created by
+            - link "TAKUSAKU" [ref=e180] [cursor=pointer]:
+              - /url: /user/TAKUSAKU
+            - text: in 2020-05-28
+        - generic [ref=e181]: IFS Menger Sponge Fold
+    - generic [ref=e37]:
+      - generic [ref=e38] [cursor=pointer]:
+        - combobox [ref=e183]:
+          - option "Common"
+          - option "Sound"
+          - option "Buffer B"
+          - option "Buffer C"
+          - option "Buffer D"
+          - option "Cubemap A"
+        - generic [ref=e184]:
+          - img [ref=e185]
+          - generic [ref=e186]: Buffer A
+          - img [ref=e187]
+        - generic [ref=e188]:
+          - img [ref=e189]
+          - generic [ref=e190]: Image
+      - generic [ref=e40] [cursor=pointer]:
+        - generic [ref=e41]: Shader Inputs
+        - generic [ref=e44]:
+          - text: uniform vec3 iResolution; // viewport resolution (in pixels)
+          - text: uniform float iTime; // shader playback time (in seconds)
+          - text: uniform float iTimeDelta; // render time (in seconds)
+          - text: uniform float iFrameRate; // shader frame rate
+          - text: uniform int iFrame; // shader playback frame
+          - text: uniform float iChannelTime[4]; // channel playback time (in seconds)
+          - text: uniform vec3 iChannelResolution[4]; // channel resolution (in pixels)
+          - text: "uniform vec4 iMouse; // mouse pixel coords. xy: current (if MLB down), zw: click"
+          - text: uniform samplerXX iChannel0..3; // input channel. XX = 2D/Cube
+          - text: uniform vec4 iDate; // (year, month, day, time in seconds)
+          - text: uniform float iSampleRate; // sound sample rate (i.e., 44100)
+      - generic [ref=e46]:
+        - textbox [ref=e47]
+        - generic [ref=e50]:
+          - generic [ref=e191]:
+            - generic [ref=e192]: "1"
+            - text: //chromatic aberration
+          - generic [ref=e193]:
+            - generic [ref=e194]: "2"
+            - text: //https://www.shadertoy.com/view/wsVXzW
+          - generic [ref=e195]:
+            - generic [ref=e196]: "3"
+            - text: void mainImage( out vec4 fragColor, in vec2 fragCoord )
+          - generic [ref=e197]:
+            - generic:
+              - generic [ref=e198]: "4"
+              - generic [ref=e200] [cursor=pointer]: ▾
+            - text: "{"
+          - generic [ref=e201]:
+            - generic [ref=e202]: "5"
+            - text: vec2 uv = fragCoord/iResolution.xy;
+          - generic [ref=e203]:
+            - generic [ref=e204]: "6"
+            - text: vec2 delta = (uv - 0.5) * 0.05;
+          - generic [ref=e205]:
+            - generic [ref=e206]: "7"
+            - text: fragColor.r = texture(iChannel0,uv + delta*sin(iTime)).r;
+          - generic [ref=e207]:
+            - generic [ref=e208]: "8"
+            - text: fragColor.g = texture(iChannel0,uv).g;
+          - generic [ref=e209]:
+            - generic [ref=e210]: "9"
+            - text: fragColor.b = texture(iChannel0,uv + delta*cos(iTime)).b;
+          - generic [ref=e211]:
+            - generic [ref=e212]: "10"
+            - text: "}"
+      - generic [ref=e57]:
+        - generic [ref=e58]:
+          - img "Compile (<ALT>+<ENTER>)" [ref=e59] [cursor=pointer]
+          - link "Compiled in 0.1 secs" [ref=e213] [cursor=pointer]:
+            - /url: "#"
+        - generic [ref=e60]: 254 / 2258 chars
+        - generic [ref=e61]:
+          - combobox "Change font size (<ALT>+<+/->)" [ref=e63]:
+            - option "XS"
+            - option "S" [selected]
+            - option "M"
+            - option "L"
+            - option "XL"
+            - option "XXL"
+          - img "Show GLSL help" [ref=e64] [cursor=pointer]
+      - generic [ref=e65]:
+        - generic [ref=e66]:
+          - generic [ref=e67]:
+            - img "remove input" [ref=e214] [cursor=pointer]
+            - generic:
+              - text: Filter
+              - combobox "Pixel filtering mode" [ref=e69]:
+                - option "nearest" [selected]
+                - option "linear"
+                - option "mipmap"
+              - text: Wrap
+              - combobox "Pixel filtering mode" [ref=e70]:
+                - option "clamp" [selected]
+                - option "repeat"
+              - generic [ref=e72]:
+                - text: VFlip
+                - checkbox "VFlip" [ref=e73]
+          - generic [ref=e74]:
+            - generic [ref=e75]: iChannel0
+            - img "sampler options" [ref=e77] [cursor=pointer]
+        - generic [ref=e78]:
+          - generic [ref=e79]:
+            - generic:
+              - text: Filter
+              - combobox "Pixel filtering mode" [ref=e81]:
+                - option "nearest" [selected]
+                - option "linear"
+                - option "mipmap"
+              - text: Wrap
+              - combobox "Pixel filtering mode" [ref=e82]:
+                - option "clamp" [selected]
+                - option "repeat"
+              - generic [ref=e84]:
+                - text: VFlip
+                - checkbox "VFlip" [ref=e85]
+          - generic [ref=e87]: iChannel1
+        - generic [ref=e90]:
+          - generic [ref=e91]:
+            - generic:
+              - text: Filter
+              - combobox "Pixel filtering mode" [ref=e93]:
+                - option "nearest" [selected]
+                - option "linear"
+                - option "mipmap"
+              - text: Wrap
+              - combobox "Pixel filtering mode" [ref=e94]:
+                - option "clamp" [selected]
+                - option "repeat"
+              - generic [ref=e96]:
+                - text: VFlip
+                - checkbox "VFlip" [ref=e97]
+          - generic [ref=e99]: iChannel2
+        - generic [ref=e102]:
+          - generic [ref=e103]:
+            - generic:
+              - text: Filter
+              - combobox "Pixel filtering mode" [ref=e105]:
+                - option "nearest" [selected]
+                - option "linear"
+                - option "mipmap"
+              - text: Wrap
+              - combobox "Pixel filtering mode" [ref=e106]:
+                - option "clamp" [selected]
+                - option "repeat"
+              - generic [ref=e108]:
+                - text: VFlip
+                - checkbox "VFlip" [ref=e109]
+          - generic [ref=e111]: iChannel3
+    - generic [ref=e115]:
+      - text: Comments (0)
+      - generic [ref=e116]:
+        - link "Sign in" [ref=e118] [cursor=pointer]:
+          - /url: /signin
+        - text: to post a comment.
+  - generic [ref=e119]:
+    - generic [ref=e120]:
+      - text: Community Forums
+      - list [ref=e121]:
+        - listitem [ref=e122]:
+          - link "Official Events" [ref=e123] [cursor=pointer]:
+            - /url: /events
+        - listitem [ref=e124]:
+          - link "In Facebook (english)" [ref=e125] [cursor=pointer]:
+            - /url: https://www.facebook.com/groups/147749602472741
+        - listitem [ref=e126]:
+          - link "In Facebook (korean)" [ref=e127] [cursor=pointer]:
+            - /url: https://www.facebook.com/groups/1339783682699494
+        - listitem [ref=e128]:
+          - link "In Discord" [ref=e129] [cursor=pointer]:
+            - /url: https://discord.gg/XtmMN6E
+          - text: (
+          - link "direct link" [ref=e130] [cursor=pointer]:
+            - /url: https://discordapp.com/channels/578696555612209173/579531723348639754
+          - text: )
+    - generic [ref=e131]:
+      - text: Feedback and Support
+      - list [ref=e132]:
+        - listitem [ref=e133]:
+          - link "Facebook" [ref=e134] [cursor=pointer]:
+            - /url: https://www.facebook.com/Shadertoy
+        - listitem [ref=e135]:
+          - link "Twitter" [ref=e136] [cursor=pointer]:
+            - /url: https://twitter.com/shadertoy
+        - listitem [ref=e137]:
+          - link "Patreon" [ref=e138] [cursor=pointer]:
+            - /url: https://www.patreon.com/shadertoy
+        - listitem [ref=e139]:
+          - link "Roadmap" [ref=e140] [cursor=pointer]:
+            - /url: https://trello.com/b/5hM0CjId
+    - generic [ref=e141]:
+      - text: Shadertoy
+      - list [ref=e142]:
+        - listitem [ref=e143]:
+          - link "Store" [ref=e144] [cursor=pointer]:
+            - /url: /store
+        - listitem [ref=e145]:
+          - link "Documentation" [ref=e146] [cursor=pointer]:
+            - /url: /howto
+        - listitem [ref=e147]:
+          - link "Terms & Privacy" [ref=e148] [cursor=pointer]:
+            - /url: /terms
+        - listitem [ref=e149]:
+          - link "About" [ref=e150] [cursor=pointer]:
+            - /url: /about
+    - generic [ref=e151]:
+      - text: Apps and Plugins
+      - list [ref=e152]:
+        - listitem [ref=e153]:
+          - link "Official iPhone App" [ref=e154] [cursor=pointer]:
+            - /url: https://itunes.apple.com/us/app/shadertoy/id717961814
+          - text: by
+          - link "Reinder" [ref=e155] [cursor=pointer]:
+            - /url: /user/reinder
+        - listitem [ref=e156]:
+          - link "Screensaver" [ref=e157] [cursor=pointer]:
+            - /url: https://steamcommunity.com/sharedfiles/filedetails/?id=1726697188
+          - text: by
+          - link "Kosro" [ref=e158] [cursor=pointer]:
+            - /url: /user/kosro
+        - listitem [ref=e159]:
+          - link "Shadertoy plugin" [ref=e160] [cursor=pointer]:
+            - /url: https://chrome.google.com/webstore/detail/shadertoy-unofficial-plug/ohicbclhdmkhoabobgppffepcopomhgl
+          - text: by
+          - link "Patu" [ref=e161] [cursor=pointer]:
+            - /url: /user/patu
+    - generic [ref=e162]:
+      - text: Tutorials
+      - list [ref=e163]:
+        - listitem [ref=e164]:
+          - link "Shader coding intro" [ref=e165] [cursor=pointer]:
+            - /url: https://www.youtube.com/watch?v=0ifChJ0nJfM
+          - text: by
+          - link "iq" [ref=e166] [cursor=pointer]:
+            - /url: /user/iq
+        - listitem [ref=e167]:
+          - link "Shadertoy Unofficial" [ref=e168] [cursor=pointer]:
+            - /url: https://shadertoyunofficial.wordpress.com/
+          - text: by
+          - link "FabriceNeyret2" [ref=e169] [cursor=pointer]:
+            - /url: /user/FabriceNeyret2
+  - generic [ref=e170]:
+    - generic [ref=e171]:
+      - text: We use cookies to give you the best experience on our website. If you continue using Shadertoy, we'll assume that you are happy to receive all cookies on this website. For more information, please review our
+      - link "Terms & Privacy" [ref=e172] [cursor=pointer]:
+        - /url: /terms
+      - text: .
+    - button "Accept" [ref=e174]

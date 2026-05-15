@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>shader-dev Solo Gallery</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #0a0a0a; color: #eee; font-family: system-ui, sans-serif; padding: 1rem; }
+    h1 { margin-bottom: 0.5rem; font-size: 1.2rem; }
+    p.hint { margin-bottom: 1rem; opacity: 0.7; font-size: 0.85rem; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 1rem; }
+    .cell { background: #111; border: 1px solid #222; border-radius: 8px; overflow: hidden; }
+    .cell h2 { padding: 0.5rem 0.75rem; font-size: 0.8rem; color: #ffa; background: #181818; }
+    .cell iframe { border: 0; width: 100%; aspect-ratio: 1/1; display: block; }
+    a { color: #8cf; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <h1>shader-dev Solo Gallery — 13 techniques on the mushroom-hand source</h1>
+  <p class="hint">Click a title to open full-size. Each cell shows exactly ONE technique cranked up on the otherwise-baseline pipeline.</p>
+  <div class="grid">
+    <div class="cell">
+      <h2><a href="/?mode=layered&scene=/presets/solo/T1-domain-warp.json" target="_blank">T1-domain-warp · Domain Warping (recursive fbm swirls)</a></h2>
+      <iframe src="/?mode=layered&scene=/presets/solo/T1-domain-warp.json" loading="lazy"></iframe>
+    </div>
+    <div class="cell">
+      <h2><a href="/?mode=layered&scene=/presets/solo/T2-tile-repeat.json" target="_blank">T2-tile-repeat · Domain Repetition (fbm tiling)</a></h2>
+      <iframe src="/?mode=layered&scene=/presets/solo/T2-tile-repeat.json" loading="lazy"></iframe>
+    </div>
+    <div class="cell">
+      <h2><a href="/?mode=layered&scene=/presets/solo/T3-polar-twist.json" target="_blank">T3-polar-twist · Polar UV Twist (spiral)</a></h2>
+      <iframe src="/?mode=layered&scene=/presets/solo/T3-polar-twist.json" loading="lazy"></iframe>
+    </div>
+    <div class="cell">
+      <h2><a href="/?mode=layered&scene=/presets/solo/T4-voronoi.json" target="_blank">T4-voronoi · Voronoi Cellular (crystalline)</a></h2>
+      <iframe src="/?mode=layered&scene=/presets/solo/T4-voronoi.json" loading="lazy"></iframe>
+    </div>
+    <div class="cell">
+      <h2><a href="/?mode=layered&scene=/presets/solo/T5-iq-palette.json" target="_blank">T5-iq-palette · IQ Cosine Palette (rainbow)</a></h2>
+      <iframe src="/?mode=layered&scene=/presets/solo/T5-iq-palette.json" loading="lazy"></iframe>
+    </div>
+    <div class="cell">
+      <h2><a href="/?mode=layered&scene=/presets/solo/T6-pattern-check.json" target="_blank">T6-pattern-check · Procedural Pattern (checker)</a></h2>
+      <iframe src="/?mode=layered&scene=/presets/solo/T6-pattern-check.json" loading="lazy"></iframe>
+    </div>
+    <div class="cell">
+      <h2><a href="/?mode=layered&scene=/presets/solo/T7-sdf-star.json" target="_blank">T7-sdf-star · SDF 2D Star overlay</a></h2>
+      <iframe src="/?mode=layered&scene=/presets/solo/T7-sdf-star.json" loading="lazy"></iframe>
+    </div>
+    <div class="cell">
+      <h2><a href="/?mode=layered&scene=/presets/solo/T8-julia.json" target="_blank">T8-julia · Julia Fractal overlay</a></h2>
+      <iframe src="/?mode=layered&scene=/presets/solo/T8-julia.json" loading="lazy"></iframe>
+    </div>
+    <div class="cell">
+      <h2><a href="/?mode=layered&scene=/presets/solo/T9-rotate.json" target="_blank">T9-rotate · Matrix UV Rotation</a></h2>
+      <iframe src="/?mode=layered&scene=/presets/solo/T9-rotate.json" loading="lazy"></iframe>
+    </div>
+    <div class="cell">
+      <h2><a href="/?mode=layered&scene=/presets/solo/T10-aa-edges.json" target="_blank">T10-aa-edges · Anti-Aliased Rings (derivative fwidth)</a></h2>
+      <iframe src="/?mode=layered&scene=/presets/solo/T10-aa-edges.json" loading="lazy"></iframe>
+    </div>
+    <div class="cell">
+      <h2><a href="/?mode=layered&scene=/presets/solo/T11-bicubic.json" target="_blank">T11-bicubic · Bicubic Texture Sampling</a></h2>
+      <iframe src="/?mode=layered&scene=/presets/solo/T11-bicubic.json" loading="lazy"></iframe>
+    </div>
+    <div class="cell">
+      <h2><a href="/?mode=layered&scene=/presets/solo/T12-worley.json" target="_blank">T12-worley · Worley F2-F1 Veins</a></h2>
+      <iframe src="/?mode=layered&scene=/presets/solo/T12-worley.json" loading="lazy"></iframe>
+    </div>
+    <div class="cell">
+      <h2><a href="/?mode=layered&scene=/presets/solo/T13-baseline.json" target="_blank">T13-baseline · Baseline (no shader-dev effect)</a></h2>
+      <iframe src="/?mode=layered&scene=/presets/solo/T13-baseline.json" loading="lazy"></iframe>
+    </div>
+  </div>
+</body>
+</html>
