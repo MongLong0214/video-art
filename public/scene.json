@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "source": "monglong_studio_a_vibrant_colorful_featuring_a_large_whale._the_ce36dd2e-9018-4c05-8f84-a228dd88fbe8.PNG",
+  "source": "monglong_a_vibrant_digital_art_piece_features_a_white_meditatin_60ece67b-afbb-4413-a55e-e4fb0d931bd5.PNG",
   "resolution": [
     1632,
     2912
@@ -17,30 +17,18 @@
       "role": "background-plate",
       "meanDepth": 50,
       "animation": {
-        "colorCycle": {
-          "speed": 11,
-          "period": 20,
-          "phaseOffset": 0
-        },
-        "glow": {
-          "intensity": 0,
-          "pulse": 0,
-          "period": 10
-        },
-        "saturationBoost": 1.55,
+        "colorCycle": { "speed": 19, "period": 20, "phaseOffset": 0 },
+        "glow": { "intensity": 0, "pulse": 0, "period": 10 },
+        "saturationBoost": 4.4,
         "luminanceKey": 0.5,
         "satBlendLow": 0.03,
-        "satBlendHigh": 0.2,
-        "satInjectionMul": 0.32,
+        "satBlendHigh": 0.42,
+        "satInjectionMul": 0.95,
         "glowPulseFloor": 0,
-        "lumExponent": 1.25,
-        "hueKey": 1.4,
-        "hueSpeed": 8,
-        "breath": {
-          "amplitude": 0,
-          "frequency": 3,
-          "period": 10
-        },
+        "lumExponent": 0.85,
+        "hueKey": 4.4,
+        "hueSpeed": 18,
+        "breath": { "amplitude": 0, "frequency": 3, "period": 10 },
         "noiseScale": 0,
         "noiseSpeed": 0,
         "noiseAmount": 0,
@@ -61,36 +49,24 @@
       "role": "subject",
       "meanDepth": 180,
       "animation": {
-        "colorCycle": {
-          "speed": 10,
-          "period": 10,
-          "phaseOffset": 180
-        },
-        "glow": {
-          "intensity": 0,
-          "pulse": 0,
-          "period": 5
-        },
-        "saturationBoost": 1.75,
-        "luminanceKey": 0.58,
+        "colorCycle": { "speed": 22, "period": 10, "phaseOffset": 180 },
+        "glow": { "intensity": 0.1, "pulse": 0, "period": 5 },
+        "saturationBoost": 5.4,
+        "luminanceKey": 0.55,
         "satBlendLow": 0.03,
-        "satBlendHigh": 0.15,
-        "satInjectionMul": 0.34,
+        "satBlendHigh": 0.45,
+        "satInjectionMul": 1.4,
         "glowPulseFloor": 0,
-        "lumExponent": 1.32,
-        "hueKey": 1.6,
-        "hueSpeed": 9,
-        "breath": {
-          "amplitude": 0,
-          "frequency": 5,
-          "period": 5
-        },
+        "lumExponent": 0.78,
+        "hueKey": 5.4,
+        "hueSpeed": 20,
+        "breath": { "amplitude": 0, "frequency": 5, "period": 5 },
         "noiseScale": 0,
         "noiseSpeed": 0,
         "noiseAmount": 0,
-        "rimIntensity": 0.45,
-        "rimHueShift": 0.14,
-        "rimWidth": 0.0032,
+        "rimIntensity": 0,
+        "rimHueShift": 0,
+        "rimWidth": 0.002,
         "ringIntensity": 0,
         "ringFreq": 22,
         "ringPeriod": 5
@@ -105,30 +81,18 @@
       "role": "light-rays",
       "meanDepth": 120,
       "animation": {
-        "colorCycle": {
-          "speed": 8,
-          "period": 10,
-          "phaseOffset": 90
-        },
-        "glow": {
-          "intensity": 0,
-          "pulse": 0,
-          "period": 5
-        },
-        "saturationBoost": 1.25,
+        "colorCycle": { "speed": 16, "period": 10, "phaseOffset": 90 },
+        "glow": { "intensity": 0, "pulse": 0, "period": 5 },
+        "saturationBoost": 3.8,
         "luminanceKey": 0.3,
         "satBlendLow": 0.02,
-        "satBlendHigh": 0.1,
-        "satInjectionMul": 0.2,
+        "satBlendHigh": 0.34,
+        "satInjectionMul": 0.85,
         "glowPulseFloor": 0,
-        "lumExponent": 1.08,
-        "hueKey": 1.3,
-        "hueSpeed": 7,
-        "breath": {
-          "amplitude": 0,
-          "frequency": 3,
-          "period": 5
-        },
+        "lumExponent": 0.82,
+        "hueKey": 3.8,
+        "hueSpeed": 14,
+        "breath": { "amplitude": 0, "frequency": 3, "period": 5 },
         "noiseScale": 0,
         "noiseSpeed": 0,
         "noiseAmount": 0,
@@ -142,64 +106,46 @@
     }
   ],
   "effects": {
-    "bloom": {
-      "strength": 0.26,
-      "radius": 0.62,
-      "threshold": 0.72
-    },
-    "chromaticAberration": {
-      "offset": 0.04,
-      "modulationOffset": 0.03
-    },
-    "parallax": {
-      "scale": 0
-    },
-    "haze": {
-      "intensity": 0
-    },
-    "feather": {
-      "radius": 0
-    },
-    "trails": {
-      "strength": 0
-    },
-    "kaleidoscope": {
-      "segments": 0,
-      "blend": 0
-    },
+    "bloom": { "strength": 1, "radius": 0.92, "threshold": 0.2 },
+    "chromaticAberration": { "offset": 0.18, "modulationOffset": 0.05 },
+    "parallax": { "scale": 0 },
+    "haze": { "intensity": 0 },
+    "feather": { "radius": 0 },
+    "trails": { "strength": 0 },
+    "kaleidoscope": { "segments": 0, "blend": 0 },
     "godRays": {
-      "intensity": 0,
-      "decay": 0.975,
-      "density": 0.9,
-      "weight": 0.55,
-      "threshold": 0.55,
+      "intensity": 1.1,
+      "decay": 0.984,
+      "density": 0.96,
+      "weight": 1,
+      "threshold": 0.18,
       "samples": 128,
       "centerX": 0.5,
-      "centerY": 0.35
+      "centerY": 0.25
     },
     "aura": {
-      "intensity": 0.35,
-      "radius": 0.024,
-      "hueSpeed": 0.1,
-      "samples": 20
+      "intensity": 1.05,
+      "radius": 0.054,
+      "hueSpeed": 0.34,
+      "samples": 30
     },
     "mandala": {
-      "opacity": 0.045,
-      "segments": 14,
-      "rings": 7,
-      "rotationSpeed": 0.08,
-      "breathSpeed": 0.18,
+      "opacity": 0,
+      "segments": 6,
+      "rings": 3,
+      "rotationSpeed": 0.16,
+      "breathSpeed": 0.06,
       "hueSpeed": 0.08
     },
     "filmGrade": {
       "grain": 0,
-      "vignetteIntensity": 0.4,
-      "vignetteRadius": 0.95,
+      "vignetteIntensity": 0.05,
+      "vignetteRadius": 1.25,
       "vignetteTintR": 0.04,
       "vignetteTintG": 0.02,
       "vignetteTintB": 0.13,
-      "contrast": 1.05,
-      "sCurve": 0.2
+      "contrast": 1.005,
+      "sCurve": 0.04
     }
   }
 }

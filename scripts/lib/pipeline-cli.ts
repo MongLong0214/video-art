@@ -1,6 +1,7 @@
 /**
  * CLI argument parsing for pipeline-pro.
  */
+import { DEFAULT_TONE, type Tone } from "./scene-presets.js";
 
 export interface PipelineCliArgs {
   inputPath: string;
@@ -9,6 +10,7 @@ export interface PipelineCliArgs {
   prores?: boolean;
   fps?: number;
   workDir?: string;
+  tone: Tone;
 }
 
 export function parseCliArgs(argv: string[]): PipelineCliArgs {
@@ -50,6 +52,17 @@ export function parseCliArgs(argv: string[]): PipelineCliArgs {
     workDir = argv[wdIdx + 1];
   }
 
+  // --tone commercial|elegant (default: commercial)
+  let tone: Tone = DEFAULT_TONE;
+  const toneIdx = argv.indexOf("--tone");
+  if (toneIdx !== -1 && toneIdx + 1 < argv.length) {
+    const val = argv[toneIdx + 1];
+    if (val !== "commercial" && val !== "elegant") {
+      throw new Error(`Invalid --tone value '${val}'. Must be 'commercial' or 'elegant'.`);
+    }
+    tone = val;
+  }
+
   return {
     inputPath,
     duration,
@@ -57,5 +70,6 @@ export function parseCliArgs(argv: string[]): PipelineCliArgs {
     prores,
     fps,
     workDir,
+    tone,
   };
 }
