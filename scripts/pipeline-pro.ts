@@ -228,33 +228,24 @@ async function main() {
 
   // ═══ Step 6: Generate scene.json from tone preset ═══
   const preset = TONE_PRESETS[args.tone];
-  // Periods must align with shader-validated values (see scene-schema getValidPeriods).
-  const periods = getValidPeriods(DURATION);
-  const longPeriod = periods[periods.length - 1];
-  const midPeriod = periods[Math.max(0, Math.floor(periods.length / 2))];
-  const shortPeriod = periods[Math.max(0, Math.floor(periods.length / 4))];
+  // Snap preset periods to the closest shader-validated period for the chosen duration.
+  // Presets are tuned for DURATION=20; for other durations we keep the preset's design
+  // intent by snapping to the nearest valid divisor rather than re-bucketing.
+  const validPeriods = getValidPeriods(DURATION);
+  const snapPeriod = (p: number) =>
+    validPeriods.reduce((best, v) => (Math.abs(v - p) < Math.abs(best - p) ? v : best), validPeriods[0]);
 
-  const layer0Anim = {
-    ...preset.layer0,
-    colorCycle: { ...preset.layer0.colorCycle, period: longPeriod },
-    glow: { ...preset.layer0.glow, period: midPeriod },
-    breath: { ...preset.layer0.breath, period: midPeriod },
-    ringPeriod: midPeriod,
-  };
-  const layer1Anim = {
-    ...preset.layer1,
-    colorCycle: { ...preset.layer1.colorCycle, period: midPeriod },
-    glow: { ...preset.layer1.glow, period: shortPeriod },
-    breath: { ...preset.layer1.breath, period: shortPeriod },
-    ringPeriod: shortPeriod,
-  };
-  const layer2Anim = {
-    ...preset.layer2,
-    colorCycle: { ...preset.layer2.colorCycle, period: midPeriod },
-    glow: { ...preset.layer2.glow, period: shortPeriod },
-    breath: { ...preset.layer2.breath, period: shortPeriod },
-    ringPeriod: midPeriod,
-  };
+  const snapLayer = (layer: typeof preset.layer0) => ({
+    ...layer,
+    colorCycle: { ...layer.colorCycle, period: snapPeriod(layer.colorCycle.period) },
+    glow: { ...layer.glow, period: snapPeriod(layer.glow.period) },
+    breath: { ...layer.breath, period: snapPeriod(layer.breath.period) },
+    ringPeriod: snapPeriod(layer.ringPeriod),
+  });
+
+  const layer0Anim = snapLayer(preset.layer0);
+  const layer1Anim = snapLayer(preset.layer1);
+  const layer2Anim = snapLayer(preset.layer2);
 
   const scene = {
     version: 1,
