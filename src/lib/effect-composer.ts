@@ -355,6 +355,7 @@ const filmGradeFragmentShader = `
       rgb *= mix(1.0, 0.75, (1.0 - v) * uVignetteIntensity);
     }
 
+    rgb = clamp(rgb, 0.0, 1.0);
     gl_FragColor = vec4(rgb, c.a);
   }
 `;

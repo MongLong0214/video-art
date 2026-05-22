@@ -16,16 +16,25 @@ npx tsx scripts/export-layered.ts --title <출력 이름>
 
 ## 톤 선택
 
-### commercial (기본)
-사이키델릭 부스트가 강한 enterprise 셋팅. SNS/광고 공통 베이스.
+### prism-sunset (기본)
+Triadic phase offset (0/120/240) + 따뜻한 vignette + 강한 CA prism. 프로덕션 베이스라인.
 
 ```bash
 npx tsx scripts/pipeline-pro.ts <이미지>
 # 또는 명시
+npx tsx scripts/pipeline-pro.ts <이미지> --tone prism-sunset
+```
+
+핵심 값: sat 4.2/4.8/3.6, satInj 0.92/1.22/0.76, hueSpeed 19/21/16, hueKey 3.6/4.2/3.2, lumExp 0.9/0.84/0.82, bloom 0.92 (threshold 0.24), CA 0.26/0.07 (강한 prism), godRays 1.05 (centerY 0.3), aura 1.0 + hueSpeed 0.32, layer-1 glow 0.1, vignette 0.14 (warm tint R 0.16/G 0.05/B 0.04).
+
+### commercial
+사이키델릭 부스트가 강한 enterprise 셋팅. SNS/광고용.
+
+```bash
 npx tsx scripts/pipeline-pro.ts <이미지> --tone commercial
 ```
 
-핵심 값: sat 4.4/5.4/3.8, satInj 0.95/1.4/0.85, hueSpeed 18/20/14, hueKey 4.4/5.4/3.8, lumExp 0.85/0.78/0.82, bloom 1.0, CA 0.18, godRays 1.1 (centerY 0.25 planet/sun), aura 1.05 + hueSpeed 0.34, layer-1 glow 0.1, vignette 0.05.
+핵심 값: sat 4.4/5.4/3.8, satInj 0.95/1.4/0.85, hueSpeed 18/20/14, hueKey 4.4/5.4/3.8, lumExp 0.85/0.78/0.82, bloom 1.0, CA 0.18, godRays 1.1 (centerY 0.25), aura 1.05 + hueSpeed 0.34, layer-1 glow 0.1, vignette 0.05.
 
 ### elegant
 소스 색감을 보존하는 절제된 톤. 인물·풍경 강조용.
@@ -44,7 +53,7 @@ npx tsx scripts/pipeline-pro.ts <이미지> --tone elegant
 
 | 플래그 | 기본 | 설명 |
 |--------|------|------|
-| `--tone commercial\|elegant` | `commercial` | scene.json 톤 프리셋 |
+| `--tone prism-sunset\|commercial\|elegant` | `prism-sunset` | scene.json 톤 프리셋 |
 | `--duration N` | 20 | 영상 길이 (초) |
 | `--fps N` | 30 | 프레임레이트 |
 | `--production` | off | Replicate 버전 핀 강제 |

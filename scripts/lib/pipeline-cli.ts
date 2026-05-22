@@ -52,13 +52,13 @@ export function parseCliArgs(argv: string[]): PipelineCliArgs {
     workDir = argv[wdIdx + 1];
   }
 
-  // --tone commercial|elegant (default: commercial)
+  // --tone prism-sunset|commercial|elegant (default: prism-sunset)
   let tone: Tone = DEFAULT_TONE;
   const toneIdx = argv.indexOf("--tone");
   if (toneIdx !== -1 && toneIdx + 1 < argv.length) {
     const val = argv[toneIdx + 1];
-    if (val !== "commercial" && val !== "elegant") {
-      throw new Error(`Invalid --tone value '${val}'. Must be 'commercial' or 'elegant'.`);
+    if (val !== "prism-sunset" && val !== "commercial" && val !== "elegant") {
+      throw new Error(`Invalid --tone value '${val}'. Must be 'prism-sunset', 'commercial', or 'elegant'.`);
     }
     tone = val;
   }
