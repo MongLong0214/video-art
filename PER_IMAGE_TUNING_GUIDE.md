@@ -45,7 +45,7 @@
 | **밝은 바디 / 저대비 + 펀치 원함** | f19 bright-body | **D bright-punch** (K×S 6 + satB5↑ + vLift↑) |
 | **무드 / 차분 / 절제** | hands-tree | **E elegant** |
 | **이미 완성된 아트(거의 안 건드림)** | graffiti, preserve류 | **F preserve** (cc≈0) |
-| **창백한 얼굴 / 잔디테일 빽빽** | 7862, IMG_9213/9214 | A 시도하되 난해. 소스 교체 고려 |
+| **창백한 얼굴 / 잔디테일 빽빽 / 손-얼굴 busy portrait** | 7862, IMG_9213/9214, **eye2/3/4/5(전부 별로)** | ❌ 사실상 부적합. 잔디테일이 노이즈로 남아 만족 불가. 매끈한 형태 소스로 교체 |
 | **흑백 / 무채색 (monochrome)** | bw-eye | ❌ **부적합 — 받지 않음** (사용자 정책). satBoost 무력(곱셈)+피부 잔디테일 스페클로 살리기 불가 |
 | **블랙 지배** | — | 부적합. 제외 |
 
@@ -186,6 +186,9 @@ CA 0.035~0.1 · bloom 0.22~0.45 · godRays 0.12~0.25 · vignette 0.02~0.04
 - **named 프리셋(prism-sunset/commercial/elegant) 믿지 마라** — 컬러풀 소스엔 과조리(satInjMul/satBoost/hueKey×speed 과다). 옛 좋은 영상들은 프리셋이 아니라 손튜닝 값이었음.
 - **ProRes 마스터 = 20초에 4.5GB+**. H.264 ~20Mbps(≈50MB)면 충분.
 - node_modules 날아가면 `npm install` (package-lock 있음), puppeteer Chrome은 `npx puppeteer browsers install chrome`.
+- **노이즈/지글거림 = 소스 잔디테일 × (luminanceKey + noiseAmount)**. 완화는 그 둘을 낮추기. ⚠️**median 디노이즈는 역효과**(소스를 뭉개 색이 더 chaotic). 근본은 잔디테일 적은 소스 선택.
+- **domainWarp·과한 noiseAmount(>0.6)=overshoot** → 패턴이 소용돌이/노이즈로 풀려 형태 상실. 환각성은 luminanceKey로, warp 금지.
+- **딥블랙 소스를 valueLift로 밝히지 마라** → 딥블랙 앵커 상실로 형태가 무지개 노이즈로 풀림. 어두운 채로가 형태/대비/non-muddy의 핵심.
 
 ---
 
@@ -226,7 +229,4 @@ CA 0.035~0.1 · bloom 0.22~0.45 · godRays 0.12~0.25 · vignette 0.02~0.04
 | bw-eye (e5be1991) | 흑백+흰배경+피부 잔디테일 | satInj/valueLift/luminanceKey/median 전부 | ❌폐기 | 무채는 satBoost 무력, satInj×satBoost로 주입돼도 어두우면 칙칙·잔디테일 스페클. **사용자 정책: 무채색 소스 안 받음** |
 
 ### 9-3. 신규 작업 로그 (여기부터 매 작업 append)
-| 날짜 | 소스 | 타입 | 패밀리/파라미터 | 결과 | 교훈 |
-|------|------|------|------|------|------|
-| 2026-06-18 | eye3 (5df84e75, 손+눈 portrait) | = eye2 타입(컬러풀+다크+busy) | **trip3 레시피 그대로** | ★전이성공(첫시도) | 동일 타입엔 trip3가 무수정 전이됨. 레시피가 "컬러풀+다크 portrait"로 일반화 검증 |
-| 2026-06-18 | eye2 (3f26b1bf, 손+눈 portrait) | 이미 오일슬릭 컬러풀 + 깊은다크 + busy 스월 | **A clean + noise dye + lumKey↑** (확정 trip3): satInj0, satB**2.2**, K×S4, cc12/14/10, CA0.26, bloom0.92, vig0, **noise scale2.5/speed4/amount0.5**, **luminanceKey 1.0**, domainWarp 0 | ★★최종채택 | (1)모션=noise dye("물들듯이"). noiseSpeed로 변화속도(빠르게 선호). (2)**환각성↑=luminanceKey↑**(명암별 무지개, chaos 없음). (3)⚠️**domainWarp·과한noiseAmount(0.75)=overshoot→오히려 망침**. 환각은 lumKey로, warp 금지. (4)satInj=0+깊은블랙=클럼프/진흙 방지. (5)⚠️**밝히기 금지**: "너무 어둡다"고 valueLift↑+satInj↑ 하면 **딥블랙 앵커 상실→형태가 무지개 노이즈로 풀려 망함**(eye3-bright 폐기). 이 타입은 **어두운 채로가 정답** — 딥블랙이 형태/대비/non-muddy의 핵심. ⚠️noise 비주기→루프 미세 seam(고속이라 가려짐) |
+| 2026-06-18 | eye2/3/4/5 (손으로 얼굴 가린 portrait 4장) | 컬러풀+딥블랙+**busy 잔디테일(피부 모공·스월)** | trip3(noise dye+lumKey) → 밝히기 → denoise → lownoise 등 다수 | ❌**결론: 전부 별로** | **이 타입(손-얼굴 busy-텍스처 portrait) = 부적합.** 비비드/딥블랙 다 맞춰도 **잔디테일이 노이즈·지글거림으로 남아** 만족 못함. 중간에 "제일 낫다"는 상대평가였을 뿐. lotus(매끈+요소뚜렷)와 달리 이 잔디테일 portrait은 한계. → 잔디테일 빽빽 소스 회피 원칙 재확인 |
