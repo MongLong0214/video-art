@@ -228,4 +228,5 @@ CA 0.035~0.1 · bloom 0.22~0.45 · godRays 0.12~0.25 · vignette 0.02~0.04
 ### 9-3. 신규 작업 로그 (여기부터 매 작업 append)
 | 날짜 | 소스 | 타입 | 패밀리/파라미터 | 결과 | 교훈 |
 |------|------|------|------|------|------|
+| 2026-06-18 | eye3 (5df84e75, 손+눈 portrait) | = eye2 타입(컬러풀+다크+busy) | **trip3 레시피 그대로** | ★전이성공(첫시도) | 동일 타입엔 trip3가 무수정 전이됨. 레시피가 "컬러풀+다크 portrait"로 일반화 검증 |
 | 2026-06-18 | eye2 (3f26b1bf, 손+눈 portrait) | 이미 오일슬릭 컬러풀 + 깊은다크 + busy 스월 | **A clean + noise dye + lumKey↑** (확정 trip3): satInj0, satB**2.2**, K×S4, cc12/14/10, CA0.26, bloom0.92, vig0, **noise scale2.5/speed4/amount0.5**, **luminanceKey 1.0**, domainWarp 0 | ★★최종채택 | (1)모션=noise dye("물들듯이"). noiseSpeed로 변화속도(빠르게 선호). (2)**환각성↑=luminanceKey↑**(명암별 무지개, chaos 없음). (3)⚠️**domainWarp·과한noiseAmount(0.75)=overshoot→오히려 망침**. 환각은 lumKey로, warp 금지. (4)satInj=0+깊은블랙=클럼프/진흙 방지. ⚠️noise 비주기→루프 미세 seam(고속이라 가려짐) |
