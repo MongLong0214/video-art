@@ -1,18 +1,18 @@
 /**
- * Pro Pipeline — 2-layer bria + flux-fill-pro architecture.
+ * Pro Pipeline — bria matte + flux-fill-pro inpaint architecture.
  *
- * 1. bria/remove-background → clean foreground with alpha matting
- * 2. flux-fill-pro → inpaint background (fill holes left by foreground)
- * 3. depth-anything-v2 → depth map
- * 4. Generate scene.json (2 layers, hueKey shader settings)
- * 5. Copy to public/
+ * 1. bria/remove-background → clean foreground with alpha matting (ESRGAN upscale only if source < target)
+ * 2. flux-fill-pro → inpaint background (fill hole left by foreground → bg plate w/o subject)
+ * 3. Luminance-split foreground → layer-1/2; bg → layer-0; write scene.json from tone preset
+ *
+ * Depth step removed: depth.png was write-only (renderer never loads it; parallax.scale=0).
  */
 import "dotenv/config";
 import Replicate from "replicate";
 import sharp from "sharp";
 import fs from "node:fs";
 import path from "node:path";
-import { getToken, withRetry, enforceVersionPin } from "./lib/replicate-utils.js";
+import { getToken, withRetry } from "./lib/replicate-utils.js";
 import { parseCliArgs } from "./lib/pipeline-cli.js";
 import { MIN_RESOLUTION, TONE_PRESETS } from "./lib/scene-presets.js";
 import { getValidPeriods } from "../src/lib/scene-schema.js";
@@ -23,7 +23,6 @@ if (!fs.existsSync(INPUT)) { console.error(`Input not found: ${INPUT}`); process
 
 const DURATION = args.duration ?? 20;
 const FPS = args.fps ?? 30;
-const PRODUCTION = args.production;
 
 const OUTPUT_DIR = args.workDir
   ? path.join(args.workDir, "intermediate")
@@ -45,21 +44,19 @@ function extractUrl(output: unknown): string {
 
 const BRIA_MODEL = "bria/remove-background";
 const FLUX_FILL_MODEL = "black-forest-labs/flux-fill-pro";
-const DAV2_MODEL = "chenxwh/depth-anything-v2";
-const DAV2_VERSION = "b239ea33cff32bb7abb5db39ffe9a09c14cbc2894331d1ef66fe096eed88ebd4";
 const ESRGAN_MODEL = "nightmareai/real-esrgan";
 
 async function main() {
-  if (PRODUCTION) {
-    enforceVersionPin(DAV2_VERSION, true);
-  }
-
   const replicate = new Replicate({ auth: getToken() });
 
   let origBuf = await sharp(INPUT).png().toBuffer();
   let meta = await sharp(origBuf).metadata();
   let origW = meta.width!, origH = meta.height!;
   console.log(`Input: ${origW}x${origH}`);
+
+  // Only ESRGAN-upscale sub-images when the SOURCE is below target res; at/above
+  // target it's wasteful and GAN smoothing degrades fine psychedelic detail.
+  const sourceBelowTarget = origW < MIN_RESOLUTION.width || origH < MIN_RESOLUTION.height;
 
   // Auto-upscale to minimum resolution (lanczos3) to keep export sharp.
   if (origW < MIN_RESOLUTION.width || origH < MIN_RESOLUTION.height) {
@@ -89,19 +86,23 @@ async function main() {
   console.log(`  ${Date.now() - t1}ms`);
   await sharp(fgBuf).toFile(path.join(OUTPUT_DIR, "01-foreground-raw.png"));
 
-  // ═══ Step 1b: Upscale foreground (Real-ESRGAN 2x) ═══
-  console.log("═══ Step 1b: Real-ESRGAN 2x upscale ═══");
-  const t1b = Date.now();
-  const fgDataUri = `data:image/png;base64,${fgBuf.toString("base64")}`;
-  const upscaled = await withRetry(() =>
-    replicate.run(ESRGAN_MODEL, { input: { image: fgDataUri, scale: 2, face_enhance: false } }),
-  );
-  const upUrl = extractUrl(upscaled);
-  const upResp = await fetch(upUrl);
-  fgBuf = Buffer.from(await upResp.arrayBuffer());
-  const upMeta = await sharp(fgBuf).metadata();
-  console.log(`  Upscaled: ${fgMeta.width}x${fgMeta.height} → ${upMeta.width}x${upMeta.height}`);
-  console.log(`  ${Date.now() - t1b}ms`);
+  // ═══ Step 1b: Upscale foreground (Real-ESRGAN 2x) — only if source below target ═══
+  if (sourceBelowTarget) {
+    console.log("═══ Step 1b: Real-ESRGAN 2x upscale ═══");
+    const t1b = Date.now();
+    const fgDataUri = `data:image/png;base64,${fgBuf.toString("base64")}`;
+    const upscaled = await withRetry(() =>
+      replicate.run(ESRGAN_MODEL, { input: { image: fgDataUri, scale: 2, face_enhance: false } }),
+    );
+    const upUrl = extractUrl(upscaled);
+    const upResp = await fetch(upUrl);
+    fgBuf = Buffer.from(await upResp.arrayBuffer());
+    const upMeta = await sharp(fgBuf).metadata();
+    console.log(`  Upscaled: ${fgMeta.width}x${fgMeta.height} → ${upMeta.width}x${upMeta.height}`);
+    console.log(`  ${Date.now() - t1b}ms`);
+  } else {
+    console.log("═══ Step 1b: skip ESRGAN (source ≥ target res) ═══");
+  }
   await sharp(fgBuf).toFile(path.join(OUTPUT_DIR, "01-foreground.png"));
 
   // Compute foreground coverage at original resolution for mask
@@ -145,36 +146,26 @@ async function main() {
   console.log(`  ${Date.now() - t3}ms`);
   await sharp(bgBuf).toFile(path.join(OUTPUT_DIR, "03-background-inpainted.png"));
 
-  // ═══ Step 3b: Upscale background (Real-ESRGAN 2x) ═══
-  console.log("═══ Step 3b: Real-ESRGAN 2x background upscale ═══");
-  const t3b = Date.now();
-  const bgDataUri = `data:image/png;base64,${bgBuf.toString("base64")}`;
-  const bgUpscaled = await withRetry(() =>
-    replicate.run(ESRGAN_MODEL, { input: { image: bgDataUri, scale: 2, face_enhance: false } }),
-  );
-  const bgUpUrl = extractUrl(bgUpscaled);
-  const bgUpResp = await fetch(bgUpUrl);
-  bgBuf = Buffer.from(await bgUpResp.arrayBuffer());
-  bgMeta = await sharp(bgBuf).metadata();
-  console.log(`  Upscaled: ${bgMeta.width}x${bgMeta.height}`);
-  console.log(`  ${Date.now() - t3b}ms`);
-  await sharp(bgBuf).toFile(path.join(OUTPUT_DIR, "03-background-upscaled.png"));
+  // ═══ Step 3b: Upscale background (Real-ESRGAN 2x) — only if source below target ═══
+  if (sourceBelowTarget) {
+    console.log("═══ Step 3b: Real-ESRGAN 2x background upscale ═══");
+    const t3b = Date.now();
+    const bgDataUri = `data:image/png;base64,${bgBuf.toString("base64")}`;
+    const bgUpscaled = await withRetry(() =>
+      replicate.run(ESRGAN_MODEL, { input: { image: bgDataUri, scale: 2, face_enhance: false } }),
+    );
+    const bgUpUrl = extractUrl(bgUpscaled);
+    const bgUpResp = await fetch(bgUpUrl);
+    bgBuf = Buffer.from(await bgUpResp.arrayBuffer());
+    bgMeta = await sharp(bgBuf).metadata();
+    console.log(`  Upscaled: ${bgMeta.width}x${bgMeta.height}`);
+    console.log(`  ${Date.now() - t3b}ms`);
+    await sharp(bgBuf).toFile(path.join(OUTPUT_DIR, "03-background-upscaled.png"));
+  } else {
+    console.log("═══ Step 3b: skip ESRGAN (source ≥ target res) ═══");
+  }
 
-  // ═══ Step 4: depth-anything-v2 ═══
-  console.log("\n═══ Step 4: depth-anything-v2 ═══");
-  const t4 = Date.now();
-  const depthOut = await withRetry(() =>
-    replicate.run(`${DAV2_MODEL}:${DAV2_VERSION}`, {
-      input: { image: dataUri },
-    }),
-  );
-  const depthResult = depthOut as Record<string, unknown>;
-  const greyDepth = depthResult.grey_depth ?? depthResult.gray_depth ?? depthResult;
-  const depthUrl = String(greyDepth);
-  const depthResp = await fetch(depthUrl);
-  const depthBuf = Buffer.from(await depthResp.arrayBuffer());
-  console.log(`  ${Date.now() - t4}ms`);
-  await sharp(depthBuf).grayscale().toFile(path.join(OUTPUT_DIR, "04-depth.png"));
+  // Depth step removed: depth.png was write-only (never loaded by renderer; parallax.scale=0).
 
   // ═══ Step 5: Compose layers at ORIGINAL resolution ═══
   const W = origW, H = origH;
@@ -223,8 +214,6 @@ async function main() {
   await sharp(silBuf, { raw: { width: W, height: H, channels: 4 } }).png().toFile(path.join(layersDir, "layer-1.png"));
   await sharp(rayBuf, { raw: { width: W, height: H, channels: 4 } }).png().toFile(path.join(layersDir, "layer-2.png"));
   console.log("  layer-1.png — silhouettes  layer-2.png — light rays");
-
-  await sharp(depthBuf).resize(W, H, { kernel: "lanczos3" }).grayscale().toFile(path.join(layersDir, "depth.png"));
 
   // ═══ Step 6: Generate scene.json from tone preset ═══
   const preset = TONE_PRESETS[args.tone];
