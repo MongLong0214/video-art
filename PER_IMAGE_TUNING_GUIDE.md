@@ -46,6 +46,7 @@
 | **무드 / 차분 / 절제** | hands-tree | **E elegant** |
 | **이미 완성된 아트(거의 안 건드림)** | graffiti, preserve류 | **F preserve** (cc≈0) |
 | **창백한 얼굴 / 잔디테일 빽빽** | 7862, IMG_9213/9214 | A 시도하되 난해. 소스 교체 고려 |
+| **흑백 / 무채색 (monochrome)** | bw-eye | ❌ **부적합 — 받지 않음** (사용자 정책). satBoost 무력(곱셈)+피부 잔디테일 스페클로 살리기 불가 |
 | **블랙 지배** | — | 부적합. 제외 |
 
 > 핵심: **prism(B/C) 색 파라미터는 컬러풀/잔디테일 소스를 무조건 망친다.** 다크-볼드 전용.
@@ -77,6 +78,13 @@
 
 ### subject 가시성
 - 레이어 `valueLift`: 어두운 픽셀만 들어올림. 0.08 기본 / 0.35 미세(거의 안 보임) / 0.6+ 강함(보통 과함). 0.3~0.5 사이 탐색.
+
+### 셰이더 색칠 메커니즘 (layer.frag 확인)
+`blend = smoothstep(satBlendLow, satBlendHigh, 원본채도)` 로 픽셀을 두 갈래로 처리:
+- **저채도 픽셀(blend≈0)**: 채도 = `saturationBoost × satInjectionMul`(주입), hue = `colorCycle + 명암×luminanceKey`(luminance 기반).
+- **고채도 픽셀(blend≈1)**: 채도 = 원본×boost, hue = 원본 hue 회전.
+- ⚠️ **순수 무채(채도 0)는 satBoost가 곱셈이라 무력** → 색은 오직 `satInjectionMul`로만 들어감. 단 어두우면(`valueLift` 안 올리면) "채도 높아도 어두운=칙칙"하게 보임.
+- `luminanceKey`↑ = 명암에 따라 hue가 깔림(매끈한 무지개). 단 **소스에 잔디테일/질감 있으면 그게 hue 스페클**로 변함 → median 디노이즈로도 한계.
 
 ---
 
@@ -210,6 +218,7 @@ CA 0.035~0.1 · bloom 0.22~0.45 · godRays 0.12~0.25 · vignette 0.02~0.04
 | 7862e9a1 | 창백얼굴+잔디테일 | clean+median | 별로 | 소스 부적합. 어떤 설정도 한계 |
 | IMG_9213/9214 | 밝은파스텔+busy | prism→clean | 별로 | 파스텔+busy는 진흙. 소스 교체 |
 | ganesha 다수 | 컬러풀에 prism강제 | prism(K×S88) | 별로 | 컬러풀에 prism=무조건 진흙 |
+| bw-eye (e5be1991) | 흑백+흰배경+피부 잔디테일 | satInj/valueLift/luminanceKey/median 전부 | ❌폐기 | 무채는 satBoost 무력, satInj×satBoost로 주입돼도 어두우면 칙칙·잔디테일 스페클. **사용자 정책: 무채색 소스 안 받음** |
 
 ### 9-3. 신규 작업 로그 (여기부터 매 작업 append)
 | 날짜 | 소스 | 타입 | 패밀리/파라미터 | 결과 | 교훈 |
