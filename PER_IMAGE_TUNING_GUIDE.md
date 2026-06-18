@@ -86,6 +86,11 @@
 - ⚠️ **순수 무채(채도 0)는 satBoost가 곱셈이라 무력** → 색은 오직 `satInjectionMul`로만 들어감. 단 어두우면(`valueLift` 안 올리면) "채도 높아도 어두운=칙칙"하게 보임.
 - `luminanceKey`↑ = 명암에 따라 hue가 깔림(매끈한 무지개). 단 **소스에 잔디테일/질감 있으면 그게 hue 스페클**로 변함 → median 디노이즈로도 한계.
 
+### 색 트랜지션/모션 3종 (느낌별 선택)
+1. **colorCycle** `{speed, period}`: 전체 화면 hue가 **균일하게 회전**(rainbow sweep). 무손실 루프=(duration/period)×speed 정수. speed↓=서서히, speed↑=빠름/급작.
+2. **noise 물들기** `{noiseScale, noiseSpeed, noiseAmount}`: 흐르는 fbm이 hue에 더해져 **잉크 번지듯 공간적으로 색이 퍼짐**("물들듯이"). scale=번짐크기(2~3 넓게), speed=번짐속도, amount=강도(0.3~). ⚠️ 비주기→루프 seam(고속이면 가려짐). *eye2 사용자 채택 모션.*
+3. **multipassFeedback** `{strength, warp, decay}`: 이전 프레임이 다음에 겹쳐 **디졸브/크로스페이드**. warp 0=공간왜곡 없이 순수 색 디졸브. strength/decay↑=더 길게 녹음.
+
 ---
 
 ## 4. 요소 분리 (핵심 요소를 살리고 싶을 때)
@@ -223,4 +228,4 @@ CA 0.035~0.1 · bloom 0.22~0.45 · godRays 0.12~0.25 · vignette 0.02~0.04
 ### 9-3. 신규 작업 로그 (여기부터 매 작업 append)
 | 날짜 | 소스 | 타입 | 패밀리/파라미터 | 결과 | 교훈 |
 |------|------|------|------|------|------|
-| 2026-06-18 | eye2 (3f26b1bf, 손+눈 portrait) | 이미 오일슬릭 컬러풀 + 깊은다크 + busy 스월 | **A clean** (satInj0, satB1.7/1.9/1.6, K×S4, cc12/14/10, CA0.26, bloom0.92, vig0) | ★good | 이미 컬러풀+다크앵커 소스엔 A clean이 정답: satInj=0로 스월 클럼프 방지, 깊은 블랙이 진흙 막아줌. busy해도 K×S 낮으면 OK |
+| 2026-06-18 | eye2 (3f26b1bf, 손+눈 portrait) | 이미 오일슬릭 컬러풀 + 깊은다크 + busy 스월 | **A clean + noise dye + lumKey↑** (확정 trip3): satInj0, satB**2.2**, K×S4, cc12/14/10, CA0.26, bloom0.92, vig0, **noise scale2.5/speed4/amount0.5**, **luminanceKey 1.0**, domainWarp 0 | ★★최종채택 | (1)모션=noise dye("물들듯이"). noiseSpeed로 변화속도(빠르게 선호). (2)**환각성↑=luminanceKey↑**(명암별 무지개, chaos 없음). (3)⚠️**domainWarp·과한noiseAmount(0.75)=overshoot→오히려 망침**. 환각은 lumKey로, warp 금지. (4)satInj=0+깊은블랙=클럼프/진흙 방지. ⚠️noise 비주기→루프 미세 seam(고속이라 가려짐) |
