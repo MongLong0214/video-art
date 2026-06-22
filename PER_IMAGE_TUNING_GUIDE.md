@@ -9,6 +9,11 @@
 
 출력 품질 = **소스 성격 × 파라미터**. 둘 중 하나만 봐선 안 됨.
 
+> 🚫 **사용자 절대 금지 (영구)**: ① **정지(static) 금지** — 색이 움직여야 함 ② **geometric 왜곡 금지**(domainWarp/polarTwist/rotateSpeed/scalePulse 전부 0) ③ **noise 모션 금지**(배경 대각선 흐름 효과 → noiseAmount/noiseScale/noiseSpeed 전부 0).
+> → 허용 모션은 **colorCycle(전역 hue 회전)뿐.** 단 이게 블루 지배 소스를 그린으로 시프트시키는 충돌이 있음(아래).
+
+> ⚠️ **모션=hue변형 딜레마 (2026-06-22, ukiyo)**: 유일하게 허용된 모션 colorCycle은 hue를 전역 회전시킴 → **블루(240°) 지배 소스는 회전 중 그린(120°)을 통과해 머디**. noise도 hue를 흔들어 같은 문제(게다가 대각선 흐름으로 금지됨). **블루 배경 우키요에류 = 이 엔진과 구조적 충돌, 접음.**
+
 > ⭐ **세션 최대 교훈 — 소스 적합성이 8할 (2026-06-19)**: 만족작은 **lotus 하나뿐**. 그 외 다수(eye 시리즈·buddha·cosmos·무채색·파스텔) 거부.
 > - ✅ **되는 소스**: 매끈한 면 + 플랫하고 뚜렷한 컬러 영역 + 단순/굵은 형태 (lotus=연꽃/부처 실루엣).
 > - ❌ **안 되는 소스**: ① 이미 디테일하게 완성된 busy 텍스처 psychedelic 스틸(잔물결 라인·스월이 전면 → hue 재매핑으로 머디/그린 + 스페클) ② 회색/석상 hero(색 넣으면 머디) ③ 무채색 ④ 창백/파스텔 ⑤ 단일 인물 클로즈업.
@@ -95,7 +100,7 @@
 
 ### 색 트랜지션/모션 3종 (느낌별 선택)
 1. **colorCycle** `{speed, period}`: 전체 화면 hue가 **균일하게 회전**(rainbow sweep). 무손실 루프=(duration/period)×speed 정수. speed↓=서서히, speed↑=빠름/급작.
-2. **noise 물들기** `{noiseScale, noiseSpeed, noiseAmount}`: 흐르는 fbm이 hue에 더해져 **잉크 번지듯 공간적으로 색이 퍼짐**("물들듯이"). scale=번짐크기(2~3 넓게), speed=번짐속도, amount=강도(0.3~). ⚠️ 비주기→루프 seam(고속이면 가려짐). *eye2 사용자 채택 모션.*
+2. **noise 물들기** `{noiseScale, noiseSpeed, noiseAmount}`: 흐르는 fbm이 hue에 더해져 색이 퍼짐. ⚠️🚫 **사용자 금지(2026-06-22)**: flow가 `vec2(time*speed*0.1, time*speed*0.07)`라 **배경이 대각선으로 흐르는 이상한 효과** 발생 → 절대 사용 금지. **noiseAmount=0 고정.**
 3. **multipassFeedback** `{strength, warp, decay}`: 이전 프레임이 다음에 겹쳐 **디졸브/크로스페이드**. warp 0=공간왜곡 없이 순수 색 디졸브. strength/decay↑=더 길게 녹음.
 
 ---
@@ -236,6 +241,7 @@ CA 0.035~0.1 · bloom 0.22~0.45 · godRays 0.12~0.25 · vignette 0.02~0.04
 | bw-eye (e5be1991) | 흑백+흰배경+피부 잔디테일 | satInj/valueLift/luminanceKey/median 전부 | ❌폐기 | 무채는 satBoost 무력, satInj×satBoost로 주입돼도 어두우면 칙칙·잔디테일 스페클. **사용자 정책: 무채색 소스 안 받음** |
 
 ### 9-3. 신규 작업 로그 (여기부터 매 작업 append)
+| 2026-06-22 | ukiyo-e 시리즈 (블루 배경 목판화/일러스트, 다수) | 플랫 컬러+블루 지배 배경+뚜렷한 요소(눈/레인보우/인물) | A clean→느린cc→hue고정+noise 다수 | ❌접음 | **모션=hue변형 딜레마**: colorCycle이 블루를 그린으로 시프트, noise는 대각선 흐름(금지)+hue흔듦. 정지·geometric·noise 다 금지된 상태에서 블루 보존+모션 동시 달성 불가. 블루 지배 소스 회피. (lotus처럼 보였지만 블루 면적이 결정적 차이) |
 | 2026-06-18 | eye2/3/4/5 (손-얼굴 portrait, busy 텍스처) | 컬러풀+딥블랙+**busy 잔디테일** | trip3→밝히기→denoise→lownoise 등 | ❌전부 별로 | 잔디테일이 노이즈로 남음 |
 | 2026-06-19 | cosmos2 (5115e0a6, 우주 은하+행성) | 컬러풀+딥블랙+뚜렷한요소(행성) BUT **전체가 잔물결 라인텍스처로 뒤덮인 완성 스틸** | aggressive→preserve→min-remap 다수 | ❌전부 별로 | 구도/요소 좋아도 **busy 라인텍스처가 전면**이면 실패. 밝은부분→그린 머디 + 텍스처 스페클. element 분리도 무의미(요소들도 다 라인텍스처). |
 | 2026-06-19 | buddha-916 (026bc850, 9:16크롭) | 구도 좋음(석상+스월+골드) BUT **회색 석상 hero + 이미 웜한 팔레트** | aggressive→preserve 다수 | ❌최악 | (1)**회색 hero**는 색 넣으면 머디(monochrome 문제 재현). (2)**이미 웜한 팔레트는 hue 재매핑 엔진 거치며 가르시 그린/옐로로 튐** — 원본 색 보존 불가(셰이더가 hue를 remap). (3)구도 좋아도 hero가 회색이면 실패. → 컬러풀 hero(석상 회색 말고) 소스라야 함 |
