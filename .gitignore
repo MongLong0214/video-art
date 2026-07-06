@@ -59,6 +59,9 @@ experiment-output/
 # Local OMX state
 .omx/
 
+# Local Codex/agent scratch evidence (gate-review logs, extracted probe frames)
+.omo/
+
 # Local ad-hoc test inputs
 input/acperience1.wav
 
