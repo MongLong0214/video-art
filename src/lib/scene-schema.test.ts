@@ -184,6 +184,13 @@ describe("sceneSchema", () => {
       sharpness: 0.5,
       fieldCycles: 1,
     });
+    expect(result.layers[0].animation.glowWave2).toEqual({
+      strength: 0,
+      speed: 0,
+      sharpness: 0.5,
+      fieldCycles: 1,
+    });
+    expect(result.layers[0].animation.phaseWarpAmount).toBe(0);
   });
 
   it("accepts D-3-6 glowWave bounds", () => {
@@ -195,6 +202,24 @@ describe("sceneSchema", () => {
           animation: {
             ...validScene.layers[0].animation,
             glowWave: { strength: 0.45, speed: 8, sharpness: 0.6, fieldCycles: 1.25 },
+          },
+        },
+      ],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts r18 second glow wave and warped phase-field sampling fields", () => {
+    const result = sceneSchema.safeParse({
+      ...validScene,
+      layers: [
+        {
+          ...validScene.layers[0],
+          animation: {
+            ...validScene.layers[0].animation,
+            phaseField2: "layers/phase-angular.png",
+            phaseWarpAmount: 0.8,
+            glowWave2: { strength: 0.55, speed: -5, sharpness: 0.7, fieldCycles: 3.25 },
           },
         },
       ],
@@ -217,6 +242,25 @@ describe("sceneSchema", () => {
     });
     expect(result.success).toBe(false);
   });
+
+  it("rejects r18 experimental wave values outside safe ranges", () => {
+    const result = sceneSchema.safeParse({
+      ...validScene,
+      layers: [
+        {
+          ...validScene.layers[0],
+          animation: {
+            ...validScene.layers[0].animation,
+            phaseField2: "layers/phase-angular.jpg",
+            phaseWarpAmount: 2.5,
+            glowWave2: { strength: 1.2, speed: 4, sharpness: 0.5, fieldCycles: 4.5 },
+          },
+        },
+      ],
+    });
+    expect(result.success).toBe(false);
+  });
+
 
   it("accepts OKLCH hue rotation with green compression", () => {
     const result = sceneSchema.safeParse({
@@ -757,6 +801,8 @@ describe("scene-schema — T-A1 multipassFeedback effect", () => {
     expect(mf.warp).toBe(0.2);
     expect(mf.decay).toBe(0.9);
     expect(mf.hueShift).toBe(0);
+    expect(mf.reactionDiffusionAmount).toBe(0);
+    expect(mf.reactionDiffusionSpeed).toBe(0.35);
   });
 
   it("accepts optional multipassFeedback mask path", () => {
@@ -765,6 +811,33 @@ describe("scene-schema — T-A1 multipassFeedback effect", () => {
       effects: { multipassFeedback: { strength: 0.32, mask: "layers/portal.png" } },
     });
     expect(r.success).toBe(true);
+  });
+
+  it("accepts reaction-diffusion-lite without ordinary feedback strength", () => {
+    const r = sceneSchema.safeParse({
+      ...minimal,
+      effects: {
+        multipassFeedback: {
+          strength: 0,
+          reactionDiffusionAmount: 0.7,
+          reactionDiffusionSpeed: 0.45,
+        },
+      },
+    });
+    expect(r.success).toBe(true);
+  });
+
+  it("rejects reaction-diffusion-lite values outside safe range", () => {
+    const r = sceneSchema.safeParse({
+      ...minimal,
+      effects: {
+        multipassFeedback: {
+          reactionDiffusionAmount: 1.2,
+          reactionDiffusionSpeed: -0.1,
+        },
+      },
+    });
+    expect(r.success).toBe(false);
   });
 });
 

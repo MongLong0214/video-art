@@ -43,6 +43,14 @@ describe("layered-psychedelic.ts — glow-wave and green-band uniform bindings",
     expect(rendererSrc).toMatch(/uGlowWaveMean:\s*\{\s*value:\s*glowWaveMean\(anim\.glowWave\.sharpness\)\s*\}/);
   });
 
+  it("binds second glow-wave uniforms from independent animation fields", () => {
+    expect(rendererSrc).toMatch(/l\.animation\.phaseField2/);
+    expect(rendererSrc).toMatch(/uPhaseTex2:\s*\{\s*value:\s*phaseTexture2\s*\}/);
+    expect(rendererSrc).toMatch(/uPhaseWarpAmount:\s*\{\s*value:\s*anim\.phaseWarpAmount\s*\?\?\s*0\s*\}/);
+    expect(rendererSrc).toMatch(/uGlowWave2Strength:\s*\{\s*value:\s*anim\.glowWave2\.strength\s*\}/);
+    expect(rendererSrc).toMatch(/uGlowWave2Mean:\s*\{\s*value:\s*glowWaveMean\(anim\.glowWave2\.sharpness\)\s*\}/);
+  });
+
   it("computes glow-wave mean with the requested 64-sample crest average", () => {
     expect(rendererSrc).toMatch(/const\s+GLOW_WAVE_MEAN_SAMPLES\s*=\s*64/);
     expect(rendererSrc).toMatch(/1\.5\s*\+\s*\(7\.0\s*-\s*1\.5\)\s*\*\s*sharpness/);

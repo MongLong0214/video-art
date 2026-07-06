@@ -19,9 +19,11 @@ uniform float uColorCycleSpeed;
 uniform float uColorCyclePeriod;
 uniform float uPhaseOffset;
 uniform sampler2D uPhaseTex;
+uniform sampler2D uPhaseTex2;
 uniform sampler2D uDepthTex;
 uniform sampler2D uFlowFieldTex;
 uniform float uPhaseAmount;
+uniform float uPhaseWarpAmount;
 uniform float uCamDriftRadius;
 uniform float uCamDriftCycles;
 uniform float uCamDriftPivot;
@@ -37,6 +39,11 @@ uniform float uGlowWaveSpeed;
 uniform float uGlowWaveSharpness;
 uniform float uGlowWaveFieldCycles;
 uniform float uGlowWaveMean;
+uniform float uGlowWave2Strength;
+uniform float uGlowWave2Speed;
+uniform float uGlowWave2Sharpness;
+uniform float uGlowWave2FieldCycles;
+uniform float uGlowWave2Mean;
 
 // Psychedelic color engine
 uniform float uSaturationBoost;
@@ -284,6 +291,13 @@ float fbm(vec2 p) {
     a *= 0.5;
   }
   return v;
+}
+
+vec2 domainWarpVector(vec2 p) {
+  vec2 q = vec2(fbm(p + vec2(1.7, 9.2)), fbm(p + vec2(8.3, 2.8)));
+  return uDomainWarp2 > 0.0001
+    ? vec2(fbm(p + 4.0 * q + vec2(1.2, 3.4)), fbm(p + 4.0 * q + vec2(0.9, 6.1)))
+    : q;
 }
 
 // IQ cosine palette (shader-dev T5) — https://iquilezles.org/articles/palettes/
@@ -549,10 +563,7 @@ void main() {
     }
     // Domain warping (IQ-style): fbm(p + warp * vec2(fbm(p+a), fbm(p+b))) (shader-dev T1)
     if (uDomainWarp > 0.0001) {
-      vec2 q = vec2(fbm(p + vec2(1.7, 9.2)), fbm(p + vec2(8.3, 2.8)));
-      vec2 rr = uDomainWarp2 > 0.0001
-        ? vec2(fbm(p + 4.0 * q + vec2(1.2, 3.4)), fbm(p + 4.0 * q + vec2(0.9, 6.1)))
-        : q;
+      vec2 rr = domainWarpVector(p);
       nHue = fbm(p + uDomainWarp * rr);
     } else {
       nHue = fbm(p);
@@ -669,15 +680,36 @@ void main() {
     rgb += vRidge * uVoronoiAmount * vec3(0.6, 0.8, 1.0);
   }
 
-  // D-3-6 glow wave: hue-stable light crest traveling over the static phase field.
-  if (uGlowWaveStrength > 0.001) {
-    float glowPhaseSample = texture2D(uPhaseTex, sampleUv).r;
+  // D-3-6/r18 glow waves: zero-mean crest deviations add, so crossing waves reinforce/cancel.
+  if (uGlowWaveStrength > 0.001 || uGlowWave2Strength > 0.001) {
+    vec2 glowPhaseUv = sampleUv;
+    if (uPhaseWarpAmount > 0.0001) {
+      float phaseWarpScale = max(uNoiseScale, 3.0);
+      vec2 phaseWarpFlow = vec2(time * uNoiseSpeed * 0.08, time * uNoiseSpeed * 0.05);
+      vec2 phaseWarp = 0.5 + 0.5 * domainWarpVector(sampleUv * phaseWarpScale + phaseWarpFlow);
+      glowPhaseUv = clamp(sampleUv + uPhaseWarpAmount * (phaseWarp - 0.5) * 0.1, 0.0, 1.0);
+    }
+
     float glowSafePeriod = max(uLoopDuration, 1e-4);
-    float wp = fract(time / glowSafePeriod * uGlowWaveSpeed + glowPhaseSample * uGlowWaveFieldCycles);
-    float crest = pow(0.5 + 0.5 * cos(TAU * (wp - 0.62)), mix(1.5, 7.0, uGlowWaveSharpness));
-    rgb *= 1.0 + uGlowWaveStrength * (crest - uGlowWaveMean);
+    float glowWaveDelta = 0.0;
+    float glowWaveCrestEnergy = 0.0;
+    if (uGlowWaveStrength > 0.001) {
+      float glowPhaseSample = texture2D(uPhaseTex, glowPhaseUv).r;
+      float wp = fract(time / glowSafePeriod * uGlowWaveSpeed + glowPhaseSample * uGlowWaveFieldCycles);
+      float crest = pow(0.5 + 0.5 * cos(TAU * (wp - 0.62)), mix(1.5, 7.0, uGlowWaveSharpness));
+      glowWaveDelta += uGlowWaveStrength * (crest - uGlowWaveMean);
+      glowWaveCrestEnergy += uGlowWaveStrength * crest;
+    }
+    if (uGlowWave2Strength > 0.001) {
+      float glowPhaseSample2 = texture2D(uPhaseTex2, glowPhaseUv).r;
+      float wp2 = fract(time / glowSafePeriod * uGlowWave2Speed + glowPhaseSample2 * uGlowWave2FieldCycles);
+      float crest2 = pow(0.5 + 0.5 * cos(TAU * (wp2 - 0.62)), mix(1.5, 7.0, uGlowWave2Sharpness));
+      glowWaveDelta += uGlowWave2Strength * (crest2 - uGlowWave2Mean);
+      glowWaveCrestEnergy += uGlowWave2Strength * crest2;
+    }
+    rgb *= 1.0 + glowWaveDelta;
     vec3 crestSat = clamp(rgb * 1.15, 0.0, 1.0);
-    rgb = mix(rgb, crestSat, 0.3 * uGlowWaveStrength * crest);
+    rgb = mix(rgb, crestSat, clamp(0.3 * glowWaveCrestEnergy, 0.0, 1.0));
   }
 
   // --- Glow pulse ---

@@ -32,6 +32,7 @@ describe("export-layered encoding defaults (T4)", () => {
     expect(exportSrc).toContain("FEEDBACK_WARMUP_SECONDS = 2");
     expect(exportSrc).toContain('"--warmup-frames"');
     expect(exportSrc).toMatch(/sceneNeedsFeedbackWarmup\(config\)\s*\?\s*Math\.round\(FPS\s*\*\s*FEEDBACK_WARMUP_SECONDS\)\s*:\s*0/);
+    expect(exportSrc).toContain("config.effects.multipassFeedback.reactionDiffusionAmount > 0");
   });
 
   it("warms feedback from the loop tail before seeking back to frame 0", () => {

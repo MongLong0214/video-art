@@ -6,6 +6,8 @@ import { fileURLToPath } from "url";
 
 const __dirname = resolve(fileURLToPath(import.meta.url), "..");
 const src = readFileSync(resolve(__dirname, "effect-composer.ts"), "utf-8");
+const multipassFrag = readFileSync(resolve(__dirname, "../shaders/multipass-feedback.frag"), "utf-8");
+const srcWithMultipass = `${src}\n${multipassFrag}`;
 
 describe("effect-composer — T-A2 lensDistortion", () => {
   it("declares lensDistortion fragment shader with Brown distortion", () => {
@@ -34,19 +36,19 @@ describe("effect-composer — T-A2 lensDistortion", () => {
 
 describe("effect-composer — T-A1 multipassFeedback", () => {
   it("declares multipassFeedback fragment shader or uniforms", () => {
-    expect(src).toMatch(/multipassFeedback|uFeedbackStrength/);
+    expect(srcWithMultipass).toMatch(/multipassFeedback|uFeedbackStrength/);
   });
 
   it("uses uFeedbackWarp / uFeedbackDecay / uFeedbackHueShift uniforms", () => {
-    expect(src).toMatch(/uFeedbackStrength/);
-    expect(src).toMatch(/uFeedbackWarp/);
-    expect(src).toMatch(/uFeedbackDecay/);
+    expect(srcWithMultipass).toMatch(/uFeedbackStrength/);
+    expect(srcWithMultipass).toMatch(/uFeedbackWarp/);
+    expect(srcWithMultipass).toMatch(/uFeedbackDecay/);
   });
 
   it("declares and applies optional feedback mask uniforms", () => {
-    expect(src).toMatch(/uFeedbackMaskTex/);
-    expect(src).toMatch(/uFeedbackMaskOn/);
-    expect(src).toMatch(/prev\s*\*\s*uFeedbackStrength\s*\*\s*m/);
+    expect(srcWithMultipass).toMatch(/uFeedbackMaskTex/);
+    expect(srcWithMultipass).toMatch(/uFeedbackMaskOn/);
+    expect(srcWithMultipass).toMatch(/prev\s*\*\s*uFeedbackStrength\s*\*\s*m/);
   });
 
   it("reuses existing feedbackTarget (no second WebGLRenderTarget allocation)", () => {
@@ -71,11 +73,129 @@ describe("effect-composer — T-A1 multipassFeedback", () => {
   });
 
   it("reboosts saturation after feedback accumulation to counter hue-history averaging", () => {
-    expect(src).toMatch(/float\s+feedbackLoad\s*=\s*clamp\(\s*uFeedbackStrength\s*\*\s*uFeedbackDecay\s*\*\s*m\s*,\s*0\.0\s*,\s*1\.0\s*\)/);
-    expect(src).toMatch(/float\s+brightFeedback\s*=\s*smoothstep\(\s*0\.55\s*,\s*0\.85\s*,\s*accumHsv\.z\s*\)/);
-    expect(src).toMatch(/float\s+satTarget\s*=\s*clamp\(\s*max\(\s*curHsv\.y\s*,\s*brightFeedback\s*\*\s*0\.35\s*\)\s*\+\s*feedbackLoad\s*\*\s*0\.6\s*,\s*curHsv\.y\s*,\s*1\.0\s*\)/);
-    expect(src).toMatch(/accumHsv\.y\s*=\s*max\(\s*accumHsv\.y\s*,\s*satTarget\s*\)/);
-    expect(src).toMatch(/writeOutput\(vec4\(clamp\(accum,\s*0\.0,\s*1\.0\),\s*cur\.a\)\)/);
+    expect(multipassFrag).toMatch(/float\s+feedbackLoad\s*=\s*clamp\(\s*uFeedbackStrength\s*\*\s*uFeedbackDecay\s*\*\s*m\s*,\s*0\.0\s*,\s*1\.0\s*\)/);
+    expect(multipassFrag).toMatch(/float\s+brightFeedback\s*=\s*smoothstep\(\s*0\.55\s*,\s*0\.85\s*,\s*accumHsv\.z\s*\)/);
+    expect(multipassFrag).toMatch(/float\s+satTarget\s*=\s*clamp\(\s*max\(\s*curHsv\.y\s*,\s*brightFeedback\s*\*\s*0\.35\s*\)\s*\+\s*feedbackLoad\s*\*\s*0\.6\s*,\s*curHsv\.y\s*,\s*1\.0\s*\)/);
+    expect(multipassFrag).toMatch(/accumHsv\.y\s*=\s*max\(\s*accumHsv\.y\s*,\s*satTarget\s*\)/);
+    expect(multipassFrag).toMatch(/writeOutput\(vec4\(clamp\(accum,\s*0\.0,\s*1\.0\),\s*cur\.a\)\)/);
+  });
+
+  it("does not let reaction-diffusion amount globally drive saturation darkening", () => {
+    expect(multipassFrag).not.toMatch(/feedbackLoad\s*=\s*clamp\([^;]*uReactionDiffusionAmount/);
+  });
+
+  it("gates reaction-diffusion-lite independently of normal feedback strength", () => {
+    expect(src).toMatch(/mf\.strength\s*>\s*0\s*\|\|\s*mf\.reactionDiffusionAmount\s*>\s*0/);
+    expect(src).toMatch(/uReactionDiffusionAmount:\s*\{\s*value:\s*mf\.reactionDiffusionAmount\s*\}/);
+    expect(src).toMatch(/uReactionDiffusionSpeed:\s*\{\s*value:\s*mf\.reactionDiffusionSpeed\s*\}/);
+    expect(src).toMatch(/uFeedbackTexel:\s*\{\s*value:\s*new\s+THREE\.Vector2\(1\s*\/\s*resolution\[0\],\s*1\s*\/\s*resolution\[1\]\)\s*\}/);
+    expect(multipassFrag).toMatch(/if\s*\(\s*uFeedbackStrength\s*<\s*0\.001\s*&&\s*uReactionDiffusionAmount\s*<\s*0\.001\s*\)/);
+  });
+
+  it("implements bounded single-channel reaction-diffusion-lite from feedback luminance", () => {
+    expect(multipassFrag).toMatch(/float\s+reactionDiffusionLite\s*\(/);
+    expect(multipassFrag).toMatch(/localMean\s*=\s*\(n\s*\+\s*s\s*\+\s*e\s*\+\s*w\s*\+\s*0\.7071\s*\*\s*\(ne\s*\+\s*nw\s*\+\s*se\s*\+\s*sw\)\)\s*\/\s*6\.8284/);
+    expect(multipassFrag).toMatch(/float\s+lap\s*=\s*localMean\s*-\s*center/);
+    expect(multipassFrag).toMatch(/smoothstep\(\s*0\.37\s*,\s*0\.63\s*,\s*seeded\s*\+\s*lap\s*\*\s*2\.15\s*\)/);
+    expect(multipassFrag).toMatch(/return\s+clamp\(/);
+  });
+
+  it("does not map the reaction-diffusion scalar field into an independent hue", () => {
+    expect(multipassFrag).not.toMatch(/fract\(\s*pattern\s*\+\s*uFeedbackHueShift\s*\)/);
+    expect(multipassFrag).not.toMatch(/\bhuePush\b/);
+    expect(multipassFrag).toContain("RD is luminance-only: an unrelated scalar must never choose hue.");
+    expect(multipassFrag).toMatch(/accum\s*\*=\s*rdGain/);
+  });
+
+  it("recenters reaction-diffusion brightness before applying it", () => {
+    expect(multipassFrag).toMatch(/float\s+rdSigned\s*=\s*clamp\(\s*\(pattern\s*-\s*localMean\)\s*\*\s*2\.0\s*,\s*-1\.0\s*,\s*1\.0\s*\)/);
+    expect(multipassFrag).toMatch(/float\s+rdGain\s*=\s*clamp\(\s*1\.0\s*\+\s*rdSigned\s*\*\s*0\.12\s*\*\s*uReactionDiffusionAmount\s*\*\s*m\s*\*\s*rdEnvelope\s*,\s*0\.92\s*,\s*1\.12\s*\)/);
+    expect(multipassFrag).not.toMatch(/accum\s*\+=\s*\(vec3\(signedPattern\)/);
+  });
+
+  it("drives reaction-diffusion from loop-periodic phase uniforms", () => {
+    expect(src).toMatch(/loopDuration\s*=\s*1/);
+    expect(src).toMatch(/uFeedbackLoopPhase:\s*\{\s*value:\s*0\s*\}/);
+    expect(src).toMatch(/multipassMaterial\.uniforms\.uFeedbackLoopPhase\.value\s*=\s*normalizedLoopTime/);
+    expect(multipassFrag).toMatch(/uniform\s+float\s+uFeedbackLoopPhase/);
+    expect(multipassFrag).toMatch(/sin\(\s*TAU\s*\*\s*uFeedbackLoopPhase\s*\)/);
+    expect(multipassFrag).toMatch(/cos\(\s*TAU\s*\*\s*uFeedbackLoopPhase\s*\)/);
+    expect(multipassFrag).toMatch(/float\s+rdEnvelope\s*=\s*smoothstep\(\s*0\.06\s*,\s*0\.18\s*,\s*uFeedbackLoopPhase\s*\)\s*\*\s*\(\s*1\.0\s*-\s*smoothstep\(\s*0\.72\s*,\s*0\.90\s*,\s*uFeedbackLoopPhase\s*\)\s*\)/);
+  });
+
+  function clamp01(value: number): number {
+    return Math.min(1, Math.max(0, value));
+  }
+
+  function smoothStep(edge0: number, edge1: number, value: number): number {
+    const x = clamp01((value - edge0) / (edge1 - edge0));
+    return x * x * (3 - 2 * x);
+  }
+
+  function hashIndex(index: number): number {
+    const x = Math.sin(index * 12.9898) * 43758.5453;
+    return x - Math.floor(x);
+  }
+
+  type ReactionGrid = {
+    readonly field: readonly number[];
+    readonly width: number;
+    readonly height: number;
+    readonly speed: number;
+  };
+
+  function evolveReactionDiffusionLite(grid: ReactionGrid): readonly number[] {
+    const { field, width, height, speed } = grid;
+    const at = (x: number, y: number): number => {
+      const clampedX = Math.min(width - 1, Math.max(0, x));
+      const clampedY = Math.min(height - 1, Math.max(0, y));
+      return field[clampedY * width + clampedX] ?? 0;
+    };
+    return field.map((center, index) => {
+      const x = index % width;
+      const y = Math.floor(index / width);
+      const n = at(x, y + 1);
+      const s = at(x, y - 1);
+      const e = at(x + 1, y);
+      const w = at(x - 1, y);
+      const ne = at(x + 1, y + 1);
+      const nw = at(x - 1, y + 1);
+      const se = at(x + 1, y - 1);
+      const sw = at(x - 1, y - 1);
+      const localMean = (n + s + e + w + 0.7071 * (ne + nw + se + sw)) / 6.8284;
+      const lap = localMean - center;
+      const seeded = clamp01(
+        center * smoothStep(0.02, 0.22, center) +
+          0.5 * (1 - smoothStep(0.02, 0.22, center)) +
+          (hashIndex(index) - 0.5) * 0.06,
+      );
+      const sharpened = smoothStep(0.37, 0.63, seeded + lap * 2.15);
+      const coarsen = (sharpened - seeded) * 0.18 + lap * 0.72;
+      return clamp01(seeded + coarsen * speed);
+    });
+  }
+
+  it("keeps reaction-diffusion-lite bounded and non-degenerate for 600 frames", () => {
+    const width = 32;
+    const height = 32;
+    let field: readonly number[] = Array.from({ length: width * height }, (_, index) =>
+      clamp01(0.48 + (hashIndex(index) - 0.5) * 0.18)
+    );
+
+    for (let frame = 0; frame < 600; frame += 1) {
+      field = evolveReactionDiffusionLite({ field, width, height, speed: 0.35 });
+    }
+
+    const min = Math.min(...field);
+    const max = Math.max(...field);
+    const mean = field.reduce((sum, value) => sum + value, 0) / field.length;
+    const variance = field.reduce((sum, value) => sum + (value - mean) ** 2, 0) / field.length;
+
+    expect(field.every(Number.isFinite)).toBe(true);
+    expect(min).toBeGreaterThanOrEqual(0);
+    expect(max).toBeLessThanOrEqual(1);
+    expect(max - min).toBeGreaterThan(0.2);
+    expect(variance).toBeGreaterThan(0.002);
   });
 
   it("file stays under 800 LOC cap after T-A1", () => {

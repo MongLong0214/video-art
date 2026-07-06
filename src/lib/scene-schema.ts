@@ -51,6 +51,14 @@ const animationSchema = z.object({
       fieldCycles: z.number().min(0.25).max(2).default(1),
     })
     .default({ strength: 0, speed: 0, sharpness: 0.5, fieldCycles: 1 }),
+  glowWave2: z
+    .object({
+      strength: z.number().min(0).max(1).default(0),
+      speed: z.number().int().default(0),
+      sharpness: z.number().min(0).max(1).default(0.5),
+      fieldCycles: z.number().min(0.25).max(4).default(1),
+    })
+    .default({ strength: 0, speed: 0, sharpness: 0.5, fieldCycles: 1 }),
   parallax: z
     .object({
       depth: z.number(),
@@ -64,9 +72,11 @@ const animationSchema = z.object({
   glowPulseFloor: z.number().default(0.0),
   lumExponent: z.number().default(1.0),
   phaseField: z.string().regex(/^[\w\-\/\.]+\.png$/).optional(),
+  phaseField2: z.string().regex(/^[\w\-\/\.]+\.png$/).optional(),
   depthField: z.string().regex(/^[\w\-\/\.]+\.png$/).optional(),
   flowField: z.string().regex(/^[\w\-\/\.]+\.png$/).optional(),
   phaseAmount: z.number().min(0).max(4).default(0),
+  phaseWarpAmount: z.number().min(0).max(2).default(0),
   structureFlow: z
     .object({
       strength: z.number().min(0).max(0.005).default(0),
@@ -203,6 +213,8 @@ const multipassFeedbackSchema = z.object({
   hueShift: z.number().min(0).max(1).default(0),
   zoom: z.number().min(0.9).max(1.1).default(1.0),
   rotate: z.number().min(-0.2).max(0.2).default(0),
+  reactionDiffusionAmount: z.number().min(0).max(1).default(0),
+  reactionDiffusionSpeed: z.number().min(0).max(1).default(0.35),
   mask: z.string().regex(/^[\w\-\/\.]+\.png$/).optional(),
 });
 
@@ -242,7 +254,7 @@ const effectsSchema = z.object({
   aura: auraEffectSchema.default({ intensity: 0, radius: 0.04, hueSpeed: 0.1, samples: 16 }),
   mandala: mandalaEffectSchema.default({ opacity: 0, segments: 12, rings: 8, rotationSpeed: 0.08, breathSpeed: 0.4, hueSpeed: 0.05 }),
   filmGrade: filmGradeEffectSchema.default({ grain: 0, vignetteIntensity: 0, vignetteRadius: 0.9, vignetteTintR: 0.12, vignetteTintG: 0.05, vignetteTintB: 0.25, contrast: 1, sCurve: 0 }),
-  multipassFeedback: multipassFeedbackSchema.default({ strength: 0, warp: 0.2, decay: 0.9, hueShift: 0, zoom: 1.0, rotate: 0 }),
+  multipassFeedback: multipassFeedbackSchema.default({ strength: 0, warp: 0.2, decay: 0.9, hueShift: 0, zoom: 1.0, rotate: 0, reactionDiffusionAmount: 0, reactionDiffusionSpeed: 0.35 }),
   lensDistortion: lensDistortionSchema.default({ barrel: 0, chromatic: 0, dof: 0, vignetteRadius: 1 }),
   cameraDrift: cameraDriftEffectSchema.default({ radius: 0, cycles: 1, pivot: 0.5 }),
 });
@@ -290,7 +302,7 @@ export const sceneSchema = z
       aura: { intensity: 0, radius: 0.04, hueSpeed: 0.1, samples: 16 },
       mandala: { opacity: 0, segments: 12, rings: 8, rotationSpeed: 0.08, breathSpeed: 0.4, hueSpeed: 0.05 },
       filmGrade: { grain: 0, vignetteIntensity: 0, vignetteRadius: 0.9, vignetteTintR: 0.12, vignetteTintG: 0.05, vignetteTintB: 0.25, contrast: 1, sCurve: 0 },
-      multipassFeedback: { strength: 0, warp: 0.2, decay: 0.9, hueShift: 0, zoom: 1.0, rotate: 0 },
+      multipassFeedback: { strength: 0, warp: 0.2, decay: 0.9, hueShift: 0, zoom: 1.0, rotate: 0, reactionDiffusionAmount: 0, reactionDiffusionSpeed: 0.35 },
       lensDistortion: { barrel: 0, chromatic: 0, dof: 0, vignetteRadius: 1 },
       cameraDrift: { radius: 0, cycles: 1, pivot: 0.5 },
     }),

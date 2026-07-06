@@ -10,6 +10,7 @@ import {
   KernelSize,
 } from "postprocessing";
 import type { EffectsConfig } from "./scene-schema";
+import multipassFeedbackFragmentShader from "@/shaders/multipass-feedback.frag";
 
 const fullscreenVertexShader = `
   varying vec2 vUv;
@@ -162,85 +163,6 @@ const lensDistortionFragmentShader = `
     col *= mix(1.0, vig, step(0.999, uLensVignetteRadius) == 1.0 ? 0.0 : 1.0);
 
     writeOutput(vec4(col, sG.a));
-  }
-`;
-
-// Multipass feedback — reads prev frame with radial warp, decay, hue-shift,
-// accumulates into current. Extends trails with warped trail effect. (T-A1)
-const multipassFeedbackFragmentShader = `
-  uniform sampler2D inputBuffer;
-  uniform sampler2D uPrevFrame;
-  uniform float uFeedbackStrength;
-  uniform float uFeedbackWarp;
-  uniform float uFeedbackDecay;
-  uniform float uFeedbackHueShift;
-  uniform float uFeedbackZoom;
-  uniform float uFeedbackRotate;
-  uniform sampler2D uFeedbackMaskTex;
-  uniform float uFeedbackMaskOn;
-  varying vec2 vUv;
-
-  #define TAU 6.28318530718
-
-  // ANGLE/Metal miscompiles two-arg atan (empirically → NaN for all inputs here).
-  // Manual atan2 via one-arg atan; also defines atan2(0,0)=0.
-  float atan2Safe(float y, float x) {
-    float ax = abs(x), ay = abs(y);
-    if (ax < 1e-9 && ay < 1e-9) return 0.0;
-    if (ax >= ay) {
-      float a = atan(y / x);
-      return x >= 0.0 ? a : (y >= 0.0 ? a + 3.14159265358979 : a - 3.14159265358979);
-    }
-    float a = atan(x / y);
-    return (y >= 0.0 ? 1.57079632679490 : -1.57079632679490) - a;
-  }
-
-  vec3 rgb2hsv(vec3 c) {
-    vec4 K = vec4(0.0, -1.0/3.0, 2.0/3.0, -1.0);
-    vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
-    vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
-    float d = q.x - min(q.w, q.y);
-    float e = 1.0e-10;
-    return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
-  }
-  vec3 hsv2rgb(vec3 c) {
-    vec4 K = vec4(1.0, 2.0/3.0, 1.0/3.0, 3.0);
-    vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
-    return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
-  }
-
-  ${linearOutputFragment}
-
-  void main() {
-    vec4 cur = texture2D(inputBuffer, vUv);
-    if (uFeedbackStrength < 0.001) { writeOutput(cur); return; }
-    // Radial warp + zoom + rotate — Milkdrop식 터널/소용돌이 피드백.
-    // zoom<1 = 안으로 빨려드는 터널, rotate = 소용돌이.
-    vec2 c = vUv - 0.5;
-    float r = length(c) * (uFeedbackZoom > 0.001 ? uFeedbackZoom : 1.0);
-    float a = atan2Safe(c.y, c.x) + uFeedbackWarp * r + uFeedbackRotate;
-    vec2 warpUv = 0.5 + vec2(cos(a), sin(a)) * r;
-    vec3 prev = texture2D(uPrevFrame, warpUv).rgb * uFeedbackDecay;
-    // Optional hue shift on prev
-    if (uFeedbackHueShift > 0.001) {
-      vec3 hsv = rgb2hsv(prev);
-      hsv.x = fract(hsv.x + uFeedbackHueShift);
-      prev = hsv2rgb(hsv);
-    }
-    float m = 1.0;
-    if (uFeedbackMaskOn > 0.5) {
-      vec4 maskTex = texture2D(uFeedbackMaskTex, vUv);
-      m = maskTex.a < 0.999 ? maskTex.a : maskTex.r;
-    }
-    vec3 accum = cur.rgb + prev * uFeedbackStrength * m;
-    vec3 curHsv = rgb2hsv(clamp(cur.rgb, 0.0, 1.0));
-    vec3 accumHsv = rgb2hsv(clamp(accum, 0.0, 1.0));
-    float feedbackLoad = clamp(uFeedbackStrength * uFeedbackDecay * m, 0.0, 1.0);
-    float brightFeedback = smoothstep(0.55, 0.85, accumHsv.z);
-    float satTarget = clamp(max(curHsv.y, brightFeedback * 0.35) + feedbackLoad * 0.6, curHsv.y, 1.0);
-    accumHsv.y = max(accumHsv.y, satTarget);
-    accum = hsv2rgb(accumHsv);
-    writeOutput(vec4(clamp(accum, 0.0, 1.0), cur.a));
   }
 `;
 
@@ -517,6 +439,7 @@ export function createComposer(
   camera: THREE.Camera,
   effects: EffectsConfig,
   resolution: [number, number],
+  loopDuration = 1,
 ) {
   const composer = new EffectComposer(renderer, {
     frameBufferType: THREE.HalfFloatType,
@@ -526,7 +449,7 @@ export function createComposer(
   const trailStrength = effects.trails?.strength ?? 0;
   const hasTrails = trailStrength > 0;
   const mf = effects.multipassFeedback;
-  const hasMultipass = mf && mf.strength > 0;
+  const hasMultipass = mf && (mf.strength > 0 || mf.reactionDiffusionAmount > 0);
   const needsFeedback = hasTrails || hasMultipass;
 
   composer.addPass(new RenderPass(scene, camera));
@@ -671,6 +594,7 @@ export function createComposer(
   // --- Feedback infrastructure (shared by trails + multipassFeedback) ---
   let feedbackTarget: THREE.WebGLRenderTarget | null = null;
   let feedbackMaskTexture: THREE.Texture | null = null;
+  let multipassMaterial: THREE.ShaderMaterial | null = null;
   if (needsFeedback) {
     feedbackTarget = new THREE.WebGLRenderTarget(resolution[0], resolution[1], {
       type: THREE.HalfFloatType,
@@ -714,7 +638,7 @@ export function createComposer(
   // Multipass feedback pass (warp + decay + hue-shift, shares feedbackTarget) (T-A1)
   if (hasMultipass && feedbackTarget) {
     feedbackMaskTexture = loadFeedbackMaskTexture(mf.mask);
-    const multipassMaterial = new THREE.ShaderMaterial({
+    multipassMaterial = new THREE.ShaderMaterial({
       uniforms: {
         inputBuffer: { value: null },
         uPrevFrame: { value: feedbackTarget.texture },
@@ -726,6 +650,10 @@ export function createComposer(
         uFeedbackRotate: { value: mf.rotate },
         uFeedbackMaskTex: { value: feedbackMaskTexture },
         uFeedbackMaskOn: { value: mf.mask ? 1 : 0 },
+        uReactionDiffusionAmount: { value: mf.reactionDiffusionAmount },
+        uReactionDiffusionSpeed: { value: mf.reactionDiffusionSpeed },
+        uFeedbackLoopPhase: { value: 0 },
+        uFeedbackTexel: { value: new THREE.Vector2(1 / resolution[0], 1 / resolution[1]) },
       },
       vertexShader: fullscreenVertexShader,
       fragmentShader: multipassFeedbackFragmentShader,
@@ -763,9 +691,12 @@ export function createComposer(
   const wrapper = {
     ...composer,
     setTime(t: number) {
+      const safeLoopDuration = Math.max(loopDuration, 1e-6);
+      const normalizedLoopTime = ((t % safeLoopDuration) + safeLoopDuration) % safeLoopDuration / safeLoopDuration;
       if (auraMaterial) auraMaterial.uniforms.uTime.value = t;
       if (mandalaMaterial) mandalaMaterial.uniforms.uTime.value = t;
       if (filmGradeMaterial) filmGradeMaterial.uniforms.uTime.value = t;
+      if (multipassMaterial) multipassMaterial.uniforms.uFeedbackLoopPhase.value = normalizedLoopTime;
     },
     render(delta?: number) {
       originalRender(delta);

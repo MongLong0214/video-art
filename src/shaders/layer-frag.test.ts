@@ -165,26 +165,50 @@ describe("layer.frag — OKLCH hue rotation and green compression", () => {
 
 describe("layer.frag — D-3-6 glow wave", () => {
   it("declares glow-wave uniforms", () => {
+    expect(fragSrc).toMatch(/uniform\s+sampler2D\s+uPhaseTex2/);
+    expect(fragSrc).toMatch(/uniform\s+float\s+uPhaseWarpAmount/);
     expect(fragSrc).toMatch(/uniform\s+float\s+uGlowWaveStrength/);
     expect(fragSrc).toMatch(/uniform\s+float\s+uGlowWaveSpeed/);
     expect(fragSrc).toMatch(/uniform\s+float\s+uGlowWaveSharpness/);
     expect(fragSrc).toMatch(/uniform\s+float\s+uGlowWaveFieldCycles/);
     expect(fragSrc).toMatch(/uniform\s+float\s+uGlowWaveMean/);
+    expect(fragSrc).toMatch(/uniform\s+float\s+uGlowWave2Strength/);
+    expect(fragSrc).toMatch(/uniform\s+float\s+uGlowWave2Speed/);
+    expect(fragSrc).toMatch(/uniform\s+float\s+uGlowWave2Sharpness/);
+    expect(fragSrc).toMatch(/uniform\s+float\s+uGlowWave2FieldCycles/);
+    expect(fragSrc).toMatch(/uniform\s+float\s+uGlowWave2Mean/);
   });
 
   it("guards glow wave behind strength threshold", () => {
-    expect(fragSrc).toMatch(/if\s*\(\s*uGlowWaveStrength\s*>\s*0\.001\s*\)/);
+    expect(fragSrc).toMatch(/if\s*\(\s*uGlowWaveStrength\s*>\s*0\.001\s*\|\|\s*uGlowWave2Strength\s*>\s*0\.001\s*\)/);
   });
 
   it("uses D-3-6 phase-field crest math", () => {
     expect(fragSrc).toMatch(/fract\(\s*time\s*\/\s*glowSafePeriod\s*\*\s*uGlowWaveSpeed\s*\+\s*glowPhaseSample\s*\*\s*uGlowWaveFieldCycles\s*\)/);
     expect(fragSrc).toMatch(/pow\(\s*0\.5\s*\+\s*0\.5\s*\*\s*cos\(\s*TAU\s*\*\s*\(\s*wp\s*-\s*0\.62\s*\)\s*\)\s*,\s*mix\(\s*1\.5\s*,\s*7\.0\s*,\s*uGlowWaveSharpness\s*\)\s*\)/);
-    expect(fragSrc).toMatch(/rgb\s*\*=\s*1\.0\s*\+\s*uGlowWaveStrength\s*\*\s*\(\s*crest\s*-\s*uGlowWaveMean\s*\)/);
+    expect(fragSrc).toMatch(/glowWaveDelta\s*\+=\s*uGlowWaveStrength\s*\*\s*\(\s*crest\s*-\s*uGlowWaveMean\s*\)/);
+    expect(fragSrc).toMatch(/rgb\s*\*=\s*1\.0\s*\+\s*glowWaveDelta/);
+  });
+
+  it("adds second wave as an independent zero-mean interference term", () => {
+    expect(fragSrc).toMatch(/texture2D\(\s*uPhaseTex2\s*,\s*glowPhaseUv\s*\)\.r/);
+    expect(fragSrc).toMatch(/fract\(\s*time\s*\/\s*glowSafePeriod\s*\*\s*uGlowWave2Speed\s*\+\s*glowPhaseSample2\s*\*\s*uGlowWave2FieldCycles\s*\)/);
+    expect(fragSrc).toMatch(/pow\(\s*0\.5\s*\+\s*0\.5\s*\*\s*cos\(\s*TAU\s*\*\s*\(\s*wp2\s*-\s*0\.62\s*\)\s*\)\s*,\s*mix\(\s*1\.5\s*,\s*7\.0\s*,\s*uGlowWave2Sharpness\s*\)\s*\)/);
+    expect(fragSrc).toMatch(/glowWaveDelta\s*\+=\s*uGlowWave2Strength\s*\*\s*\(\s*crest2\s*-\s*uGlowWave2Mean\s*\)/);
+    expect(fragSrc).not.toMatch(/mix\(\s*crest\s*,\s*crest2/);
+  });
+
+  it("warps glow-wave phase-field UVs only when phase warp is enabled", () => {
+    expect(fragSrc).toMatch(/vec2\s+domainWarpVector\s*\(\s*vec2\s+p\s*\)/);
+    expect(fragSrc).toMatch(/if\s*\(\s*uPhaseWarpAmount\s*>\s*0\.0001\s*\)/);
+    expect(fragSrc).toMatch(/vec2\s+phaseWarp\s*=\s*0\.5\s*\+\s*0\.5\s*\*\s*domainWarpVector/);
+    expect(fragSrc).toMatch(/glowPhaseUv\s*=\s*clamp\(\s*sampleUv\s*\+\s*uPhaseWarpAmount\s*\*\s*\(\s*phaseWarp\s*-\s*0\.5\s*\)\s*\*\s*0\.1/);
+    expect(fragSrc).toMatch(/texture2D\(\s*uPhaseTex\s*,\s*glowPhaseUv\s*\)\.r/);
   });
 
   it("applies glow wave after palette blend and before rim lighting", () => {
     const paletteIdx = fragSrc.indexOf("// IQ cosine palette blend");
-    const glowWaveIdx = fragSrc.indexOf("// D-3-6 glow wave");
+    const glowWaveIdx = fragSrc.indexOf("// D-3-6/r18 glow waves");
     const rimIdx = fragSrc.indexOf("// --- Fresnel rim chromatic glow ---");
     expect(paletteIdx).toBeGreaterThan(-1);
     expect(glowWaveIdx).toBeGreaterThan(paletteIdx);

@@ -10,6 +10,7 @@ interface LayerMesh {
   material: THREE.ShaderMaterial;
   config: LayerConfig;
   phaseTexture: THREE.Texture;
+  phaseTexture2: THREE.Texture;
   depthTexture: THREE.Texture;
   flowTexture: THREE.Texture;
 }
@@ -46,6 +47,9 @@ export async function createLayeredPsychedelic(
   const phaseTextures = await Promise.all(
     config.layers.map((l) => loadPhaseTexture(textureLoader, l.animation.phaseField)),
   );
+  const phaseTextures2 = await Promise.all(
+    config.layers.map((l) => loadPhaseTexture(textureLoader, l.animation.phaseField2)),
+  );
   const depthTextures = await Promise.all(
     config.layers.map((l) => loadFieldTexture(textureLoader, l.animation.depthField, [128, 128, 128, 255])),
   );
@@ -57,6 +61,7 @@ export async function createLayeredPsychedelic(
     const layerConfig = config.layers[idx];
     const texture = textures[idx];
     const phaseTexture = phaseTextures[idx];
+    const phaseTexture2 = phaseTextures2[idx];
     const depthTexture = depthTextures[idx];
     const flowTexture = flowTextures[idx];
     texture.colorSpace = THREE.NoColorSpace;
@@ -80,9 +85,11 @@ export async function createLayeredPsychedelic(
         uColorCyclePeriod: { value: anim.colorCycle?.period ?? 10 },
         uPhaseOffset: { value: anim.colorCycle?.phaseOffset ?? 0 },
         uPhaseTex: { value: phaseTexture },
+        uPhaseTex2: { value: phaseTexture2 },
         uDepthTex: { value: depthTexture },
         uFlowFieldTex: { value: flowTexture },
         uPhaseAmount: { value: anim.phaseAmount ?? 0 },
+        uPhaseWarpAmount: { value: anim.phaseWarpAmount ?? 0 },
         uCamDriftRadius: { value: config.effects.cameraDrift.radius },
         uCamDriftCycles: { value: config.effects.cameraDrift.cycles },
         uCamDriftPivot: { value: config.effects.cameraDrift.pivot },
@@ -96,6 +103,11 @@ export async function createLayeredPsychedelic(
         uGlowWaveSharpness: { value: anim.glowWave.sharpness },
         uGlowWaveFieldCycles: { value: anim.glowWave.fieldCycles },
         uGlowWaveMean: { value: glowWaveMean(anim.glowWave.sharpness) },
+        uGlowWave2Strength: { value: anim.glowWave2.strength },
+        uGlowWave2Speed: { value: anim.glowWave2.speed },
+        uGlowWave2Sharpness: { value: anim.glowWave2.sharpness },
+        uGlowWave2FieldCycles: { value: anim.glowWave2.fieldCycles },
+        uGlowWave2Mean: { value: glowWaveMean(anim.glowWave2.sharpness) },
         uSaturationBoost: { value: anim.saturationBoost ?? 2.5 },
         uLuminanceKey: { value: anim.luminanceKey ?? 0.6 },
         uSatBlendLow: { value: anim.satBlendLow ?? 0.1 },
@@ -184,7 +196,7 @@ export async function createLayeredPsychedelic(
     mesh.renderOrder = layerConfig.zIndex;
 
     scene.add(mesh);
-    layerMeshes.push({ mesh, material, config: layerConfig, phaseTexture, depthTexture, flowTexture });
+    layerMeshes.push({ mesh, material, config: layerConfig, phaseTexture, phaseTexture2, depthTexture, flowTexture });
   }
 
   return {
@@ -201,12 +213,13 @@ export async function createLayeredPsychedelic(
       // OrthographicCamera is fixed -1..1, no resize needed for square
     },
     dispose() {
-      for (const { mesh, material, phaseTexture, depthTexture, flowTexture } of layerMeshes) {
+      for (const { mesh, material, phaseTexture, phaseTexture2, depthTexture, flowTexture } of layerMeshes) {
         mesh.geometry.dispose();
         material.dispose();
         const tex = material.uniforms.uTexture.value as THREE.Texture;
         tex.dispose();
         phaseTexture.dispose();
+        phaseTexture2.dispose();
         depthTexture.dispose();
         flowTexture.dispose();
         scene.remove(mesh);

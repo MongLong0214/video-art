@@ -46,7 +46,9 @@ function parseWarmupFrames(argv: readonly string[]): number | undefined {
 }
 
 function sceneNeedsFeedbackWarmup(config: SceneConfig): boolean {
-  return config.effects.trails.strength > 0 || config.effects.multipassFeedback.strength > 0;
+  return config.effects.trails.strength > 0 ||
+    config.effects.multipassFeedback.strength > 0 ||
+    config.effects.multipassFeedback.reactionDiffusionAmount > 0;
 }
 
 function startViteServer(port: number, projectRoot: string, workDir?: string): ChildProcess {

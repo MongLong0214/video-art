@@ -179,6 +179,7 @@ async function init() {
       sketch.camera,
       config.effects,
       [WIDTH, HEIGHT],
+      config.duration,
     );
     composerRender = () => composer.render();
     updatePostUniforms = (time: number) => composer.setTime(time);

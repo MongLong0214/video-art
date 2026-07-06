@@ -1489,10 +1489,27 @@ QA 하네스 전 항목 PASS + 아래 체감 3문:
 
 ---
 
-# PART K — 구현 현황 레저 (2026-07-03 세션 종료 시점)
+# PART K — 구현 현황 레저 (최종 갱신: 2026-07-06)
 
 > 구현 주체: Codex CLI (gpt-5.5 xhigh) / 검수·판정: Claude / 최종 미학 판정: Isaac.
-> 다음 세션은 이 레저에서 이어간다.
+> 다음 세션은 이 레저에서 이어간다. **작업 현황 트래킹 정본 — 세션마다 K-3/K-5를 갱신할 것.**
+
+## K-0. 현재 상태 한눈에 (2026-07-06)
+
+| 항목 | 상태 |
+|------|------|
+| 색공간(어두운 톤 + 표백) | ✅ 해결 — r14 디스플레이-참조 전환 |
+| bloom/feedback 과잉 강도 | ✅ 해결 — r15 M1 기반 유도 + decay 완화 |
+| edge 레이어 실버 브러시 텍스처 | ✅ 해결 — r17 screen-blend opacity 버그 수정 (r16은 무효 패치였음, K-3 참조) |
+| 가네샤(#23, 무지개 헤일로) 풀해상도 최종본 | ✅ 렌더 완료 (`ganesha-halo-r17-final`), QA 사실상 PASS(seamRatio만 1.51/1.5 근소초과), Isaac 육안 확인 대기 |
+| "단조로운 단방향 파동" 진부함 문제 | ✅ 원인규명+대응책 구현 완료 — r18 3종 실험 프리미티브(A 다중파동간섭/B 반응-확산/C 위상장 워프) 전부 opt-in 구현, r19에서 B의 그린오염·다크닝·심(seam) 버그 수정 완료. **전부 QA PASS, 육안 이중검증 완료. 단, 아직 어떤 씬에도 기본 채택 안 됨** — Isaac 최종 판정/조합 결정 대기 |
+| git 커밋 | ✅ main 브랜치에 4개 커밋 랜딩(docs/feat-pipeline/fix-render/chore) — **push 여부는 미결정, Isaac 확인 필요** |
+| 8소스 배터리(가네샤 제외) r17 재검증 | ⬜ 미실행 — r15까지만 배터리 검증됨, r16/r17/r18/r19는 가네샤(+일부 turtle) 단일/이중 소스로만 검증 |
+| turtle/thirdeye oliveDwell 잔여 마진 FAIL | ⬜ 미해결 (r15 시점 수치, r17 이후 영향 미확인) |
+| flowrobe·ganesha M8 캘리브레이션(회전경로 라우팅 적절성) | ⬜ 미결정 — 육안 판정 대기 |
+| hueJump95/hierarchy/subjectHold QA 경고 | ⬜ 미정리 (차단 사유 아님, 저우선) |
+| `--full-res` 승인분 최종 익스포트 | ⬜ 가네샤 1건만 완료, 나머지는 Isaac 승인 후 |
+| A/B/C 프리미티브 `master-derivation.ts` 자동유도 편입 | ⬜ 미착수 — 현재는 손패치 scene.json 실험 단계, 자동 유도 규칙에는 미연결 |
 
 ## K-1. 완료된 인프라 (전부 검수·테스트 통과)
 
@@ -1512,12 +1529,15 @@ QA 하네스 전 항목 PASS + 아래 체감 3문:
 | 프리미티브 | 상태 |
 |-----------|------|
 | 위상장 hue 파동 (uPhaseTex/uPhaseAmount) | ✅ A/B 검증됨 (전역필터→구조따라 흐르는 다색 파동) |
-| 글로우 파동 (glowWave: 빛 마루가 구조를 타고 주행) | ✅ 구현 / ⚠️ **평균-밝기 버그 → r11 수정 중** |
+| 글로우 파동 (glowWave: 빛 마루가 구조를 타고 주행) | ✅ 구현 + r11 평균-밝기 버그 수정 완료(uGlowWaveMean) |
 | 붓결 플로우 (structureFlow, 구조텐서 접선 변위) | ✅ 구현, marble에서 활성 확인, 육안 검증 대기 |
 | 2.5D 카메라 드리프트 (depth.png) | ✅ 구현, 육안 검증 대기 |
-| 포탈 마스크드 피드백 | ✅ 구현, 육안 검증 대기 |
-| OKLCH 회전 + greenCompress | ✅ 구현 / ⚠️ **OKLCH 좌표계 그린밴드 불일치 → r11 수정 중** |
+| 포탈 마스크드 피드백 | ✅ 구현 + r15 decay 재보정(탈채도 방지), 가네샤 실사용 확인 |
+| OKLCH 회전 + greenCompress | ✅ 구현 + r11 그린밴드 수치유도 + r14 국소 srgb↔linear 어댑터로 색공간 전환 후에도 유효성 보존 |
 | atan2Safe (ANGLE/Metal 2-인자 atan=NaN 드라이버 버그) | ✅ 전 콜사이트 교체 (과거 feedback 이상동작의 유력 원인) |
+| **A. 다중파동 간섭 글로우** (glowWave2 — 두번째 독립 위상장·speed·sharpness, 편차합산으로 진짜 간섭/moiré) | ✅ 구현+QA PASS (r18/r19) — opt-in, 기본 off |
+| **B. 반응-확산-lite** (multipass feedback 버퍼 기반 luminance 국소평균+비선형 샤프닝 코어스닝) | ✅ 구현+r19 재수정 후 QA PASS — opt-in, 기본 off. **초기(r18)에 그린오염/다크닝/심깨짐으로 FAIL했던 이력 있음(K-3 참조), 채택 전 반드시 r19 코드인지 확인** |
+| **C. 위상장 도메인워프 샘플링** (uPhaseWarpAmount — 기존 fbm 도메인워프를 위상장 UV 샘플링에 재사용, 파동 경로가 유기적으로 뒤틀림) | ✅ 구현+QA PASS (r18/r19) — opt-in, 기본 off, 3개 중 가장 저비용 |
 
 ## K-3. 라운드 연대기 (r0~r11)
 
@@ -1557,7 +1577,33 @@ r0 유도규칙 초판(olive 47.5%) → r3 oklch+압축(7.7%, 창백) → r4 가
 
 **r17 (2026-07-06): r16의 opacity 수정이 실제로는 무효였던 코드 버그 발견.** `layered-psychedelic.ts`의 `screen` 블렌드 구현이 `THREE.CustomBlending`에 `blendSrc = THREE.OneFactor`를 사용 — 이 블렌드 함수는 **알파(불투명도)를 아예 읽지 않음**. 즉 셰이더가 `uOpacity`로 alpha를 계산해도 GPU 블렌드 단계에서 버려져 opacity 값이 무엇이든 렌더링에 전혀 반영되지 않았음. 증명: opacity=0 강제 프로브와 opacity=0.18(r16값) 프로브를 렌더해 프레임 MD5 비교 → **완전히 동일**(원본 diff 0.0). r16의 satBoost/glowWave 조정은 일부 효과가 있었지만 "opacity로 강도를 줄인다"는 핵심 조치 자체가 처음부터 죽어있었음 — edge 레이어는 계속 100% 강도로 화면 전체를 screen-블렌드 중이었음. 수정: 셰이더에서 `uPremultiplyAlpha`(screen 블렌드 레이어에서만 1) 플래그 추가, `rgb *= alpha`로 최종 출력 전 프리멀티플라이 — screen 블렌드가 이제 opacity를 실제로 따름. 검증: opacity 0 vs 0.18이 이제 프레임당 mean abs diff 3.86~4.67로 실제 차이 발생(수정 전엔 0.0). 육안 확인: 연꽃·손 윤곽의 굵은 창백한 붓자국 소멸, 자연스러운 색 경계로 복원. 435테스트 통과. **동일 버그가 영향을 준 다른 파일**: `scripts/split-layers.ts`, `scripts/create-ganesha-dmt-v6.ts`, `scripts/ganesha-dmt-v8-scene-style.ts` — `createLayeredPsychedelic` 경유 렌더는 전부 이 수정의 혜택을 받음.
 
-**교훈**: 파라미터를 낮췄는데도 증상이 그대로면 "덜 낮췄나"가 아니라 "그 파라미터가 애초에 배선이 안 됐나"를 의심할 것 — 실측(MD5/픽셀 diff)으로 파라미터 민감도부터 검증.
+**교훈**: 파라미터를 낮췄는데도 증상이 그대로면 "덜 낮췄나"가 아니라 "그 파라미터가 애초에 배선이 안 됐나"를 의심할 것 — 실측(MD5/픽셀 diff)으로 파라미터 민감도부터 검증. ([[feedback_verify_param_sensitivity]] 메모리 저장됨)
+
+**r17 풀해상도 최종 검증 (2026-07-06)**: `out/manual-runs/r13-ganesha-halo` 씬을 1632×2912@30fps 20초 풀해상도로 최종 렌더(`ganesha-halo-r17-final.mp4`, 49.3MB). QA: oliveDwell 0.040(≤0.054 PASS), bleachDwell 0.0036(≤0.05 PASS, 소스 0.0011 수준까지 근접), darkDwell 0(PASS), seamRatio 1.51(≤1.5, **근소 초과** — 노이즈 수준). 5프레임 육안 확인: 무지개 헤일로 선명, 몸체 색이 그린→퍼플→옐로우→오렌지→블루로 자연스럽게 흐름, 윤곽은 두꺼운 흰 붓자국 없이 색 경계로 정리됨. **Isaac 최종 승인 대기 중.**
+
+**git 커밋 완료 (2026-07-06)**: 이번 세션 전체 작업(r10~r17 + 측정→유도 파이프라인 + 문서)을 main 브랜치에 4개 커밋으로 정리:
+1. `docs: masterpiece pipeline design doc + colorspace audit + workflow rewrite`
+2. `feat(pipeline): source-agnostic measure→derive→render→QA one-command system`
+3. `fix(render): display-referred colorspace + bloom/feedback recalibration + screen-blend opacity bug`
+4. `chore: pre-masterpiece-pipeline ganesha experiment scripts + recipe + tooling sync`
+
+로컬 커밋만 완료, **origin push는 미실행**(Isaac 확인 후 진행).
+
+**r18 (2026-07-06): "단조로운 단방향 파동" 창의 방향 문제 — 진짜 창발적 패턴형성 3종 실험.** Isaac 지적: 현재 glowWave는 단일 위상장에서 샘플링하는 하나의 진행파라 늘 한 방향/한 패턴으로만 흘러 "진부하다". 실제 사이키델릭 시각(Kluver form constants: 격자/터널-스파이럴/거미줄)은 Bressloff & Cowan(2001)의 신경장 모델에서 **여러 파동모드의 간섭**으로 나타나는 대칭깨짐 튜링형 불안정성이지, 단일 진행파가 아님 — 이 과학적 근거로 opt-in 실험 3종을 Codex 발주:
+- **A. 다중파동 간섭**: 기존 glowWave 블록(`layer.frag`)에 독립된 2번째 위상장(`uPhaseTex2`)·speed·sharpness·fieldCycles를 추가, 두 파동의 **평균편차를 가산**(`rgb *= 1 + s1*(crest1-mean) + s2*(crest2-mean)`)해 공진 시 보강(밝은 띠)·역위상 시 상쇄(간섭무늬)가 실제로 발생하도록 구현. 단순 블렌드가 아닌 진짜 간섭.
+- **B. 반응-확산-lite**: 풀 2종 Gray-Scott은 기존 패스 아키텍처(가시 컴포지트만 저장, 숨은 activator/inhibitor 채널 없음)에 부적합해 축소 구현 — `uPrevFrame` luminance 국소평균(8이웃) + 비선형 샤프닝(`smoothstep`)을 프레임마다 재귀 적용하는 단채널 코어스닝. `uReactionDiffusionAmount`/`uReactionDiffusionSpeed`.
+- **C. 위상장 도메인워프**: 기존 IQ 스타일 fbm 도메인워프(`uDomainWarp`, 원래 hue-noise 전용)를 위상장 UV 샘플링에도 재사용 — 파동이 뒤쫓는 "지도"가 유기적으로 뒤틀려 고정된 기하 형태 대신 살아 움직이는 경로를 그림. 가장 저비용(기존 노이즈 재사용).
+
+3종 모두 opt-in/기본 off로 구현, Zod 스키마 확장, 445테스트 통과. 풀해상도 최종본 3종(A/B/C) 렌더 후 QA: **A·C는 클린 PASS. B는 FAIL** — oliveDwell 0.167(임계 0.05의 3배+), darkDwell 0.367(임계 0.10의 3배+), seamRatio 1.66(임계 1.5). 육안 확인: 피사체 피부/몸체에 뚜렷한 그린/올리브 색조 오염 — 프로젝트의 하드 가드(머디/그린 금지) 정면 위반.
+
+**r19 (2026-07-06): B(반응-확산) 그린오염 근본원인 규명·수정.** `multipass-feedback.frag` 직독으로 원인 3건 특정:
+1. **그린오염(핵심)**: `huePush = hsv2rgb(vec3(fract(pattern + hueShift), 0.75, 1.0))` — `pattern`은 색과 무관한 휘도류 스칼라(반응-확산 평형이 구조적으로 0.3~0.4 부근에 안착)인데 이를 그대로 HSV hue 각도로 사용 → hue≈0.33은 정확히 순수 그린. 평형 상태가 곧 금지색과 일치하도록 설계된 셈, 우연이 아니라 필연.
+2. **다크닝**: `signedPattern`(휘도유도 부호값)을 3채널 RGB에 균등 가산 — zero-mean 보정 없이(기존 `uGlowWaveMean`류 수치보정과 대비) 음의 영역에서 전체 채널을 균일하게 끌어내림.
+3. **심 깨짐**: 반응-확산이 순수 프레임히스토리 재귀 + 정적(시간항 없는) 해시 시드로만 진화 — 비선형 코어스닝이 20초/60프레임 워밍업 내 주기적 어트랙터로 수렴한다는 보장이 없음.
+
+수정: huePush 완전 제거, `rdGain = 1 + rdSigned*0.12*amount*m*envelope`(순수 luminance-multiply, hue 절대 미개입 — 코드 주석으로 명문화) + 루프위상 기반 `rdEnvelope`(loop 시작/끝 근접 시 0으로 페이드, `smoothstep(0.06,0.18,phase)*(1-smoothstep(0.72,0.90,phase))`)로 심 경계 안전 + `hash12` 시드에 `uFeedbackLoopPhase` 기반 주기항(`loopSin`/`loopCos`) 추가. 449테스트 통과. Codex 자체 풀해상도 재검증: oliveDwell 0.0405 PASS(소스 0.0356), darkDwell 0.0000 PASS, seamRatio 1.3278 PASS. **Claude 독립 재검증**: 코드 직독으로 huePush 완전삭제·`accum *= rdGain` 순수배율구조 확인 + 3프레임(3s/10s/17s) 육안 확인 — 스킨/바디 그린오염 없음(t17의 그린은 헤일로 링 고유 컬러사이클 팔레트 색상이지 오염 아님), 다크닝 없음, 배경/링 가장자리 모틀링 텍스처(RD 목표 효과) 정상 유지. **B 픽스 확정.**
+
+**남은 결정**: A/B(r19)/C 모두 QA PASS 상태이나 아직 어느 씬에도 기본값으로 채택되지 않음 — 개별 채택 여부·조합(A+B+C 동시 사용 시 상호작용)·최종 강도(amount/strength) 아티스트 판단은 Isaac 몫. `master-derivation.ts` 자동유도 규칙에도 아직 미연결(현재는 손패치 scene.json 실험 전용).
 
 ## K-4. 미학 기준 (확정, 메모리 저장됨)
 
@@ -1566,14 +1612,17 @@ r0 유도규칙 초판(olive 47.5%) → r3 oklch+압축(7.7%, 창백) → r4 가
 - 판정 제1문: "소스 원본보다 아름다운가" (원본 스틸 나란히 필수).
 - 가드 불변: strobe·멜팅·머디/그린·스페클·dayglo 금지.
 
-## K-5. 다음 착수 순서 (2026-07-06 3차 갱신)
+## K-5. 다음 착수 순서 (2026-07-06 5차 갱신)
 
-1. ~~r12~~ / ~~r13~~ / ~~r14 디스플레이-참조 전환~~ / ~~r15 bloom·feedback 재보정+satBlend 버그 수정~~ 전부 ✅ (9소스 배터리 7/9 PASS — K-3 r15 참조)
-2. **[여기부터 시작]** {원본|출력} 나란히 판정 시트 생성 후 Isaac 육안 승인 — 제1문 "원본보다 아름다운가" (이제 표백 없이 판정 가능한 상태)
-3. 잔여 2건 마무리: turtle(oliveDwell 0.076/0.06, bleachDwell 0.062/0.05) / thirdeye(oliveDwell 0.051/0.05) — 임계값 근접 마진, 필요시 소폭 추가 튜닝
-4. flowrobe·ganesha M8 캘리브레이션 판단(0.47/0.54가 회전 경로로 가는 게 맞는지 — 육안 판정 후 결정)
-5. 남은 QA 경고 정리: hueJump95 / hierarchy / subjectHold → Isaac 승인분 `--full-res`
-6. 잔여 백로그: P3c 레인지 A/B, IMAGE_TO_LOOP_WORKFLOW P4 갱신(측정→유도 경로 반영)
+1. ~~r12~~ / ~~r13~~ / ~~r14 디스플레이-참조 전환~~ / ~~r15 bloom·feedback 재보정~~ / ~~r16 edge 1차 시도(무효)~~ / ~~r17 screen-blend opacity 버그 수정~~ / ~~가네샤 풀해상도 최종 렌더~~ / ~~main 4개 커밋~~ / ~~r18 A/B/C 실험 프리미티브 구현~~ / ~~r19 B 그린오염·다크닝·심 버그 수정+이중검증~~ 전부 ✅
+2. **[여기부터 시작]** Isaac이 가네샤 `ganesha-halo-r17-final.mp4` 최종 승인 여부 확정 → 승인 시 `git push` (r18/r19 커밋도 함께 정리 필요 — 현재 미커밋)
+3. A/B/C 프리미티브 중 어느 것을 기본 채택할지, 조합(동시 사용) 가능 여부, 최종 강도값 Isaac 판정 — 판정 후 `master-derivation.ts` 자동유도 규칙 편입 여부 결정
+4. **r17 이후 효과를 가네샤 단일 소스로만 검증함** — r15 8소스 배터리(eyestack/marble/whitebuddha/flowrobe/womaneye/turtle/eyebranch/thirdeye)를 r17~r19 코드로 재렌더해 다른 소스에서도 표백/실버텍스처/그린오염 없이 잘 작동하는지 확인 필요
+5. turtle(oliveDwell 0.076/0.06, bleachDwell 0.062/0.05)·thirdeye(oliveDwell 0.051/0.05) 잔여 마진 FAIL — 위 4번 재검증 후 여전히 남으면 소폭 튜닝
+6. flowrobe·ganesha M8 캘리브레이션 판단(0.47/0.54가 회전 경로로 가는 게 맞는지 — 육안 판정 후 결정)
+7. 남은 QA 경고 정리: hueJump95 / hierarchy / subjectHold (차단 사유 아님, 저우선)
+8. Isaac 승인분 전체 `--full-res` 최종 익스포트
+9. 잔여 백로그: P3c 레인지 A/B, IMAGE_TO_LOOP_WORKFLOW P4 갱신(측정→유도 경로 반영)
 
 ---
 
