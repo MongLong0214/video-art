@@ -11,10 +11,43 @@ import {
 } from "./lib/archive.js";
 import { findAvailablePort } from "./lib/work-dir.js";
 
-import { sceneSchema } from "../src/lib/scene-schema.js";
+import { sceneSchema, type SceneConfig } from "../src/lib/scene-schema.js";
 
 import { waitForServer } from "./lib/browser-utils.js";
 
+const FEEDBACK_WARMUP_SECONDS = 2;
+
+type CaptureFrameOptions = {
+  readonly outputDir: string;
+  readonly totalFrames: number;
+  readonly resolution: [number, number];
+  readonly fps: number;
+  readonly warmupFrames: number;
+  readonly resScale: number;
+  readonly workDir?: string;
+};
+
+function evenCeil(value: number): number {
+  return Math.max(2, Math.ceil(value / 2) * 2);
+}
+
+function computePreviewResolution(resolution: readonly [number, number]): [number, number] {
+  return [evenCeil(resolution[0] * 0.5), evenCeil(resolution[1] * 0.5)];
+}
+
+function parseWarmupFrames(argv: readonly string[]): number | undefined {
+  const warmupIdx = argv.indexOf("--warmup-frames");
+  if (warmupIdx === -1) return undefined;
+  const raw = argv[warmupIdx + 1];
+  if (!raw || raw.startsWith("--")) throw new Error("expected frame count after --warmup-frames");
+  const value = Number(raw);
+  if (!Number.isInteger(value) || value < 0) throw new Error("--warmup-frames must be a non-negative integer");
+  return value;
+}
+
+function sceneNeedsFeedbackWarmup(config: SceneConfig): boolean {
+  return config.effects.trails.strength > 0 || config.effects.multipassFeedback.strength > 0;
+}
 
 function startViteServer(port: number, projectRoot: string, workDir?: string): ChildProcess {
   const env = { ...process.env };
@@ -36,7 +69,8 @@ async function killViteGracefully(proc: ChildProcess): Promise<void> {
   });
 }
 
-async function captureFrames(outputDir: string, totalFrames: number, resolution: [number, number], fps: number, workDir?: string): Promise<void> {
+async function captureFrames(options: CaptureFrameOptions): Promise<void> {
+  const { outputDir, totalFrames, resolution, fps, warmupFrames, resScale, workDir } = options;
   const port = workDir ? await findAvailablePort() : 5299;
   fs.mkdirSync(outputDir, { recursive: true });
 
@@ -52,7 +86,8 @@ async function captureFrames(outputDir: string, totalFrames: number, resolution:
     console.log("Server ready.");
 
     browser = await puppeteer.launch({
-      headless: "new",
+      headless: true,
+      protocolTimeout: 120000,
       args: [
         "--no-sandbox",
         "--use-gl=angle",
@@ -64,7 +99,11 @@ async function captureFrames(outputDir: string, totalFrames: number, resolution:
 
     const page = await browser.newPage();
     await page.setViewport({ width: resolution[0], height: resolution[1] });
-    await page.goto(`http://localhost:${port}/?mode=layered`, {
+    const toneMapParam = process.argv.includes("--tonemap")
+      ? `&tonemap=${process.argv[process.argv.indexOf("--tonemap") + 1]}`
+      : "";
+    const resScaleParam = resScale === 1 ? "" : `&resScale=${resScale}`;
+    await page.goto(`http://localhost:${port}/?mode=layered${toneMapParam}${resScaleParam}`, {
       waitUntil: "networkidle0",
     });
 
@@ -74,6 +113,20 @@ async function captureFrames(outputDir: string, totalFrames: number, resolution:
 
     console.log(`Starting capture: ${totalFrames} frames @ ${fps}fps...`);
     await page.evaluate(`window.__startCapture(${fps})`);
+
+    if (warmupFrames > 0) {
+      const warmupStartFrame = Math.max(0, totalFrames - warmupFrames);
+      console.log(`Feedback warmup: ${warmupFrames} frames (${warmupStartFrame}..${totalFrames - 1})`);
+      await page.evaluate(`window.__seekFrame(${warmupStartFrame})`);
+      for (let i = 0; i < warmupFrames; i++) {
+        await page.evaluate("window.__captureFrame()");
+        if ((i + 1) % 30 === 0 || i === warmupFrames - 1) {
+          process.stdout.write(`\r  warmup ${i + 1}/${warmupFrames}`);
+        }
+      }
+      await page.evaluate("window.__seekFrame(0)");
+      console.log("\nWarmup complete; capture starts at frame 0.");
+    }
 
     for (let i = 0; i < totalFrames; i++) {
       const dataUrl = (await page.evaluate(
@@ -106,10 +159,11 @@ interface EncodeOptions {
   fps: number;
   duration: number;
   prores: boolean;
+  preview: boolean;
 }
 
 function encodeVideo(inputFramesDir: string, outputPath: string, options: EncodeOptions): Promise<void> {
-  const { fps, duration, prores } = options;
+  const { fps, duration, prores, preview } = options;
   const ffmpegArgs = prores
     ? [
         "-y",
@@ -120,11 +174,26 @@ function encodeVideo(inputFramesDir: string, outputPath: string, options: Encode
         "-pix_fmt", "yuva444p10le",
         outputPath,
       ]
+    : preview
+      ? [
+          "-y",
+          "-framerate", String(fps),
+          "-i", path.join(inputFramesDir, "frame_%05d.png"),
+          "-r", String(fps),
+          "-c:v", "libx264",
+          "-preset", "veryfast",
+          "-crf", "23",
+          "-profile:v", "high",
+          "-pix_fmt", "yuv420p",
+          "-g", String(fps * 2),
+          "-movflags", "+faststart",
+          outputPath,
+        ]
     : [
         "-y",
         "-framerate", String(fps),
         "-i", path.join(inputFramesDir, "frame_%05d.png"),
-        "-vf", "scale=1080:1920:flags=lanczos:force_original_aspect_ratio=decrease:in_range=full:in_color_matrix=bt709:out_range=tv:out_color_matrix=bt709,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:black",
+        "-vf", "scale=1080:1920:flags=lanczos:force_original_aspect_ratio=increase:in_range=full:in_color_matrix=bt709:out_range=tv:out_color_matrix=bt709,crop=1080:1920",
         "-r", "30",
         "-c:v", "libx264",
         "-preset", "slow",
@@ -164,7 +233,8 @@ function encodeVideo(inputFramesDir: string, outputPath: string, options: Encode
 
 async function main() {
   const keepFrames = process.argv.includes("--keep-frames");
-  const proresFlag = process.argv.includes("--prores");
+  const preview = process.argv.includes("--preview");
+  const proresFlag = process.argv.includes("--prores") && !preview;
   const title = parseTitle(process.argv.slice(2));
 
   // Parse --fps from CLI
@@ -204,25 +274,30 @@ async function main() {
   const config = sceneSchema.parse(sceneJson);
   const DURATION = config.duration;
 
-  // FPS priority: CLI --fps > scene.json fps (default 60)
-  const FPS = cliFps ?? config.fps;
+  const FPS = preview ? 15 : cliFps ?? config.fps;
   const totalFrames = FPS * DURATION;
+  const cliWarmupFrames = parseWarmupFrames(process.argv);
+  const defaultWarmupFrames = sceneNeedsFeedbackWarmup(config) ? Math.round(FPS * FEEDBACK_WARMUP_SECONDS) : 0;
+  const warmupFrames = Math.min(totalFrames, cliWarmupFrames ?? defaultWarmupFrames);
 
   const ext = proresFlag ? ".mov" : ".mp4";
-  const outputPath = path.join(ctx.archiveDir, `${title}${ext}`);
+  const outputPath = path.join(ctx.archiveDir, preview ? `${title}-preview${ext}` : `${title}${ext}`);
 
-  const [resW, resH] = config.resolution;
+  const captureResolution = preview ? computePreviewResolution(config.resolution) : config.resolution;
+  const resScale = preview ? 0.5 : 1;
+  const [resW, resH] = captureResolution;
   console.log(`Title: ${title}`);
   console.log(`Archive: ${path.relative(projectRoot, ctx.archiveDir)}/`);
-  console.log(`Resolution: ${resW}x${resH}`);
-  console.log(`Duration: ${DURATION}s, ${totalFrames} frames @ ${FPS}fps${proresFlag ? " (ProRes 4444)" : ""}`);
+  console.log(`Resolution: ${resW}x${resH}${preview ? " (preview half-res)" : ""}`);
+  console.log(`Duration: ${DURATION}s, ${totalFrames} frames @ ${FPS}fps${proresFlag ? " (ProRes 4444)" : preview ? " (preview)" : ""}`);
+  console.log(`Warmup frames: ${warmupFrames}${cliWarmupFrames === undefined ? " (auto)" : " (CLI)"}`);
 
   const estimatedMB = (totalFrames * 4.5).toFixed(0);
   console.log(`Estimated disk usage: ~${estimatedMB}MB for ${totalFrames} frames`);
 
   try {
-    await captureFrames(ctx.paths.frames, totalFrames, config.resolution, FPS, workDir);
-    await encodeVideo(ctx.paths.frames, outputPath, { fps: FPS, duration: DURATION, prores: proresFlag });
+    await captureFrames({ outputDir: ctx.paths.frames, totalFrames, resolution: captureResolution, fps: FPS, warmupFrames, resScale, workDir });
+    await encodeVideo(ctx.paths.frames, outputPath, { fps: FPS, duration: DURATION, prores: proresFlag, preview });
   } catch (err) {
     ctx.cleanup();
     throw err;

@@ -27,6 +27,32 @@ describe("export-layered encoding defaults (T4)", () => {
   it("FPS CLI input is validated to range 1..120", () => {
     expect(exportSrc).toMatch(/val\s*>=\s*1\s*&&\s*val\s*<=\s*120/);
   });
+
+  it("supports configurable feedback warmup frames", () => {
+    expect(exportSrc).toContain("FEEDBACK_WARMUP_SECONDS = 2");
+    expect(exportSrc).toContain('"--warmup-frames"');
+    expect(exportSrc).toMatch(/sceneNeedsFeedbackWarmup\(config\)\s*\?\s*Math\.round\(FPS\s*\*\s*FEEDBACK_WARMUP_SECONDS\)\s*:\s*0/);
+  });
+
+  it("warms feedback from the loop tail before seeking back to frame 0", () => {
+    expect(exportSrc).toMatch(/totalFrames\s*-\s*warmupFrames/);
+    expect(exportSrc).toContain("window.__seekFrame");
+    expect(exportSrc).toContain('window.__captureFrame()');
+    expect(exportSrc).toContain('window.__seekFrame(0)');
+  });
+
+  it("--preview forces half-resolution capture, 15fps, and preview output name", () => {
+    expect(exportSrc).toContain('"--preview"');
+    expect(exportSrc).toContain("const FPS = preview ? 15");
+    expect(exportSrc).toContain("computePreviewResolution(config.resolution)");
+    expect(exportSrc).toContain('`${title}-preview${ext}`');
+  });
+
+  it("preview encoding skips final 1080 scale and uses fast x264 settings", () => {
+    expect(exportSrc).toContain('"veryfast"');
+    expect(exportSrc).toContain('"-crf", "23"');
+    expect(exportSrc).toContain("preview");
+  });
 });
 
 describe("pipeline-cli flags (T4/T7)", () => {

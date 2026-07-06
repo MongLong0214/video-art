@@ -36,9 +36,20 @@ const SKETCH_NAME = params.get("sketch") || "psychedelic";
 const SCENE_URL = params.get("scene") || "/scene.json";
 const DMT_CONFIG_URL = params.get("dmt") || "/dmt-config.json";
 
+function parseResScale(value: string | null): number {
+  const parsed = Number(value ?? "1");
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+}
+
+function scaleEvenDimension(value: number, scale: number): number {
+  if (scale === 1) return value;
+  return Math.max(2, Math.ceil((value * scale) / 2) * 2);
+}
+
 // --- config ---
 const IS_LAYERED = MODE === "layered";
 const IS_DMT = MODE === "dmt";
+const RES_SCALE = parseResScale(params.get("resScale"));
 const sketchConfig = getSketchConfig(SKETCH_NAME);
 let WIDTH = IS_LAYERED || IS_DMT ? 1080 : sketchConfig.width;
 let HEIGHT = IS_LAYERED || IS_DMT ? 1080 : sketchConfig.height;
@@ -53,7 +64,11 @@ const renderer = new THREE.WebGLRenderer({
 renderer.setSize(WIDTH, HEIGHT);
 renderer.setPixelRatio(1);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
-renderer.toneMapping = IS_LAYERED || IS_DMT ? THREE.ACESFilmicToneMapping : getToneMapping(sketchConfig);
+const TONEMAP_OVERRIDE = params.get("tonemap");
+const layeredToneMapping =
+  TONEMAP_OVERRIDE === "aces" ? THREE.ACESFilmicToneMapping : THREE.NoToneMapping;
+renderer.toneMapping =
+  IS_LAYERED || IS_DMT ? layeredToneMapping : getToneMapping(sketchConfig);
 renderer.toneMappingExposure = 1.0;
 document.body.appendChild(renderer.domElement);
 
@@ -135,8 +150,8 @@ async function init() {
     const layeredSketch = sketch as import("@/sketches/layered-psychedelic").LayeredSketch;
     LOOP_DUR = layeredSketch.sceneConfig.duration;
     const [w, h] = layeredSketch.sceneConfig.resolution;
-    WIDTH = w;
-    HEIGHT = h;
+    WIDTH = scaleEvenDimension(w, RES_SCALE);
+    HEIGHT = scaleEvenDimension(h, RES_SCALE);
     renderer.setSize(WIDTH, HEIGHT);
   }
 
@@ -163,7 +178,7 @@ async function init() {
       sketch.scene,
       sketch.camera,
       config.effects,
-      config.resolution,
+      [WIDTH, HEIGHT],
     );
     composerRender = () => composer.render();
     updatePostUniforms = (time: number) => composer.setTime(time);
@@ -384,17 +399,10 @@ async function init() {
   win.__startCapture = (fps: number) => {
     capturing = true;
     clock.setFps(fps);
-    // Loop-seam fix: pre-render last ~0.5s of the loop so trails feedback
-    // buffer matches continuous-loop state at frame 0.
-    const warmupFrames = Math.max(15, Math.floor(fps * 0.5));
-    const dt = 1 / fps;
-    for (let i = 0; i < warmupFrames; i++) {
-      const t = LOOP_DUR - (warmupFrames - i) * dt;
-      sketch.update(t, dt);
-      updatePostUniforms(t);
-      composerRender();
-    }
     clock.startRecording();
+  };
+  win.__seekFrame = (frame: number) => {
+    clock.seekFrame(frame);
   };
 
   // --- animation loop (disabled during capture) ---

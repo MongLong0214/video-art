@@ -170,6 +170,71 @@ describe("sceneSchema", () => {
     expect(result.layers[0].animation.luminanceKey).toBe(0.6);
   });
 
+  it("defaults hue rotation safety fields to legacy HSV behavior", () => {
+    const result = sceneSchema.parse(validScene);
+    expect(result.layers[0].animation.hueSpace).toBe("hsv");
+    expect(result.layers[0].animation.greenCompress).toBe(0);
+  });
+
+  it("defaults glowWave to an inert legacy-compatible object", () => {
+    const result = sceneSchema.parse(validScene);
+    expect(result.layers[0].animation.glowWave).toEqual({
+      strength: 0,
+      speed: 0,
+      sharpness: 0.5,
+      fieldCycles: 1,
+    });
+  });
+
+  it("accepts D-3-6 glowWave bounds", () => {
+    const result = sceneSchema.safeParse({
+      ...validScene,
+      layers: [
+        {
+          ...validScene.layers[0],
+          animation: {
+            ...validScene.layers[0].animation,
+            glowWave: { strength: 0.45, speed: 8, sharpness: 0.6, fieldCycles: 1.25 },
+          },
+        },
+      ],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects glowWave values outside D-3-6 ranges", () => {
+    const result = sceneSchema.safeParse({
+      ...validScene,
+      layers: [
+        {
+          ...validScene.layers[0],
+          animation: {
+            ...validScene.layers[0].animation,
+            glowWave: { strength: 1.2, speed: 8, sharpness: 0.6, fieldCycles: 2.5 },
+          },
+        },
+      ],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("accepts OKLCH hue rotation with green compression", () => {
+    const result = sceneSchema.safeParse({
+      ...validScene,
+      layers: [
+        {
+          ...validScene.layers[0],
+          animation: {
+            ...validScene.layers[0].animation,
+            hueSpace: "oklch",
+            greenCompress: 0.7,
+          },
+        },
+      ],
+    });
+    expect(result.success).toBe(true);
+  });
+
   it("should have default phaseOffset of 0", () => {
     const result = sceneSchema.parse(validScene);
     expect(result.layers[0].animation.colorCycle?.phaseOffset).toBe(0);
@@ -693,6 +758,71 @@ describe("scene-schema — T-A1 multipassFeedback effect", () => {
     expect(mf.decay).toBe(0.9);
     expect(mf.hueShift).toBe(0);
   });
+
+  it("accepts optional multipassFeedback mask path", () => {
+    const r = sceneSchema.safeParse({
+      ...minimal,
+      effects: { multipassFeedback: { strength: 0.32, mask: "layers/portal.png" } },
+    });
+    expect(r.success).toBe(true);
+  });
+});
+
+describe("scene-schema — R9 structural primitives", () => {
+  const minimal = {
+    version: 1,
+    source: "x.png",
+    resolution: [720, 1280] as [number, number],
+    duration: 20,
+    fps: 30,
+    layers: [
+      {
+        id: "l0",
+        file: "layers/layer-0.png",
+        zIndex: 0,
+        animation: {
+          depthField: "layers/depth.png",
+          flowField: "layers/flow-field.png",
+          structureFlow: { strength: 0.003, cycles: 3 },
+        },
+      },
+    ],
+  };
+
+  it("defaults camera drift and structure flow to off", () => {
+    const r = sceneSchema.parse({
+      version: 1,
+      source: "x.png",
+      resolution: [720, 1280],
+      layers: [{ id: "l0", file: "layers/layer-0.png", zIndex: 0 }],
+    });
+
+    expect(r.effects.cameraDrift).toEqual({ radius: 0, cycles: 1, pivot: 0.5 });
+    expect(r.layers[0]?.animation.structureFlow).toEqual({ strength: 0, cycles: 3 });
+  });
+
+  it("accepts depthField, flowField, structureFlow, and cameraDrift bounds", () => {
+    const r = sceneSchema.safeParse({
+      ...minimal,
+      effects: { cameraDrift: { radius: 0.006, cycles: 1, pivot: 0.5 } },
+    });
+    expect(r.success).toBe(true);
+  });
+
+  it("rejects camera drift radius above 0.02 and structure flow above 0.005", () => {
+    expect(sceneSchema.safeParse({ ...minimal, effects: { cameraDrift: { radius: 0.03 } } }).success).toBe(false);
+    expect(sceneSchema.safeParse({
+      ...minimal,
+      layers: [
+        {
+          id: "l0",
+          file: "layers/layer-0.png",
+          zIndex: 0,
+          animation: { structureFlow: { strength: 0.006 } },
+        },
+      ],
+    }).success).toBe(false);
+  });
 });
 
 describe("LayerRole schema", () => {
@@ -768,4 +898,3 @@ describe("LayerRole schema", () => {
     }
   });
 });
-

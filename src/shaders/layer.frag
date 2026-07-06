@@ -12,16 +12,31 @@ precision highp float;
 uniform sampler2D uTexture;
 uniform float uTime;
 uniform float uOpacity;
+uniform float uPremultiplyAlpha;
 
 // Color cycling
 uniform float uColorCycleSpeed;
 uniform float uColorCyclePeriod;
 uniform float uPhaseOffset;
+uniform sampler2D uPhaseTex;
+uniform sampler2D uDepthTex;
+uniform sampler2D uFlowFieldTex;
+uniform float uPhaseAmount;
+uniform float uCamDriftRadius;
+uniform float uCamDriftCycles;
+uniform float uCamDriftPivot;
+uniform float uStructFlowStrength;
+uniform float uStructFlowCycles;
 
 // Glow pulse
 uniform float uGlowIntensity;
 uniform float uGlowPulse;
 uniform float uGlowPeriod;
+uniform float uGlowWaveStrength;
+uniform float uGlowWaveSpeed;
+uniform float uGlowWaveSharpness;
+uniform float uGlowWaveFieldCycles;
+uniform float uGlowWaveMean;
 
 // Psychedelic color engine
 uniform float uSaturationBoost;
@@ -34,6 +49,10 @@ uniform float uSatInjectionMul;
 uniform float uGlowPulseFloor;
 uniform float uLumExponent;
 uniform float uValueLift;
+uniform float uGreenCompress;
+uniform float uGreenBandLo;
+uniform float uGreenBandHi;
+uniform float uHueSpaceMode;
 
 // Breathing / morphing
 uniform float uBreathAmp;
@@ -56,6 +75,7 @@ uniform float uNoiseAmount;
 
 // Domain warping — recursive fbm for organic swirls (shader-dev T1)
 uniform float uDomainWarp;
+uniform float uDomainWarp2;
 
 // Domain repetition — fbm UV tiling (shader-dev T2)
 uniform float uTileRepeat;
@@ -95,6 +115,10 @@ uniform float uWorleyAmount;
 
 // IQ cosine palette — a + b*cos(TAU*(c*t+d)) (shader-dev T5)
 uniform float uPaletteAmount;
+uniform float uPaletteValueFloor;
+uniform float uPaletteSatFloor;
+uniform float uFlowAmp;
+uniform float uFlowScale;
 uniform vec3 uPaletteA;
 uniform vec3 uPaletteB;
 uniform vec3 uPaletteC;
@@ -181,6 +205,19 @@ vec4 sampleBicubic(sampler2D tex, vec2 uv, vec2 texSize) {
   return mix(mix(s3, s2, sx), mix(s1, s0, sx), sy);
 }
 
+// ANGLE/Metal miscompiles two-arg atan (empirically → NaN for all inputs here).
+// Manual atan2 via one-arg atan; also defines atan2(0,0)=0.
+float atan2Safe(float y, float x) {
+  float ax = abs(x), ay = abs(y);
+  if (ax < 1e-9 && ay < 1e-9) return 0.0;
+  if (ax >= ay) {
+    float a = atan(y / x);
+    return x >= 0.0 ? a : (y >= 0.0 ? a + 3.14159265358979 : a - 3.14159265358979);
+  }
+  float a = atan(x / y);
+  return (y >= 0.0 ? 1.57079632679490 : -1.57079632679490) - a;
+}
+
 // SDF 2D shapes (shader-dev T7) — https://iquilezles.org/articles/distfunctions2d/
 float sdCircle(vec2 p, float r) { return length(p) - r; }
 float sdStar(vec2 p, float r, float n) {
@@ -188,7 +225,7 @@ float sdStar(vec2 p, float r, float n) {
   float en = PI / max(n - 2.0, 2.0);
   vec2 acs = vec2(cos(an), sin(an));
   vec2 ecs = vec2(cos(en), sin(en));
-  float bn = mod(atan(p.x, p.y), 2.0 * an) - an;
+  float bn = mod(atan2Safe(p.x, p.y), 2.0 * an) - an;
   p = length(p) * vec2(cos(bn), abs(sin(bn)));
   p -= r * acs;
   p += ecs * clamp(-dot(p, ecs), 0.0, r * acs.y / ecs.y);
@@ -269,6 +306,134 @@ vec3 hsv2rgb(vec3 c) {
   return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
 }
 
+float srgbChannelToLinear(float c) {
+  return c <= 0.04045 ? c / 12.92 : pow((c + 0.055) / 1.055, 2.4);
+}
+
+vec3 srgbToLinear(vec3 c) {
+  return vec3(
+    srgbChannelToLinear(c.r),
+    srgbChannelToLinear(c.g),
+    srgbChannelToLinear(c.b)
+  );
+}
+
+float linearChannelToSrgb(float value) {
+  float c = clamp(value, 0.0, 1.0);
+  return c <= 0.0031308 ? c * 12.92 : 1.055 * pow(c, 1.0 / 2.4) - 0.055;
+}
+
+vec3 linearToSrgb(vec3 c) {
+  return vec3(
+    linearChannelToSrgb(c.r),
+    linearChannelToSrgb(c.g),
+    linearChannelToSrgb(c.b)
+  );
+}
+
+float timelineGreenWarp(float h, float amt) {
+  float greenStart = uGreenBandLo;
+  float greenEnd = uGreenBandHi;
+  float greenOut = greenEnd - greenStart;
+  float loOut = greenStart;
+  float hiOut = 1.0 - greenEnd;
+  float nonGreenOut = loOut + hiOut;
+  float greenIn = greenOut / (1.0 + 4.0 * amt);
+  float freed = greenOut - greenIn;
+  float loIn = loOut + freed * (loOut / nonGreenOut);
+  float hiIn = hiOut + freed * (hiOut / nonGreenOut);
+  float greenInEnd = loIn + greenIn;
+  // W maps input allocations [loIn, greenIn, hiIn] to fixed output arcs
+  // [loOut, greenOut, hiOut]. Since greenIn=|G|/(1+4a), a uniform sweep
+  // crosses output G=[70deg,165deg] faster while W(0)=0, W(1)=1 remains continuous.
+  if (h < loIn) return h * loOut / max(loIn, 1e-6);
+  if (h < greenInEnd) return greenStart + (h - loIn) * greenOut / max(greenIn, 1e-6);
+  return greenEnd + (h - greenInEnd) * hiOut / max(hiIn, 1e-6);
+}
+
+float squeezeOutputGreenArc(float h, float amt) {
+  float greenStart = uGreenBandLo;
+  float greenEnd = uGreenBandHi;
+  float greenOut = greenEnd - greenStart;
+  float targetGreen = greenOut * max(0.0001, 1.0 - 0.85 * amt);
+  float originalCenter = (greenStart + greenEnd) * 0.5;
+  float tealCenter = greenEnd - targetGreen * 0.5;
+  float targetCenter = mix(originalCenter, tealCenter, smoothstep(0.0, 1.0, amt));
+  float targetStart = clamp(targetCenter - targetGreen * 0.5, 0.0, 1.0 - targetGreen);
+  float targetEnd = targetStart + targetGreen;
+  if (h < greenStart) return h * targetStart / max(greenStart, 1e-6);
+  if (h < greenEnd) return targetStart + (h - greenStart) * targetGreen / max(greenOut, 1e-6);
+  return targetEnd + (h - greenEnd) * (1.0 - targetEnd) / max(1.0 - greenEnd, 1e-6);
+}
+
+float greenCompressedHue(float hue) {
+  float h = fract(hue);
+  float amt = clamp(uGreenCompress, 0.0, 1.0);
+  return squeezeOutputGreenArc(timelineGreenWarp(h, amt), amt);
+}
+
+// OKLab matrices operate on linear sRGB; the shader adapts locally because
+// the surrounding layered pipeline is display-referred.
+vec3 linearSrgbToOklab(vec3 c) {
+  float l = 0.4122214708 * c.r + 0.5363325363 * c.g + 0.0514459929 * c.b;
+  float m = 0.2119034982 * c.r + 0.6806995451 * c.g + 0.1073969566 * c.b;
+  float s = 0.0883024619 * c.r + 0.2817188376 * c.g + 0.6299787005 * c.b;
+  float l_ = pow(max(l, 0.0), 1.0 / 3.0);
+  float m_ = pow(max(m, 0.0), 1.0 / 3.0);
+  float s_ = pow(max(s, 0.0), 1.0 / 3.0);
+  return vec3(
+    0.2104542553 * l_ + 0.7936177850 * m_ - 0.0040720468 * s_,
+    1.9779984951 * l_ - 2.4285922050 * m_ + 0.4505937099 * s_,
+    0.0259040371 * l_ + 0.7827717662 * m_ - 0.8086757660 * s_
+  );
+}
+
+vec3 oklabToLinearSrgb(vec3 c) {
+  float l_ = c.x + 0.3963377774 * c.y + 0.2158037573 * c.z;
+  float m_ = c.x - 0.1055613458 * c.y - 0.0638541728 * c.z;
+  float s_ = c.x - 0.0894841775 * c.y - 1.2914855480 * c.z;
+  float l = l_ * l_ * l_;
+  float m = m_ * m_ * m_;
+  float s = s_ * s_ * s_;
+  return vec3(
+    4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
+    -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+    -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s
+  );
+}
+
+bool inLinearSrgbGamut(vec3 c) {
+  return all(greaterThanEqual(c, vec3(-1e-5))) && all(lessThanEqual(c, vec3(1.0 + 1e-5)));
+}
+
+vec3 oklchToLinearSrgb(float lightness, float hue, float chroma) {
+  vec2 ab = vec2(cos(hue * TAU), sin(hue * TAU)) * chroma;
+  return oklabToLinearSrgb(vec3(lightness, ab.x, ab.y));
+}
+
+vec3 oklchToLinearSrgbGamutMapped(float lightness, float hue, float chroma) {
+  vec3 rgb = oklchToLinearSrgb(lightness, hue, chroma);
+  if (inLinearSrgbGamut(rgb)) return rgb;
+
+  // Bright OKLCH boosts can exit sRGB; scale chroma down instead of channel-clipping toward white.
+  float lo = 0.0;
+  float hi = max(0.0, chroma);
+  for (int i = 0; i < 6; i++) {
+    float mid = (lo + hi) * 0.5;
+    vec3 candidate = oklchToLinearSrgb(lightness, hue, mid);
+    if (inLinearSrgbGamut(candidate)) {
+      lo = mid;
+    } else {
+      hi = mid;
+    }
+  }
+  return oklchToLinearSrgb(lightness, hue, lo);
+}
+
+void writeOutput(vec4 color) {
+  gl_FragColor = color;
+}
+
 void main() {
   float time = uTime * uLoopDuration;
 
@@ -288,7 +453,7 @@ void main() {
   if (abs(uPolarTwist) > 0.0001) {
     vec2 cPol = polarUv - 0.5;
     float rPol = length(cPol);
-    float aPol = atan(cPol.y, cPol.x) + uPolarTwist * rPol;
+    float aPol = atan2Safe(cPol.y, cPol.x) + uPolarTwist * rPol;
     polarUv = 0.5 + vec2(cos(aPol), sin(aPol)) * rPol;
   }
 
@@ -302,19 +467,50 @@ void main() {
     breathUv += normalize(fromCenter + 1e-6) * breathWave * dist;
   }
 
+  // Curl-noise flow displacement — divergence-free 액체 스월 모션.
+  // circle-time(cos/sin) 으로 시간을 원에 매핑 → frame0 == frameN, seamless 루프.
+  if (uFlowAmp > 0.0001) {
+    float ang = uTime * TAU;
+    vec2 tOff = vec2(cos(ang), sin(ang)) * 1.5; // 노이즈 도메인을 원으로 순회 = 주기적
+    vec2 fp = breathUv * uFlowScale + tOff;
+    float e = 0.012;
+    float a0 = fbm(fp);
+    float ax = fbm(fp + vec2(e, 0.0));
+    float ay = fbm(fp + vec2(0.0, e));
+    vec2 grad = vec2(ax - a0, ay - a0) / e;
+    vec2 curl = vec2(grad.y, -grad.x);          // 수직 그래디언트 = divergence-free 스월
+    curl = clamp(curl, -2.0, 2.0);              // 고그래디언트 영역 폭주 방지
+    breathUv += curl * uFlowAmp;
+  }
+
+  vec2 sampleUv = breathUv;
+  if (uCamDriftRadius > 0.0001) {
+    float d = texture2D(uDepthTex, sampleUv).r;
+    vec2 cam = uCamDriftRadius * vec2(cos(TAU * uTime * uCamDriftCycles), sin(TAU * uTime * uCamDriftCycles));
+    sampleUv += cam * (d - uCamDriftPivot);
+  }
+  if (uStructFlowStrength > 0.0001) {
+    vec3 ff = texture2D(uFlowFieldTex, sampleUv).rgb;
+    vec2 dir = ff.rg * 2.0 - 1.0;
+    float coh = ff.b;
+    float ph = texture2D(uPhaseTex, sampleUv).r;
+    sampleUv += dir * uStructFlowStrength * coh * sin(TAU * (uTime * uStructFlowCycles + ph));
+  }
+  sampleUv = clamp(sampleUv, 0.0, 1.0);
+
   vec4 texColor = uBicubicFilter > 0.5
-    ? sampleBicubic(uTexture, breathUv, uTextureSize)
-    : texture2D(uTexture, breathUv);
+    ? sampleBicubic(uTexture, sampleUv, uTextureSize)
+    : texture2D(uTexture, sampleUv);
 
   // --- Fresnel rim: sample alpha neighbors BEFORE alpha-discard so edges glow ---
   float rimFactor = 0.0;
   vec2 rimGrad = vec2(0.0);
   if (uRimIntensity > 0.001) {
     float w = max(uRimWidth, 0.001);
-    float aR = texture2D(uTexture, breathUv + vec2(w, 0.0)).a;
-    float aL = texture2D(uTexture, breathUv - vec2(w, 0.0)).a;
-    float aU = texture2D(uTexture, breathUv + vec2(0.0, w)).a;
-    float aD = texture2D(uTexture, breathUv - vec2(0.0, w)).a;
+    float aR = texture2D(uTexture, sampleUv + vec2(w, 0.0)).a;
+    float aL = texture2D(uTexture, sampleUv - vec2(w, 0.0)).a;
+    float aU = texture2D(uTexture, sampleUv + vec2(0.0, w)).a;
+    float aD = texture2D(uTexture, sampleUv - vec2(0.0, w)).a;
     rimGrad = vec2(aR - aL, aU - aD);
     rimFactor = length(rimGrad);
   }
@@ -326,12 +522,19 @@ void main() {
   vec3 hsv = rgb2hsv(texColor.rgb);
   float originalSat = hsv.y;
   float originalVal = hsv.z;
+  float disabledInjectionSatFloor = min(0.22, originalSat + 0.16);
 
   float lumPhase = uLuminanceKey > 0.001 ? pow(1.0 - lum, uLumExponent + uLuminanceKey) : 0.0;
   float huePhase = uHueKey > 0.001 ? hsv.x * uHueKey * uHueSpeed : 0.0;
 
   float safePeriod = max(uColorCyclePeriod, 1e-4);
-  float hueShift = fract(time / safePeriod * uColorCycleSpeed + lumPhase + huePhase + uPhaseOffset / 360.0);
+  float fieldPhase = 0.0;
+  if (uPhaseAmount > 0.0001) {
+    float f = texture2D(uPhaseTex, sampleUv).r;
+    f += (hash12(vUv * 1024.0) - 0.5) / 300.0;
+    fieldPhase = f * uPhaseAmount;
+  }
+  float hueShift = fract(time / safePeriod * uColorCycleSpeed + lumPhase + huePhase + fieldPhase + uPhaseOffset / 360.0);
 
   // Multi-octave fBm flow — richer spatial color variation
   float nHue = 0.0;
@@ -346,7 +549,11 @@ void main() {
     }
     // Domain warping (IQ-style): fbm(p + warp * vec2(fbm(p+a), fbm(p+b))) (shader-dev T1)
     if (uDomainWarp > 0.0001) {
-      nHue = fbm(p + uDomainWarp * vec2(fbm(p + vec2(1.7, 9.2)), fbm(p + vec2(8.3, 2.8))));
+      vec2 q = vec2(fbm(p + vec2(1.7, 9.2)), fbm(p + vec2(8.3, 2.8)));
+      vec2 rr = uDomainWarp2 > 0.0001
+        ? vec2(fbm(p + 4.0 * q + vec2(1.2, 3.4)), fbm(p + 4.0 * q + vec2(0.9, 6.1)))
+        : q;
+      nHue = fbm(p + uDomainWarp * rr);
     } else {
       nHue = fbm(p);
     }
@@ -355,26 +562,48 @@ void main() {
     hueShift += nHue * uNoiseAmount;
   }
 
-  float shiftedHue = fract(hsv.x + hueShift);
-  float injectedHue = fract(hueShift + lum * uLuminanceKey);
+  float shiftedHue = greenCompressedHue(hsv.x + hueShift);
+  float injectedHue = greenCompressedHue(hueShift + lum * uLuminanceKey);
 
-  float blend = smoothstep(uSatBlendLow, uSatBlendHigh, originalSat);
-  hsv.x = mix(injectedHue, shiftedHue, blend);
+  vec3 rgb = vec3(0.0);
+  if (uHueSpaceMode > 0.5) {
+    vec3 lab = linearSrgbToOklab(srgbToLinear(texColor.rgb));
+    float okHue = greenCompressedHue(atan2Safe(lab.z, lab.y) / TAU + hueShift);
+    float okChroma = length(lab.yz) * max(0.0, uSaturationBoost);
+    okChroma *= max(0.0, 1.0 + nSat * uNoiseAmount * 0.8);
+    okChroma *= max(0.0, 1.0 - uHazeIntensity * (1.0 - uDepthNorm));
+    vec3 linearRgb = oklchToLinearSrgbGamutMapped(lab.x, okHue, okChroma);
+    rgb = linearToSrgb(linearRgb);
+  } else {
+    float blend = smoothstep(uSatBlendLow, uSatBlendHigh, originalSat);
+    hsv.x = mix(injectedHue, shiftedHue, blend);
 
-  float injectedSat = uSaturationBoost * uSatInjectionMul;
-  float boostedSat = clamp(originalSat * uSaturationBoost, 0.0, 1.0);
-  hsv.y = clamp(mix(injectedSat, boostedSat, blend), 0.0, 1.0);
-  hsv.y *= 1.0 + nSat * uNoiseAmount * 0.8;
+    float boostedSat = clamp(originalSat * uSaturationBoost, 0.0, 1.0);
+    float injectedSat = uSaturationBoost * uSatInjectionMul;
+    float injectionEnabled = step(0.001, uSatInjectionMul);
+    float disabledInjectionSat = max(boostedSat, disabledInjectionSatFloor);
+    float lowSatTarget = mix(disabledInjectionSat, injectedSat, injectionEnabled);
+    hsv.y = clamp(mix(lowSatTarget, boostedSat, blend), 0.0, 1.0);
+    hsv.y *= 1.0 + nSat * uNoiseAmount * 0.8;
 
-  hsv.z = max(originalVal, uValueLift * (1.0 - originalVal));
-  hsv.y *= max(0.0, 1.0 - uHazeIntensity * (1.0 - uDepthNorm));
+    hsv.z = max(originalVal, uValueLift * (1.0 - originalVal));
+    hsv.y *= max(0.0, 1.0 - uHazeIntensity * (1.0 - uDepthNorm));
 
-  vec3 rgb = hsv2rgb(hsv);
+    rgb = hsv2rgb(hsv);
+  }
 
   // IQ cosine palette blend — drive color by hueShift phase (shader-dev T5)
   if (uPaletteAmount > 0.001) {
     vec3 pal = palette(fract(hueShift));
-    rgb = mix(rgb, pal * originalVal, uPaletteAmount);
+    // 팔레트 자체가 특정 hue 위상에서 어두운 네이비로 떨어지는 것을 차단:
+    // HSV value를 floor로 끌어올리되 채도는 보존(쨍쨍 유지)해 "어두운 톤" 제거.
+    vec3 palHsv = rgb2hsv(pal);
+    palHsv.z = max(palHsv.z, uPaletteValueFloor);
+    // 채도도 floor로 끌어올림 → "탁한 밝음(저채도 회색/올리브)" 방지, 쨍한 밝음 보장.
+    palHsv.y = max(palHsv.y, uPaletteSatFloor);
+    pal = hsv2rgb(palHsv);
+    // 소스 어두운 영역(originalVal 낮음)도 floor만큼 밝힘.
+    rgb = mix(rgb, pal * mix(originalVal, 1.0, uPaletteValueFloor), uPaletteAmount);
   }
 
   // Julia set fractal overlay (shader-dev T8)
@@ -388,7 +617,7 @@ void main() {
       iter += 1.0;
     }
     float jt = iter / float(MAX);
-    vec3 jCol = 0.5 + 0.5 * cos(TAU * (vec3(0.0, 0.33, 0.67) + jt + time * 0.1));
+    vec3 jCol = 0.5 + 0.5 * cos(TAU * (vec3(0.0, 0.33, 0.67) + jt + hueShift));
     rgb = mix(rgb, rgb + jCol * (1.0 - jt), uJuliaAmount);
   }
 
@@ -426,17 +655,29 @@ void main() {
 
   // Worley F2-F1 vein pattern (shader-dev T12)
   if (uWorleyAmount > 0.001) {
-    float w = worley(vUv * uWorleyScale + vec2(time * 0.2, time * -0.15));
+    float w = worley(vUv * uWorleyScale);
     // Crisp vein edges where F2-F1 is small
     float vein = 1.0 - smoothstep(0.0, 0.3, w);
-    rgb = mix(rgb, rgb + vec3(0.3, 0.6, 1.0) * vein, uWorleyAmount);
+    vec3 veinCol = palette(fract(hueShift + 0.5));
+    rgb = mix(rgb, rgb + veinCol * vein, uWorleyAmount);
   }
 
   // Voronoi cell overlay — crystalline additive highlights (shader-dev T4)
   if (uVoronoiAmount > 0.001) {
-    float vCell = voronoi(vUv * uVoronoiScale + vec2(time * 0.3, time * 0.2));
+    float vCell = voronoi(vUv * uVoronoiScale);
     float vRidge = 1.0 - smoothstep(0.0, 0.25, vCell);
     rgb += vRidge * uVoronoiAmount * vec3(0.6, 0.8, 1.0);
+  }
+
+  // D-3-6 glow wave: hue-stable light crest traveling over the static phase field.
+  if (uGlowWaveStrength > 0.001) {
+    float glowPhaseSample = texture2D(uPhaseTex, sampleUv).r;
+    float glowSafePeriod = max(uLoopDuration, 1e-4);
+    float wp = fract(time / glowSafePeriod * uGlowWaveSpeed + glowPhaseSample * uGlowWaveFieldCycles);
+    float crest = pow(0.5 + 0.5 * cos(TAU * (wp - 0.62)), mix(1.5, 7.0, uGlowWaveSharpness));
+    rgb *= 1.0 + uGlowWaveStrength * (crest - uGlowWaveMean);
+    vec3 crestSat = clamp(rgb * 1.15, 0.0, 1.0);
+    rgb = mix(rgb, crestSat, 0.3 * uGlowWaveStrength * crest);
   }
 
   // --- Glow pulse ---
@@ -460,7 +701,7 @@ void main() {
     // Falloff: strongest at mid-radius, fades at center + corners
     ring *= smoothstep(0.0, 0.1, ringR) * smoothstep(0.75, 0.25, ringR);
     // Chromatic ring: hue rotates over time
-    vec3 ringHue = hsv2rgb(vec3(fract(time * 0.07 + ringR * 0.5), 0.85, 1.0));
+    vec3 ringHue = hsv2rgb(vec3(fract(hueShift + ringR * 0.5), 0.85, 1.0));
     rgb += ringHue * ring * uRingIntensity * texColor.a;
     ringSum = ring;
   }
@@ -468,7 +709,7 @@ void main() {
   // --- Fresnel rim chromatic glow ---
   if (uRimIntensity > 0.001 && rimFactor > 0.01) {
     // Rim hue: direction of alpha gradient + time drift
-    float rimAngle = atan(rimGrad.y, rimGrad.x);
+    float rimAngle = atan2Safe(rimGrad.y, rimGrad.x);
     float rimHue = fract(rimAngle / TAU + time * uRimHueShift);
     vec3 rimColor = hsv2rgb(vec3(rimHue, 0.9, 1.0));
     float rimStrength = smoothstep(0.05, 0.6, rimFactor) * uRimIntensity;
@@ -483,5 +724,17 @@ void main() {
   float alpha = max(texColor.a, rimFactor * uRimIntensity * 0.6);
   alpha = alpha * uOpacity * feather;
 
-  gl_FragColor = vec4(rgb, alpha);
+  if (uSatInjectionMul < 0.001) {
+    vec3 finalHsv = rgb2hsv(clamp(rgb, 0.0, 1.2));
+    float brightSatFloor = smoothstep(0.55, 0.85, finalHsv.z) * 0.18;
+    finalHsv.y = max(finalHsv.y, max(disabledInjectionSatFloor, brightSatFloor));
+    rgb = hsv2rgb(finalHsv);
+  }
+
+  // Custom screen blending uses OneFactor, so final alpha must attenuate source RGB here.
+  if (uPremultiplyAlpha > 0.5) {
+    rgb *= alpha;
+  }
+
+  writeOutput(vec4(rgb, alpha));
 }

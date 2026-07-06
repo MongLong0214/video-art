@@ -6,6 +6,7 @@ import {
   BloomEffect,
   ChromaticAberrationEffect,
   ShaderPass,
+  Pass,
   KernelSize,
 } from "postprocessing";
 import type { EffectsConfig } from "./scene-schema";
@@ -18,6 +19,18 @@ const fullscreenVertexShader = `
   }
 `;
 
+const linearOutputFragment = `
+  void writeOutput(vec4 color) {
+    gl_FragColor = color;
+  }
+`;
+
+const screenOutputFragment = `
+  void writeScreenOutput(vec4 color) {
+    gl_FragColor = color;
+  }
+`;
+
 const kaleidoFragmentShader = `
   uniform sampler2D inputBuffer;
   uniform float uSegments;
@@ -26,14 +39,29 @@ const kaleidoFragmentShader = `
 
   #define TAU 6.28318530718
 
+  // ANGLE/Metal miscompiles two-arg atan (empirically → NaN for all inputs here).
+  // Manual atan2 via one-arg atan; also defines atan2(0,0)=0.
+  float atan2Safe(float y, float x) {
+    float ax = abs(x), ay = abs(y);
+    if (ax < 1e-9 && ay < 1e-9) return 0.0;
+    if (ax >= ay) {
+      float a = atan(y / x);
+      return x >= 0.0 ? a : (y >= 0.0 ? a + 3.14159265358979 : a - 3.14159265358979);
+    }
+    float a = atan(x / y);
+    return (y >= 0.0 ? 1.57079632679490 : -1.57079632679490) - a;
+  }
+
+  ${linearOutputFragment}
+
   void main() {
     vec4 original = texture2D(inputBuffer, vUv);
     if (uSegments < 2.0) {
-      gl_FragColor = original;
+      writeOutput(original);
       return;
     }
     vec2 centered = vUv - 0.5;
-    float angle = atan(centered.y, centered.x);
+    float angle = atan2Safe(centered.y, centered.x);
     if (angle < 0.0) angle += TAU;
     float radius = length(centered);
 
@@ -46,7 +74,7 @@ const kaleidoFragmentShader = `
 
     vec2 kaleidoUv = vec2(cos(localAngle), sin(localAngle)) * radius + 0.5;
     vec4 kaleidoColor = texture2D(inputBuffer, kaleidoUv);
-    gl_FragColor = mix(original, kaleidoColor, uBlend);
+    writeOutput(mix(original, kaleidoColor, uBlend));
   }
 `;
 
@@ -56,18 +84,34 @@ const trailsFragmentShader = `
   uniform float uTrailStrength;
   varying vec2 vUv;
 
+  ${linearOutputFragment}
+
   void main() {
     vec4 current = texture2D(inputBuffer, vUv);
     vec4 prev = texture2D(uPrevFrame, vUv);
-    gl_FragColor = mix(current, prev, uTrailStrength);
+    writeOutput(mix(current, prev, uTrailStrength));
   }
 `;
 
-const blitFragmentShader = `
+const linearBlitFragmentShader = `
   uniform sampler2D inputBuffer;
   varying vec2 vUv;
+
+  ${linearOutputFragment}
+
   void main() {
-    gl_FragColor = texture2D(inputBuffer, vUv);
+    writeOutput(texture2D(inputBuffer, vUv));
+  }
+`;
+
+const screenBlitFragmentShader = `
+  uniform sampler2D inputBuffer;
+  varying vec2 vUv;
+
+  ${screenOutputFragment}
+
+  void main() {
+    writeScreenOutput(texture2D(inputBuffer, vUv));
   }
 `;
 
@@ -85,6 +129,8 @@ const lensDistortionFragmentShader = `
     float r2 = dot(c, c);
     return 0.5 + c * (1.0 + k * r2);
   }
+
+  ${linearOutputFragment}
 
   void main() {
     float k = uBarrelAmount;
@@ -115,7 +161,7 @@ const lensDistortionFragmentShader = `
     float vig = smoothstep(uLensVignetteRadius, uLensVignetteRadius * 0.5, d);
     col *= mix(1.0, vig, step(0.999, uLensVignetteRadius) == 1.0 ? 0.0 : 1.0);
 
-    gl_FragColor = vec4(col, sG.a);
+    writeOutput(vec4(col, sG.a));
   }
 `;
 
@@ -128,9 +174,26 @@ const multipassFeedbackFragmentShader = `
   uniform float uFeedbackWarp;
   uniform float uFeedbackDecay;
   uniform float uFeedbackHueShift;
+  uniform float uFeedbackZoom;
+  uniform float uFeedbackRotate;
+  uniform sampler2D uFeedbackMaskTex;
+  uniform float uFeedbackMaskOn;
   varying vec2 vUv;
 
   #define TAU 6.28318530718
+
+  // ANGLE/Metal miscompiles two-arg atan (empirically → NaN for all inputs here).
+  // Manual atan2 via one-arg atan; also defines atan2(0,0)=0.
+  float atan2Safe(float y, float x) {
+    float ax = abs(x), ay = abs(y);
+    if (ax < 1e-9 && ay < 1e-9) return 0.0;
+    if (ax >= ay) {
+      float a = atan(y / x);
+      return x >= 0.0 ? a : (y >= 0.0 ? a + 3.14159265358979 : a - 3.14159265358979);
+    }
+    float a = atan(x / y);
+    return (y >= 0.0 ? 1.57079632679490 : -1.57079632679490) - a;
+  }
 
   vec3 rgb2hsv(vec3 c) {
     vec4 K = vec4(0.0, -1.0/3.0, 2.0/3.0, -1.0);
@@ -146,13 +209,16 @@ const multipassFeedbackFragmentShader = `
     return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
   }
 
+  ${linearOutputFragment}
+
   void main() {
     vec4 cur = texture2D(inputBuffer, vUv);
-    if (uFeedbackStrength < 0.001) { gl_FragColor = cur; return; }
-    // Radial warp — spiral sample of prev
+    if (uFeedbackStrength < 0.001) { writeOutput(cur); return; }
+    // Radial warp + zoom + rotate — Milkdrop식 터널/소용돌이 피드백.
+    // zoom<1 = 안으로 빨려드는 터널, rotate = 소용돌이.
     vec2 c = vUv - 0.5;
-    float r = length(c);
-    float a = atan(c.y, c.x) + uFeedbackWarp * r;
+    float r = length(c) * (uFeedbackZoom > 0.001 ? uFeedbackZoom : 1.0);
+    float a = atan2Safe(c.y, c.x) + uFeedbackWarp * r + uFeedbackRotate;
     vec2 warpUv = 0.5 + vec2(cos(a), sin(a)) * r;
     vec3 prev = texture2D(uPrevFrame, warpUv).rgb * uFeedbackDecay;
     // Optional hue shift on prev
@@ -161,8 +227,20 @@ const multipassFeedbackFragmentShader = `
       hsv.x = fract(hsv.x + uFeedbackHueShift);
       prev = hsv2rgb(hsv);
     }
-    vec3 accum = cur.rgb + prev * uFeedbackStrength;
-    gl_FragColor = vec4(clamp(accum, 0.0, 1.2), cur.a);
+    float m = 1.0;
+    if (uFeedbackMaskOn > 0.5) {
+      vec4 maskTex = texture2D(uFeedbackMaskTex, vUv);
+      m = maskTex.a < 0.999 ? maskTex.a : maskTex.r;
+    }
+    vec3 accum = cur.rgb + prev * uFeedbackStrength * m;
+    vec3 curHsv = rgb2hsv(clamp(cur.rgb, 0.0, 1.0));
+    vec3 accumHsv = rgb2hsv(clamp(accum, 0.0, 1.0));
+    float feedbackLoad = clamp(uFeedbackStrength * uFeedbackDecay * m, 0.0, 1.0);
+    float brightFeedback = smoothstep(0.55, 0.85, accumHsv.z);
+    float satTarget = clamp(max(curHsv.y, brightFeedback * 0.35) + feedbackLoad * 0.6, curHsv.y, 1.0);
+    accumHsv.y = max(accumHsv.y, satTarget);
+    accum = hsv2rgb(accumHsv);
+    writeOutput(vec4(clamp(accum, 0.0, 1.0), cur.a));
   }
 `;
 
@@ -177,6 +255,8 @@ const godRaysFragmentShader = `
   uniform float uThreshold;
   uniform int uSamples;
   varying vec2 vUv;
+
+  ${linearOutputFragment}
 
   void main() {
     vec4 original = texture2D(inputBuffer, vUv);
@@ -195,7 +275,7 @@ const godRaysFragmentShader = `
     }
     accum *= uIntensity / float(uSamples);
     // Additive blend
-    gl_FragColor = vec4(original.rgb + accum, original.a);
+    writeOutput(vec4(original.rgb + accum, original.a));
   }
 `;
 
@@ -216,6 +296,8 @@ const auraFragmentShader = `
     vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
     return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
   }
+
+  ${linearOutputFragment}
 
   void main() {
     vec4 center = texture2D(inputBuffer, vUv);
@@ -241,7 +323,7 @@ const auraFragmentShader = `
     halo *= uIntensity;
     // Screen blend
     vec3 screen = 1.0 - (1.0 - center.rgb) * (1.0 - halo);
-    gl_FragColor = vec4(screen, center.a);
+    writeOutput(vec4(screen, center.a));
   }
 `;
 
@@ -259,21 +341,36 @@ const mandalaFragmentShader = `
 
   #define TAU 6.28318530718
 
+  // ANGLE/Metal miscompiles two-arg atan (empirically → NaN for all inputs here).
+  // Manual atan2 via one-arg atan; also defines atan2(0,0)=0.
+  float atan2Safe(float y, float x) {
+    float ax = abs(x), ay = abs(y);
+    if (ax < 1e-9 && ay < 1e-9) return 0.0;
+    if (ax >= ay) {
+      float a = atan(y / x);
+      return x >= 0.0 ? a : (y >= 0.0 ? a + 3.14159265358979 : a - 3.14159265358979);
+    }
+    float a = atan(x / y);
+    return (y >= 0.0 ? 1.57079632679490 : -1.57079632679490) - a;
+  }
+
   vec3 hsv2rgb(vec3 c) {
     vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
     vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
     return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
   }
 
+  ${linearOutputFragment}
+
   void main() {
     vec4 original = texture2D(inputBuffer, vUv);
-    if (uOpacity < 0.001) { gl_FragColor = original; return; }
+    if (uOpacity < 0.001) { writeOutput(original); return; }
 
     vec2 p = vUv - 0.5;
     // Aspect correct (portrait: y spans more)
     p.y *= 1.78;
     float r = length(p);
-    float a = atan(p.y, p.x) + uTime * uRotationSpeed;
+    float a = atan2Safe(p.y, p.x) + uTime * uRotationSpeed;
 
     // N-fold mirror fold
     float seg = TAU / max(uSegments, 2.0);
@@ -288,8 +385,8 @@ const mandalaFragmentShader = `
     float cellDist = length(g);
     float circle = smoothstep(0.48, 0.38, cellDist);
 
-    // Concentric rings overlay
-    float ringWave = sin(r * uRings * 6.28 - uTime * 1.2) * 0.5 + 0.5;
+    // Concentric rings overlay — static standing wave (no outward scroll: loop-safe + ban #2)
+    float ringWave = sin(r * uRings * 6.28) * 0.5 + 0.5;
     float rings = pow(ringWave, 6.0);
 
     float pattern = max(circle, rings * 0.5);
@@ -301,11 +398,10 @@ const mandalaFragmentShader = `
 
     // Screen blend so it glows rather than obscures
     vec3 out_rgb = 1.0 - (1.0 - original.rgb) * (1.0 - tinted);
-    gl_FragColor = vec4(out_rgb, original.a);
+    writeOutput(vec4(out_rgb, original.a));
   }
 `;
 
-// Final film grade — S-curve contrast, luminance-adaptive grain, tinted radial vignette
 const filmGradeFragmentShader = `
   uniform sampler2D inputBuffer;
   uniform float uTime;
@@ -322,6 +418,15 @@ const filmGradeFragmentShader = `
     p3 += dot(p3, p3.yzx + 33.33);
     return fract((p3.x + p3.y) * p3.z);
   }
+  vec3 rgb2hsv(vec3 c) {
+    vec4 K = vec4(0.0, -1.0/3.0, 2.0/3.0, -1.0), p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g)), q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
+    float d = q.x - min(q.w, q.y), e = 1.0e-10; return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
+  }
+  vec3 hsv2rgb(vec3 c) {
+    vec4 K = vec4(1.0, 2.0/3.0, 1.0/3.0, 3.0); vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www); return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
+  }
+
+  ${linearOutputFragment}
 
   void main() {
     vec4 c = texture2D(inputBuffer, vUv);
@@ -354,11 +459,57 @@ const filmGradeFragmentShader = `
       rgb = mix(rgb, tintedEdge, uVignetteIntensity);
       rgb *= mix(1.0, 0.75, (1.0 - v) * uVignetteIntensity);
     }
-
     rgb = clamp(rgb, 0.0, 1.0);
-    gl_FragColor = vec4(rgb, c.a);
+    float lum = dot(rgb, vec3(0.299, 0.587, 0.114));
+    float bleachGuard = smoothstep(0.52, 0.6, lum);
+    vec3 hsv = rgb2hsv(rgb);
+    hsv.y = max(hsv.y, bleachGuard * 0.45);
+    rgb = hsv2rgb(hsv);
+
+    writeOutput(vec4(rgb, c.a));
   }
 `;
+
+function createWhiteMaskTexture(): THREE.DataTexture {
+  const texture = new THREE.DataTexture(
+    new Uint8Array([255, 255, 255, 255]),
+    1,
+    1,
+    THREE.RGBAFormat,
+  );
+  texture.colorSpace = THREE.NoColorSpace;
+  texture.needsUpdate = true;
+  return texture;
+}
+
+function loadFeedbackMaskTexture(mask: string | undefined): THREE.Texture {
+  const texture = mask ? new THREE.TextureLoader().load(`/${mask}`) : createWhiteMaskTexture();
+  texture.colorSpace = THREE.NoColorSpace;
+  texture.wrapS = THREE.ClampToEdgeWrapping;
+  texture.wrapT = THREE.ClampToEdgeWrapping;
+  return texture;
+}
+
+class FinalTexturePass extends Pass {
+  texture: THREE.Texture | null = null;
+
+  constructor() {
+    super("FinalTexturePass");
+    this.needsSwap = false;
+  }
+
+  render(
+    _renderer: THREE.WebGLRenderer,
+    inputBuffer: THREE.WebGLRenderTarget | null,
+    _outputBuffer: THREE.WebGLRenderTarget | null,
+  ): void {
+    this.texture = inputBuffer?.texture ?? null;
+  }
+
+  dispose(): void {
+    this.texture = null;
+  }
+}
 
 export function createComposer(
   renderer: THREE.WebGLRenderer,
@@ -370,16 +521,13 @@ export function createComposer(
   const composer = new EffectComposer(renderer, {
     frameBufferType: THREE.HalfFloatType,
   });
+  composer.autoRenderToScreen = false;
 
   const trailStrength = effects.trails?.strength ?? 0;
   const hasTrails = trailStrength > 0;
   const mf = effects.multipassFeedback;
   const hasMultipass = mf && mf.strength > 0;
   const needsFeedback = hasTrails || hasMultipass;
-
-  if (needsFeedback) {
-    composer.autoRenderToScreen = false;
-  }
 
   composer.addPass(new RenderPass(scene, camera));
 
@@ -520,10 +668,9 @@ export function createComposer(
           fragmentShader: filmGradeFragmentShader,
         })
       : null;
-  if (filmGradeMaterial) composer.addPass(new ShaderPass(filmGradeMaterial, "inputBuffer"));
-
   // --- Feedback infrastructure (shared by trails + multipassFeedback) ---
   let feedbackTarget: THREE.WebGLRenderTarget | null = null;
+  let feedbackMaskTexture: THREE.Texture | null = null;
   if (needsFeedback) {
     feedbackTarget = new THREE.WebGLRenderTarget(resolution[0], resolution[1], {
       type: THREE.HalfFloatType,
@@ -566,6 +713,7 @@ export function createComposer(
 
   // Multipass feedback pass (warp + decay + hue-shift, shares feedbackTarget) (T-A1)
   if (hasMultipass && feedbackTarget) {
+    feedbackMaskTexture = loadFeedbackMaskTexture(mf.mask);
     const multipassMaterial = new THREE.ShaderMaterial({
       uniforms: {
         inputBuffer: { value: null },
@@ -574,6 +722,10 @@ export function createComposer(
         uFeedbackWarp: { value: mf.warp },
         uFeedbackDecay: { value: mf.decay },
         uFeedbackHueShift: { value: mf.hueShift },
+        uFeedbackZoom: { value: mf.zoom },
+        uFeedbackRotate: { value: mf.rotate },
+        uFeedbackMaskTex: { value: feedbackMaskTexture },
+        uFeedbackMaskOn: { value: mf.mask ? 1 : 0 },
       },
       vertexShader: fullscreenVertexShader,
       fragmentShader: multipassFeedbackFragmentShader,
@@ -581,16 +733,29 @@ export function createComposer(
     composer.addPass(new ShaderPass(multipassMaterial, "inputBuffer"));
   }
 
-  // Blit quad for feedback copy
+  if (filmGradeMaterial) composer.addPass(new ShaderPass(filmGradeMaterial, "inputBuffer"));
+
+  const finalTexturePass = new FinalTexturePass();
+  composer.addPass(finalTexturePass);
+
+  // Display-referred contract: feedback and screen/capture blits are byte copies.
   const blitGeo = new THREE.PlaneGeometry(2, 2);
-  const blitMat = new THREE.ShaderMaterial({
+  const linearBlitMat = new THREE.ShaderMaterial({
     uniforms: { inputBuffer: { value: null } },
     vertexShader: fullscreenVertexShader,
-    fragmentShader: blitFragmentShader,
+    fragmentShader: linearBlitFragmentShader,
   });
-  const blitQuad = new THREE.Mesh(blitGeo, blitMat);
-  const blitScene = new THREE.Scene();
-  blitScene.add(blitQuad);
+  const screenBlitMat = new THREE.ShaderMaterial({
+    uniforms: { inputBuffer: { value: null } },
+    vertexShader: fullscreenVertexShader,
+    fragmentShader: screenBlitFragmentShader,
+  });
+  const linearBlitQuad = new THREE.Mesh(blitGeo, linearBlitMat);
+  const screenBlitQuad = new THREE.Mesh(blitGeo, screenBlitMat);
+  const linearBlitScene = new THREE.Scene();
+  const screenBlitScene = new THREE.Scene();
+  linearBlitScene.add(linearBlitQuad);
+  screenBlitScene.add(screenBlitQuad);
   const blitCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
 
   const originalRender = composer.render.bind(composer);
@@ -605,21 +770,26 @@ export function createComposer(
     render(delta?: number) {
       originalRender(delta);
 
-      if (needsFeedback) {
-        const resultTexture = composer.outputBuffer.texture;
-        blitMat.uniforms.inputBuffer.value = resultTexture;
-        if (feedbackTarget) {
-          renderer.setRenderTarget(feedbackTarget);
-          renderer.render(blitScene, blitCamera);
-        }
-        renderer.setRenderTarget(null);
-        renderer.render(blitScene, blitCamera);
+      const resultTexture = finalTexturePass.texture;
+      if (resultTexture === null) {
+        throw new Error("EffectComposer final texture was not captured");
       }
+
+      if (feedbackTarget) {
+        linearBlitMat.uniforms.inputBuffer.value = resultTexture;
+        renderer.setRenderTarget(feedbackTarget);
+        renderer.render(linearBlitScene, blitCamera);
+      }
+      screenBlitMat.uniforms.inputBuffer.value = resultTexture;
+      renderer.setRenderTarget(null);
+      renderer.render(screenBlitScene, blitCamera);
     },
     dispose() {
       feedbackTarget?.dispose();
+      feedbackMaskTexture?.dispose();
       blitGeo.dispose();
-      blitMat.dispose();
+      linearBlitMat.dispose();
+      screenBlitMat.dispose();
       composer.dispose();
     },
   };

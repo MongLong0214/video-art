@@ -57,6 +57,11 @@ export class Clock {
     this._dt = 1 / fps;
   }
 
+  seekFrame(frame: number) {
+    this._frame = Math.max(0, Math.floor(frame));
+    this._time = this._frame * this._dt;
+  }
+
   reset() {
     this._time = 0;
     this._frame = 0;

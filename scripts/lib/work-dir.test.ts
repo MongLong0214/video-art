@@ -11,14 +11,28 @@ function tmpDir() {
   return fs.mkdtempSync(path.join(os.tmpdir(), "work-dir-test-"));
 }
 
+async function canBindLocalTcp(): Promise<boolean> {
+  return new Promise((resolve) => {
+    const server = net.createServer();
+    server.once("error", () => resolve(false));
+    server.once("listening", () => {
+      server.close(() => resolve(true));
+    });
+    server.listen(0, "127.0.0.1");
+  });
+}
+
+const localTcpAvailable = await canBindLocalTcp();
+const tcpIt = localTcpAvailable ? it : it.skip;
+
 describe("findAvailablePort", () => {
-  it("returns port in range 5300-5399", async () => {
+  tcpIt("returns port in range 5300-5399", async () => {
     const port = await findAvailablePort();
     expect(port).toBeGreaterThanOrEqual(5300);
     expect(port).toBeLessThanOrEqual(5399);
   });
 
-  it("retries on occupied port", async () => {
+  tcpIt("retries on occupied port", async () => {
     // Occupy a port
     const server = net.createServer();
     const occupiedPort = 5350;
@@ -36,7 +50,7 @@ describe("findAvailablePort", () => {
     }
   });
 
-  it("throws after max retries when all ports occupied", async () => {
+  tcpIt("throws after max retries when all ports occupied", async () => {
     // Occupy the single port in range
     const server = net.createServer();
     const port = 5398;

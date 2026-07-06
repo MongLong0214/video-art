@@ -43,6 +43,14 @@ const animationSchema = z.object({
       period: z.number().positive(),
     })
     .optional(),
+  glowWave: z
+    .object({
+      strength: z.number().min(0).max(1).default(0),
+      speed: z.number().int().default(0),
+      sharpness: z.number().min(0).max(1).default(0.5),
+      fieldCycles: z.number().min(0.25).max(2).default(1),
+    })
+    .default({ strength: 0, speed: 0, sharpness: 0.5, fieldCycles: 1 }),
   parallax: z
     .object({
       depth: z.number(),
@@ -55,7 +63,19 @@ const animationSchema = z.object({
   satInjectionMul: z.number().default(0.35),
   glowPulseFloor: z.number().default(0.0),
   lumExponent: z.number().default(1.0),
+  phaseField: z.string().regex(/^[\w\-\/\.]+\.png$/).optional(),
+  depthField: z.string().regex(/^[\w\-\/\.]+\.png$/).optional(),
+  flowField: z.string().regex(/^[\w\-\/\.]+\.png$/).optional(),
+  phaseAmount: z.number().min(0).max(4).default(0),
+  structureFlow: z
+    .object({
+      strength: z.number().min(0).max(0.005).default(0),
+      cycles: z.number().int().positive().default(3),
+    })
+    .default({ strength: 0, cycles: 3 }),
   valueLift: z.number().min(0).max(1).default(0),
+  greenCompress: z.number().min(0).max(1).default(0),
+  hueSpace: z.enum(["hsv", "oklch"]).default("hsv"),
   hueKey: z.number().min(0).default(0),
   hueSpeed: z.number().default(1),
   breath: z
@@ -69,11 +89,16 @@ const animationSchema = z.object({
   noiseSpeed: z.number().min(0).max(10).default(1),
   noiseAmount: z.number().min(0).max(1).default(0),
   domainWarp: z.number().min(0).max(3).default(0),
+  domainWarp2: z.number().min(0).max(3).default(0),
   tileRepeat: z.number().min(0).max(20).default(0),
   polarTwist: z.number().min(-10).max(10).default(0),
   voronoiScale: z.number().min(0).max(50).default(8),
   voronoiAmount: z.number().min(0).max(2).default(0),
   paletteAmount: z.number().min(0).max(1).default(0),
+  paletteValueFloor: z.number().min(0).max(1).default(0),
+  paletteSatFloor: z.number().min(0).max(1).default(0),
+  flowAmp: z.number().min(0).max(0.5).default(0),
+  flowScale: z.number().min(0).max(20).default(3),
   paletteA: z.tuple([z.number(), z.number(), z.number()]).default([0.5, 0.5, 0.5]),
   paletteB: z.tuple([z.number(), z.number(), z.number()]).default([0.5, 0.5, 0.5]),
   paletteC: z.tuple([z.number(), z.number(), z.number()]).default([1.0, 1.0, 1.0]),
@@ -176,6 +201,9 @@ const multipassFeedbackSchema = z.object({
   warp: z.number().min(0).max(1).default(0.2),
   decay: z.number().min(0).max(1).default(0.9),
   hueShift: z.number().min(0).max(1).default(0),
+  zoom: z.number().min(0.9).max(1.1).default(1.0),
+  rotate: z.number().min(-0.2).max(0.2).default(0),
+  mask: z.string().regex(/^[\w\-\/\.]+\.png$/).optional(),
 });
 
 const lensDistortionSchema = z.object({
@@ -183,6 +211,12 @@ const lensDistortionSchema = z.object({
   chromatic: z.number().min(0).max(2).default(0),
   dof: z.number().min(0).max(1).default(0),
   vignetteRadius: z.number().min(0.5).max(1).default(1),
+});
+
+const cameraDriftEffectSchema = z.object({
+  radius: z.number().min(0).max(0.02).default(0),
+  cycles: z.number().int().positive().default(1),
+  pivot: z.number().min(0).max(1).default(0.5),
 });
 
 const filmGradeEffectSchema = z.object({
@@ -208,8 +242,9 @@ const effectsSchema = z.object({
   aura: auraEffectSchema.default({ intensity: 0, radius: 0.04, hueSpeed: 0.1, samples: 16 }),
   mandala: mandalaEffectSchema.default({ opacity: 0, segments: 12, rings: 8, rotationSpeed: 0.08, breathSpeed: 0.4, hueSpeed: 0.05 }),
   filmGrade: filmGradeEffectSchema.default({ grain: 0, vignetteIntensity: 0, vignetteRadius: 0.9, vignetteTintR: 0.12, vignetteTintG: 0.05, vignetteTintB: 0.25, contrast: 1, sCurve: 0 }),
-  multipassFeedback: multipassFeedbackSchema.default({ strength: 0, warp: 0.2, decay: 0.9, hueShift: 0 }),
+  multipassFeedback: multipassFeedbackSchema.default({ strength: 0, warp: 0.2, decay: 0.9, hueShift: 0, zoom: 1.0, rotate: 0 }),
   lensDistortion: lensDistortionSchema.default({ barrel: 0, chromatic: 0, dof: 0, vignetteRadius: 1 }),
+  cameraDrift: cameraDriftEffectSchema.default({ radius: 0, cycles: 1, pivot: 0.5 }),
 });
 
 const audioSchema = z.object({
@@ -255,8 +290,9 @@ export const sceneSchema = z
       aura: { intensity: 0, radius: 0.04, hueSpeed: 0.1, samples: 16 },
       mandala: { opacity: 0, segments: 12, rings: 8, rotationSpeed: 0.08, breathSpeed: 0.4, hueSpeed: 0.05 },
       filmGrade: { grain: 0, vignetteIntensity: 0, vignetteRadius: 0.9, vignetteTintR: 0.12, vignetteTintG: 0.05, vignetteTintB: 0.25, contrast: 1, sCurve: 0 },
-      multipassFeedback: { strength: 0, warp: 0.2, decay: 0.9, hueShift: 0 },
+      multipassFeedback: { strength: 0, warp: 0.2, decay: 0.9, hueShift: 0, zoom: 1.0, rotate: 0 },
       lensDistortion: { barrel: 0, chromatic: 0, dof: 0, vignetteRadius: 1 },
+      cameraDrift: { radius: 0, cycles: 1, pivot: 0.5 },
     }),
     audio: audioSchema.optional(),
   })
@@ -285,4 +321,3 @@ export type LayerConfig = z.infer<typeof layerSchema>;
 export type AnimationConfig = z.infer<typeof animationSchema>;
 export type EffectsConfig = z.infer<typeof effectsSchema>;
 export type AudioConfig = z.infer<typeof audioSchema>;
-

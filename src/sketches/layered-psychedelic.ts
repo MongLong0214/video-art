@@ -9,9 +9,24 @@ interface LayerMesh {
   mesh: THREE.Mesh;
   material: THREE.ShaderMaterial;
   config: LayerConfig;
+  phaseTexture: THREE.Texture;
+  depthTexture: THREE.Texture;
+  flowTexture: THREE.Texture;
 }
 
 export type LayeredSketch = Sketch & { sceneConfig: SceneConfig };
+
+type GreenBand = { readonly lo: number; readonly hi: number };
+
+const TAU = Math.PI * 2;
+const GLOW_WAVE_MEAN_SAMPLES = 64;
+
+// Derived by sweeping HSV h=70..165,s=1,v=1 through the shader's
+// linearSrgbToOklab matrix path; pure green maps to 142.4953388878deg.
+const GREEN_BANDS_BY_HUE_SPACE = {
+  hsv: { lo: 70 / 360, hi: 165 / 360 },
+  oklch: { lo: 0.27769994490592986, hi: 0.49983187802797546 },
+} satisfies Record<LayerConfig["animation"]["hueSpace"], GreenBand>;
 
 export async function createLayeredPsychedelic(
   sceneUrl = "/scene.json",
@@ -28,15 +43,29 @@ export async function createLayeredPsychedelic(
   const textures = await Promise.all(
     config.layers.map((l) => loadTexture(textureLoader, `/${l.file}`)),
   );
+  const phaseTextures = await Promise.all(
+    config.layers.map((l) => loadPhaseTexture(textureLoader, l.animation.phaseField)),
+  );
+  const depthTextures = await Promise.all(
+    config.layers.map((l) => loadFieldTexture(textureLoader, l.animation.depthField, [128, 128, 128, 255])),
+  );
+  const flowTextures = await Promise.all(
+    config.layers.map((l) => loadFieldTexture(textureLoader, l.animation.flowField, [128, 128, 0, 255])),
+  );
 
   for (let idx = 0; idx < config.layers.length; idx++) {
     const layerConfig = config.layers[idx];
     const texture = textures[idx];
-    texture.colorSpace = THREE.SRGBColorSpace;
+    const phaseTexture = phaseTextures[idx];
+    const depthTexture = depthTextures[idx];
+    const flowTexture = flowTextures[idx];
+    texture.colorSpace = THREE.NoColorSpace;
     texture.wrapS = THREE.ClampToEdgeWrapping;
     texture.wrapT = THREE.ClampToEdgeWrapping;
 
     const anim = layerConfig.animation;
+    const greenBand = GREEN_BANDS_BY_HUE_SPACE[anim.hueSpace];
+    const blending = layerConfig.blending ?? "normal";
 
     const material = new THREE.ShaderMaterial({
       vertexShader,
@@ -46,12 +75,27 @@ export async function createLayeredPsychedelic(
         uTime: { value: 0 },
         uLoopDuration: { value: loopDuration },
         uOpacity: { value: layerConfig.opacity },
+        uPremultiplyAlpha: { value: blending === "screen" ? 1 : 0 },
         uColorCycleSpeed: { value: anim.colorCycle?.speed ?? 0 },
         uColorCyclePeriod: { value: anim.colorCycle?.period ?? 10 },
         uPhaseOffset: { value: anim.colorCycle?.phaseOffset ?? 0 },
+        uPhaseTex: { value: phaseTexture },
+        uDepthTex: { value: depthTexture },
+        uFlowFieldTex: { value: flowTexture },
+        uPhaseAmount: { value: anim.phaseAmount ?? 0 },
+        uCamDriftRadius: { value: config.effects.cameraDrift.radius },
+        uCamDriftCycles: { value: config.effects.cameraDrift.cycles },
+        uCamDriftPivot: { value: config.effects.cameraDrift.pivot },
+        uStructFlowStrength: { value: anim.structureFlow.strength },
+        uStructFlowCycles: { value: anim.structureFlow.cycles },
         uGlowIntensity: { value: anim.glow?.intensity ?? 0 },
         uGlowPulse: { value: anim.glow?.pulse ?? 0 },
         uGlowPeriod: { value: anim.glow?.period ?? loopDuration },
+        uGlowWaveStrength: { value: anim.glowWave.strength },
+        uGlowWaveSpeed: { value: anim.glowWave.speed },
+        uGlowWaveSharpness: { value: anim.glowWave.sharpness },
+        uGlowWaveFieldCycles: { value: anim.glowWave.fieldCycles },
+        uGlowWaveMean: { value: glowWaveMean(anim.glowWave.sharpness) },
         uSaturationBoost: { value: anim.saturationBoost ?? 2.5 },
         uLuminanceKey: { value: anim.luminanceKey ?? 0.6 },
         uSatBlendLow: { value: anim.satBlendLow ?? 0.1 },
@@ -60,6 +104,10 @@ export async function createLayeredPsychedelic(
         uGlowPulseFloor: { value: anim.glowPulseFloor ?? 0.0 },
         uLumExponent: { value: anim.lumExponent ?? 1.0 },
         uValueLift: { value: anim.valueLift ?? 0 },
+        uGreenCompress: { value: anim.greenCompress ?? 0 },
+        uGreenBandLo: { value: greenBand.lo },
+        uGreenBandHi: { value: greenBand.hi },
+        uHueSpaceMode: { value: anim.hueSpace === "oklch" ? 1 : 0 },
         uDepthNorm: { value: (layerConfig.meanDepth ?? 128) / 255 },
         uParallaxScale: { value: config.effects?.parallax?.scale ?? 0 },
         uHazeIntensity: { value: config.effects?.haze?.intensity ?? 0 },
@@ -73,11 +121,16 @@ export async function createLayeredPsychedelic(
         uNoiseSpeed: { value: anim.noiseSpeed ?? 1 },
         uNoiseAmount: { value: anim.noiseAmount ?? 0 },
         uDomainWarp: { value: anim.domainWarp ?? 0 },
+        uDomainWarp2: { value: anim.domainWarp2 ?? 0 },
         uTileRepeat: { value: anim.tileRepeat ?? 0 },
         uPolarTwist: { value: anim.polarTwist ?? 0 },
         uVoronoiScale: { value: anim.voronoiScale ?? 8 },
         uVoronoiAmount: { value: anim.voronoiAmount ?? 0 },
         uPaletteAmount: { value: anim.paletteAmount ?? 0 },
+        uPaletteValueFloor: { value: anim.paletteValueFloor ?? 0 },
+        uPaletteSatFloor: { value: anim.paletteSatFloor ?? 0 },
+        uFlowAmp: { value: anim.flowAmp ?? 0 },
+        uFlowScale: { value: anim.flowScale ?? 3 },
         uPaletteA: { value: new THREE.Vector3(...(anim.paletteA ?? [0.5, 0.5, 0.5])) },
         uPaletteB: { value: new THREE.Vector3(...(anim.paletteB ?? [0.5, 0.5, 0.5])) },
         uPaletteC: { value: new THREE.Vector3(...(anim.paletteC ?? [1, 1, 1])) },
@@ -114,7 +167,6 @@ export async function createLayeredPsychedelic(
     });
 
     // Apply blend mode from scene.json
-    const blending = layerConfig.blending ?? "normal";
     if (blending === "screen") {
       material.blending = THREE.CustomBlending;
       material.blendEquation = THREE.AddEquation;
@@ -132,7 +184,7 @@ export async function createLayeredPsychedelic(
     mesh.renderOrder = layerConfig.zIndex;
 
     scene.add(mesh);
-    layerMeshes.push({ mesh, material, config: layerConfig });
+    layerMeshes.push({ mesh, material, config: layerConfig, phaseTexture, depthTexture, flowTexture });
   }
 
   return {
@@ -149,11 +201,14 @@ export async function createLayeredPsychedelic(
       // OrthographicCamera is fixed -1..1, no resize needed for square
     },
     dispose() {
-      for (const { mesh, material } of layerMeshes) {
+      for (const { mesh, material, phaseTexture, depthTexture, flowTexture } of layerMeshes) {
         mesh.geometry.dispose();
         material.dispose();
         const tex = material.uniforms.uTexture.value as THREE.Texture;
         tex.dispose();
+        phaseTexture.dispose();
+        depthTexture.dispose();
+        flowTexture.dispose();
         scene.remove(mesh);
       }
       layerMeshes.length = 0;
@@ -168,4 +223,53 @@ function loadTexture(
   return new Promise((resolve, reject) => {
     loader.load(url, resolve, undefined, reject);
   });
+}
+
+async function loadFieldTexture(
+  loader: THREE.TextureLoader,
+  field: string | undefined,
+  fallbackRgba: readonly [number, number, number, number],
+): Promise<THREE.Texture> {
+  const texture = field === undefined
+    ? createDataTexture(fallbackRgba)
+    : await loadTexture(loader, `/${field}`);
+  texture.colorSpace = THREE.NoColorSpace;
+  texture.wrapS = THREE.ClampToEdgeWrapping;
+  texture.wrapT = THREE.ClampToEdgeWrapping;
+  return texture;
+}
+
+async function loadPhaseTexture(
+  loader: THREE.TextureLoader,
+  phaseField: string | undefined,
+): Promise<THREE.Texture> {
+  const texture = phaseField === undefined
+    ? createDataTexture([0, 0, 0, 255])
+    : await loadTexture(loader, `/${phaseField}`);
+  texture.colorSpace = THREE.NoColorSpace;
+  texture.wrapS = THREE.ClampToEdgeWrapping;
+  texture.wrapT = THREE.ClampToEdgeWrapping;
+  return texture;
+}
+
+function createDataTexture(rgba: readonly [number, number, number, number]): THREE.DataTexture {
+  const texture = new THREE.DataTexture(
+    new Uint8Array(rgba),
+    1,
+    1,
+    THREE.RGBAFormat,
+  );
+  texture.colorSpace = THREE.NoColorSpace;
+  texture.needsUpdate = true;
+  return texture;
+}
+
+function glowWaveMean(sharpness: number): number {
+  const exponent = 1.5 + (7.0 - 1.5) * sharpness;
+  let sum = 0;
+  for (let sample = 0; sample < GLOW_WAVE_MEAN_SAMPLES; sample += 1) {
+    const x = sample / GLOW_WAVE_MEAN_SAMPLES;
+    sum += Math.pow(0.5 + 0.5 * Math.cos(TAU * x), exponent);
+  }
+  return sum / GLOW_WAVE_MEAN_SAMPLES;
 }
