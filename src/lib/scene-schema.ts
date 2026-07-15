@@ -29,6 +29,12 @@ const animationSchema = z.object({
       phaseOffset: z.number().min(0).max(360).default(0),
     })
     .optional(),
+  colorCycleDesync: z
+    .object({
+      amount: z.number().min(0).max(0.25).default(0),
+      cycles: z.number().int().positive().max(12).default(1),
+    })
+    .default({ amount: 0, cycles: 1 }),
   wave: z
     .object({
       amplitude: z.number().min(0),
@@ -51,6 +57,7 @@ const animationSchema = z.object({
       fieldCycles: z.number().min(0.25).max(2).default(1),
     })
     .default({ strength: 0, speed: 0, sharpness: 0.5, fieldCycles: 1 }),
+  glowWavePhaseSource: z.enum(["phaseField", "flowField"]).default("phaseField"),
   glowWave2: z
     .object({
       strength: z.number().min(0).max(1).default(0),
@@ -75,6 +82,8 @@ const animationSchema = z.object({
   phaseField2: z.string().regex(/^[\w\-\/\.]+\.png$/).optional(),
   depthField: z.string().regex(/^[\w\-\/\.]+\.png$/).optional(),
   flowField: z.string().regex(/^[\w\-\/\.]+\.png$/).optional(),
+  streamField: z.string().regex(/^[\w\-\/\.]+\.png$/).optional(),
+  regionField: z.string().regex(/^[\w\-\/\.]+\.png$/).optional(),
   phaseAmount: z.number().min(0).max(4).default(0),
   phaseWarpAmount: z.number().min(0).max(2).default(0),
   structureFlow: z
@@ -83,6 +92,167 @@ const animationSchema = z.object({
       cycles: z.number().int().positive().default(3),
     })
     .default({ strength: 0, cycles: 3 }),
+  tangentMicroflow: z
+    .object({
+      amount: z.number().min(0).max(1).default(0),
+      maxDisplacementPx: z.number().min(0).max(5).default(0),
+      cycles: z.number().int().positive().max(48).default(1),
+      phaseScale: z.number().min(0).max(8).default(1),
+    })
+    .default({
+      amount: 0,
+      maxDisplacementPx: 0,
+      cycles: 1,
+      phaseScale: 1,
+    }),
+  sourceFlowAdvection: z
+    .object({
+      amount: z.number().min(0).max(1).default(0),
+      maxDisplacementPx: z.number().min(0).max(64).default(0),
+      cycles: z.number().int().positive().max(24).default(1),
+      phaseScale: z.number().min(0).max(8).default(1),
+      normalMix: z.number().min(0).max(1).default(0.35),
+      edgePreserve: z.number().min(0).max(1).default(1),
+      detailGain: z.number().min(0).max(6).default(1),
+    })
+    .default({
+      amount: 0,
+      maxDisplacementPx: 0,
+      cycles: 1,
+      phaseScale: 1,
+      normalMix: 0.35,
+      edgePreserve: 1,
+      detailGain: 1,
+    }),
+  sourceFlowTransport: z
+    .object({
+      amount: z.number().min(0).max(1).default(0),
+      macroDisplacementPx: z.number().min(0).max(96).default(0),
+      macroCycles: z.number().int().positive().max(8).default(1),
+      microDisplacementPx: z.number().min(0).max(24).default(0),
+      microCycles: z.number().int().positive().max(48).default(1),
+      phaseScale: z.number().min(0).max(8).default(1),
+      normalMix: z.number().min(0).max(1).default(0.35),
+      edgePreserve: z.number().min(0).max(1).default(1),
+      colorAmount: z.number().min(0).max(1).default(0),
+    })
+    .default({
+      amount: 0,
+      macroDisplacementPx: 0,
+      macroCycles: 1,
+      microDisplacementPx: 0,
+      microCycles: 1,
+      phaseScale: 1,
+      normalMix: 0.35,
+      edgePreserve: 1,
+      colorAmount: 0,
+    }),
+  sourceStreamFlow: z
+    .object({
+      amount: z.number().min(0).max(1).default(0),
+      maxDisplacementPx: z.number().min(0).max(48).default(0),
+      cycles: z.number().int().positive().max(24).default(1),
+      wavelengthPx: z.number().min(8).max(256).default(64),
+      edgePreserve: z.number().min(0).max(1).default(1),
+      streamPhase: z.boolean().default(false),
+      normalMix: z.number().min(0).max(1).default(0),
+      materialMaskMix: z.number().min(0).max(1).default(0),
+    })
+    .default({
+      amount: 0,
+      maxDisplacementPx: 0,
+      cycles: 1,
+      wavelengthPx: 64,
+      edgePreserve: 1,
+      streamPhase: false,
+      normalMix: 0,
+      materialMaskMix: 0,
+    }),
+  sourceMaterialDissolve: z
+    .object({
+      amount: z.number().min(0).max(1).default(0),
+      maxDisplacementPx: z.number().min(0).max(32).default(0),
+      cycles: z.number().int().positive().max(24).default(1),
+      wavelengthPx: z.number().min(8).max(256).default(64),
+      edgePreserve: z.number().min(0).max(1).default(1),
+      streamPhase: z.boolean().default(false),
+    })
+    .default({
+      amount: 0,
+      maxDisplacementPx: 0,
+      cycles: 1,
+      wavelengthPx: 64,
+      edgePreserve: 1,
+      streamPhase: false,
+    }),
+  sourceDetailResidualFlow: z
+    .object({
+      amount: z.number().min(0).max(1).default(0),
+      maxDisplacementPx: z.number().min(0).max(32).default(0),
+      cycles: z.number().int().positive().max(24).default(1),
+      bandLimitPx: z.number().min(24).max(96).default(24),
+      edgePreserve: z.number().min(0).max(1).default(1),
+      chromaOnly: z.boolean().default(false),
+      streamPhase: z.boolean().default(false),
+    })
+    .default({
+      amount: 0,
+      maxDisplacementPx: 0,
+      cycles: 1,
+      bandLimitPx: 24,
+      edgePreserve: 1,
+      chromaOnly: false,
+      streamPhase: false,
+    }),
+  sourceRegionAffinity: z
+    .object({
+      amount: z.number().min(0).max(1).default(0),
+      maxDisplacementPx: z.number().min(0).max(32).default(0),
+      cycles: z.number().int().positive().max(24).default(1),
+      edgePreserve: z.number().min(0).max(1).default(1),
+      normalMix: z.number().min(0).max(1).default(0.5),
+      streamPhase: z.boolean().default(false),
+    })
+    .default({
+      amount: 0,
+      maxDisplacementPx: 0,
+      cycles: 1,
+      edgePreserve: 1,
+      normalMix: 0.5,
+      streamPhase: false,
+    }),
+  sourceChromaFlow: z
+    .object({
+      amount: z.number().min(0).max(1).default(0),
+      maxDisplacementPx: z.number().min(0).max(8).default(0),
+      cycles: z.number().int().positive().max(48).default(1),
+      phaseScale: z.number().min(0).max(8).default(1),
+      normalMix: z.number().min(0).max(1).default(0),
+      detailGain: z.number().min(0).max(6).default(1),
+    })
+    .default({
+      amount: 0,
+      maxDisplacementPx: 0,
+      cycles: 1,
+      phaseScale: 1,
+      normalMix: 0,
+      detailGain: 1,
+    }),
+  sourceSpectralFlow: z
+    .object({
+      amount: z.number().min(0).max(1).default(0),
+      radiusPx: z.number().min(0).max(24).default(0),
+      cycles: z.number().int().positive().max(48).default(1),
+      phaseScale: z.number().min(0).max(8).default(1),
+      normalMix: z.number().min(0).max(1).default(0),
+    })
+    .default({
+      amount: 0,
+      radiusPx: 0,
+      cycles: 1,
+      phaseScale: 1,
+      normalMix: 0,
+    }),
   valueLift: z.number().min(0).max(1).default(0),
   greenCompress: z.number().min(0).max(1).default(0),
   hueSpace: z.enum(["hsv", "oklch"]).default("hsv"),
@@ -109,6 +279,85 @@ const animationSchema = z.object({
   paletteSatFloor: z.number().min(0).max(1).default(0),
   flowAmp: z.number().min(0).max(0.5).default(0),
   flowScale: z.number().min(0).max(20).default(3),
+  adaptiveFlow: z
+    .object({
+      strength: z.number().min(0).max(1).default(0),
+      scale: z.number().min(0).max(20).default(3),
+      cycles: z.number().int().positive().max(12).default(1),
+      luminanceWeight: z.number().min(0).max(1).default(0),
+      saturationWeight: z.number().min(0).max(1).default(0),
+      edgeWeight: z.number().min(0).max(1).default(0),
+      maxDisplacementPx: z.number().min(0).max(12).default(4),
+      edgePreserve: z.number().min(0).max(1).default(1),
+    })
+    .default({
+      strength: 0,
+      scale: 3,
+      cycles: 1,
+      luminanceWeight: 0,
+      saturationWeight: 0,
+      edgeWeight: 0,
+      maxDisplacementPx: 4,
+      edgePreserve: 1,
+    }),
+  colorMotionMask: z
+    .object({
+      floor: z.number().min(0).max(1).default(1),
+      luminanceWeight: z.number().min(0).max(1).default(0),
+      saturationWeight: z.number().min(0).max(1).default(0),
+      edgeWeight: z.number().min(0).max(1).default(0),
+      power: z.number().min(0.25).max(4).default(1),
+    })
+    .default({
+      floor: 1,
+      luminanceWeight: 0,
+      saturationWeight: 0,
+      edgeWeight: 0,
+      power: 1,
+    }),
+  chromaOrbit: z
+    .object({
+      radius: z.number().min(0).max(0.2).default(0),
+      speed: z.number().int().min(-120).max(120).default(0),
+      phaseScale: z.number().min(0.25).max(8).default(1),
+    })
+    .default({
+      radius: 0,
+      speed: 0,
+      phaseScale: 1,
+    }),
+  sourcePrism: z
+    .object({
+      amount: z.number().min(0).max(1).default(0),
+      radiusPx: z.number().min(0).max(6).default(0),
+      directionCycles: z.number().int().min(-40).max(40).default(0),
+      chromaCycles: z.number().int().min(-120).max(120).default(0),
+      surfaceCycles: z.number().int().min(-120).max(120).default(0),
+      phaseFlowPx: z.number().min(0).max(64).default(0),
+      phaseFlowCycles: z.number().int().min(-40).max(40).default(0),
+      phaseMix: z.number().min(0).max(1).default(0),
+      detailBoost: z.number().min(0.25).max(4).default(1),
+      phaseScale: z.number().min(0).max(12).default(0),
+    })
+    .default({
+      amount: 0,
+      radiusPx: 0,
+      directionCycles: 0,
+      chromaCycles: 0,
+      surfaceCycles: 0,
+      phaseFlowPx: 0,
+      phaseFlowCycles: 0,
+      phaseMix: 0,
+      detailBoost: 1,
+      phaseScale: 0,
+    }),
+  sourceColorClamp: z
+    .object({
+      maxDrift: z.number().min(0).max(1).default(1),
+    })
+    .default({
+      maxDrift: 1,
+    }),
   paletteA: z.tuple([z.number(), z.number(), z.number()]).default([0.5, 0.5, 0.5]),
   paletteB: z.tuple([z.number(), z.number(), z.number()]).default([0.5, 0.5, 0.5]),
   paletteC: z.tuple([z.number(), z.number(), z.number()]).default([1.0, 1.0, 1.0]),
@@ -325,6 +574,88 @@ export const sceneSchema = z
       if (anim.wave) checkPeriod("wave", anim.wave.period);
       if (anim.glow) checkPeriod("glow", anim.glow.period);
       if (anim.breath) checkPeriod("breath", anim.breath.period);
+      if (anim.sourceFlowTransport.amount > 0 && anim.flowField === undefined) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Active sourceFlowTransport requires a source-derived flowField",
+          path: ["layers", layerIdx, "animation", "flowField"],
+        });
+      }
+      if (anim.sourceStreamFlow.amount > 0 && anim.flowField === undefined) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Active sourceStreamFlow requires a source-derived flowField",
+          path: ["layers", layerIdx, "animation", "flowField"],
+        });
+      }
+      if (anim.sourceStreamFlow.amount > 0 && anim.sourceStreamFlow.streamPhase && anim.streamField === undefined) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Active sourceStreamFlow streamPhase requires a source-derived streamField",
+          path: ["layers", layerIdx, "animation", "streamField"],
+        });
+      }
+      if (anim.sourceMaterialDissolve.amount > 0 && anim.flowField === undefined) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Active sourceMaterialDissolve requires a source-derived flowField",
+          path: ["layers", layerIdx, "animation", "flowField"],
+        });
+      }
+      if (
+        anim.sourceMaterialDissolve.amount > 0 &&
+        anim.sourceMaterialDissolve.streamPhase &&
+        anim.streamField === undefined
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Active sourceMaterialDissolve streamPhase requires a source-derived streamField",
+          path: ["layers", layerIdx, "animation", "streamField"],
+        });
+      }
+      if (anim.sourceDetailResidualFlow.amount > 0 && anim.flowField === undefined) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Active sourceDetailResidualFlow requires a source-derived flowField",
+          path: ["layers", layerIdx, "animation", "flowField"],
+        });
+      }
+      if (
+        anim.sourceDetailResidualFlow.amount > 0 &&
+        anim.sourceDetailResidualFlow.streamPhase &&
+        anim.streamField === undefined
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Active sourceDetailResidualFlow streamPhase requires a source-derived streamField",
+          path: ["layers", layerIdx, "animation", "streamField"],
+        });
+      }
+      if (anim.sourceRegionAffinity.amount > 0 && anim.flowField === undefined) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Active sourceRegionAffinity requires a source-derived flowField",
+          path: ["layers", layerIdx, "animation", "flowField"],
+        });
+      }
+      if (anim.sourceRegionAffinity.amount > 0 && anim.regionField === undefined) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Active sourceRegionAffinity requires a source-derived regionField",
+          path: ["layers", layerIdx, "animation", "regionField"],
+        });
+      }
+      if (
+        anim.sourceRegionAffinity.amount > 0 &&
+        anim.sourceRegionAffinity.streamPhase &&
+        anim.streamField === undefined
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Active sourceRegionAffinity streamPhase requires a source-derived streamField",
+          path: ["layers", layerIdx, "animation", "streamField"],
+        });
+      }
     });
   });
 

@@ -191,6 +191,124 @@ describe("sceneSchema", () => {
       fieldCycles: 1,
     });
     expect(result.layers[0].animation.phaseWarpAmount).toBe(0);
+    expect(result.layers[0].animation.glowWavePhaseSource).toBe("phaseField");
+    expect(result.layers[0].animation.colorCycleDesync).toEqual({
+      amount: 0,
+      cycles: 1,
+    });
+    expect(result.layers[0].animation.adaptiveFlow).toEqual({
+      strength: 0,
+      scale: 3,
+      cycles: 1,
+      luminanceWeight: 0,
+      saturationWeight: 0,
+      edgeWeight: 0,
+      maxDisplacementPx: 4,
+      edgePreserve: 1,
+    });
+    expect(result.layers[0].animation.sourceColorClamp).toEqual({
+      maxDrift: 1,
+    });
+    expect(result.layers[0].animation.colorMotionMask).toEqual({
+      floor: 1,
+      luminanceWeight: 0,
+      saturationWeight: 0,
+      edgeWeight: 0,
+      power: 1,
+    });
+    expect(result.layers[0].animation.chromaOrbit).toEqual({
+      radius: 0,
+      speed: 0,
+      phaseScale: 1,
+    });
+    expect(result.layers[0].animation.sourcePrism).toEqual({
+      amount: 0,
+      radiusPx: 0,
+      directionCycles: 0,
+      chromaCycles: 0,
+      surfaceCycles: 0,
+      phaseFlowPx: 0,
+      phaseFlowCycles: 0,
+      phaseMix: 0,
+      detailBoost: 1,
+      phaseScale: 0,
+    });
+    expect(result.layers[0].animation.tangentMicroflow).toEqual({
+      amount: 0,
+      maxDisplacementPx: 0,
+      cycles: 1,
+      phaseScale: 1,
+    });
+    expect(result.layers[0].animation.sourceFlowAdvection).toEqual({
+      amount: 0,
+      maxDisplacementPx: 0,
+      cycles: 1,
+      phaseScale: 1,
+      normalMix: 0.35,
+      edgePreserve: 1,
+      detailGain: 1,
+    });
+    expect(result.layers[0].animation.sourceFlowTransport).toEqual({
+      amount: 0,
+      macroDisplacementPx: 0,
+      macroCycles: 1,
+      microDisplacementPx: 0,
+      microCycles: 1,
+      phaseScale: 1,
+      normalMix: 0.35,
+      edgePreserve: 1,
+      colorAmount: 0,
+    });
+    expect(result.layers[0].animation.sourceStreamFlow).toEqual({
+      amount: 0,
+      maxDisplacementPx: 0,
+      cycles: 1,
+      wavelengthPx: 64,
+      edgePreserve: 1,
+      streamPhase: false,
+      normalMix: 0,
+      materialMaskMix: 0,
+    });
+    expect(result.layers[0].animation.sourceMaterialDissolve).toEqual({
+      amount: 0,
+      maxDisplacementPx: 0,
+      cycles: 1,
+      wavelengthPx: 64,
+      edgePreserve: 1,
+      streamPhase: false,
+    });
+    expect(result.layers[0].animation.sourceDetailResidualFlow).toEqual({
+      amount: 0,
+      maxDisplacementPx: 0,
+      cycles: 1,
+      bandLimitPx: 24,
+      edgePreserve: 1,
+      chromaOnly: false,
+      streamPhase: false,
+    });
+    expect(result.layers[0].animation.sourceRegionAffinity).toEqual({
+      amount: 0,
+      maxDisplacementPx: 0,
+      cycles: 1,
+      edgePreserve: 1,
+      normalMix: 0.5,
+      streamPhase: false,
+    });
+    expect(result.layers[0].animation.sourceChromaFlow).toEqual({
+      amount: 0,
+      maxDisplacementPx: 0,
+      cycles: 1,
+      phaseScale: 1,
+      normalMix: 0,
+      detailGain: 1,
+    });
+    expect(result.layers[0].animation.sourceSpectralFlow).toEqual({
+      amount: 0,
+      radiusPx: 0,
+      cycles: 1,
+      phaseScale: 1,
+      normalMix: 0,
+    });
   });
 
   it("accepts D-3-6 glowWave bounds", () => {
@@ -207,6 +325,888 @@ describe("sceneSchema", () => {
       ],
     });
     expect(result.success).toBe(true);
+  });
+
+  it("accepts source-adaptive in-place flow bounds", () => {
+    const result = sceneSchema.safeParse({
+      ...validScene,
+      layers: [
+        {
+          ...validScene.layers[0],
+          animation: {
+            ...validScene.layers[0].animation,
+            adaptiveFlow: {
+              strength: 0.95,
+              scale: 12,
+              cycles: 6,
+              luminanceWeight: 0.2,
+              saturationWeight: 0.45,
+              edgeWeight: 0.35,
+              maxDisplacementPx: 8,
+              edgePreserve: 0.85,
+            },
+          },
+        },
+      ],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts source-derived tangent microflow bounds", () => {
+    const result = sceneSchema.safeParse({
+      ...validScene,
+      layers: [
+        {
+          ...validScene.layers[0],
+          animation: {
+            ...validScene.layers[0].animation,
+            tangentMicroflow: {
+              amount: 0.88,
+              maxDisplacementPx: 0.95,
+              cycles: 24,
+              phaseScale: 3.2,
+            },
+          },
+        },
+      ],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts bounded source-flow advection controls", () => {
+    const result = sceneSchema.safeParse({
+      ...validScene,
+      layers: [
+        {
+          ...validScene.layers[0],
+          animation: {
+            ...validScene.layers[0].animation,
+            sourceFlowAdvection: {
+              amount: 0.92,
+              maxDisplacementPx: 48,
+              cycles: 12,
+              phaseScale: 3.2,
+              normalMix: 0.4,
+              edgePreserve: 1,
+              detailGain: 4,
+            },
+          },
+        },
+      ],
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.layers[0].animation.sourceFlowAdvection).toMatchObject({ detailGain: 4 });
+    }
+  });
+
+  it("accepts source-aligned stream-flow controls", () => {
+    const result = sceneSchema.safeParse({
+      ...validScene,
+      layers: [
+        {
+          ...validScene.layers[0],
+          animation: {
+            ...validScene.layers[0].animation,
+            flowField: "layers/flow-field.png",
+            sourceStreamFlow: {
+              amount: 0.9,
+              maxDisplacementPx: 24,
+              cycles: 12,
+              wavelengthPx: 72,
+              edgePreserve: 1,
+              streamPhase: true,
+              normalMix: 1,
+              materialMaskMix: 1,
+            },
+            streamField: "layers/stream-field.png",
+          },
+        },
+      ],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts source-only material dissolve controls", () => {
+    const result = sceneSchema.safeParse({
+      ...validScene,
+      layers: [
+        {
+          ...validScene.layers[0],
+          animation: {
+            ...validScene.layers[0].animation,
+            flowField: "layers/flow-field.png",
+            sourceMaterialDissolve: {
+              amount: 1,
+              maxDisplacementPx: 20,
+              cycles: 16,
+              wavelengthPx: 80,
+              edgePreserve: 1,
+            },
+          },
+        },
+      ],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts source-only detail residual-flow controls", () => {
+    const result = sceneSchema.safeParse({
+      ...validScene,
+      layers: [
+        {
+          ...validScene.layers[0],
+          animation: {
+            ...validScene.layers[0].animation,
+            phaseField: "layers/phase-luminance.png",
+            flowField: "layers/flow-field.png",
+            sourceDetailResidualFlow: {
+              amount: 1,
+              maxDisplacementPx: 20,
+              cycles: 18,
+              bandLimitPx: 64,
+              edgePreserve: 1,
+              chromaOnly: true,
+            },
+          },
+        },
+      ],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts region-affinity transport only with source-derived region, flow, and stream fields", () => {
+    const result = sceneSchema.safeParse({
+      ...validScene,
+      layers: [
+        {
+          ...validScene.layers[0],
+          animation: {
+            ...validScene.layers[0].animation,
+            flowField: "layers/flow-field.png",
+            streamField: "layers/stream-field.png",
+            regionField: "layers/region-affinity-field.png",
+            sourceRegionAffinity: {
+              amount: 1,
+              maxDisplacementPx: 20,
+              cycles: 14,
+              edgePreserve: 1,
+              normalMix: 0.5,
+              streamPhase: true,
+            },
+          },
+        },
+      ],
+    });
+
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts source-derived chroma-flow bounds", () => {
+    const result = sceneSchema.safeParse({
+      ...validScene,
+      layers: [
+        {
+          ...validScene.layers[0],
+          animation: {
+            ...validScene.layers[0].animation,
+            sourceChromaFlow: {
+              amount: 0.82,
+              maxDisplacementPx: 6.5,
+              cycles: 12,
+              phaseScale: 1.8,
+              normalMix: 0.4,
+              detailGain: 4.2,
+            },
+          },
+        },
+      ],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts source-derived spectral-flow bounds", () => {
+    const result = sceneSchema.safeParse({
+      ...validScene,
+      layers: [
+        {
+          ...validScene.layers[0],
+          animation: {
+            ...validScene.layers[0].animation,
+            sourceSpectralFlow: {
+              amount: 0.9,
+              radiusPx: 9.5,
+              cycles: 22,
+              phaseScale: 2.4,
+              normalMix: 0.3,
+            },
+          },
+        },
+      ],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts bounded source color clamp values", () => {
+    const result = sceneSchema.safeParse({
+      ...validScene,
+      layers: [
+        {
+          ...validScene.layers[0],
+          animation: {
+            ...validScene.layers[0].animation,
+            sourceColorClamp: {
+              maxDrift: 0.16,
+            },
+          },
+        },
+      ],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts a source-derived color motion mask", () => {
+    const result = sceneSchema.safeParse({
+      ...validScene,
+      layers: [
+        {
+          ...validScene.layers[0],
+          animation: {
+            ...validScene.layers[0].animation,
+            colorMotionMask: {
+              floor: 0.04,
+              luminanceWeight: 0.1,
+              saturationWeight: 0.25,
+              edgeWeight: 1,
+              power: 0.8,
+            },
+          },
+        },
+      ],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts a loop-safe source chroma orbit", () => {
+    const result = sceneSchema.safeParse({
+      ...validScene,
+      layers: [
+        {
+          ...validScene.layers[0],
+          animation: {
+            ...validScene.layers[0].animation,
+            chromaOrbit: {
+              radius: 0.09,
+              speed: 53,
+              phaseScale: 2.4,
+            },
+          },
+        },
+      ],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts loop-safe in-place source prism controls", () => {
+    const result = sceneSchema.safeParse({
+      ...validScene,
+      layers: [
+        {
+          ...validScene.layers[0],
+          animation: {
+            ...validScene.layers[0].animation,
+            sourcePrism: {
+              amount: 0.85,
+              radiusPx: 2.4,
+              directionCycles: 7,
+              chromaCycles: 47,
+              surfaceCycles: 31,
+              phaseFlowPx: 18,
+              phaseFlowCycles: 7,
+              phaseMix: 0.3,
+              detailBoost: 2.2,
+              phaseScale: 5.5,
+            },
+          },
+        },
+      ],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects source-adaptive flow values outside bounded in-place ranges", () => {
+    const result = sceneSchema.safeParse({
+      ...validScene,
+      layers: [
+        {
+          ...validScene.layers[0],
+          animation: {
+            ...validScene.layers[0].animation,
+            adaptiveFlow: {
+              strength: 1.2,
+              scale: 24,
+              cycles: 1.5,
+              luminanceWeight: 1.2,
+              saturationWeight: -0.1,
+              edgeWeight: 0.5,
+              maxDisplacementPx: 24,
+              edgePreserve: 1.2,
+            },
+          },
+        },
+      ],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects tangent microflow values outside bounded in-place ranges", () => {
+    const result = sceneSchema.safeParse({
+      ...validScene,
+      layers: [
+        {
+          ...validScene.layers[0],
+          animation: {
+            ...validScene.layers[0].animation,
+            tangentMicroflow: {
+              amount: 1.1,
+              maxDisplacementPx: 5.1,
+              cycles: 49,
+              phaseScale: 8.1,
+            },
+          },
+        },
+      ],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it.each([
+    ["amount", { amount: 1.1, maxDisplacementPx: 64, cycles: 24, phaseScale: 8, normalMix: 1, edgePreserve: 1 }],
+    ["maxDisplacementPx", { amount: 1, maxDisplacementPx: 64.1, cycles: 24, phaseScale: 8, normalMix: 1, edgePreserve: 1 }],
+    ["cycles", { amount: 1, maxDisplacementPx: 64, cycles: 25, phaseScale: 8, normalMix: 1, edgePreserve: 1 }],
+    ["phaseScale", { amount: 1, maxDisplacementPx: 64, cycles: 24, phaseScale: 8.1, normalMix: 1, edgePreserve: 1 }],
+    ["normalMix", { amount: 1, maxDisplacementPx: 64, cycles: 24, phaseScale: 8, normalMix: 1.1, edgePreserve: 1 }],
+    ["edgePreserve", { amount: 1, maxDisplacementPx: 64, cycles: 24, phaseScale: 8, normalMix: 1, edgePreserve: 1.1 }],
+    ["detailGain", { amount: 1, maxDisplacementPx: 64, cycles: 24, phaseScale: 8, normalMix: 1, edgePreserve: 1, detailGain: 6.1 }],
+  ])("rejects an out-of-range source-flow advection %s", (_field, sourceFlowAdvection) => {
+    const result = sceneSchema.safeParse({
+      ...validScene,
+      layers: [
+        {
+          ...validScene.layers[0],
+          animation: {
+            ...validScene.layers[0].animation,
+            sourceFlowAdvection,
+          },
+        },
+      ],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it.each([
+    ["amount", { amount: 1.1, macroDisplacementPx: 96, macroCycles: 8, microDisplacementPx: 24, microCycles: 48, phaseScale: 8, normalMix: 1, edgePreserve: 1, colorAmount: 1 }],
+    ["macroDisplacementPx", { amount: 1, macroDisplacementPx: 96.1, macroCycles: 8, microDisplacementPx: 24, microCycles: 48, phaseScale: 8, normalMix: 1, edgePreserve: 1, colorAmount: 1 }],
+    ["macroCycles", { amount: 1, macroDisplacementPx: 96, macroCycles: 9, microDisplacementPx: 24, microCycles: 48, phaseScale: 8, normalMix: 1, edgePreserve: 1, colorAmount: 1 }],
+    ["microDisplacementPx", { amount: 1, macroDisplacementPx: 96, macroCycles: 8, microDisplacementPx: 24.1, microCycles: 48, phaseScale: 8, normalMix: 1, edgePreserve: 1, colorAmount: 1 }],
+    ["microCycles", { amount: 1, macroDisplacementPx: 96, macroCycles: 8, microDisplacementPx: 24, microCycles: 49, phaseScale: 8, normalMix: 1, edgePreserve: 1, colorAmount: 1 }],
+    ["phaseScale", { amount: 1, macroDisplacementPx: 96, macroCycles: 8, microDisplacementPx: 24, microCycles: 48, phaseScale: 8.1, normalMix: 1, edgePreserve: 1, colorAmount: 1 }],
+    ["normalMix", { amount: 1, macroDisplacementPx: 96, macroCycles: 8, microDisplacementPx: 24, microCycles: 48, phaseScale: 8, normalMix: 1.1, edgePreserve: 1, colorAmount: 1 }],
+    ["edgePreserve", { amount: 1, macroDisplacementPx: 96, macroCycles: 8, microDisplacementPx: 24, microCycles: 48, phaseScale: 8, normalMix: 1, edgePreserve: 1.1, colorAmount: 1 }],
+    ["colorAmount", { amount: 1, macroDisplacementPx: 96, macroCycles: 8, microDisplacementPx: 24, microCycles: 48, phaseScale: 8, normalMix: 1, edgePreserve: 1, colorAmount: 1.1 }],
+  ])("rejects an out-of-range source-flow transport %s", (_field, sourceFlowTransport) => {
+    const result = sceneSchema.safeParse({
+      ...validScene,
+      layers: [
+        {
+          ...validScene.layers[0],
+          animation: {
+            ...validScene.layers[0].animation,
+            flowField: "layers/flow-field.png",
+            sourceFlowTransport,
+          },
+        },
+      ],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects active source-flow transport without a source-derived flow field", () => {
+    const result = sceneSchema.safeParse({
+      ...validScene,
+      layers: [
+        {
+          ...validScene.layers[0],
+          animation: {
+            ...validScene.layers[0].animation,
+            sourceFlowTransport: {
+              amount: 1,
+              macroDisplacementPx: 32,
+              macroCycles: 3,
+              microDisplacementPx: 0,
+              microCycles: 1,
+              phaseScale: 1,
+              normalMix: 0.5,
+              edgePreserve: 1,
+              colorAmount: 0,
+            },
+          },
+        },
+      ],
+    });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues).toContainEqual(expect.objectContaining({
+        path: ["layers", 0, "animation", "flowField"],
+      }));
+    }
+  });
+
+  it.each([
+    ["amount", { amount: 1.1, maxDisplacementPx: 48, cycles: 24, wavelengthPx: 64, edgePreserve: 1 }],
+    ["maxDisplacementPx", { amount: 1, maxDisplacementPx: 48.1, cycles: 24, wavelengthPx: 64, edgePreserve: 1 }],
+    ["cycles", { amount: 1, maxDisplacementPx: 48, cycles: 25, wavelengthPx: 64, edgePreserve: 1 }],
+    ["wavelengthPx", { amount: 1, maxDisplacementPx: 48, cycles: 24, wavelengthPx: 7.9, edgePreserve: 1 }],
+    ["edgePreserve", { amount: 1, maxDisplacementPx: 48, cycles: 24, wavelengthPx: 64, edgePreserve: 1.1 }],
+    ["normalMix", { amount: 1, maxDisplacementPx: 48, cycles: 24, wavelengthPx: 64, edgePreserve: 1, normalMix: 1.1 }],
+    ["materialMaskMix", { amount: 1, maxDisplacementPx: 48, cycles: 24, wavelengthPx: 64, edgePreserve: 1, materialMaskMix: 1.1 }],
+  ])("rejects an out-of-range source stream-flow %s", (_field, sourceStreamFlow) => {
+    const result = sceneSchema.safeParse({
+      ...validScene,
+      layers: [
+        {
+          ...validScene.layers[0],
+          animation: {
+            ...validScene.layers[0].animation,
+            flowField: "layers/flow-field.png",
+            sourceStreamFlow,
+          },
+        },
+      ],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects active source stream-flow without a source-derived flow field", () => {
+    const result = sceneSchema.safeParse({
+      ...validScene,
+      layers: [
+        {
+          ...validScene.layers[0],
+          animation: {
+            ...validScene.layers[0].animation,
+            sourceStreamFlow: {
+              amount: 1,
+              maxDisplacementPx: 24,
+              cycles: 12,
+              wavelengthPx: 72,
+              edgePreserve: 1,
+            },
+          },
+        },
+      ],
+    });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues).toContainEqual(expect.objectContaining({
+        path: ["layers", 0, "animation", "flowField"],
+      }));
+    }
+  });
+
+  it("rejects an integrated source stream-flow without a source-derived stream field", () => {
+    const result = sceneSchema.safeParse({
+      ...validScene,
+      layers: [
+        {
+          ...validScene.layers[0],
+          animation: {
+            ...validScene.layers[0].animation,
+            flowField: "layers/flow-field.png",
+            sourceStreamFlow: {
+              amount: 1,
+              maxDisplacementPx: 24,
+              cycles: 12,
+              wavelengthPx: 72,
+              edgePreserve: 1,
+              streamPhase: true,
+            },
+          },
+        },
+      ],
+    });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues).toContainEqual(expect.objectContaining({
+        path: ["layers", 0, "animation", "streamField"],
+      }));
+    }
+  });
+
+  it.each([
+    ["amount", { amount: 1.1, maxDisplacementPx: 24, cycles: 16, wavelengthPx: 80, edgePreserve: 1 }],
+    ["maxDisplacementPx", { amount: 1, maxDisplacementPx: 32.1, cycles: 16, wavelengthPx: 80, edgePreserve: 1 }],
+    ["cycles", { amount: 1, maxDisplacementPx: 24, cycles: 25, wavelengthPx: 80, edgePreserve: 1 }],
+    ["wavelengthPx", { amount: 1, maxDisplacementPx: 24, cycles: 16, wavelengthPx: 7.9, edgePreserve: 1 }],
+    ["edgePreserve", { amount: 1, maxDisplacementPx: 24, cycles: 16, wavelengthPx: 80, edgePreserve: 1.1 }],
+  ])("rejects an out-of-range source material dissolve %s", (_field, sourceMaterialDissolve) => {
+    const result = sceneSchema.safeParse({
+      ...validScene,
+      layers: [
+        {
+          ...validScene.layers[0],
+          animation: {
+            ...validScene.layers[0].animation,
+            flowField: "layers/flow-field.png",
+            sourceMaterialDissolve,
+          },
+        },
+      ],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects active source material dissolve without a source-derived flow field", () => {
+    const result = sceneSchema.safeParse({
+      ...validScene,
+      layers: [
+        {
+          ...validScene.layers[0],
+          animation: {
+            ...validScene.layers[0].animation,
+            sourceMaterialDissolve: {
+              amount: 1,
+              maxDisplacementPx: 20,
+              cycles: 16,
+              wavelengthPx: 80,
+              edgePreserve: 1,
+            },
+          },
+        },
+      ],
+    });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues).toContainEqual(expect.objectContaining({
+        path: ["layers", 0, "animation", "flowField"],
+      }));
+    }
+  });
+
+  it("requires a source-derived stream phase only when source material dissolve enables it", () => {
+    const missingStreamPhase = sceneSchema.safeParse({
+      ...validScene,
+      layers: [
+        {
+          ...validScene.layers[0],
+          animation: {
+            ...validScene.layers[0].animation,
+            flowField: "layers/flow-field.png",
+            sourceMaterialDissolve: {
+              amount: 1,
+              maxDisplacementPx: 24,
+              cycles: 18,
+              wavelengthPx: 96,
+              edgePreserve: 1,
+              streamPhase: true,
+            },
+          },
+        },
+      ],
+    });
+
+    expect(missingStreamPhase.success).toBe(false);
+    if (!missingStreamPhase.success) {
+      expect(missingStreamPhase.error.issues).toContainEqual(expect.objectContaining({
+        path: ["layers", 0, "animation", "streamField"],
+      }));
+    }
+
+    const withStreamPhase = sceneSchema.safeParse({
+      ...validScene,
+      layers: [
+        {
+          ...validScene.layers[0],
+          animation: {
+            ...validScene.layers[0].animation,
+            flowField: "layers/flow-field.png",
+            streamField: "layers/stream-field.png",
+            sourceMaterialDissolve: {
+              amount: 1,
+              maxDisplacementPx: 24,
+              cycles: 18,
+              wavelengthPx: 96,
+              edgePreserve: 1,
+              streamPhase: true,
+            },
+          },
+        },
+      ],
+    });
+
+    expect(withStreamPhase.success).toBe(true);
+  });
+
+  it.each([
+    ["amount", { amount: 1.1, maxDisplacementPx: 20, cycles: 18, edgePreserve: 1 }],
+    ["maxDisplacementPx", { amount: 1, maxDisplacementPx: 32.1, cycles: 18, edgePreserve: 1 }],
+    ["cycles", { amount: 1, maxDisplacementPx: 20, cycles: 25, edgePreserve: 1 }],
+    ["bandLimitPx", { amount: 1, maxDisplacementPx: 20, cycles: 18, bandLimitPx: 96.1, edgePreserve: 1 }],
+    ["edgePreserve", { amount: 1, maxDisplacementPx: 20, cycles: 18, edgePreserve: 1.1 }],
+  ])("rejects an out-of-range source detail residual-flow %s", (_field, sourceDetailResidualFlow) => {
+    const result = sceneSchema.safeParse({
+      ...validScene,
+      layers: [
+        {
+          ...validScene.layers[0],
+          animation: {
+            ...validScene.layers[0].animation,
+            phaseField: "layers/phase-luminance.png",
+            flowField: "layers/flow-field.png",
+            sourceDetailResidualFlow,
+          },
+        },
+      ],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("accepts active source detail residual-flow with only its source-derived flow field", () => {
+    const result = sceneSchema.safeParse({
+      ...validScene,
+      layers: [
+        {
+          ...validScene.layers[0],
+          animation: {
+            ...validScene.layers[0].animation,
+            flowField: "layers/flow-field.png",
+            sourceDetailResidualFlow: {
+              amount: 1,
+              maxDisplacementPx: 20,
+              cycles: 18,
+              edgePreserve: 1,
+            },
+          },
+        },
+      ],
+    });
+
+    expect(result.success).toBe(true);
+  });
+
+  it("requires a source-derived stream phase only when source detail residual-flow enables it", () => {
+    const missingStreamPhase = sceneSchema.safeParse({
+      ...validScene,
+      layers: [
+        {
+          ...validScene.layers[0],
+          animation: {
+            ...validScene.layers[0].animation,
+            flowField: "layers/flow-field.png",
+            sourceDetailResidualFlow: {
+              amount: 1,
+              maxDisplacementPx: 20,
+              cycles: 18,
+              edgePreserve: 1,
+              streamPhase: true,
+            },
+          },
+        },
+      ],
+    });
+
+    expect(missingStreamPhase.success).toBe(false);
+    if (!missingStreamPhase.success) {
+      expect(missingStreamPhase.error.issues).toContainEqual(expect.objectContaining({
+        path: ["layers", 0, "animation", "streamField"],
+      }));
+    }
+
+    const withStreamPhase = sceneSchema.safeParse({
+      ...validScene,
+      layers: [
+        {
+          ...validScene.layers[0],
+          animation: {
+            ...validScene.layers[0].animation,
+            flowField: "layers/flow-field.png",
+            streamField: "layers/stream-field.png",
+            sourceDetailResidualFlow: {
+              amount: 1,
+              maxDisplacementPx: 20,
+              cycles: 18,
+              edgePreserve: 1,
+              streamPhase: true,
+            },
+          },
+        },
+      ],
+    });
+
+    expect(withStreamPhase.success).toBe(true);
+  });
+
+  it("rejects active source detail residual-flow without a source-derived flow field", () => {
+    const result = sceneSchema.safeParse({
+      ...validScene,
+      layers: [
+        {
+          ...validScene.layers[0],
+          animation: {
+            ...validScene.layers[0].animation,
+            sourceDetailResidualFlow: {
+              amount: 1,
+              maxDisplacementPx: 20,
+              cycles: 18,
+              edgePreserve: 1,
+            },
+          },
+        },
+      ],
+    });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues).toContainEqual(expect.objectContaining({
+        path: ["layers", 0, "animation", "flowField"],
+      }));
+    }
+  });
+
+  it("rejects source chroma-flow values outside bounded source ranges", () => {
+    const result = sceneSchema.safeParse({
+      ...validScene,
+      layers: [
+        {
+          ...validScene.layers[0],
+          animation: {
+            ...validScene.layers[0].animation,
+            sourceChromaFlow: {
+              amount: 1.1,
+              maxDisplacementPx: 8.1,
+              cycles: 49,
+              phaseScale: 8.1,
+              normalMix: 1.1,
+              detailGain: 6.1,
+            },
+          },
+        },
+      ],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects source spectral-flow values outside bounded source ranges", () => {
+    const result = sceneSchema.safeParse({
+      ...validScene,
+      layers: [
+        {
+          ...validScene.layers[0],
+          animation: {
+            ...validScene.layers[0].animation,
+            sourceSpectralFlow: {
+              amount: 1.1,
+              radiusPx: 24.1,
+              cycles: 49,
+              phaseScale: 8.1,
+              normalMix: 1.1,
+            },
+          },
+        },
+      ],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects source color clamp values outside RGB drift range", () => {
+    const result = sceneSchema.safeParse({
+      ...validScene,
+      layers: [
+        {
+          ...validScene.layers[0],
+          animation: {
+            ...validScene.layers[0].animation,
+            sourceColorClamp: {
+              maxDrift: 1.2,
+            },
+          },
+        },
+      ],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects color motion mask values outside bounded source feature ranges", () => {
+    const result = sceneSchema.safeParse({
+      ...validScene,
+      layers: [
+        {
+          ...validScene.layers[0],
+          animation: {
+            ...validScene.layers[0].animation,
+            colorMotionMask: {
+              floor: -0.1,
+              luminanceWeight: 1.1,
+              saturationWeight: 0.2,
+              edgeWeight: 0.8,
+              power: 5,
+            },
+          },
+        },
+      ],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects non-looping or excessive source chroma orbit values", () => {
+    const result = sceneSchema.safeParse({
+      ...validScene,
+      layers: [
+        {
+          ...validScene.layers[0],
+          animation: {
+            ...validScene.layers[0].animation,
+            chromaOrbit: {
+              radius: 0.3,
+              speed: 20.5,
+              phaseScale: 10,
+            },
+          },
+        },
+      ],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects non-looping or excessive source prism values", () => {
+    const result = sceneSchema.safeParse({
+      ...validScene,
+      layers: [
+        {
+          ...validScene.layers[0],
+          animation: {
+            ...validScene.layers[0].animation,
+            sourcePrism: {
+              amount: 1.1,
+              radiusPx: 7,
+              directionCycles: 4.5,
+              chromaCycles: 121,
+              surfaceCycles: 20.5,
+              phaseFlowPx: 65,
+              phaseFlowCycles: 4.5,
+              phaseMix: 1.1,
+              detailBoost: 5,
+              phaseScale: 13,
+            },
+          },
+        },
+      ],
+    });
+    expect(result.success).toBe(false);
   });
 
   it("accepts r18 second glow wave and warped phase-field sampling fields", () => {
@@ -227,6 +1227,24 @@ describe("sceneSchema", () => {
     expect(result.success).toBe(true);
   });
 
+  it("accepts r21 flow-field glow phase and color-cycle desync fields", () => {
+    const result = sceneSchema.safeParse({
+      ...validScene,
+      layers: [
+        {
+          ...validScene.layers[0],
+          animation: {
+            ...validScene.layers[0].animation,
+            flowField: "layers/flow-field.png",
+            glowWavePhaseSource: "flowField",
+            colorCycleDesync: { amount: 0.08, cycles: 2 },
+          },
+        },
+      ],
+    });
+    expect(result.success).toBe(true);
+  });
+
   it("rejects glowWave values outside D-3-6 ranges", () => {
     const result = sceneSchema.safeParse({
       ...validScene,
@@ -236,6 +1254,23 @@ describe("sceneSchema", () => {
           animation: {
             ...validScene.layers[0].animation,
             glowWave: { strength: 1.2, speed: 8, sharpness: 0.6, fieldCycles: 2.5 },
+          },
+        },
+      ],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects r21 desync values that cannot stay bounded and integer-periodic", () => {
+    const result = sceneSchema.safeParse({
+      ...validScene,
+      layers: [
+        {
+          ...validScene.layers[0],
+          animation: {
+            ...validScene.layers[0].animation,
+            glowWavePhaseSource: "flowField",
+            colorCycleDesync: { amount: 0.4, cycles: 1.5 },
           },
         },
       ],
@@ -479,7 +1514,8 @@ describe("sceneSchema", () => {
         i.message.includes("Period must be a divisor")
       );
       expect(periodIssue).toBeDefined();
-      expect(periodIssue!.message).toContain("divisor of 10");
+      if (!periodIssue) throw new Error("Expected dynamic period issue");
+      expect(periodIssue.message).toContain("divisor of 10");
     }
   });
 

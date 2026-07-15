@@ -270,9 +270,9 @@ input.png (원본 해상도 유지, e.g. 1632x2912)
        → 1080x1920, 30fps, H.264 High 4.2 (Instagram 최적)
 ```
 
-### 셰이더 — Luminance-preserving HSV Hue Rotation + HueKey
+### 셰이더 — Source-derived in-place motion + luminance-preserving color
 
-`layer.frag`는 wave/parallax 없이 **구조를 픽셀 단위로 유지**하면서 색상만 변조한다:
+`layer.frag`는 기본적으로 구조를 보존하는 색 변조를 제공하고, 선택적으로 source-derived flow/phase map을 사용해 **원본 픽셀 재료 자체**를 in-place 이동시킨다. 외래 패턴이나 생성 노이즈를 추가하지 않는다.
 
 1. RGB → HSV 변환
 2. luminance 기반 phase offset (`pow(1-lum, lumExponent + luminanceKey)`)
@@ -282,6 +282,38 @@ input.png (원본 해상도 유지, e.g. 1632x2912)
 6. luminance 보존 (`hsv.z = originalVal`)
 7. subtle glow pulse (sin 기반)
 8. atmospheric haze (깊이 기반 채도 감쇄)
+
+`sourceFlowTransport`는 저주기 macro 좌표 이동과 독립 micro 색 운반을 분리한다. `macroDisplacementPx`와 `microDisplacementPx`는 source texture 픽셀 기준 상한이며, edge crossing 감쇠 뒤 source UV에서만 샘플한다. 기본값은 off이고, 활성화하려면 source-derived `flowField`가 필수다. 누락 시 스키마가 거부하고 렌더러도 amount를 0으로 차단한다. figure 소스에서는 micro를 0에서 시작해 fine jitter를 피한다. 모든 후보는 visible phase 경로의 hash/noise 부재, source color drift, edge persistence, temporal coherence, fine-motion ratio와 동일 시점 crop으로 검증해야 한다.
+
+### Source-derived phase advection
+
+`sourcePrism`은 별도 가시 레이어를 합성하지 않는다. 원본 texture sample 좌표와 휘도는 고정하고,
+`phaseField2`를 source-derived `flowField` 방향으로 loop-safe 이동시켜 소스 세부에 붙은 색 위상만 순환시킨다.
+
+| 그룹 | 필드 | 의미 |
+|------|------|------|
+| `adaptiveFlow` | `strength`, `scale`, `cycles` | 소스 UV에 적용하는 source-weighted loop-safe curl의 강도, 공간 주파수, 루프 횟수 |
+| `adaptiveFlow` | `luminanceWeight`, `saturationWeight`, `edgeWeight` | 휘도·채도·경계에서 UV 변위 강도를 유도하는 가중치 |
+| `adaptiveFlow` | `maxDisplacementPx`, `edgePreserve` | 최대 변위를 source-texture px로 제한하고 휘도 경계 횡단을 감쇠 |
+| `colorMotionMask` | `floor` | 모든 픽셀에 남기는 최소 색 변형량. `1`이면 full-field |
+| `colorMotionMask` | `luminanceWeight`, `saturationWeight`, `edgeWeight`, `power` | 소스 특징으로 색 변형량을 만들고 `power`로 응답 곡선을 조정 |
+| `chromaOrbit` | `radius`, `speed`, `phaseScale` | 소스 OKLab 색 주위의 균일 chroma orbit. r114에서 질감이 약해 최종 레시피에서는 기본 off |
+| `sourcePrism` | `amount` | source-prism 결과 혼합량. `0`이면 완전 비활성 |
+| `sourcePrism` | `radiusPx`, `directionCycles` | RGB용 주변 source-luma 샘플 반경과 방향 회전 수. `radiusPx=0`이면 가시 채널 오프셋 없음 |
+| `sourcePrism` | `chromaCycles` | 주변 luma에서 유도한 additive chroma의 루프 회전 수 |
+| `sourcePrism` | `surfaceCycles` | 원본 source chroma의 빠른 루프 회전 수 |
+| `sourcePrism` | `phaseFlowPx`, `phaseFlowCycles` | 보이지 않는 phase texture의 source-texture px 이동 반경과 느린 루프 횟수 |
+| `sourcePrism` | `phaseMix` | 두 phase texture의 시간 변조 보간량. 큰 저주파 패치가 드러날 수 있어 기본값 `0` |
+| `sourcePrism` | `detailBoost`, `phaseScale` | source-luma 세부 chroma 배율과 source-derived 공간 위상 배율 |
+| `sourceColorClamp` | `maxDrift` | 후보 RGB와 source RGB 사이 최대 정규화 거리. 소스 클래스별 QA와 함께 판정 |
+
+`phaseFlowPx`는 `uTextureSize` 기준이므로 source texture 폭이 달라지면 비례 조정한다. r139처럼 source와
+scene 해상도가 같은 경로에서는 816px 진단의 `14px`를 1632px 최종에서 `28px`로 올렸다.
+
+최종 후보는 `noiseAmount=0`, 공간 post 효과 0을 기준으로 `npm run analyze:reference -- <video>`와
+`npx tsx scripts/qa-motion.ts <video> --source <source.png>`를 모두 실행하고, 원본/렌더 동일 크롭으로
+원본 인쇄 질감과 생성 노이즈를 분리해서 판정한다. QA는 화면 전체 프레임-평균 P95인
+`sourceColorDrift95`와 국소 셀·프레임 P95인 `sourceColorLocalDrift95`를 함께 기록한다.
 
 ---
 
@@ -347,6 +379,7 @@ npm run export:layered -- [options]
 | `--fps <N>` | 프레임 레이트 override | scene.json 값 |
 | `--keep-frames` | 인코딩 후 PNG 프레임 보존 | false |
 | `--prores` | ProRes 4444 출력 | false |
+| `--full-res` | 최종 H.264 mp4를 scene 해상도 그대로 출력 | false |
 | `--work-dir <path>` | _work/ 디렉토리 경로 | public/ |
 | `--archive-dir <path>` | 출력 아카이브 경로 | out/layered/ |
 
@@ -376,6 +409,7 @@ npx tsx scripts/pipeline-pro.ts <input.png> [options]
 | `npm run pipeline:validate` | scene.json 루프 검증 |
 | `npm run export:layered` | layered mp4 익스포트 |
 | `npm run export:sketch` | sketch mp4 익스포트 |
+| `npm run analyze:reference -- <video>` | 색/휘도 운동비, 위상 연속성, 미세운동, 루프 접점 분석 |
 | `npm run preset:save` | 프리셋 저장 |
 | `npm run preset:list` | 프리셋 목록 |
 | `npm run analyze:track <wav>` | 트랙 분석 → preset + Tidal + 샘플 추출 |

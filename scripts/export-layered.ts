@@ -14,6 +14,11 @@ import { findAvailablePort } from "./lib/work-dir.js";
 import { sceneSchema, type SceneConfig } from "../src/lib/scene-schema.js";
 
 import { waitForServer } from "./lib/browser-utils.js";
+import { assertPsychedelicFullRenderGate } from "./lib/psychedelic-final-guard.js";
+import {
+  assertRegionAffinityAuthorityAudit,
+  sceneUsesRegionAffinity,
+} from "./lib/region-affinity-authority-audit.js";
 
 const FEEDBACK_WARMUP_SECONDS = 2;
 
@@ -162,10 +167,11 @@ interface EncodeOptions {
   duration: number;
   prores: boolean;
   preview: boolean;
+  fullRes: boolean;
 }
 
 function encodeVideo(inputFramesDir: string, outputPath: string, options: EncodeOptions): Promise<void> {
-  const { fps, duration, prores, preview } = options;
+  const { fps, duration, prores, preview, fullRes } = options;
   const ffmpegArgs = prores
     ? [
         "-y",
@@ -188,6 +194,30 @@ function encodeVideo(inputFramesDir: string, outputPath: string, options: Encode
           "-profile:v", "high",
           "-pix_fmt", "yuv420p",
           "-g", String(fps * 2),
+          "-movflags", "+faststart",
+          outputPath,
+        ]
+    : fullRes
+      ? [
+          "-y",
+          "-framerate", String(fps),
+          "-i", path.join(inputFramesDir, "frame_%05d.png"),
+          "-vf", "scale=iw:ih:flags=lanczos:in_range=full:in_color_matrix=bt709:out_range=tv:out_color_matrix=bt709",
+          "-r", "30",
+          "-c:v", "libx264",
+          "-preset", "slow",
+          "-crf", "15",
+          "-profile:v", "high",
+          "-level:v", "5.1",
+          "-pix_fmt", "yuv420p",
+          "-g", "60",
+          "-maxrate", "36M",
+          "-bufsize", "72M",
+          "-color_range", "tv",
+          "-colorspace", "bt709",
+          "-color_primaries", "bt709",
+          "-color_trc", "iec61966-2-1",
+          "-x264-params", "aq-mode=3:aq-strength=0.8",
           "-movflags", "+faststart",
           outputPath,
         ]
@@ -237,6 +267,7 @@ async function main() {
   const keepFrames = process.argv.includes("--keep-frames");
   const preview = process.argv.includes("--preview");
   const proresFlag = process.argv.includes("--prores") && !preview;
+  const fullResFlag = process.argv.includes("--full-res") && !preview && !proresFlag;
   const title = parseTitle(process.argv.slice(2));
 
   // Parse --fps from CLI
@@ -264,7 +295,6 @@ async function main() {
   checkFfmpeg();
 
   const projectRoot = process.cwd();
-  const ctx = createRunContext(projectRoot, title, "layered", archiveDirOverride);
 
   // Load duration from scene.json (from workDir or public/)
   const sourceDir = workDir || path.join(projectRoot, "public");
@@ -272,7 +302,28 @@ async function main() {
   if (!fs.existsSync(scenePath)) {
     throw new Error(`scene.json not found at ${scenePath}. Run pipeline-pro first.`);
   }
+  if (!preview) {
+    const gateReportIdx = process.argv.indexOf("--gate-report");
+    const gateReportPath = gateReportIdx === -1 ? undefined : process.argv[gateReportIdx + 1];
+    if (!gateReportPath || gateReportPath.startsWith("--")) {
+      throw new Error("full render requires --gate-report <PASS report from npm run gate:psychedelic>");
+    }
+    assertPsychedelicFullRenderGate(path.resolve(gateReportPath), scenePath);
+  }
+  const ctx = createRunContext(projectRoot, title, "layered", archiveDirOverride);
   const sceneJson = JSON.parse(fs.readFileSync(scenePath, "utf-8"));
+  // Region-affinity previews require a renderer-equivalent authority audit PASS first.
+  // This prevents replaying r209-style "capacity true but field authority collapsed" failures.
+  if (preview && sceneUsesRegionAffinity(sceneJson as { layers?: readonly { animation?: { sourceRegionAffinity?: { amount?: number } } }[] })) {
+    const authorityIdx = process.argv.indexOf("--authority-report");
+    const authorityPath = authorityIdx === -1 ? undefined : process.argv[authorityIdx + 1];
+    if (!authorityPath || authorityPath.startsWith("--")) {
+      throw new Error(
+        "region-affinity preview requires --authority-report <PASS report from region-affinity authority audit>",
+      );
+    }
+    assertRegionAffinityAuthorityAudit(path.resolve(authorityPath), scenePath);
+  }
   const config = sceneSchema.parse(sceneJson);
   const DURATION = config.duration;
 
@@ -291,7 +342,7 @@ async function main() {
   console.log(`Title: ${title}`);
   console.log(`Archive: ${path.relative(projectRoot, ctx.archiveDir)}/`);
   console.log(`Resolution: ${resW}x${resH}${preview ? " (preview half-res)" : ""}`);
-  console.log(`Duration: ${DURATION}s, ${totalFrames} frames @ ${FPS}fps${proresFlag ? " (ProRes 4444)" : preview ? " (preview)" : ""}`);
+  console.log(`Duration: ${DURATION}s, ${totalFrames} frames @ ${FPS}fps${proresFlag ? " (ProRes 4444)" : preview ? " (preview)" : fullResFlag ? " (full-res H.264)" : ""}`);
   console.log(`Warmup frames: ${warmupFrames}${cliWarmupFrames === undefined ? " (auto)" : " (CLI)"}`);
 
   const estimatedMB = (totalFrames * 4.5).toFixed(0);
@@ -299,7 +350,7 @@ async function main() {
 
   try {
     await captureFrames({ outputDir: ctx.paths.frames, totalFrames, resolution: captureResolution, fps: FPS, warmupFrames, resScale, workDir });
-    await encodeVideo(ctx.paths.frames, outputPath, { fps: FPS, duration: DURATION, prores: proresFlag, preview });
+    await encodeVideo(ctx.paths.frames, outputPath, { fps: FPS, duration: DURATION, prores: proresFlag, preview, fullRes: fullResFlag });
   } catch (err) {
     ctx.cleanup();
     throw err;

@@ -22,6 +22,11 @@ const THRESH = {
   darkDwell: 0.1,
   seamRatio: 1.5,
   staticZone: 0.15,
+  lightStaticZone: 0.15,
+  lightStaticStd: 0.018,
+  motionDensity: 0.12,
+  sourceColorDrift95: 0.18,
+  sourceColorLocalDrift95: 0.3,
   hierarchy: 0.6,
   subjectHold: 0.25,
 } as const;
@@ -46,6 +51,10 @@ type Metrics = {
   readonly darkDwell: number;
   readonly seamRatio: number;
   readonly staticZone: number;
+  readonly lightStaticZone: number;
+  readonly motionDensity: number;
+  readonly sourceColorDrift95?: number;
+  readonly sourceColorLocalDrift95?: number;
   readonly hierarchy?: number;
   readonly subjectHold?: number;
   readonly subjectHoldMask?: string;
@@ -67,6 +76,11 @@ type ColorDwellMetrics = {
 
 type QaSourceBaseline = ColorDwellMetrics & {
   readonly path: string;
+  readonly grid: Buffer;
+};
+
+type QaSourceReport = ColorDwellMetrics & {
+  readonly path: string;
 };
 
 type RelativeThresholdInput = {
@@ -74,6 +88,11 @@ type RelativeThresholdInput = {
   readonly sourceValue?: number;
   readonly sourceMultiplier: number;
   readonly cap?: number;
+};
+
+type SourceColorDriftMetrics = {
+  readonly frameMean95: number;
+  readonly local95: number;
 };
 
 const derivationReportSchema = z.object({
@@ -119,6 +138,28 @@ function mean(values: readonly number[]): number {
   return sum / values.length;
 }
 
+function std(values: readonly number[]): number {
+  if (values.length === 0) return 0;
+  const avg = mean(values);
+  let sum = 0;
+  for (const value of values) {
+    const delta = value - avg;
+    sum += delta * delta;
+  }
+  return Math.sqrt(sum / values.length);
+}
+
+function range(values: readonly number[]): number {
+  if (values.length === 0) return 0;
+  let min = Number.POSITIVE_INFINITY;
+  let max = Number.NEGATIVE_INFINITY;
+  for (const value of values) {
+    if (value < min) min = value;
+    if (value > max) max = value;
+  }
+  return max - min;
+}
+
 function percentile(values: readonly number[], pct: number): number {
   if (values.length === 0) return 0;
   const sorted = [...values].sort((a, b) => a - b);
@@ -140,6 +181,29 @@ function frameDiff(buf: Buffer, a: number, b: number): number {
     sum += Math.hypot(dr, dg, db) / Math.sqrt(3);
   }
   return sum / CELL_COUNT;
+}
+
+function sourceColorDriftMetrics(buf: Buffer, frameCount: number, sourceGrid: Buffer): SourceColorDriftMetrics {
+  if (sourceGrid.length < FRAME_BYTES) throw new Error("source baseline grid is incomplete");
+  const frameDrifts: number[] = [];
+  const localDrifts: number[] = [];
+  for (let frame = 0; frame < frameCount; frame++) {
+    const frameOffset = frame * FRAME_BYTES;
+    let sum = 0;
+    for (let i = 0; i < FRAME_BYTES; i += 3) {
+      const dr = (buf[frameOffset + i] - sourceGrid[i]) / 255;
+      const dg = (buf[frameOffset + i + 1] - sourceGrid[i + 1]) / 255;
+      const db = (buf[frameOffset + i + 2] - sourceGrid[i + 2]) / 255;
+      const drift = Math.hypot(dr, dg, db) / Math.sqrt(3);
+      sum += drift;
+      localDrifts.push(drift);
+    }
+    frameDrifts.push(sum / CELL_COUNT);
+  }
+  return {
+    frameMean95: percentile(frameDrifts, 0.95),
+    local95: percentile(localDrifts, 0.95),
+  };
 }
 
 function circularStdDeg(hues: readonly number[]): number {
@@ -218,28 +282,33 @@ async function readSourceBaseline(sourcePath: string | undefined): Promise<QaSou
     .toBuffer({ resolveWithObject: true });
   return {
     path: sourcePath,
+    grid: data,
     ...colorDwellMetrics(data, 1),
   };
 }
 
-export async function analyzeFrameBuffer(buf: Buffer, masksDir?: string): Promise<{ readonly frameCount: number; readonly metrics: Metrics }> {
+export async function analyzeFrameBuffer(buf: Buffer, masksDir?: string, sourceGrid?: Buffer): Promise<{ readonly frameCount: number; readonly metrics: Metrics }> {
   const frameCount = Math.floor(buf.length / FRAME_BYTES);
   if (frameCount < 1) throw new Error("ffmpeg produced no complete frames");
   const meanY: number[] = [];
   const hueFrames: Float32Array[] = [];
+  const lumFrames: Float32Array[] = [];
   const colorDwell = colorDwellMetrics(buf, frameCount);
 
   for (let frame = 0; frame < frameCount; frame++) {
     const hues = new Float32Array(CELL_COUNT);
+    const lums = new Float32Array(CELL_COUNT);
     let lumSum = 0;
     for (let cell = 0; cell < CELL_COUNT; cell++) {
       const p = frame * FRAME_BYTES + cell * 3;
       const [h] = rgbToHsv(buf[p], buf[p + 1], buf[p + 2]);
       const lum = frameLumAt(buf, frame, cell);
       hues[cell] = h;
+      lums[cell] = lum;
       lumSum += lum;
     }
     hueFrames.push(hues);
+    lumFrames.push(lums);
     meanY.push(lumSum / CELL_COUNT);
   }
 
@@ -260,14 +329,20 @@ export async function analyzeFrameBuffer(buf: Buffer, masksDir?: string): Promis
   }
 
   let staticCells = 0;
+  let lightStaticCells = 0;
+  const lumRanges: number[] = [];
   for (let cell = 0; cell < CELL_COUNT; cell++) {
     const hues = hueFrames.map((frame) => frame[cell]);
+    const lums = lumFrames.map((frame) => frame[cell]);
     if (circularStdDeg(hues) < 2) staticCells++;
+    if (std(lums) < THRESH.lightStaticStd) lightStaticCells++;
+    lumRanges.push(range(lums));
   }
 
   const adjacentMedian = percentile(adjacentFrameDiffs, 0.5);
   const seamDiff = frameCount > 1 ? frameDiff(buf, frameCount - 1, 0) : 0;
   const subject = masksDir ? await subjectHoldMetric(buf, frameCount, masksDir) : {};
+  const sourceColorDrift = sourceGrid ? sourceColorDriftMetrics(buf, frameCount, sourceGrid) : undefined;
   return {
     frameCount,
     metrics: {
@@ -279,6 +354,10 @@ export async function analyzeFrameBuffer(buf: Buffer, masksDir?: string): Promis
       darkDwell: meanY.filter((value) => value < 0.28).length / frameCount,
       seamRatio: adjacentMedian <= 1e-9 ? (seamDiff <= 1e-9 ? 0 : 9999) : seamDiff / adjacentMedian,
       staticZone: staticCells / CELL_COUNT,
+      lightStaticZone: lightStaticCells / CELL_COUNT,
+      motionDensity: percentile(lumRanges, 0.95),
+      sourceColorDrift95: sourceColorDrift?.frameMean95,
+      sourceColorLocalDrift95: sourceColorDrift?.local95,
       hierarchy: masksDir ? await hierarchyMetric(buf, frameCount, masksDir) : undefined,
       subjectHold: subject.value,
       subjectHoldMask: subject.mask,
@@ -298,6 +377,20 @@ function row(metric: string, value: number | undefined, thresholdValue: number, 
   return { metric, value, threshold, className, status: exceeded ? className : "PASS", note };
 }
 
+function lightMotionRow(metric: string, value: number, thresholdValue: number, threshold: string, direction: "max" | "min", hueStaticZone: number, note?: string): MetricRow {
+  if (hueStaticZone <= THRESH.staticZone) {
+    return {
+      metric,
+      value,
+      threshold,
+      className: "WARN",
+      status: "PASS",
+      note: note === undefined ? "hue-motion-pass" : `hue-motion-pass; ${note}`,
+    };
+  }
+  return row(metric, value, thresholdValue, threshold, "WARN", direction, note);
+}
+
 function relativeThreshold(input: RelativeThresholdInput): number {
   const relative = input.sourceValue === undefined
     ? input.floor
@@ -309,7 +402,7 @@ function sourceNote(value: number | undefined): string {
   return value === undefined ? "(abs)" : `source=${formatValue(value)}`;
 }
 
-export function buildMetricRows(metrics: Metrics, source?: QaSourceBaseline): readonly MetricRow[] {
+export function buildMetricRows(metrics: Metrics, source?: QaSourceReport): readonly MetricRow[] {
   const oliveThreshold = relativeThreshold({
     floor: THRESH.oliveDwell,
     sourceValue: source?.oliveDwell,
@@ -327,8 +420,12 @@ export function buildMetricRows(metrics: Metrics, source?: QaSourceBaseline): re
     row("oliveDwell", metrics.oliveDwell, oliveThreshold, `<= ${formatValue(oliveThreshold)}`, "FAIL", "max", sourceNote(source?.oliveDwell)),
     row("bleachDwell", metrics.bleachDwell, bleachThreshold, `<= ${formatValue(bleachThreshold)}`, "FAIL", "max", sourceNote(source?.bleachDwell)),
     row("darkDwell", metrics.darkDwell, THRESH.darkDwell, "<= 0.10", "WARN"),
+    row("sourceColorDrift95", metrics.sourceColorDrift95, THRESH.sourceColorDrift95, "<= 0.1800", "FAIL", "max", source ? "rgb-to-source" : "no-source"),
+    row("sourceColorLocalDrift95", metrics.sourceColorLocalDrift95, THRESH.sourceColorLocalDrift95, "<= 0.3000", "FAIL", "max", source ? "cell-frame-rgb-to-source" : "no-source"),
     row("seamRatio", metrics.seamRatio, THRESH.seamRatio, "<= 1.5", "FAIL"),
     row("staticZone", metrics.staticZone, THRESH.staticZone, "<= 0.15", "WARN"),
+    lightMotionRow("lightStaticZone", metrics.lightStaticZone, THRESH.lightStaticZone, "<= 0.15", "max", metrics.staticZone, `std<${formatValue(THRESH.lightStaticStd)}`),
+    lightMotionRow("motionDensity", metrics.motionDensity, THRESH.motionDensity, ">= 0.12", "min", metrics.staticZone),
     row("hierarchy", metrics.hierarchy, THRESH.hierarchy, ">= 0.60", "WARN", "min"),
     row("subjectHold", metrics.subjectHold, THRESH.subjectHold, "<= 0.25", "WARN", "max", metrics.subjectHoldMask ? `mask=${metrics.subjectHoldMask}` : undefined),
   ];
@@ -349,12 +446,15 @@ function printTable(videoPath: string, frameCount: number, rows: readonly Metric
 
 export async function runQaMotion(args: CliArgs): Promise<number> {
   const source = await readSourceBaseline(resolveQaSourcePath(args));
-  const result = await analyzeFrameBuffer(extractFrames(args.videoPath), args.masksDir);
+  const result = await analyzeFrameBuffer(extractFrames(args.videoPath), args.masksDir, source?.grid);
   const rows = buildMetricRows(result.metrics, source);
   printTable(args.videoPath, result.frameCount, rows);
   if (args.jsonPath) {
     fs.mkdirSync(path.dirname(path.resolve(args.jsonPath)), { recursive: true });
-    fs.writeFileSync(args.jsonPath, `${JSON.stringify({ video: args.videoPath, source: source ?? null, frameCount: result.frameCount, grid: [GRID_W, GRID_H], thresholds: THRESH, metrics: result.metrics, rows }, null, 2)}\n`);
+    const sourceReport = source
+      ? { path: source.path, oliveDwell: source.oliveDwell, bleachDwell: source.bleachDwell }
+      : null;
+    fs.writeFileSync(args.jsonPath, `${JSON.stringify({ video: args.videoPath, source: sourceReport, frameCount: result.frameCount, grid: [GRID_W, GRID_H], thresholds: THRESH, metrics: result.metrics, rows }, null, 2)}\n`);
   }
   return rows.some((item) => item.status === "FAIL") ? 1 : 0;
 }

@@ -54,6 +54,24 @@ describe("export-layered encoding defaults (T4)", () => {
     expect(exportSrc).toContain('"-crf", "23"');
     expect(exportSrc).toContain("preview");
   });
+
+  it("--full-res preserves source dimensions for final H.264 output", () => {
+    expect(exportSrc).toContain('"--full-res"');
+    expect(exportSrc).toContain("fullResFlag");
+    expect(exportSrc).toContain("scale=iw:ih");
+    expect(exportSrc).toContain('"-level:v", "5.1"');
+  });
+
+  it("requires a matching psychedelic gate report before a non-preview render", () => {
+    expect(exportSrc).toContain('"--gate-report"');
+    expect(exportSrc).toContain("assertPsychedelicFullRenderGate");
+  });
+
+  it("requires a region-affinity authority audit before a region-affinity preview", () => {
+    expect(exportSrc).toContain('"--authority-report"');
+    expect(exportSrc).toContain("assertRegionAffinityAuthorityAudit");
+    expect(exportSrc).toContain("sceneUsesRegionAffinity");
+  });
 });
 
 describe("pipeline-cli flags (T4/T7)", () => {
