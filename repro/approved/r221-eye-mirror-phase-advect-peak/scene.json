@@ -1,0 +1,122 @@
+{
+  "version": 1,
+  "source": "layers/source.png",
+  "resolution": [
+    1632,
+    2912
+  ],
+  "duration": 20,
+  "fps": 30,
+  "layers": [
+    {
+      "id": "source-phase-advect-peak",
+      "file": "layers/source.png",
+      "zIndex": 0,
+      "opacity": 1,
+      "blending": "normal",
+      "role": "subject",
+      "animation": {
+        "colorCycle": {
+          "speed": 0,
+          "period": 20,
+          "phaseOffset": 0
+        },
+        "hueSpace": "oklch",
+        "greenCompress": 0.52,
+        "saturationBoost": 1.48,
+        "valueLift": 0.02,
+        "luminanceKey": 0,
+        "hueKey": 0,
+        "hueSpeed": 0,
+        "satInjectionMul": 0.01,
+        "satBlendLow": 0.05,
+        "satBlendHigh": 0.6,
+        "paletteAmount": 0,
+        "noiseAmount": 0,
+        "bicubicFilter": true,
+        "phaseField": "layers/phase-edge.png",
+        "phaseField2": "layers/phase-mix.png",
+        "flowField": "layers/flow-field.png",
+        "phaseAmount": 0,
+        "phaseWarpAmount": 0,
+        "glowWave": {
+          "strength": 0.1,
+          "speed": 15,
+          "sharpness": 0.42,
+          "fieldCycles": 1.15
+        },
+        "glowWave2": {
+          "strength": 0.06,
+          "speed": 25,
+          "sharpness": 0.36,
+          "fieldCycles": 1.55
+        },
+        "structureFlow": {
+          "strength": 0,
+          "cycles": 3
+        },
+        "adaptiveFlow": {
+          "strength": 0,
+          "scale": 5,
+          "cycles": 3,
+          "luminanceWeight": 0,
+          "saturationWeight": 0,
+          "edgeWeight": 0,
+          "maxDisplacementPx": 0,
+          "edgePreserve": 1
+        },
+        "sourcePrism": {
+          "amount": 1,
+          "radiusPx": 0,
+          "directionCycles": 0,
+          "chromaCycles": 0,
+          "surfaceCycles": 26,
+          "phaseFlowPx": 27,
+          "phaseFlowCycles": 5,
+          "phaseMix": 0,
+          "detailBoost": 1.05,
+          "phaseScale": 5.8
+        },
+        "sourceColorClamp": {
+          "maxDrift": 0.26
+        },
+        "breath": {
+          "amplitude": 0.003,
+          "frequency": 1,
+          "period": 20
+        }
+      }
+    }
+  ],
+  "effects": {
+    "bloom": {
+      "strength": 0.3,
+      "radius": 0.5,
+      "threshold": 0.68
+    },
+    "chromaticAberration": {
+      "offset": 0.06,
+      "modulationOffset": 0.02
+    },
+    "multipassFeedback": {
+      "strength": 0.12,
+      "warp": 0.01,
+      "decay": 0.87,
+      "hueShift": 0.008,
+      "zoom": 1.0,
+      "rotate": 0
+    },
+    "godRays": {
+      "intensity": 0
+    },
+    "aura": {
+      "intensity": 0
+    },
+    "filmGrade": {
+      "grain": 0,
+      "contrast": 1.04,
+      "sCurve": 0.05,
+      "vignetteIntensity": 0
+    }
+  }
+}

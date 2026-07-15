@@ -1,0 +1,142 @@
+{
+  "video": "out/layered/2026-07-15_r221-eye-mirror-phase-advect-peak-final-ab325ea9/r221-eye-mirror-phase-advect-peak-final.mp4",
+  "source": {
+    "path": "/Users/isaac/WebstormProjects/video-art/out/manual-runs/r221-eye-mirror-phase-advect-peak/source.png",
+    "oliveDwell": 0.003289473684210526,
+    "bleachDwell": 0
+  },
+  "frameCount": 600,
+  "grid": [
+    32,
+    57
+  ],
+  "thresholds": {
+    "lumFlicker": 0.015,
+    "oliveDwell": 0.05,
+    "oliveDwellSourceMultiplier": 1.5,
+    "oliveDwellCap": 0.2,
+    "bleachDwell": 0.05,
+    "bleachDwellSourceMultiplier": 2,
+    "darkDwell": 0.1,
+    "seamRatio": 1.5,
+    "staticZone": 0.15,
+    "lightStaticZone": 0.15,
+    "lightStaticStd": 0.018,
+    "motionDensity": 0.12,
+    "sourceColorDrift95": 0.18,
+    "sourceColorLocalDrift95": 0.3,
+    "hierarchy": 0.6,
+    "subjectHold": 0.25
+  },
+  "metrics": {
+    "lumFlicker": 0.001020489052531636,
+    "hueJump95": 25,
+    "hueJumpThreshold": 26.135875603163726,
+    "oliveDwell": 0.015157163742690105,
+    "bleachDwell": 0.008485014619883088,
+    "darkDwell": 0,
+    "seamRatio": 1.003629846855065,
+    "staticZone": 0,
+    "lightStaticZone": 0.4479166666666667,
+    "motionDensity": 0.17238470315933227,
+    "sourceColorDrift95": 0.12974033751814412,
+    "sourceColorLocalDrift95": 0.22199911907118905
+  },
+  "rows": [
+    {
+      "metric": "lumFlicker",
+      "value": 0.001020489052531636,
+      "threshold": "<= 0.015",
+      "className": "WARN",
+      "status": "PASS"
+    },
+    {
+      "metric": "hueJump95",
+      "value": 25,
+      "threshold": "<= 26.1359 deg",
+      "className": "WARN",
+      "status": "PASS"
+    },
+    {
+      "metric": "oliveDwell",
+      "value": 0.015157163742690105,
+      "threshold": "<= 0.0500",
+      "className": "FAIL",
+      "status": "PASS",
+      "note": "source=0.0033"
+    },
+    {
+      "metric": "bleachDwell",
+      "value": 0.008485014619883088,
+      "threshold": "<= 0.0500",
+      "className": "FAIL",
+      "status": "PASS",
+      "note": "source=0.0000"
+    },
+    {
+      "metric": "darkDwell",
+      "value": 0,
+      "threshold": "<= 0.10",
+      "className": "WARN",
+      "status": "PASS"
+    },
+    {
+      "metric": "sourceColorDrift95",
+      "value": 0.12974033751814412,
+      "threshold": "<= 0.1800",
+      "className": "FAIL",
+      "status": "PASS",
+      "note": "rgb-to-source"
+    },
+    {
+      "metric": "sourceColorLocalDrift95",
+      "value": 0.22199911907118905,
+      "threshold": "<= 0.3000",
+      "className": "FAIL",
+      "status": "PASS",
+      "note": "cell-frame-rgb-to-source"
+    },
+    {
+      "metric": "seamRatio",
+      "value": 1.003629846855065,
+      "threshold": "<= 1.5",
+      "className": "FAIL",
+      "status": "PASS"
+    },
+    {
+      "metric": "staticZone",
+      "value": 0,
+      "threshold": "<= 0.15",
+      "className": "WARN",
+      "status": "PASS"
+    },
+    {
+      "metric": "lightStaticZone",
+      "value": 0.4479166666666667,
+      "threshold": "<= 0.15",
+      "className": "WARN",
+      "status": "PASS",
+      "note": "hue-motion-pass; std<0.0180"
+    },
+    {
+      "metric": "motionDensity",
+      "value": 0.17238470315933227,
+      "threshold": ">= 0.12",
+      "className": "WARN",
+      "status": "PASS",
+      "note": "hue-motion-pass"
+    },
+    {
+      "metric": "hierarchy",
+      "threshold": ">= 0.60",
+      "className": "WARN",
+      "status": "SKIP"
+    },
+    {
+      "metric": "subjectHold",
+      "threshold": "<= 0.25",
+      "className": "WARN",
+      "status": "SKIP"
+    }
+  ]
+}

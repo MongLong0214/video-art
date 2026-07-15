@@ -19,7 +19,8 @@ __pycache__/
 # IDE
 .idea/
 
-# Output artifacts (archives + work dirs)
+# Output artifacts (archives + experimental work dirs)
+# Approved closed packages live in repro/approved/ and sources/approved/ (committed).
 out/
 
 # Local ad-hoc agent dumps (never production)

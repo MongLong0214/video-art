@@ -1,0 +1,182 @@
+{
+  "version": 1,
+  "source": "layers/source.png",
+  "resolution": [
+    1632,
+    2912
+  ],
+  "duration": 20,
+  "fps": 30,
+  "layers": [
+    {
+      "id": "handface-phase-river-gatepass",
+      "file": "layers/source.png",
+      "zIndex": 0,
+      "opacity": 1,
+      "blending": "normal",
+      "role": "subject",
+      "meanDepth": 150,
+      "animation": {
+        "colorCycle": {
+          "speed": 0,
+          "period": 20,
+          "phaseOffset": 0
+        },
+        "colorCycleDesync": {
+          "amount": 0,
+          "cycles": 12
+        },
+        "phaseField": "layers/phase-edge.png",
+        "phaseField2": "layers/phase-mix.png",
+        "flowField": "layers/flow-field.png",
+        "phaseAmount": 0,
+        "phaseWarpAmount": 0,
+        "glowWavePhaseSource": "flowField",
+        "glowWave": {
+          "strength": 0.18,
+          "speed": 19,
+          "sharpness": 0.4,
+          "fieldCycles": 1.35
+        },
+        "glowWave2": {
+          "strength": 0.12,
+          "speed": 31,
+          "sharpness": 0.34,
+          "fieldCycles": 1.75
+        },
+        "structureFlow": {
+          "strength": 0,
+          "cycles": 11
+        },
+        "flowAmp": 0,
+        "flowScale": 9.4,
+        "adaptiveFlow": {
+          "strength": 0,
+          "scale": 9.8,
+          "cycles": 12,
+          "luminanceWeight": 0.08,
+          "saturationWeight": 0.48,
+          "edgeWeight": 0.68,
+          "maxDisplacementPx": 4.8,
+          "edgePreserve": 1
+        },
+        "colorMotionMask": {
+          "floor": 1,
+          "luminanceWeight": 0,
+          "saturationWeight": 0,
+          "edgeWeight": 0,
+          "power": 1
+        },
+        "chromaOrbit": {
+          "radius": 0,
+          "speed": 0,
+          "phaseScale": 1
+        },
+        "sourcePrism": {
+          "amount": 1,
+          "radiusPx": 0,
+          "directionCycles": 0,
+          "chromaCycles": 0,
+          "surfaceCycles": 31,
+          "phaseFlowPx": 36,
+          "phaseFlowCycles": 4,
+          "phaseMix": 0,
+          "detailBoost": 1.25,
+          "phaseScale": 7.5
+        },
+        "sourceColorClamp": {
+          "maxDrift": 0.26
+        },
+        "saturationBoost": 1.72,
+        "luminanceKey": 0,
+        "satBlendLow": 0.08,
+        "satBlendHigh": 0.58,
+        "satInjectionMul": 0.03,
+        "glowPulseFloor": 0,
+        "lumExponent": 0.98,
+        "valueLift": 0.04,
+        "hueSpace": "oklch",
+        "hueKey": 0,
+        "hueSpeed": 0,
+        "greenCompress": 0.5,
+        "noiseAmount": 0,
+        "paletteAmount": 0,
+        "patternAmount": 0,
+        "sdfAmount": 0,
+        "juliaAmount": 0,
+        "worleyAmount": 0,
+        "voronoiAmount": 0,
+        "rimIntensity": 0,
+        "ringIntensity": 0,
+        "bicubicFilter": true,
+        "breath": {
+          "amplitude": 0.005,
+          "frequency": 1.15,
+          "period": 20
+        }
+      }
+    }
+  ],
+  "effects": {
+    "bloom": {
+      "strength": 0.28,
+      "radius": 0.52,
+      "threshold": 0.68
+    },
+    "chromaticAberration": {
+      "offset": 0.12,
+      "modulationOffset": 0.035
+    },
+    "parallax": {
+      "scale": 0
+    },
+    "haze": {
+      "intensity": 0
+    },
+    "feather": {
+      "radius": 0
+    },
+    "trails": {
+      "strength": 0
+    },
+    "kaleidoscope": {
+      "segments": 0,
+      "blend": 0
+    },
+    "godRays": {
+      "intensity": 0,
+      "decay": 0.98,
+      "density": 0.62,
+      "weight": 0.4,
+      "threshold": 0.8,
+      "samples": 64,
+      "centerX": 0.5,
+      "centerY": 0.38
+    },
+    "aura": {
+      "intensity": 0
+    },
+    "mandala": {
+      "opacity": 0,
+      "segments": 6,
+      "rings": 3,
+      "rotationSpeed": 0,
+      "breathSpeed": 0,
+      "hueSpeed": 0
+    },
+    "filmGrade": {
+      "grain": 0,
+      "contrast": 1.06,
+      "sCurve": 0.07,
+      "vignetteIntensity": 0
+    },
+    "multipassFeedback": {
+      "strength": 0.22,
+      "warp": 0.02,
+      "decay": 0.85,
+      "hueShift": 0.012,
+      "zoom": 1.0,
+      "rotate": 0.002
+    }
+  }
+}

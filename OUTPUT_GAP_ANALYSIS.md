@@ -42,9 +42,12 @@ If two docs disagree: **this file wins.** Archive is not deleted knowledge — i
 | FPS preview | **15** (export `--preview`) |
 | Aspect | 9:16 (typical 1632×2912) |
 | Codec final | H.264 yuv420p |
-| Work dir | `out/manual-runs/<slug>/` |
-| Archive | `out/layered/<date>_<slug>_<hash>/` |
+| Work dir | `out/manual-runs/<slug>/` (local experiments) |
+| **Approved repro (git)** | `repro/approved/<slug>/` — source + scene + layers + gate; **pull → re-export** |
+| **Approved sources (git)** | `sources/approved/*.png` |
+| Archive | `out/layered/<date>_<slug>_<hash>/` (**not** in git; re-export) |
 | Golden recipes | `recipes/golden/*.json` (**versioned; do not rely on out/**) |
+| Repro manifest | `repro/approved/manifest.json` |
 | Ops KB | this file |
 | Closed handoff | `SESSION_HANDOFF_2026-07-15.md` |
 
@@ -52,10 +55,10 @@ If two docs disagree: **this file wins.** Archive is not deleted knowledge — i
 
 | Source | Slug | Silent MP4 | Audio mux |
 |--------|------|------------|-----------|
-| eye-mirror | r221 | `out/layered/2026-07-15_r221-eye-mirror-phase-advect-peak-final-ab325ea9/r221-eye-mirror-phase-advect-peak-final.mp4` | `...-with-getting-that-feeling.mp4` (Jared Wilson — Getting That Feeling @0s) |
-| woodblock | r139 | `out/layered/2026-07-10_r139-woodblock-phase-advect-final-167951af/r139-woodblock-phase-advect-final.mp4` | Shaman Trance |
-| mushroom-hand | r65 | `out/layered/2026-07-08_r65-mushroom-hand-aurora-dissolve-final-7fa8e4cf/r65-...-final.mp4` | Ancient Aum |
-| hand-face | **r242** | `out/layered/2026-07-15_r242-handface-phase-river-gatepass-final-209a36a0/r242-handface-phase-river-gatepass-final.mp4` | `...-with-eating-glue.mp4` (Paranoid London / Mutado Pintado — Eating Glue @0s) |
+| eye-mirror | r221 | local: `out/layered/.../r221-...-final.mp4` · **repro:** `repro/approved/r221-eye-mirror-phase-advect-peak/` | Getting That Feeling (WAV local) |
+| woodblock | r139 | local archive only (repro pack TODO) | Shaman Trance |
+| mushroom-hand | r65 | local archive only (repro pack TODO) | Ancient Aum |
+| hand-face | **r242** | local: `out/layered/.../r242-...-final.mp4` · **repro:** `repro/approved/r242-handface-phase-river-gatepass/` | Eating Glue (WAV local) |
 
 ### Approved previews (Isaac visual OK — full only after gate PASS §7.1; do not re-open without new defect)
 
@@ -516,6 +519,6 @@ Work is **not done** until:
 
 ---
 
-*Version: 2026-07-15.5 — hand-face r242 gate PASS final + Eating Glue; R-055/R-056 (no override skip).  
-Ops: this file + `recipes/golden/*` + scripts.  
+*Version: 2026-07-15.6 — git-tracked `repro/approved` + `sources/approved` (pull → re-export; no MP4 in git).  
+Ops: this file + `recipes/golden/*` + `repro/approved/*` + scripts.  
 Evidence: `docs/archive/OUTPUT_GAP_ANALYSIS.pre-refactor-2026-07-15.md` (git snapshot `be59eb8`, ~1640 lines).*

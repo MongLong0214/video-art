@@ -1,0 +1,7 @@
+{
+  "slug": "r242-handface-phase-river-gatepass",
+  "sourcePath": "out/manual-runs/r240-handface-phase-river/source.png",
+  "parent": "r240-handface-phase-river",
+  "delta": "sourceColorClamp.maxDrift 0.42\u21920.26 (gate local-drift)",
+  "createdAt": "2026-07-15T07:36:57.406000+00:00"
+}
