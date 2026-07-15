@@ -55,13 +55,22 @@ If two docs disagree: **this file wins.** Archive is not deleted knowledge — i
 | eye-mirror | r221 | `out/layered/2026-07-15_r221-eye-mirror-phase-advect-peak-final-ab325ea9/r221-eye-mirror-phase-advect-peak-final.mp4` | `...-with-getting-that-feeling.mp4` (Jared Wilson — Getting That Feeling @0s) |
 | woodblock | r139 | `out/layered/2026-07-10_r139-woodblock-phase-advect-final-167951af/r139-woodblock-phase-advect-final.mp4` | Shaman Trance |
 | mushroom-hand | r65 | `out/layered/2026-07-08_r65-mushroom-hand-aurora-dissolve-final-7fa8e4cf/r65-...-final.mp4` | Ancient Aum |
+| hand-face | **r242** | `out/layered/2026-07-15_r242-handface-phase-river-gatepass-final-209a36a0/r242-handface-phase-river-gatepass-final.mp4` | `...-with-eating-glue.mp4` (Paranoid London / Mutado Pintado — Eating Glue @0s) |
+
+### Approved previews (Isaac visual OK — full only after gate PASS §7.1; do not re-open without new defect)
+
+| Source | Slug | Type | Preview MP4 | Recipe | Note |
+|--------|------|------|-------------|--------|------|
+| hand-face | r240 | `dense-pattern-figure` | `out/layered/2026-07-15_r240-handface-phase-river-78c509b8/r240-handface-phase-river-preview.mp4` | r139, clamp **0.42** | Isaac visual pick; **gate REJECT local-drift 0.394** — do not full without fix |
+| hand-face | **r242** | same | `out/layered/2026-07-15_r242-handface-phase-river-gatepass-973703eb/...-preview.mp4` | r240 + clamp **0.26** | **gate PASS** local 0.297; **final + audio** |
+| hand-face | r241 | same source (alt) | `out/layered/2026-07-15_r241-handface-chroma-trance-bc800728/r241-handface-chroma-trance-preview.mp4` | r139 delta: colorCycle 19 + hueKey 0.42 | alt only |
 
 ### Golden recipe files (copy these)
 
 | Recipe file | Use when |
 |-------------|----------|
 | `recipes/golden/eye-mirror-phase-advect-r221.json` | finished vivid figure / multi-eye / painted portrait with dense color detail |
-| `recipes/golden/woodblock-phase-advect-r139.json` | busy high-frequency line/print texture |
+| `recipes/golden/woodblock-phase-advect-r139.json` | busy high-frequency line/print texture **and** dense-pattern-figure (hand-face r240 Isaac-validated) |
 | `recipes/golden/cosmos-vivid-oklch-r24b.json` | all-over colorful swirl (not figure-skin critical) |
 
 ---
@@ -122,7 +131,7 @@ npx tsx scripts/analyze-source.ts <source.png> --out out/manual-runs/<slug>/anal
 | 3 | all-over marble/swirl/galaxy, figure not the color problem | `allover-vivid` | `cosmos-vivid-oklch-r24b.json` |
 | 4 | `greenRisk true` **or** pastel/low-sat majority with few vivid focals | `pastel-greenrisk` | start from r221 **or** cosmos but **hueKey/lumKey low + clamp≤0.18**; never full peacock |
 | 5 | figure/face/deity + finished vivid paint (`finishedVivid` useful; skin/face large) | `figure-vivid` | `eye-mirror-phase-advect-r221.json` |
-| 6 | dense full-frame pattern figure (hand/mushroom/forest) without soft skin wash risk | `dense-pattern-figure` | prefer r221-like single-source phase; multi-layer r65 only if layers already exist |
+| 6 | dense full-frame pattern figure (hand/mushroom/forest) without soft skin wash risk | `dense-pattern-figure` | **first try** `woodblock-phase-advect-r139.json` (hand-face r240 Isaac OK); multi-layer r65 only if layers already exist; avoid body colorCycle as first path (r241 alt only) |
 | 7 | else | `unknown` | scaffold r221 **one** preview → if repaint FAIL, stop and escalate |
 
 ### 3.2 Hard type rules
@@ -131,6 +140,7 @@ npx tsx scripts/analyze-source.ts <source.png> --out out/manual-runs/<slug>/anal
 |------|------|----------|
 | `figure-vivid` | single layer; colorCycle **0** on r221 path; sourcePrism on | body colorCycle, peacock satBoost 1.8+palette, overlays |
 | `busy-line` | UV fixed; phaseMix=0; phaseFlowPx ∝ width | copy r139 px blindly without width scale |
+| `dense-pattern-figure` | start **r139** path; colorCycle **0** first; for **gate/final** clamp maxDrift **≤0.26** (r242) | default colorCycle/hueKey; shipping with clamp 0.42+ without re-gate |
 | `allover-vivid` | OKLCH; integer cycle; satInj 0 | HSV + high satFloor |
 | `pastel-greenrisk` | clamp; low hueKey | full-field hue “for energy” |
 
@@ -345,8 +355,58 @@ ffprobe -v error -show_entries stream=codec_type,codec_name,nb_frames -of csv=p=
 | r217 pure phase extreme | HOLD / drift fail | max halluc density, weaker identity |
 | **r221** | **Isaac final** | phase-advection balanced; closed |
 | r209 region-affinity | FAIL static | authority field ≠ binary capacity |
+| r240 hand-face | Isaac visual / **gate REJECT local-drift** | look OK ≠ full-ready; clamp 0.42 too loose |
+| **r242 hand-face** | **gate PASS + Isaac final + audio** | single-axis clamp **0.42→0.26** fixed local-drift; keep r139 prism |
+| r241 hand-face chroma | alt / not preferred | colorCycle+hueKey ok as A/B, not default |
 | r65 mushroom | approved | keep pattern engine; fix defects only |
 | r139 woodblock | approved | UV fixed + phase flow |
+
+### 9.2b CASE detail — hand-face (2026-07-15)
+
+#### CASE-2026-07-15-r240 | r240-handface-phase-river
+- source: `out/manual-runs/_sources/psy-hand-face-1632.png` 1632×2912 sha256=`369496e278e699d5…` — type=`dense-pattern-figure` M: satMean=0.56 vivid=48.4% busyness=0.022 greenRisk=false finishedVivid=0.32 figureArea≈40%
+- hypothesis: dense patterned hand/face responds to woodblock phase-advection (fixed UV, phaseMix=0) better than figure-vivid r221 or body hue-cycle
+- recipe: golden=`recipes/golden/woodblock-phase-advect-r139.json` (scaffold as-is; sourcePrism amount=1 phaseFlowPx=36 satBoost=1.72 colorCycle=0)
+- work-dir: `out/manual-runs/r240-handface-phase-river/`
+- preview: `out/layered/2026-07-15_r240-handface-phase-river-78c509b8/r240-handface-phase-river-preview.mp4`
+- QA: olive=0.056 bleach=0.005 seam=0.99 drift=0.12 / local=0.278 static=0 motionDensity=0.197 verdict=**hard PASS** (darkDwell WARN only)
+- stills: contact=`out/manual-runs/r240-handface-phase-river/stills/contact.png` subsec=`.../stills/subsec.png`
+- judge: **PASS** — R-002=yes (Isaac) R-020=yes notes=agent pick + Isaac “맘에든다”
+- learning: for dense-pattern-figure without soft-skin wash risk, **r139 single-source phase river is the proven first recipe** (not peacock, not first-path colorCycle)
+- rules: R-001 confirm · R-002 confirm · R-038 confirm · R-042 confirm · R-003 confirm (type→recipe map)
+- status: **delivered-preview** (Isaac visual OK; full pending; audio pending)
+
+#### CASE-2026-07-15-r241 | r241-handface-chroma-trance
+- source: same as r240
+- hypothesis: add integer colorCycle + mild hueKey for denser chroma trance while holding sourcePrism
+- recipe: delta from r240 — colorCycle.speed=**19**, hueKey=**0.42**, luminanceKey=0.1, sourcePrism slightly softer (amount 0.9, phaseFlowPx 32), clamp maxDrift 0.30, glowWave up
+- work-dir: `out/manual-runs/r241-handface-chroma-trance/`
+- preview: `out/layered/2026-07-15_r241-handface-chroma-trance-bc800728/r241-handface-chroma-trance-preview.mp4`
+- QA: olive=0.010 bleach=0.008 seam=0.89 drift=0.089 / local=0.181 motionDensity=0.179 verdict=**hard PASS** (hueJump WARN 42>41.8, darkDwell WARN)
+- stills: `out/manual-runs/r241-handface-chroma-trance/stills/{contact,subsec}.png`
+- judge: **HOLD as alt** — QA ok, Isaac preferred overall look of r240 family; do not promote to default dense-pattern path
+- learning: chroma-cycle A/B is valid second preview, not the type default
+- rules: R-027 confirm (integer cycle) · R-018 not violated as primary (alt only)
+- status: open-alt (not discarded; not preferred)
+
+#### CASE-2026-07-15-r242 | r242-handface-phase-river-gatepass
+- source: same as r240
+- hypothesis: r240 gate fail was **source-local-drift only** (0.394 > 0.30); single-axis tighten `sourceColorClamp.maxDrift` 0.42→**0.26** (r221-class) keeps phase-river look while anchoring local RGB
+- recipe: r240 delta — **only** clamp maxDrift=0.26 (prism/sat/glow unchanged)
+- work-dir: `out/manual-runs/r242-handface-phase-river-gatepass/`
+- preview: `out/layered/2026-07-15_r242-handface-phase-river-gatepass-973703eb/r242-handface-phase-river-gatepass-preview.mp4`
+- final: `out/layered/2026-07-15_r242-handface-phase-river-gatepass-final-209a36a0/r242-handface-phase-river-gatepass-final.mp4`
+- audio: `...-with-eating-glue.mp4` (Paranoid London / Mutado Pintado — Eating Glue @0s)
+- gate: **PASS** edges=0.877 frameDrift=0.141 **localDrift=0.297** (≤0.30) — no humanOverride
+- QA final: hard PASS (darkDwell WARN only); localDrift qa=0.207
+- judge: **PASS final** — process fix: Isaac visual → **gate PASS required** before full; do not skip to override when a single-axis clamp can recover
+- learning: dense-pattern r139 path for final should ship with **clamp ≤0.26** (golden r139 default 0.55 is preview-loose; final/gate needs tighter clamp)
+- rules: R-010 confirm · R-020 confirm (QA≠gate) · R-044 confirm · **R-055 new (P):** Isaac look OK still requires gate PASS or explicit “override OK”; prefer single-axis clamp before override
+- status: **final closed**
+
+### Process correction (2026-07-15)
+- Wrong: r240 Isaac like → humanOverride → full while gate REJECT local-drift.
+- Right: diagnose fail code → one-axis fix → re-preview → **gate PASS** → full → audio.
 
 ### 9.3 Rule registry (operational)
 
@@ -375,6 +435,8 @@ ffprobe -v error -show_entries stream=codec_type,codec_name,nb_frames -of csv=p=
 | R-052 | E | Capacity = affinity field (not binary mask) |
 | R-053 | E | Failed family cannot be re-previewed |
 | R-054 | P | figure-vivid: after peacock fail → phase-advection |
+| R-055 | P | Isaac visual OK ≠ skip gate; fix fail-code first (often clamp); override only if Isaac says override OK |
+| R-056 | P | dense-pattern final/gate: `sourceColorClamp.maxDrift ≤ 0.26` (r242); golden r139 0.55 is start only |
 
 Tier: L=law E=established P=provisional.
 
@@ -382,12 +444,13 @@ Tier: L=law E=established P=provisional.
 
 ## 10. Experiment queue (priority order; do not skip up)
 
-1. ~~eye-mirror r221~~ **CLOSED**  
-2. sourcePrism on **new** busy-line source (not woodblock clone numbers)  
-3. cosmos-B black-hole **in-place** local fix only  
-4. lightMotion threshold calibration set  
-5. colorCycleDesync single-variable A/B only  
-6. figure class strategy only with Isaac choice  
+1. ~~eye-mirror r221~~ **CLOSED** (final + audio)  
+2. ~~hand-face r242~~ **CLOSED** (gate PASS + final + Eating Glue); r240 was look-pick only  
+3. sourcePrism on **new** busy-line source (not woodblock clone numbers)  
+4. cosmos-B black-hole **in-place** local fix only (r230–r232 previews exist; not Isaac-locked)  
+5. lightMotion threshold calibration set  
+6. colorCycleDesync single-variable A/B only  
+7. figure class strategy only with Isaac choice  
 
 **Blocked forever without new evidence:** region-affinity retune, r209, optical liquid, freeze+overlay.
 
@@ -453,6 +516,6 @@ Work is **not done** until:
 
 ---
 
-*Version: 2026-07-15.3 production-agent OS + archive pointer.  
+*Version: 2026-07-15.5 — hand-face r242 gate PASS final + Eating Glue; R-055/R-056 (no override skip).  
 Ops: this file + `recipes/golden/*` + scripts.  
 Evidence: `docs/archive/OUTPUT_GAP_ANALYSIS.pre-refactor-2026-07-15.md` (git snapshot `be59eb8`, ~1640 lines).*

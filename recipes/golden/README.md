@@ -5,7 +5,7 @@ Versioned starting `scene.json` templates. **These are the only recipes a new ag
 | File | Type | Notes |
 |------|------|--------|
 | `eye-mirror-phase-advect-r221.json` | figure-vivid | Isaac-approved eye-mirror path. colorCycle 0 + sourcePrism. |
-| `woodblock-phase-advect-r139.json` | busy-line | UV fixed, phase advection. Scale `phaseFlowPx` with width. |
+| `woodblock-phase-advect-r139.json` | busy-line **+ dense-pattern-figure** | UV fixed, phase advection. Scale `phaseFlowPx` with width. Isaac-validated on hand-face r240 (2026-07-15). |
 | `cosmos-vivid-oklch-r24b.json` | allover-vivid | Integer colorCycle OKLCH single layer. |
 
 ## Use
