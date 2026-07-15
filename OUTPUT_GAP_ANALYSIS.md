@@ -2,13 +2,19 @@
 
 **READ THIS FIRST. This file is the only operating truth for image→20s psychedelic loop work.**
 
-| Supersedes | Keep only as optional history |
-|------------|-------------------------------|
-| `IMAGE_TO_LOOP_WORKFLOW.md` peacock-as-always-default | when it conflicts with §3–§4 here, **ignore it** |
-| `PER_IMAGE_TUNING_GUIDE.md` old tone presets | do not invent prism-sunset for finished vivid |
-| Long PART A–K essays | deleted; rules below are sufficient |
+| Layer | Path | When to open |
+|-------|------|----------------|
+| **OS (this file)** | `OUTPUT_GAP_ANALYSIS.md` | Always |
+| **Evidence archive** | `docs/archive/OUTPUT_GAP_ANALYSIS.pre-refactor-2026-07-15.md` | Recurrence / “why is this rule?” / deep debug only |
+| **Golden recipes** | `recipes/golden/*` | Every new source start |
 
-If two docs disagree: **this file wins.**
+| Supersedes (if conflict) | Action |
+|--------------------------|--------|
+| `IMAGE_TO_LOOP_WORKFLOW.md` peacock-default | **Ignore** for figure-vivid finals |
+| `PER_IMAGE_TUNING_GUIDE.md` tone presets | Do not invent prism-sunset for finished vivid |
+| Archive peacock / legacy preserve recipes | Archive is evidence, **not** current defaults |
+
+If two docs disagree: **this file wins.** Archive is not deleted knowledge — it is **read-on-demand**.
 
 ---
 
@@ -447,4 +453,6 @@ Work is **not done** until:
 
 ---
 
-*Version: 2026-07-15.2 production-agent OS. Designed so a weaker agent following only this file + `recipes/golden/*` + scripts produces the same class of output as a strong agent.*
+*Version: 2026-07-15.3 production-agent OS + archive pointer.  
+Ops: this file + `recipes/golden/*` + scripts.  
+Evidence: `docs/archive/OUTPUT_GAP_ANALYSIS.pre-refactor-2026-07-15.md` (git snapshot `be59eb8`, ~1640 lines).*

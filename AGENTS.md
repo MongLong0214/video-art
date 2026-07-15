@@ -4,9 +4,10 @@
 
 1. **`OUTPUT_GAP_ANALYSIS.md`** — sole operating system for image→loop work  
 2. `recipes/golden/*.json` — approved starting recipes (never invent peacock for figure-vivid finals)  
-3. `SESSION_HANDOFF_2026-07-15.md` — closed-loop status (eye-mirror r221 closed)
+3. `SESSION_HANDOFF_2026-07-15.md` — closed-loop status (eye-mirror r221 closed)  
+4. `docs/archive/` — **optional**; full pre-refactor case/theory ledger (only when debugging recurrence)
 
-If any other doc (`IMAGE_TO_LOOP_WORKFLOW.md`, tuning guides, old playbooks) conflicts with `OUTPUT_GAP_ANALYSIS.md`, **follow OUTPUT_GAP_ANALYSIS.md**.
+If any other doc (`IMAGE_TO_LOOP_WORKFLOW.md`, tuning guides, old playbooks, archive) conflicts with `OUTPUT_GAP_ANALYSIS.md`, **follow OUTPUT_GAP_ANALYSIS.md**.
 
 ## Default new-source path
 
