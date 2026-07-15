@@ -22,6 +22,10 @@ __pycache__/
 # Output artifacts (archives + work dirs)
 out/
 
+# Local ad-hoc agent dumps (never production)
+/analysis.json
+/incoming/
+
 # Audio render output
 out/audio/
 out/acid/
