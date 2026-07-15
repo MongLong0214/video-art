@@ -19,3 +19,5 @@ npx tsx scripts/scaffold-layered-run.ts \
 ```
 
 Do not edit golden files for one-off experiments. Copy via scaffold into `out/manual-runs/` and patch there.
+
+**Closed finals** are not goldens. Use `sources/approved/` + `recipes/locks/` and follow **`docs/REPRO_LOCKS_PLAYBOOK.md`**.

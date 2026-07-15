@@ -1,7 +1,7 @@
 {
   "version": 2,
   "createdAt": "2026-07-15T07:49:14.286872+00:00",
-  "policy": "Minimal git repro: sources/approved PNG + recipes/locks scene+gate. No MP4, no layers. scaffold regenerates fields.",
+  "policy": "Minimal git repro: sources/approved PNG + recipes/locks scene+gate. No MP4, no layers. Full agent procedure: docs/REPRO_LOCKS_PLAYBOOK.md",
   "approved": [
     {
       "slug": "r221-eye-mirror-phase-advect-peak",
@@ -13,7 +13,8 @@
       "audio": "Getting That Feeling (Jared Wilson) @0s \u2014 WAV not in git",
       "scaffold": "npx tsx scripts/scaffold-layered-run.ts --source sources/approved/r221-eye-mirror.png --slug r221-eye-mirror-phase-advect-peak --recipe recipes/locks/r221-eye-mirror-phase-advect-peak.json --work-dir out/manual-runs/r221-eye-mirror-phase-advect-peak",
       "exportFull": "npx tsx scripts/export-layered.ts --title r221-eye-mirror-phase-advect-peak-final --work-dir out/manual-runs/r221-eye-mirror-phase-advect-peak --full-res --gate-report recipes/locks/r221-eye-mirror-phase-advect-peak.gate.json",
-      "notes": "After scaffold, overwrite scene.json with lock (or use lock as --recipe). Gate has humanOverride."
+      "notes": "After scaffold, overwrite scene.json with lock (or use lock as --recipe). Gate has humanOverride.",
+      "playbookSection": "docs/REPRO_LOCKS_PLAYBOOK.md \u00a73 (rebuild) \u00b7 \u00a74 (lock) \u00b7 \u00a75 (maintenance)"
     },
     {
       "slug": "r242-handface-phase-river-gatepass",
@@ -25,7 +26,10 @@
       "audio": "Eating Glue (Paranoid London/Mutado Pintado) @0s \u2014 WAV not in git",
       "scaffold": "npx tsx scripts/scaffold-layered-run.ts --source sources/approved/r242-hand-face.png --slug r242-handface-phase-river-gatepass --recipe recipes/locks/r242-handface-phase-river-gatepass.json --work-dir out/manual-runs/r242-handface-phase-river-gatepass",
       "exportFull": "npx tsx scripts/export-layered.ts --title r242-handface-phase-river-gatepass-final --work-dir out/manual-runs/r242-handface-phase-river-gatepass --full-res --gate-report recipes/locks/r242-handface-phase-river-gatepass.gate.json",
-      "notes": "gate PASS; clamp maxDrift 0.26. Scaffold with lock as recipe regenerates layers from source."
+      "notes": "gate PASS; clamp maxDrift 0.26. Scaffold with lock as recipe regenerates layers from source. | ALWAYS cp lock\u2192scene.json after scaffold before full export.",
+      "playbookSection": "docs/REPRO_LOCKS_PLAYBOOK.md \u00a73 (rebuild) \u00b7 \u00a74 (lock) \u00b7 \u00a75 (maintenance)"
     }
-  ]
+  ],
+  "playbook": "docs/REPRO_LOCKS_PLAYBOOK.md",
+  "updatedAt": "2026-07-15T07:52:43.726761+00:00"
 }

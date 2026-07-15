@@ -2,13 +2,15 @@
 
 ## Mandatory read order
 
-1. **`OUTPUT_GAP_ANALYSIS.md`** — sole operating system for image→loop work  
-2. `recipes/golden/*.json` — approved starting recipes (never invent peacock for figure-vivid finals)  
-3. **`sources/approved/` + `recipes/locks/`** — closed PNG + scene + gate (minimal pull-to-rebuild)  
-4. `SESSION_HANDOFF_2026-07-15.md` — closed-loop status  
-5. `docs/archive/` — **optional**; full pre-refactor case/theory ledger (only when debugging recurrence)
+1. **`OUTPUT_GAP_ANALYSIS.md`** — sole OS for image→loop *creation* (type, QA, gate, cases)  
+2. **`docs/REPRO_LOCKS_PLAYBOOK.md`** — sole OS for *closed-product* store/rebuild (sources + locks)  
+3. `recipes/golden/*.json` — **new** source start templates only  
+4. `recipes/locks/manifest.json` — closed inventory + shas + commands  
+5. `SESSION_HANDOFF_2026-07-15.md` — historical handoff (may lag; prefer locks playbook)  
+6. `docs/archive/` — optional deep evidence  
 
-If any other doc conflicts with `OUTPUT_GAP_ANALYSIS.md`, **follow OUTPUT_GAP_ANALYSIS.md**.
+**Conflict rule:** creation aesthetics → `OUTPUT_GAP_ANALYSIS.md`.  
+**Conflict rule:** pull / other PC / lock / commit media → `docs/REPRO_LOCKS_PLAYBOOK.md`.
 
 ## Default new-source path
 
@@ -27,9 +29,12 @@ npx tsx scripts/export-layered.ts \
 
 Then stills + `qa-motion` + case ledger per `OUTPUT_GAP_ANALYSIS.md` §4–§9.
 
-## Rebuild closed final (any machine after pull)
+## Rebuild closed final (any machine)
 
-See `recipes/locks/README.md` and `recipes/locks/manifest.json`.
+**Do not improvise — follow playbook §3 end-to-end**  
+(`docs/REPRO_LOCKS_PLAYBOOK.md`).
+
+Summary (r242):
 
 ```bash
 SLUG=r242-handface-phase-river-gatepass
@@ -38,7 +43,7 @@ npx tsx scripts/scaffold-layered-run.ts \
   --slug "$SLUG" \
   --recipe "recipes/locks/${SLUG}.json" \
   --work-dir "out/manual-runs/${SLUG}"
-cp "recipes/locks/${SLUG}.json" "out/manual-runs/${SLUG}/scene.json"
+cp "recipes/locks/${SLUG}.json" "out/manual-runs/${SLUG}/scene.json"   # REQUIRED
 npx tsx scripts/export-layered.ts \
   --title "${SLUG}-final" \
   --work-dir "out/manual-runs/${SLUG}" \
@@ -46,24 +51,27 @@ npx tsx scripts/export-layered.ts \
   --gate-report "recipes/locks/${SLUG}.gate.json"
 ```
 
+## Close a final into git (lock pack)
+
+Follow playbook **§4.2 checklist**. Minimum commits:
+
+- `sources/approved/<name>.png`
+- `recipes/locks/<slug>.json` + `<slug>.gate.json`
+- `recipes/locks/manifest.json` (sha256 updated)
+- `OUTPUT_GAP_ANALYSIS.md` CASE + approved table
+
 ## Hard bans
 
 - img2video APIs  
 - Overlay / optical-liquid / freeze-source decoration  
-- Audio without Isaac’s explicit request  
-- Full render without gate report (PASS or Isaac humanOverride)  
-- Re-tuning closed approved slugs without new defect feedback  
+- Audio without Isaac’s explicit track request  
+- Full render without gate PASS or Isaac humanOverride  
+- Re-tuning closed locks without new Isaac defect  
+- **Committing** MP4, WAV, `out/**`, or phase `layers/`  
 
 ## Do not commit
 
 - `analysis.json` (repo root)  
 - `incoming/`  
-- `out/` (render archives / experiments)  
-- final/preview **MP4**, audio **WAV**, phase **layers** (rebuild via scaffold)  
-
-## Do commit when closing a final
-
-- `sources/approved/<name>.png`  
-- `recipes/locks/<slug>.json` + `<slug>.gate.json`  
-- update `recipes/locks/manifest.json`  
-
+- `out/`  
+- final/preview **MP4**, audio **WAV**, regenerated **layers**  

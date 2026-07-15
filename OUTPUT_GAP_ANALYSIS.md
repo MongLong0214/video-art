@@ -4,9 +4,11 @@
 
 | Layer | Path | When to open |
 |-------|------|----------------|
-| **OS (this file)** | `OUTPUT_GAP_ANALYSIS.md` | Always |
+| **OS (this file)** | `OUTPUT_GAP_ANALYSIS.md` | Always — create / judge / gate / cases |
+| **Repro + locks playbook** | `docs/REPRO_LOCKS_PLAYBOOK.md` | Closed product store/rebuild / other PC / what to commit |
 | **Evidence archive** | `docs/archive/OUTPUT_GAP_ANALYSIS.pre-refactor-2026-07-15.md` | Recurrence / “why is this rule?” / deep debug only |
-| **Golden recipes** | `recipes/golden/*` | Every new source start |
+| **Golden recipes** | `recipes/golden/*` | Every **new** source start (not closed re-export) |
+| **Locks + sources** | `recipes/locks/*` + `sources/approved/*` | Closed finals only |
 
 | Supersedes (if conflict) | Action |
 |--------------------------|--------|
@@ -44,8 +46,9 @@ If two docs disagree: **this file wins.** Archive is not deleted knowledge — i
 | Codec final | H.264 yuv420p |
 | Work dir | `out/manual-runs/<slug>/` (local; scaffold here) |
 | **Approved sources (git)** | `sources/approved/*.png` |
-| **Approved locks (git)** | `recipes/locks/<slug>.json` + `<slug>.gate.json` — **pull → scaffold → full** |
-| Repro index | `recipes/locks/manifest.json` · how-to: `recipes/locks/README.md` |
+| **Approved locks (git)** | `recipes/locks/<slug>.json` + `<slug>.gate.json` — **pull → scaffold → cp lock → full** |
+| Repro index | `recipes/locks/manifest.json` |
+| **Repro playbook (agents)** | `docs/REPRO_LOCKS_PLAYBOOK.md` — usage · management · maintenance (mandatory for locks) |
 | Archive | `out/layered/<date>_<slug>_<hash>/` (**not** in git) |
 | Golden recipes | `recipes/golden/*.json` (new-source start templates) |
 | Ops KB | this file |
@@ -519,6 +522,6 @@ Work is **not done** until:
 
 ---
 
-*Version: 2026-07-15.7 — minimal git repro: `sources/approved` + `recipes/locks` only (no MP4, no layers).  
-Ops: this file + `recipes/golden/*` + `recipes/locks/*` + `sources/approved/*` + scripts.  
+*Version: 2026-07-15.8 — REPRO_LOCKS_PLAYBOOK (usage/management/maintenance for dumb-agent execution).  
+Ops: this file + `docs/REPRO_LOCKS_PLAYBOOK.md` + `recipes/golden/*` + `recipes/locks/*` + `sources/approved/*` + scripts.  
 Evidence: `docs/archive/OUTPUT_GAP_ANALYSIS.pre-refactor-2026-07-15.md` (git snapshot `be59eb8`, ~1640 lines).*
