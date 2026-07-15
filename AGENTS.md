@@ -4,11 +4,11 @@
 
 1. **`OUTPUT_GAP_ANALYSIS.md`** — sole operating system for image→loop work  
 2. `recipes/golden/*.json` — approved starting recipes (never invent peacock for figure-vivid finals)  
-3. **`repro/approved/`** — closed sources + scene + layers (git-tracked; `git pull` then re-export)  
-4. `SESSION_HANDOFF_2026-07-15.md` — closed-loop status (eye-mirror r221 closed)  
+3. **`sources/approved/` + `recipes/locks/`** — closed PNG + scene + gate (minimal pull-to-rebuild)  
+4. `SESSION_HANDOFF_2026-07-15.md` — closed-loop status  
 5. `docs/archive/` — **optional**; full pre-refactor case/theory ledger (only when debugging recurrence)
 
-If any other doc (`IMAGE_TO_LOOP_WORKFLOW.md`, tuning guides, old playbooks, archive) conflicts with `OUTPUT_GAP_ANALYSIS.md`, **follow OUTPUT_GAP_ANALYSIS.md**.
+If any other doc conflicts with `OUTPUT_GAP_ANALYSIS.md`, **follow OUTPUT_GAP_ANALYSIS.md**.
 
 ## Default new-source path
 
@@ -27,6 +27,25 @@ npx tsx scripts/export-layered.ts \
 
 Then stills + `qa-motion` + case ledger per `OUTPUT_GAP_ANALYSIS.md` §4–§9.
 
+## Rebuild closed final (any machine after pull)
+
+See `recipes/locks/README.md` and `recipes/locks/manifest.json`.
+
+```bash
+SLUG=r242-handface-phase-river-gatepass
+npx tsx scripts/scaffold-layered-run.ts \
+  --source sources/approved/r242-hand-face.png \
+  --slug "$SLUG" \
+  --recipe "recipes/locks/${SLUG}.json" \
+  --work-dir "out/manual-runs/${SLUG}"
+cp "recipes/locks/${SLUG}.json" "out/manual-runs/${SLUG}/scene.json"
+npx tsx scripts/export-layered.ts \
+  --title "${SLUG}-final" \
+  --work-dir "out/manual-runs/${SLUG}" \
+  --full-res \
+  --gate-report "recipes/locks/${SLUG}.gate.json"
+```
+
 ## Hard bans
 
 - img2video APIs  
@@ -35,22 +54,16 @@ Then stills + `qa-motion` + case ledger per `OUTPUT_GAP_ANALYSIS.md` §4–§9.
 - Full render without gate report (PASS or Isaac humanOverride)  
 - Re-tuning closed approved slugs without new defect feedback  
 
-## Re-export closed finals (any machine after pull)
-
-See `repro/README.md` and `repro/approved/manifest.json`.
-
-```bash
-npx tsx scripts/export-layered.ts \
-  --title r242-handface-phase-river-gatepass-final \
-  --work-dir repro/approved/r242-handface-phase-river-gatepass \
-  --full-res \
-  --gate-report repro/approved/r242-handface-phase-river-gatepass/psychedelic-gate.json
-```
-
 ## Do not commit
 
 - `analysis.json` (repo root)  
 - `incoming/`  
-- `out/` (gitignored render archives / experiments)  
-- final/preview **MP4** and audio **WAV** (re-export + local mux)  
-- **Do** commit `repro/approved/*` and `sources/approved/*` when closing a final
+- `out/` (render archives / experiments)  
+- final/preview **MP4**, audio **WAV**, phase **layers** (rebuild via scaffold)  
+
+## Do commit when closing a final
+
+- `sources/approved/<name>.png`  
+- `recipes/locks/<slug>.json` + `<slug>.gate.json`  
+- update `recipes/locks/manifest.json`  
+

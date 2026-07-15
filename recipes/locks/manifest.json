@@ -1,0 +1,31 @@
+{
+  "version": 2,
+  "createdAt": "2026-07-15T07:49:14.286872+00:00",
+  "policy": "Minimal git repro: sources/approved PNG + recipes/locks scene+gate. No MP4, no layers. scaffold regenerates fields.",
+  "approved": [
+    {
+      "slug": "r221-eye-mirror-phase-advect-peak",
+      "source": "sources/approved/r221-eye-mirror.png",
+      "sourceSha256": "711863ff4fe5f096caa10823cca5198f6cfd2f6be6702205c35573c0e1437be8",
+      "lock": "recipes/locks/r221-eye-mirror-phase-advect-peak.json",
+      "sceneSha256": "1204cde756434749f74eaf787d0aac6fb684c0f34965e585a11d1267201e2a91",
+      "gate": "recipes/locks/r221-eye-mirror-phase-advect-peak.gate.json",
+      "audio": "Getting That Feeling (Jared Wilson) @0s \u2014 WAV not in git",
+      "scaffold": "npx tsx scripts/scaffold-layered-run.ts --source sources/approved/r221-eye-mirror.png --slug r221-eye-mirror-phase-advect-peak --recipe recipes/locks/r221-eye-mirror-phase-advect-peak.json --work-dir out/manual-runs/r221-eye-mirror-phase-advect-peak",
+      "exportFull": "npx tsx scripts/export-layered.ts --title r221-eye-mirror-phase-advect-peak-final --work-dir out/manual-runs/r221-eye-mirror-phase-advect-peak --full-res --gate-report recipes/locks/r221-eye-mirror-phase-advect-peak.gate.json",
+      "notes": "After scaffold, overwrite scene.json with lock (or use lock as --recipe). Gate has humanOverride."
+    },
+    {
+      "slug": "r242-handface-phase-river-gatepass",
+      "source": "sources/approved/r242-hand-face.png",
+      "sourceSha256": "369496e278e699d5120350c940020c7f8e3ad871013d0113de04b7f9843a642c",
+      "lock": "recipes/locks/r242-handface-phase-river-gatepass.json",
+      "sceneSha256": "6aac3671605a67c6e4115c75508615c3f20c0a273a3845fece259af3d68bac96",
+      "gate": "recipes/locks/r242-handface-phase-river-gatepass.gate.json",
+      "audio": "Eating Glue (Paranoid London/Mutado Pintado) @0s \u2014 WAV not in git",
+      "scaffold": "npx tsx scripts/scaffold-layered-run.ts --source sources/approved/r242-hand-face.png --slug r242-handface-phase-river-gatepass --recipe recipes/locks/r242-handface-phase-river-gatepass.json --work-dir out/manual-runs/r242-handface-phase-river-gatepass",
+      "exportFull": "npx tsx scripts/export-layered.ts --title r242-handface-phase-river-gatepass-final --work-dir out/manual-runs/r242-handface-phase-river-gatepass --full-res --gate-report recipes/locks/r242-handface-phase-river-gatepass.gate.json",
+      "notes": "gate PASS; clamp maxDrift 0.26. Scaffold with lock as recipe regenerates layers from source."
+    }
+  ]
+}

@@ -42,12 +42,12 @@ If two docs disagree: **this file wins.** Archive is not deleted knowledge — i
 | FPS preview | **15** (export `--preview`) |
 | Aspect | 9:16 (typical 1632×2912) |
 | Codec final | H.264 yuv420p |
-| Work dir | `out/manual-runs/<slug>/` (local experiments) |
-| **Approved repro (git)** | `repro/approved/<slug>/` — source + scene + layers + gate; **pull → re-export** |
+| Work dir | `out/manual-runs/<slug>/` (local; scaffold here) |
 | **Approved sources (git)** | `sources/approved/*.png` |
-| Archive | `out/layered/<date>_<slug>_<hash>/` (**not** in git; re-export) |
-| Golden recipes | `recipes/golden/*.json` (**versioned; do not rely on out/**) |
-| Repro manifest | `repro/approved/manifest.json` |
+| **Approved locks (git)** | `recipes/locks/<slug>.json` + `<slug>.gate.json` — **pull → scaffold → full** |
+| Repro index | `recipes/locks/manifest.json` · how-to: `recipes/locks/README.md` |
+| Archive | `out/layered/<date>_<slug>_<hash>/` (**not** in git) |
+| Golden recipes | `recipes/golden/*.json` (new-source start templates) |
 | Ops KB | this file |
 | Closed handoff | `SESSION_HANDOFF_2026-07-15.md` |
 
@@ -55,10 +55,10 @@ If two docs disagree: **this file wins.** Archive is not deleted knowledge — i
 
 | Source | Slug | Silent MP4 | Audio mux |
 |--------|------|------------|-----------|
-| eye-mirror | r221 | local: `out/layered/.../r221-...-final.mp4` · **repro:** `repro/approved/r221-eye-mirror-phase-advect-peak/` | Getting That Feeling (WAV local) |
-| woodblock | r139 | local archive only (repro pack TODO) | Shaman Trance |
-| mushroom-hand | r65 | local archive only (repro pack TODO) | Ancient Aum |
-| hand-face | **r242** | local: `out/layered/.../r242-...-final.mp4` · **repro:** `repro/approved/r242-handface-phase-river-gatepass/` | Eating Glue (WAV local) |
+| eye-mirror | r221 | git: `sources/approved/r221-eye-mirror.png` + `recipes/locks/r221-eye-mirror-phase-advect-peak.{json,gate.json}` | Getting That Feeling (WAV local) |
+| woodblock | r139 | lock pack TODO | Shaman Trance |
+| mushroom-hand | r65 | lock pack TODO | Ancient Aum |
+| hand-face | **r242** | git: `sources/approved/r242-hand-face.png` + `recipes/locks/r242-handface-phase-river-gatepass.{json,gate.json}` | Eating Glue (WAV local) |
 
 ### Approved previews (Isaac visual OK — full only after gate PASS §7.1; do not re-open without new defect)
 
@@ -519,6 +519,6 @@ Work is **not done** until:
 
 ---
 
-*Version: 2026-07-15.6 — git-tracked `repro/approved` + `sources/approved` (pull → re-export; no MP4 in git).  
-Ops: this file + `recipes/golden/*` + `repro/approved/*` + scripts.  
+*Version: 2026-07-15.7 — minimal git repro: `sources/approved` + `recipes/locks` only (no MP4, no layers).  
+Ops: this file + `recipes/golden/*` + `recipes/locks/*` + `sources/approved/*` + scripts.  
 Evidence: `docs/archive/OUTPUT_GAP_ANALYSIS.pre-refactor-2026-07-15.md` (git snapshot `be59eb8`, ~1640 lines).*
