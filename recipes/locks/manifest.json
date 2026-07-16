@@ -28,8 +28,23 @@
       "exportFull": "npx tsx scripts/export-layered.ts --title r242-handface-phase-river-gatepass-final --work-dir out/manual-runs/r242-handface-phase-river-gatepass --full-res --gate-report recipes/locks/r242-handface-phase-river-gatepass.gate.json",
       "notes": "gate PASS; clamp maxDrift 0.26. Scaffold with lock as recipe regenerates layers from source. | ALWAYS cp lock\u2192scene.json after scaffold before full export.",
       "playbookSection": "docs/REPRO_LOCKS_PLAYBOOK.md \u00a73 (rebuild) \u00b7 \u00a74 (lock) \u00b7 \u00a75 (maintenance)"
+    },
+    {
+      "slug": "r274-dual-abstract-a-beam-focus",
+      "source": "sources/approved/r274-dual-abstract-beam.png",
+      "sourceSha256": "5c6b19d4eb013bb9ebf7e6f6a22183ef5c8480638768ecf820184dc57702ae03",
+      "lock": "recipes/locks/r274-dual-abstract-a-beam-focus.json",
+      "sceneSha256": "1b6afdba446861d52cf434a140b93d48befcf03312088fdbadb05338dbe577c3",
+      "gate": "recipes/locks/r274-dual-abstract-a-beam-focus.gate.json",
+      "audio": "Astrix \u2014 Sapana (Album Version) @2:58 (178s) \u2014 WAV not in git",
+      "finalLocal": "out/layered/2026-07-16_r274-dual-abstract-a-beam-focus-final-54cff7f8/r274-dual-abstract-a-beam-focus-final.mp4",
+      "finalWithAudioLocal": "out/layered/2026-07-16_r274-dual-abstract-a-beam-focus-final-54cff7f8/r274-dual-abstract-a-beam-focus-final-with-sapana.mp4",
+      "scaffold": "npx tsx scripts/scaffold-layered-run.ts --source sources/approved/r274-dual-abstract-beam.png --slug r274-dual-abstract-a-beam-focus --recipe recipes/locks/r274-dual-abstract-a-beam-focus.json --work-dir out/manual-runs/r274-dual-abstract-a-beam-focus",
+      "exportFull": "npx tsx scripts/export-layered.ts --title r274-dual-abstract-a-beam-focus-final --work-dir out/manual-runs/r274-dual-abstract-a-beam-focus --full-res --gate-report recipes/locks/r274-dual-abstract-a-beam-focus.gate.json",
+      "notes": "Isaac liked 2026-07-16. Beam-focus: godRays from third-eye + bloom threshold + colorMotionMask lum/sat. Gate PASS. Parent r272 extreme; r273 near-miss temporal 0.8095.",
+      "playbookSection": "docs/REPRO_LOCKS_PLAYBOOK.md \u00a73 (rebuild) \u00b7 \u00a74 (lock) \u00b7 \u00a75 (maintenance)"
     }
   ],
   "playbook": "docs/REPRO_LOCKS_PLAYBOOK.md",
-  "updatedAt": "2026-07-15T07:52:43.726761+00:00"
+  "updatedAt": "2026-07-16T07:46:04.691956+00:00"
 }

@@ -62,6 +62,7 @@ If two docs disagree: **this file wins.** Archive is not deleted knowledge — i
 | woodblock | r139 | lock pack TODO | Shaman Trance |
 | mushroom-hand | r65 | lock pack TODO | Ancient Aum |
 | hand-face | **r242** | git: `sources/approved/r242-hand-face.png` + `recipes/locks/r242-handface-phase-river-gatepass.{json,gate.json}` | Eating Glue (WAV local) |
+| dual-abstract A (silhouettes + third-eye beam) | **r274** | git: `sources/approved/r274-dual-abstract-beam.png` + `recipes/locks/r274-dual-abstract-a-beam-focus.{json,gate.json}` · local final `out/layered/2026-07-16_r274-…-54cff7f8/…-final.mp4` | **Astrix — Sapana @2:58** (`…-with-sapana.mp4`) |
 
 ### Approved previews (Isaac visual OK — full only after gate PASS §7.1; do not re-open without new defect)
 
@@ -364,6 +365,8 @@ ffprobe -v error -show_entries stream=codec_type,codec_name,nb_frames -of csv=p=
 | r240 hand-face | Isaac visual / **gate REJECT local-drift** | look OK ≠ full-ready; clamp 0.42 too loose |
 | **r242 hand-face** | **gate PASS + Isaac final + audio** | single-axis clamp **0.42→0.26** fixed local-drift; keep r139 prism |
 | r241 hand-face chroma | alt / not preferred | colorCycle+hueKey ok as A/B, not default |
+| r272 dual-abstract A max | gate PASS full | extreme prism baseline |
+| **r274 dual-abstract beam-focus** | **Isaac liked + Sapana @2:58** | godRays@eye + bloom threshold + colorMotionMask lum/sat; gate PASS |
 | r65 mushroom | approved | keep pattern engine; fix defects only |
 | r139 woodblock | approved | UV fixed + phase flow |
 
@@ -410,6 +413,118 @@ ffprobe -v error -show_entries stream=codec_type,codec_name,nb_frames -of csv=p=
 - rules: R-010 confirm · R-020 confirm (QA≠gate) · R-044 confirm · **R-055 new (P):** Isaac look OK still requires gate PASS or explicit “override OK”; prefer single-axis clamp before override
 - status: **final closed**
 
+
+#### CASE-2026-07-16-r243 | r243-handbuddha-phase-river-halluc
+- source: `incoming/r243-handbuddha.png` 1121×2000 sha256=fbae215d2164b24a — type=`dense-pattern-figure` (+busy-line) M: satMean=0.66 vivid=0.57 busyness=0.113 greenRisk=true finishedVivid=0.39
+- hypothesis: hand+face engraved deity with finished vivid = hand-face family; **extreme** phase-river (phaseFlowPx↑, surfaceCycles↑, sat↑, multipass↑) + **smooth** (noise/grain/palette=0, bicubic, soft bloom) meets “극도로 환각 + 텍스쳐 매끄럽게”
+- recipe: lock r242 base + halluc delta — prism phaseFlowPx=44 surfaceCycles=38 detailBoost=1.45 phaseScale=8.2; satBoost=1.88 clamp maxDrift=**0.30** (preview; final should re-gate ≤0.26 per R-056); glowWave↑; bloom 0.36; multipass 0.30; CA 0.15; grain/noise 0
+- work-dir: `out/manual-runs/r243-handbuddha-phase-river-halluc/`
+- preview: `out/layered/2026-07-16_r243-handbuddha-phase-river-halluc-f43c87ba/r243-handbuddha-phase-river-halluc-preview.mp4`
+- QA: olive=0.047 bleach=0.005 seam=1.06 drift=0.141 local=0.267 static=0 motionDensity=0.332 verdict=**PASS**
+- stills: `out/manual-runs/r243-handbuddha-phase-river-halluc/stills/{contact,subsec}.png`
+- judge: **HOLD for Isaac visual** — QA PASS; subsec shows smooth color-river travel; identity held; greenRisk mitigated via hueKey=0 + greenCompress 0.55. Full only after Isaac OK + gate (clamp may need 0.26 if local drift fails gate)
+- learning: same-class as hand-face; extreme look = phaseFlow/surfaceCycles/multipass/bloom stack, not colorCycle; keep noise=0 for smooth metal-engrave texture
+- rules: R-001 confirm · R-030 confirm · R-038 confirm · R-056 note (preview clamp 0.30 > final≤0.26)
+- status: delivered-preview
+
+
+#### CASE-2026-07-16-r244 | r244-handbuddha-smooth-multibreathe
+- source: same as r243 (`incoming/r243-handbuddha.png`) — type=`dense-pattern-figure` greenRisk=true busyness=0.113
+- defect from Isaac on r243: texture **too rough**; want subject **layers breathe differently**
+- diagnosis (frame crops): r243 high `surfaceCycles=38` + `detailBoost=1.45` + multipass warp boiled engraving lines into high-freq chroma noise (face/hand/chest crops)
+- hypothesis: optical bands (void/body/ornament/highlight/edge) with **per-layer** phaseFlow/glow/breath desync + **smooth** prism (surfaceCycles 7–13, detailBoost≤1.0, CA↓, soft bloom, noise0)
+- recipe: `make-optical-layers` 5-band + sourcePrism per band; pass2 olive fix greenCompress 0.72 satInj0
+- work-dir: `out/manual-runs/r244-handbuddha-smooth-multibreathe/`
+- preview: `out/layered/2026-07-16_r244-handbuddha-smooth-multibreathe-3d311444/...-preview.mp4` (pass2)
+- QA: see qa-preview.json
+- stills: inspect2 compare-face/hand r243|r244b
+- judge: HOLD Isaac — smoother face vs r243; multi-band desync active; engraving geometry remains (source) but color river less grainy
+- learning: roughness on line-engrave dense art = surfaceCycles/detailBoost too high more than phaseFlowPx; multi-breathe = optical bands not single-layer dual glow alone
+- status: delivered-preview
+
+
+#### CASE-2026-07-16-r255 | r255-handbuddha-silk-clean
+- source: **1632×2912** full PNG (not session re-encode 1121 JPEG) — type dense-pattern-figure
+- Isaac defect on r243/r244: **square blocky noise** in texture (not just “rough”)
+- root cause: (1) agent used chat-attachment re-encode **1121×2000 JPEG** with 8×8 blocks; (2) high multipass + multi optical bands + high surface/detailBoost **amplified** blocks into mosaic
+- fix: full-res source + silk single-layer prism (surfaceCycles 14, detailBoost 0.95, multipass 0.08, clamp 0.24) + dual glowWave for soft desync breath
+- preview: `out/layered/2026-07-16_r255-handbuddha-silk-clean-90495efb/r255-handbuddha-silk-clean-preview.mp4`
+- block-inspect: hand/face nearest zoom — **no square mosaic** vs r244
+- QA: oliveDwell FAIL (greenRisk) other hard PASS localDrift 0.25
+- judge: HOLD Isaac for square-noise check
+- learning: **never use session-compressed JPEG as source**; always prefer native res PNG; square noise = source blocks × prism, not only surfaceCycles
+- status: delivered-preview
+
+
+#### CASE-2026-07-16-r256 | r256-handbuddha-silk-soft
+- source: **pre-smoothed** 1632 PNG (72% blurσ4 + 28% mild) — busyness 0.10→**0.031**, greenRisk false
+- Isaac: still too rough — either preserve original texture cleanly OR remove rough texture
+- path chosen: **remove/soft HF engrave** + gentle prism (surfaceCycles **6**, detailBoost **0.75**, phaseFlow 18, multipass 0.05, phase=luminance not edge)
+- preview: `out/layered/2026-07-16_r256-handbuddha-silk-soft-058e76ce/r256-handbuddha-silk-soft-preview.mp4`
+- verify: hand/face lanczos vs r255 — lines softer, silk metal; full frame no square mosaic
+- QA: olive FAIL 0.066; lightStatic WARN 0.45 (motion quieter by design); motionDensity 0.16 PASS; localDrift 0.23
+- judge: HOLD Isaac — smoothness priority; may want more halluc if OK
+- learning: woodcut engrave roughness cannot be fixed by prism knobs alone — **pre-smooth source** when Isaac asks soft texture
+- status: delivered-preview
+
+
+#### CASE-2026-07-16-r257 | r257-handbuddha-ultra-silk
+- Isaac: **극도로 매끄러워야 함**
+- source: triple blur (3.5+4.5+5.5) 92% + 8% mild original — busyness **0.013** texture=smooth
+- prism: surfaceCycles **2**, detailBoost **0.5**, phaseFlow 14, multipass 0.04, heavy bloom
+- preview: `out/layered/2026-07-16_r257-handbuddha-ultra-silk-1fa48345/r257-handbuddha-ultra-silk-preview.mp4`
+- verify: hand/face lacnzos = silk paint; engrave nearly dissolved vs r256
+- QA: olive FAIL 0.056; seam FAIL 1.55 (soft content); lightStatic 0.52; motionDensity 0.16
+- status: delivered-preview (smoothness max path)
+
+
+#### CASE-2026-07-16-r258 | r258-third-eye-silk-river
+- source: new third-eye melting-hands buddha (chat attach → mild deblock + 1632 lanczos) — type **figure-vivid** finishedVivid=0.72 busyness=0.03 greenRisk=true
+- recipe: r221 lock base + silk delta (surfaceCycles 12, detailBoost 0.9, phaseFlow 28, clamp 0.24, multipass 0.10)
+- work-dir: `out/manual-runs/r258-third-eye-silk-river/`
+- preview: `out/layered/2026-07-16_r258-third-eye-silk-river-45f5b741/r258-third-eye-silk-river-preview.mp4`
+- QA: olive FAIL 0.087 (cyan cast); localDrift 0.26 PASS; motionDensity 0.25; no square mosaic on hand NN
+- judge: HOLD Isaac visual — paint-silk look OK; eye/hand somewhat cyan-shift
+- status: delivered-preview (new source, old hand-buddha abandoned)
+
+
+#### CASE-2026-07-16-r259 | r259-multieye-sun-silk
+- source: multi-eye vertical stack + particle field + sun (new) — figure-vivid-ish finishedVivid=0.58 busyness=0.046 greenRisk=false
+- recipe: r221 lock + particle-safe silk (surfaceCycles 10, detailBoost 0.85, clamp 0.22, noise0)
+- preview: `out/layered/2026-07-16_r259-multieye-sun-silk-3d547136/r259-multieye-sun-silk-preview.mp4`
+- status: delivered-preview
+
+
+#### CASE-2026-07-16-r260 | r260-sunhead-eye-fast-halluc
+- source: open-head sunburst single-eye liquid face (new) — figure-vivid finishedVivid=0.51 busyness=0.051 greenRisk=true
+- recipe: r221 + fast-halluc (phaseFlow 40, surface 16, glow 26/43, multipass 0.16, clamp 0.26)
+- preview: `out/layered/2026-07-16_r260-sunhead-eye-fast-halluc-f8f1b9fe/r260-sunhead-eye-fast-halluc-preview.mp4`
+- status: delivered-preview
+
+
+#### CASE-2026-07-16-r265 | r265-folder28-4-elevated
+- source: same as r264 folder28-4 (silhouette dual heads + eye beam + marble) — Isaac pick of batch
+- elevate: radial phase + phaseFlow 54, sat 1.78, bloom 0.50 beam hero, glow 41/68, multipass 0.22, detailBoost 0.88 (grain protect), clamp 0.28
+- preview: `out/layered/2026-07-16_r265-folder28-4-elevated-9235de03/r265-folder28-4-elevated-preview.mp4`
+- status: delivered-preview
+
+#### CASE-2026-07-16-r274 | r274-dual-abstract-a-beam-focus
+- source: `sources/approved/r274-dual-abstract-beam.png` 1632×2912 sha256=`5c6b19d4eb013bb9…` (folder28 dual-abstract silhouettes + third-eye light cone) — type=`figure-vivid` / allover psychedelic plate; large pure-black silhouettes + bright high-sat beam
+- hypothesis: after r272 extreme full, Isaac wants **beam alone more independent** → godRays centered on third eye + bloom that only keys bright cone + colorMotionMask (lum/sat) so prism prefers beam/background over black silhouettes
+- recipe: r272 extreme prism base (phaseFlow~40, surface~32–36, clamp 0.22) + effects:
+  - `godRays`: intensity≈1.05, threshold≈0.40, centerX≈0.46 centerY≈0.40, samples 96
+  - `bloom`: strength≈0.62, threshold≈0.42
+  - `colorMotionMask`: floor 0.18, lumW 0.92, satW 0.55, power 1.85
+- work-dir: `out/manual-runs/r274-dual-abstract-a-beam-focus/`
+- preview: `out/layered/2026-07-16_r274-dual-abstract-a-beam-focus-d2e4129c/r274-dual-abstract-a-beam-focus-preview.mp4`
+- final: `out/layered/2026-07-16_r274-dual-abstract-a-beam-focus-final-54cff7f8/r274-dual-abstract-a-beam-focus-final.mp4`
+- audio: `...-with-sapana.mp4` — **Astrix — Sapana (Album Version) @2:58 (178s)**
+- gate: **PASS** cohere=0.816 (r273 was 0.8095 near-miss temporal-boiling)
+- judge: **PASS final** — Isaac “이 버전 맘에든다” 2026-07-16; lock pack committed
+- learning: for **bright focal beam on dark silhouettes**, use post **godRays+bloom threshold** + **colorMotionMask lum/sat** rather than raising global prism (global prism muddies blacks); third-eye center must match composition
+- rules: R-001 confirm · R-010 confirm · R-055 confirm · **R-057 new (P):** beam/spotlight hero → godRays center + bloom threshold + luminance colorMotionMask before more phaseFlow
+- status: **final closed** (git lock + Sapana meta)
+
 ### Process correction (2026-07-15)
 - Wrong: r240 Isaac like → humanOverride → full while gate REJECT local-drift.
 - Right: diagnose fail code → one-axis fix → re-preview → **gate PASS** → full → audio.
@@ -443,6 +558,7 @@ ffprobe -v error -show_entries stream=codec_type,codec_name,nb_frames -of csv=p=
 | R-054 | P | figure-vivid: after peacock fail → phase-advection |
 | R-055 | P | Isaac visual OK ≠ skip gate; fix fail-code first (often clamp); override only if Isaac says override OK |
 | R-056 | P | dense-pattern final/gate: `sourceColorClamp.maxDrift ≤ 0.26` (r242); golden r139 0.55 is start only |
+| R-057 | P | Bright beam/spotlight on dark plate: godRays@focal + bloom threshold + colorMotionMask lum/sat before more global prism (r274) |
 
 Tier: L=law E=established P=provisional.
 
@@ -452,6 +568,7 @@ Tier: L=law E=established P=provisional.
 
 1. ~~eye-mirror r221~~ **CLOSED** (final + audio)  
 2. ~~hand-face r242~~ **CLOSED** (gate PASS + final + Eating Glue); r240 was look-pick only  
+2b. ~~dual-abstract A r274 beam-focus~~ **CLOSED** (gate PASS + final + Sapana @2:58); do not re-tune without defect  
 3. sourcePrism on **new** busy-line source (not woodblock clone numbers)  
 4. cosmos-B black-hole **in-place** local fix only (r230–r232 previews exist; not Isaac-locked)  
 5. lightMotion threshold calibration set  
@@ -522,6 +639,6 @@ Work is **not done** until:
 
 ---
 
-*Version: 2026-07-15.8 — REPRO_LOCKS_PLAYBOOK (usage/management/maintenance for dumb-agent execution).  
+*Version: 2026-07-16.1 — r274 dual-abstract beam-focus closed (godRays+bloom+mask; Sapana @2:58); R-057.  
 Ops: this file + `docs/REPRO_LOCKS_PLAYBOOK.md` + `recipes/golden/*` + `recipes/locks/*` + `sources/approved/*` + scripts.  
 Evidence: `docs/archive/OUTPUT_GAP_ANALYSIS.pre-refactor-2026-07-15.md` (git snapshot `be59eb8`, ~1640 lines).*

@@ -40,6 +40,7 @@ git pull
 sources/approved/
   r221-eye-mirror.png          # closed source pixels
   r242-hand-face.png
+  r274-dual-abstract-beam.png  # silhouettes + third-eye beam (r274)
 
 recipes/locks/
   README.md                    # short pointer → this playbook
@@ -534,6 +535,7 @@ npm run gate:psychedelic -- \
 |------|-------------|------|-------|
 | `r221-eye-mirror-phase-advect-peak` | `sources/approved/r221-eye-mirror.png` | REJECT + humanOverride | figure-vivid; audio: Getting That Feeling (local) |
 | `r242-handface-phase-river-gatepass` | `sources/approved/r242-hand-face.png` | PASS | dense-pattern; clamp 0.26; audio: Eating Glue (local) |
+| `r274-dual-abstract-a-beam-focus` | `sources/approved/r274-dual-abstract-beam.png` | PASS | beam-focus godRays+bloom+mask; audio: **Sapana @2:58** (local) |
 
 TODO (not locked in git yet): woodblock r139, mushroom-hand r65 — local archives only.
 
