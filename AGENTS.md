@@ -7,7 +7,8 @@
 3. `recipes/golden/*.json` — **new** source start templates only  
 4. `recipes/locks/manifest.json` — closed inventory + shas + commands  
 5. `SESSION_HANDOFF_2026-07-15.md` — historical handoff (may lag; prefer locks playbook)  
-6. `docs/archive/` — optional deep evidence  
+6. **`docs/INSTAGRAM_REELS_SESSION_2026-07-16.md`** — Instagram reels craft log (r274/r275 cuts, audio timings, Isaac picks; **not** creation OS)  
+7. `docs/archive/` — optional deep evidence  
 
 **Conflict rule:** creation aesthetics → `OUTPUT_GAP_ANALYSIS.md`.  
 **Conflict rule:** pull / other PC / lock / commit media → `docs/REPRO_LOCKS_PLAYBOOK.md`.

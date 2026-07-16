@@ -525,6 +525,25 @@ ffprobe -v error -show_entries stream=codec_type,codec_name,nb_frames -of csv=p=
 - rules: R-001 confirm · R-010 confirm · R-055 confirm · **R-057 new (P):** beam/spotlight hero → godRays center + bloom threshold + luminance colorMotionMask before more phaseFlow
 - status: **final closed** (git lock + Sapana meta)
 
+#### CASE-2026-07-16-r275 | r275-mushroom-crown (+ Instagram reels)
+- source: session attach → `sources/incoming/r275-mushroom-crown-1632.png` (1121×2000 attach upscaled 1632×2912); **not yet** `sources/approved`
+- type: dense-pattern / finished vivid psychedelic (crown light + hand mushroom)
+- **drop/full prism:** work-dir `out/manual-runs/r275-mushroom-crown-prism/` — woodblock-r139 base + godRays@crown (0.48,0.28) + bloom + colorMotionMask; gate PASS; full `out/layered/2026-07-16_r275-mushroom-crown-prism-final-ab46062f/r275-mushroom-crown-prism-final.mp4` (20s)
+- **narration-only (Isaac “오 이거 좋다 일단 보류”):** full `out/layered/2026-07-16_r275-mushroom-crown-narration-final-282a9cd4/r275-mushroom-crown-narration-final.mp4` — slower prism (~phaseFlow 13 / surface 16 / soft rays); do not overwrite
+- **drip narr experiment (not pick):** `…-narration-drip-final-d6f32be8/…` sourceFlowAdvection+Transport
+- **Instagram reels (local only, no git MP4):** full ledger `docs/INSTAGRAM_REELS_SESSION_2026-07-16.md`
+  - audio: `/Users/isaac/Downloads/Psysex - L.S.Dance (LOUD Remix).wav` — skip 0–1s mute; drop ≈7.78s; narr speed experiments 2×→**1.5×**
+  - bans: eye/crown tight crop on open (Isaac)
+  - **Isaac pick reel:** `out/instagram/r275-mushroom-crown-reel-v10-matchcut.mp4` (~18.23s; dual A narr + B full; short 0.28s match xfade; bang@~4.52)
+  - rejected: long dissolve v11; total≠20 v13; user kept v10 over v14-20s
+- status: **reel pick locked (v10)**; product lock pack pending Isaac
+
+#### CASE-2026-07-16-IG | Instagram reel craft (r274 + r275)
+- full session detail: **`docs/INSTAGRAM_REELS_SESSION_2026-07-16.md`** (mandatory read for any IG cut from these sources)
+- r274 reels: `out/instagram/r274-reel-before-drop-v1…v7.mp4` — pan-to-eye fixed at **v7** (look-at 0.50/0.82→0.42/0.33, z 1.55→2.60); Sapana @cut
+- learning: fake “zoom to eye” fails if start still shows eye; zoompan must set portrait `s=` and escape filter commas; L.S.Dance bang measured not guessed; dual-render A/B > setpts-only slowdown for open energy contrast
+- status: logged
+
 ### Process correction (2026-07-15)
 - Wrong: r240 Isaac like → humanOverride → full while gate REJECT local-drift.
 - Right: diagnose fail code → one-axis fix → re-preview → **gate PASS** → full → audio.
@@ -559,6 +578,10 @@ ffprobe -v error -show_entries stream=codec_type,codec_name,nb_frames -of csv=p=
 | R-055 | P | Isaac visual OK ≠ skip gate; fix fail-code first (often clamp); override only if Isaac says override OK |
 | R-056 | P | dense-pattern final/gate: `sourceColorClamp.maxDrift ≤ 0.26` (r242); golden r139 0.55 is start only |
 | R-057 | P | Bright beam/spotlight on dark plate: godRays@focal + bloom threshold + colorMotionMask lum/sat before more global prism (r274) |
+| R-058 | P | IG dual-roll: prefer **separate narration recipe full** + **drop full** over setpts-slow of drop alone; open energy contrast sells bang |
+| R-059 | P | Track intros with leading silence: set `AUDIO_START` past mute; measure drop with RMS jump not guess |
+| R-060 | P | Isaac “no crop to eye” on reels = full-frame open/after unless new defect; pan-to-eye only when explicitly requested |
+| R-061 | P | Long dissolve kills bang; short match xfade (~0.25–0.35s) or hard match-frame cut — pick by Isaac, don't default long fade |
 
 Tier: L=law E=established P=provisional.
 
@@ -569,6 +592,7 @@ Tier: L=law E=established P=provisional.
 1. ~~eye-mirror r221~~ **CLOSED** (final + audio)  
 2. ~~hand-face r242~~ **CLOSED** (gate PASS + final + Eating Glue); r240 was look-pick only  
 2b. ~~dual-abstract A r274 beam-focus~~ **CLOSED** (gate PASS + final + Sapana @2:58); do not re-tune without defect  
+2c. r275 mushroom-crown — reel **v10 pick** (local); product lock pack still open  
 3. sourcePrism on **new** busy-line source (not woodblock clone numbers)  
 4. cosmos-B black-hole **in-place** local fix only (r230–r232 previews exist; not Isaac-locked)  
 5. lightMotion threshold calibration set  
@@ -639,6 +663,6 @@ Work is **not done** until:
 
 ---
 
-*Version: 2026-07-16.1 — r274 dual-abstract beam-focus closed (godRays+bloom+mask; Sapana @2:58); R-057.  
-Ops: this file + `docs/REPRO_LOCKS_PLAYBOOK.md` + `recipes/golden/*` + `recipes/locks/*` + `sources/approved/*` + scripts.  
+*Version: 2026-07-16.2 — r274 closed; r275 mushroom + IG reels ledger (`docs/INSTAGRAM_REELS_SESSION_2026-07-16.md`); Isaac reel pick v10; R-058–R-061.  
+Ops: this file + `docs/REPRO_LOCKS_PLAYBOOK.md` + `docs/INSTAGRAM_REELS_SESSION_2026-07-16.md` + `recipes/golden/*` + `recipes/locks/*` + `sources/approved/*` + scripts.  
 Evidence: `docs/archive/OUTPUT_GAP_ANALYSIS.pre-refactor-2026-07-15.md` (git snapshot `be59eb8`, ~1640 lines).*
