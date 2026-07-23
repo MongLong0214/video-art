@@ -1,10 +1,11 @@
 # repro/
 
-Historical pointer. **Canonical multi-PC repro docs and assets:**
+Historical pointer. **Canonical multi-PC repro:**
 
 | What | Where |
 |------|--------|
-| Full playbook (usage / management / maintenance) | [`docs/REPRO_LOCKS_PLAYBOOK.md`](../docs/REPRO_LOCKS_PLAYBOOK.md) |
+| Agent entry | [`docs/video-os/00-INDEX.md`](../docs/video-os/00-INDEX.md) |
+| Full playbook | [`docs/video-os/02-REPRO-LOCKS.md`](../docs/video-os/02-REPRO-LOCKS.md) |
 | Source PNGs | `sources/approved/` |
 | Scene + gate locks | `recipes/locks/` |
 | Index | `recipes/locks/manifest.json` |

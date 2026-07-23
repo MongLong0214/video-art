@@ -1,17 +1,22 @@
 # Agent entrypoint — video-art
 
-## Mandatory read order
+## Single structure (mandatory)
 
-1. **`OUTPUT_GAP_ANALYSIS.md`** — sole OS for image→loop *creation* (type, QA, gate, cases)  
-2. **`docs/REPRO_LOCKS_PLAYBOOK.md`** — sole OS for *closed-product* store/rebuild (sources + locks)  
-3. `recipes/golden/*.json` — **new** source start templates only  
-4. `recipes/locks/manifest.json` — closed inventory + shas + commands  
-5. `SESSION_HANDOFF_2026-07-15.md` — historical handoff (may lag; prefer locks playbook)  
-6. **`docs/INSTAGRAM_REELS_SESSION_2026-07-16.md`** — Instagram reels craft log (r274/r275 cuts, audio timings, Isaac picks; **not** creation OS)  
-7. `docs/archive/` — optional deep evidence  
+**All image→loop / locks / Instagram reel agent work starts here:**
 
-**Conflict rule:** creation aesthetics → `OUTPUT_GAP_ANALYSIS.md`.  
-**Conflict rule:** pull / other PC / lock / commit media → `docs/REPRO_LOCKS_PLAYBOOK.md`.
+1. **`docs/video-os/00-INDEX.md`** — folder map, conflict rules, hard bans  
+2. **`docs/video-os/01-CREATE-OS.md`** — create / classify / gate / cases (sole creation OS)  
+3. **`docs/video-os/02-REPRO-LOCKS.md`** — closed-product rebuild / what to commit  
+4. **`docs/video-os/03-INSTAGRAM-REELS.md`** — reel edit logs (not creation aesthetics)  
+5. `recipes/golden/*.json` — **new** source start templates only  
+6. `recipes/locks/manifest.json` — closed inventory + shas + commands  
+7. `docs/video-os/archive/` — optional deep evidence / legacy only  
+
+**Conflict rule:** creation aesthetics → `01-CREATE-OS.md`.  
+**Conflict rule:** pull / other PC / lock / commit media → `02-REPRO-LOCKS.md`.  
+**Conflict rule:** reel craft history → `03-INSTAGRAM-REELS.md`; loop look still `01`.
+
+Root files named `OUTPUT_GAP_ANALYSIS.md`, `IMAGE_TO_LOOP_WORKFLOW.md`, old IG session paths, etc. are **stubs or SUPERSEDED**. Do not treat them as truth.
 
 ## Default new-source path
 
@@ -28,12 +33,11 @@ npx tsx scripts/export-layered.ts \
   --preview
 ```
 
-Then stills + `qa-motion` + case ledger per `OUTPUT_GAP_ANALYSIS.md` §4–§9.
+Then stills + `qa-motion` + case ledger per `docs/video-os/01-CREATE-OS.md`.
 
 ## Rebuild closed final (any machine)
 
-**Do not improvise — follow playbook §3 end-to-end**  
-(`docs/REPRO_LOCKS_PLAYBOOK.md`).
+**Do not improvise — follow `docs/video-os/02-REPRO-LOCKS.md` §3 end-to-end.**
 
 Summary (r242):
 
@@ -54,12 +58,12 @@ npx tsx scripts/export-layered.ts \
 
 ## Close a final into git (lock pack)
 
-Follow playbook **§4.2 checklist**. Minimum commits:
+Follow `docs/video-os/02-REPRO-LOCKS.md` checklist. Minimum commits:
 
 - `sources/approved/<name>.png`
 - `recipes/locks/<slug>.json` + `<slug>.gate.json`
 - `recipes/locks/manifest.json` (sha256 updated)
-- `OUTPUT_GAP_ANALYSIS.md` CASE + approved table
+- case note in `docs/video-os/01-CREATE-OS.md` when applicable
 
 ## Hard bans
 

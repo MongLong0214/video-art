@@ -1,7 +1,7 @@
 # MOVED — Instagram reels session log
 
 **Canonical location:** [`docs/video-os/03-INSTAGRAM-REELS.md`](video-os/03-INSTAGRAM-REELS.md)  
-(contains 2026-07-16 **and** 2026-07-22)
+(Part B — 2026-07-22 waterline dual reel / final xfade pick)
 
 Entry: [`docs/video-os/00-INDEX.md`](video-os/00-INDEX.md)
 

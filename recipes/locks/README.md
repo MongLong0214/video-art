@@ -1,26 +1,26 @@
 # recipes/locks — short index
 
-**Full procedure (agents must follow):**  
-→ **[`docs/REPRO_LOCKS_PLAYBOOK.md`](../../docs/REPRO_LOCKS_PLAYBOOK.md)**
+**Full procedure:** → **[`docs/video-os/02-REPRO-LOCKS.md`](../../docs/video-os/02-REPRO-LOCKS.md)**  
+**Entry:** [`docs/video-os/00-INDEX.md`](../../docs/video-os/00-INDEX.md)
 
 ## What is here
 
 | File | Meaning |
 |------|---------|
-| `<slug>.json` | Locked final `scene.json` (knobs) |
-| `<slug>.gate.json` | Gate report (PASS or REJECT+Isaac override); scene sha must match lock |
-| `manifest.json` | Index + sha256 + exact rebuild commands |
+| `<slug>.json` | Locked final `scene.json` |
+| `<slug>.gate.json` | Gate report (PASS or REJECT+Isaac override) |
+| `manifest.json` | Index + sha256 + rebuild commands |
 
 ## Companion (git)
 
-- `sources/approved/*.png` — original pixels for closed products  
-- `recipes/golden/*` — **new source** templates only (not closed finals)
+- `sources/approved/*.png`  
+- `recipes/golden/*` — new source only  
 
-## Never put here / never commit
+## Never commit
 
-MP4 · WAV · `layers/` · anything under `out/`
+MP4 · WAV · `layers/` · `out/`
 
-## 30-second rebuild (detail in playbook §3)
+## 30-second rebuild
 
 ```bash
 SLUG=r242-handface-phase-river-gatepass
@@ -37,4 +37,4 @@ npx tsx scripts/export-layered.ts \
   --gate-report "recipes/locks/${SLUG}.gate.json"
 ```
 
-After scaffold, **always** `cp` lock → `scene.json` (gate checks file sha).
+After scaffold, **always** `cp` lock → `scene.json`.

@@ -1,0 +1,1 @@
+../../archive/OUTPUT_GAP_ANALYSIS.pre-refactor-2026-07-15.md

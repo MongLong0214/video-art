@@ -1,23 +1,24 @@
-# Archive — OUTPUT_GAP_ANALYSIS history
+# Archive — deep evidence (not live OS)
 
 ## Policy
 
 | File | Who reads | Purpose |
 |------|-----------|---------|
-| `/OUTPUT_GAP_ANALYSIS.md` (repo root) | **Every agent, every session** | Operating system: runbook, rules, killed axes, golden paths |
-| Files in this directory | **Only when** debugging recurrence / needing evidence for a rule | Full case ledger, theory, long chronicles |
+| **`docs/video-os/00-INDEX.md`** | **Every agent** | Live entry |
+| **`docs/video-os/01-CREATE-OS.md`** | **Every create session** | Live create OS |
+| Files in **this** directory | Recurrence / “why is this rule?” only | Historical snapshots |
 
-**Do not** paste archive content back into the root OS file.  
-**Do not** follow archive peacock/legacy defaults when they conflict with the root OS.
+**Do not** follow archive peacock/legacy defaults when they conflict with create OS.  
+**Do not** paste archive content back into live OS without Isaac.
 
-## Snapshots
+## Snapshots here
 
-| File | Source commit | Lines (approx) | Contents |
-|------|---------------|----------------|----------|
-| `OUTPUT_GAP_ANALYSIS.pre-refactor-2026-07-15.md` | `be59eb8` | ~1640 | Pre-enterprise full knowledge base: detailed cases, PART 0–K style evidence, knob/theory depth |
-| `OUTPUT_GAP_ANALYSIS.enterprise-compress-2026-07-15.md` | `5b5d017` | ~331 | First compression pass (rules table heavy, less runbook) |
+| File | Contents |
+|------|----------|
+| `OUTPUT_GAP_ANALYSIS.pre-refactor-2026-07-15.md` | Pre-enterprise full KB (~1640 lines) |
+| `OUTPUT_GAP_ANALYSIS.enterprise-compress-2026-07-15.md` | First compression (~331 lines) |
 
-Root OS after `8ed7192` is the production agent runbook (~450 lines) + `recipes/golden/*`.
+Also: `docs/video-os/archive/legacy/*` (superseded playbooks).
 
 ## Restore note
 
