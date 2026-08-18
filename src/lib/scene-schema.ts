@@ -108,12 +108,17 @@ const animationSchema = z.object({
   sourceFlowAdvection: z
     .object({
       amount: z.number().min(0).max(1).default(0),
-      maxDisplacementPx: z.number().min(0).max(64).default(0),
+      // 256: cascade/waterfall stream mode needs large throw (legacy shuttle used ≤64).
+      maxDisplacementPx: z.number().min(0).max(256).default(0),
       cycles: z.number().int().positive().max(24).default(1),
       phaseScale: z.number().min(0).max(8).default(1),
       normalMix: z.number().min(0).max(1).default(0.35),
       edgePreserve: z.number().min(0).max(1).default(1),
       detailGain: z.number().min(0).max(6).default(1),
+      // 0 = legacy sin shuttle (bidirectional). 1 = continuous stream along +flowField (waterfall).
+      forwardBias: z.number().min(0).max(1).default(0),
+      // 0 = legacy edge-tangent mix. 1 = pure flowField direction.
+      fieldAlign: z.number().min(0).max(1).default(0),
     })
     .default({
       amount: 0,
@@ -123,11 +128,13 @@ const animationSchema = z.object({
       normalMix: 0.35,
       edgePreserve: 1,
       detailGain: 1,
+      forwardBias: 0,
+      fieldAlign: 0,
     }),
   sourceFlowTransport: z
     .object({
       amount: z.number().min(0).max(1).default(0),
-      macroDisplacementPx: z.number().min(0).max(96).default(0),
+      macroDisplacementPx: z.number().min(0).max(192).default(0),
       macroCycles: z.number().int().positive().max(8).default(1),
       microDisplacementPx: z.number().min(0).max(24).default(0),
       microCycles: z.number().int().positive().max(48).default(1),
@@ -135,6 +142,7 @@ const animationSchema = z.object({
       normalMix: z.number().min(0).max(1).default(0.35),
       edgePreserve: z.number().min(0).max(1).default(1),
       colorAmount: z.number().min(0).max(1).default(0),
+      forwardBias: z.number().min(0).max(1).default(0),
     })
     .default({
       amount: 0,
@@ -146,6 +154,7 @@ const animationSchema = z.object({
       normalMix: 0.35,
       edgePreserve: 1,
       colorAmount: 0,
+      forwardBias: 0,
     }),
   sourceStreamFlow: z
     .object({

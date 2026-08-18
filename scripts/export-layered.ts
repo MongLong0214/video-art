@@ -110,7 +110,12 @@ async function captureFrames(options: CaptureFrameOptions): Promise<void> {
       ? `&tonemap=${process.argv[process.argv.indexOf("--tonemap") + 1]}`
       : "";
     const resScaleParam = resScale === 1 ? "" : `&resScale=${resScale}`;
-    await page.goto(`http://localhost:${port}/?mode=layered${toneMapParam}${resScaleParam}`, {
+    // Work-directory scenes are edited between preview passes. Give their JSON a
+    // unique URL so a renderer process cannot reuse a prior pass's scene asset.
+    const sceneRevisionParam = workDir
+      ? `&scene=${encodeURIComponent(`/scene.json?rev=${Date.now()}`)}`
+      : "";
+    await page.goto(`http://localhost:${port}/?mode=layered${toneMapParam}${resScaleParam}${sceneRevisionParam}`, {
       waitUntil: "networkidle0",
     });
 
@@ -202,7 +207,8 @@ function encodeVideo(inputFramesDir: string, outputPath: string, options: Encode
           "-y",
           "-framerate", String(fps),
           "-i", path.join(inputFramesDir, "frame_%05d.png"),
-          "-vf", "scale=iw:ih:flags=lanczos:in_range=full:in_color_matrix=bt709:out_range=tv:out_color_matrix=bt709",
+          // yuv420p requires even width/height — odd source dims (e.g. 1121) fail libx264
+          "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2:flags=lanczos:in_range=full:in_color_matrix=bt709:out_range=tv:out_color_matrix=bt709",
           "-r", "30",
           "-c:v", "libx264",
           "-preset", "slow",

@@ -43,6 +43,8 @@ uniform float uSourceFlowAdvectionPhaseScale;
 uniform float uSourceFlowAdvectionNormalMix;
 uniform float uSourceFlowAdvectionEdgePreserve;
 uniform float uSourceFlowAdvectionDetailGain;
+uniform float uSourceFlowAdvectionForwardBias;
+uniform float uSourceFlowAdvectionFieldAlign;
 uniform float uSourceFlowTransportAmount;
 uniform float uSourceFlowTransportMacroDisplacementPx;
 uniform float uSourceFlowTransportMacroCycles;
@@ -52,6 +54,7 @@ uniform float uSourceFlowTransportPhaseScale;
 uniform float uSourceFlowTransportNormalMix;
 uniform float uSourceFlowTransportEdgePreserve;
 uniform float uSourceFlowTransportColorAmount;
+uniform float uSourceFlowTransportForwardBias;
 uniform float uSourceStreamFlowAmount;
 uniform float uSourceStreamFlowMaxDisplacementPx;
 uniform float uSourceStreamFlowCycles;
@@ -460,6 +463,19 @@ float sourceMaterialDissolveWeight(vec2 uv) {
 
 float sourceFlowLoopProgress(float t) {
   return t - sin(TAU * t) / TAU;
+}
+
+// 0 = pure sin shuttle (legacy). 1 = always along +flowField tangent.
+// Continuous waterfall uses sourceFlowStreamDrive (fract progress), not this.
+float sourceFlowForwardTravel(float angle, float forwardBias) {
+  float shuttle = sin(angle);
+  float forward = 0.55 + 0.45 * shuttle;
+  return mix(shuttle, forward, clamp(forwardBias, 0.0, 1.0));
+}
+
+// Seamless one-way stream phase in [0,1): integer cycles → loop-closed.
+float sourceFlowStreamDrive(float time, float cycles, float phase) {
+  return fract(time * max(cycles, 0.0) + phase);
 }
 
 float sourceFeatureWeight(
@@ -906,73 +922,188 @@ void main() {
   if (uSourceFlowAdvectionAmount > 0.0001 && uSourceFlowAdvectionMaxDisplacementPx > 0.0001) {
     vec2 sourceFlowUv = sampleUv;
     float sourceFlowTime = sourceFlowLoopProgress(uTime);
-    vec2 sourceFlowStepPx = vec2(uSourceFlowAdvectionMaxDisplacementPx / 5.0) / max(uTextureSize, vec2(1.0));
-    for (int sourceFlowStep = 0; sourceFlowStep < 5; sourceFlowStep++) {
+    float sourceFlowStreamMode = step(0.5, uSourceFlowAdvectionForwardBias);
+    // Stream mode: continuous one-way slide along flowField (waterfall).
+    // Legacy mode: multi-step sin shuttle (optional soft forwardBias).
+    if (sourceFlowStreamMode > 0.5) {
+      // Pure one-way cascade: sawtooth drive along +flowField.
+      // Spatial phase staggers strands so wraps don't read as a global snap.
       vec3 sourceFlowField = texture2D(uFlowFieldTex, sourceFlowUv).rgb;
       vec2 sourceFlowRaw = sourceFlowField.rg * 2.0 - 1.0;
-      vec2 sourceFlowFieldTangent = sourceFlowRaw / max(length(sourceFlowRaw), 1e-4);
-      vec2 sourceDetailGradient = sourceLuminanceGradient(sourceFlowUv, 1.0);
-      vec2 sourceDetailTangent = vec2(-sourceDetailGradient.y, sourceDetailGradient.x);
-      sourceDetailTangent /= max(length(sourceDetailTangent), 1e-4);
-      float sourceDetailTangentWeight = 0.82 * smoothstep(0.006, 0.10, length(sourceDetailGradient));
-      vec2 sourceFlowTangentRaw = mix(sourceFlowFieldTangent, sourceDetailTangent, sourceDetailTangentWeight);
-      vec2 sourceFlowTangent = sourceFlowTangentRaw / max(length(sourceFlowTangentRaw), 1e-4);
-      vec2 sourceFlowNormal = vec2(-sourceFlowTangent.y, sourceFlowTangent.x);
+      vec2 sourceFlowTangent = sourceFlowRaw / max(length(sourceFlowRaw), 1e-4);
+      vec2 sourceFlowTraceUv = sourceFlowUv;
+      vec2 sourceFlowAccum = vec2(0.0);
+      vec2 sourceFlowStep = vec2(uSourceFlowAdvectionMaxDisplacementPx / 5.0) / max(uTextureSize, vec2(1.0));
+      for (int sourceFlowStepI = 0; sourceFlowStepI < 5; sourceFlowStepI++) {
+        vec3 sourceFlowTraceField = texture2D(uFlowFieldTex, sourceFlowTraceUv).rgb;
+        vec2 sourceFlowTraceRaw = sourceFlowTraceField.rg * 2.0 - 1.0;
+        vec2 sourceFlowTraceTangent = sourceFlowTraceRaw / max(length(sourceFlowTraceRaw), 1e-4);
+        sourceFlowAccum += sourceFlowTraceTangent;
+        sourceFlowTraceUv += sourceFlowTraceTangent * sourceFlowStep;
+        sourceFlowTraceUv = clamp(sourceFlowTraceUv, 0.0, 1.0);
+      }
+      sourceFlowTangent = sourceFlowAccum / max(length(sourceFlowAccum), 1e-4);
       float sourceFlowPhaseA = texture2D(uPhaseTex2, sourceFlowUv).r * uSourceFlowAdvectionPhaseScale;
-      float sourceFlowPhaseB = texture2D(uPhaseTex, sourceFlowUv).r * uSourceFlowAdvectionPhaseScale * 0.61803398875;
-      float sourceFlowStepPhase = float(sourceFlowStep) * 0.17320508075;
-      float sourceFlowAngleA = TAU * (
-        sourceFlowTime * uSourceFlowAdvectionCycles + sourceFlowPhaseA + sourceFlowStepPhase
+      float sourceFlowPhaseB = texture2D(uPhaseTex, sourceFlowUv).r * uSourceFlowAdvectionPhaseScale * 0.41;
+      float sourceFlowCoord = dot(sourceFlowUv * uTextureSize, sourceFlowTangent) /
+        max(uSourceFlowAdvectionMaxDisplacementPx, 8.0);
+      // drive ∈ [0,1): always advances with time → features only travel +field.
+      float sourceFlowDrive = sourceFlowStreamDrive(
+        uTime,
+        float(uSourceFlowAdvectionCycles),
+        -sourceFlowCoord + sourceFlowPhaseA
       );
-      float sourceFlowAngleB = TAU * (
-        sourceFlowTime * (uSourceFlowAdvectionCycles + 3.0) + sourceFlowPhaseB - sourceFlowStepPhase * 0.79
+      float sourceFlowDrive2 = sourceFlowStreamDrive(
+        uTime,
+        float(uSourceFlowAdvectionCycles) * 1.5,
+        -sourceFlowCoord * 1.6 + sourceFlowPhaseB + 0.27
       );
-      float sourceFlowTravelA = sin(sourceFlowAngleA);
-      float sourceFlowTravelB = sin(sourceFlowAngleB);
-      vec2 sourceFlowDirectionRaw =
-        sourceFlowTangent * sourceFlowTravelA +
-        sourceFlowNormal * uSourceFlowAdvectionNormalMix * sourceFlowTravelB;
-      vec2 sourceFlowDirection = sourceFlowDirectionRaw / max(1.0, length(sourceFlowDirectionRaw));
-      float sourceFlowDetail = sourceInteriorDetailWeight(sourceFlowUv);
-      float sourceFlowSupport = min(1.0, sourceFlowDetail * uSourceFlowAdvectionDetailGain);
-      float sourceFlowConfidence = mix(0.45, 1.0, smoothstep(0.0, 0.65, sourceFlowField.b));
-      vec2 sourceFlowDelta = sourceFlowDirection * sourceFlowStepPx *
-        uSourceFlowAdvectionAmount * sourceFlowSupport * sourceFlowConfidence;
-      sourceFlowUv += edgePreservedSourceFlowDelta(sourceFlowUv, sourceFlowDelta);
-      sourceFlowUv = clamp(sourceFlowUv, 0.0, 1.0);
+      float sourceFlowDriveMix = mix(sourceFlowDrive, sourceFlowDrive2, 0.32);
+      // Waterfall strands are silhouettes/edges — do NOT use interior-only weight
+      // (that zeros coarse edges and kills the cascade).
+      float sourceFlowEdge = sourceEdgeStrength(sourceFlowUv, 4.0);
+      float sourceFlowEdgeSupport = smoothstep(0.02, 0.18, sourceFlowEdge);
+      float sourceFlowInterior = sourceInteriorDetailWeight(sourceFlowUv);
+      float sourceFlowSupport = mix(0.72, 1.0, max(sourceFlowEdgeSupport, sourceFlowInterior));
+      sourceFlowSupport = min(1.0, sourceFlowSupport * max(uSourceFlowAdvectionDetailGain, 1.0) / 3.0 + 0.55);
+      float sourceFlowConfidence = mix(0.85, 1.0, smoothstep(0.0, 0.65, sourceFlowField.b));
+      vec2 sourceFlowMaxDelta = sourceFlowTangent *
+        (uSourceFlowAdvectionMaxDisplacementPx / max(uTextureSize, vec2(1.0)));
+      // Sample from upstream (+field) so content appears to fall along the cascade.
+      vec2 sourceFlowDelta = -sourceFlowMaxDelta *
+        sourceFlowDriveMix *
+        uSourceFlowAdvectionAmount *
+        sourceFlowSupport *
+        sourceFlowConfidence;
+      // Stream mode: skip edge-preserve kill (edgePreserve was designed to freeze silhouettes).
+      sourceFlowUv = clamp(sourceFlowUv + sourceFlowDelta, 0.0, 1.0);
+      sampleUv = sourceFlowUv;
+    } else {
+      vec2 sourceFlowStepPx = vec2(uSourceFlowAdvectionMaxDisplacementPx / 5.0) / max(uTextureSize, vec2(1.0));
+      for (int sourceFlowStep = 0; sourceFlowStep < 5; sourceFlowStep++) {
+        vec3 sourceFlowField = texture2D(uFlowFieldTex, sourceFlowUv).rgb;
+        vec2 sourceFlowRaw = sourceFlowField.rg * 2.0 - 1.0;
+        vec2 sourceFlowFieldTangent = sourceFlowRaw / max(length(sourceFlowRaw), 1e-4);
+        vec2 sourceDetailGradient = sourceLuminanceGradient(sourceFlowUv, 1.0);
+        vec2 sourceDetailTangent = vec2(-sourceDetailGradient.y, sourceDetailGradient.x);
+        sourceDetailTangent /= max(length(sourceDetailTangent), 1e-4);
+        // fieldAlign=1 locks to flowField (cascade direction); 0 keeps legacy edge-tangent mix.
+        float sourceDetailTangentWeight =
+          0.82 * (1.0 - clamp(uSourceFlowAdvectionFieldAlign, 0.0, 1.0)) *
+          smoothstep(0.006, 0.10, length(sourceDetailGradient));
+        vec2 sourceFlowTangentRaw = mix(sourceFlowFieldTangent, sourceDetailTangent, sourceDetailTangentWeight);
+        vec2 sourceFlowTangent = sourceFlowTangentRaw / max(length(sourceFlowTangentRaw), 1e-4);
+        vec2 sourceFlowNormal = vec2(-sourceFlowTangent.y, sourceFlowTangent.x);
+        float sourceFlowPhaseA = texture2D(uPhaseTex2, sourceFlowUv).r * uSourceFlowAdvectionPhaseScale;
+        float sourceFlowPhaseB = texture2D(uPhaseTex, sourceFlowUv).r * uSourceFlowAdvectionPhaseScale * 0.61803398875;
+        float sourceFlowStepPhase = float(sourceFlowStep) * 0.17320508075;
+        float sourceFlowAngleA = TAU * (
+          sourceFlowTime * uSourceFlowAdvectionCycles + sourceFlowPhaseA + sourceFlowStepPhase
+        );
+        float sourceFlowAngleB = TAU * (
+          sourceFlowTime * (uSourceFlowAdvectionCycles + 3.0) + sourceFlowPhaseB - sourceFlowStepPhase * 0.79
+        );
+        float sourceFlowTravelA = sourceFlowForwardTravel(sourceFlowAngleA, uSourceFlowAdvectionForwardBias);
+        float sourceFlowTravelB = sourceFlowForwardTravel(sourceFlowAngleB, uSourceFlowAdvectionForwardBias);
+        vec2 sourceFlowDirectionRaw =
+          sourceFlowTangent * sourceFlowTravelA +
+          sourceFlowNormal * uSourceFlowAdvectionNormalMix * sourceFlowTravelB;
+        vec2 sourceFlowDirection = sourceFlowDirectionRaw / max(1.0, length(sourceFlowDirectionRaw));
+        float sourceFlowDetail = sourceInteriorDetailWeight(sourceFlowUv);
+        float sourceFlowSupport = min(1.0, sourceFlowDetail * uSourceFlowAdvectionDetailGain);
+        float sourceFlowConfidence = mix(0.45, 1.0, smoothstep(0.0, 0.65, sourceFlowField.b));
+        vec2 sourceFlowDelta = sourceFlowDirection * sourceFlowStepPx *
+          uSourceFlowAdvectionAmount * sourceFlowSupport * sourceFlowConfidence;
+        sourceFlowUv += edgePreservedSourceFlowDelta(sourceFlowUv, sourceFlowDelta);
+        sourceFlowUv = clamp(sourceFlowUv, 0.0, 1.0);
+      }
+      sampleUv = clamp(sourceFlowUv, 0.0, 1.0);
     }
-    sampleUv = clamp(sourceFlowUv, 0.0, 1.0);
   }
   if (uSourceFlowTransportAmount > 0.0001 && uSourceFlowTransportMacroDisplacementPx > 0.0001) {
     vec2 sourceFlowTransportUv = sampleUv;
-    vec2 sourceFlowTransportStepPx = vec2(uSourceFlowTransportMacroDisplacementPx / 6.0) / max(uTextureSize, vec2(1.0));
-    for (int sourceFlowTransportStep = 0; sourceFlowTransportStep < 6; sourceFlowTransportStep++) {
+    if (uSourceFlowTransportForwardBias > 0.5) {
+      // Pure one-way macro transport (sawtooth) along +flowField.
       vec3 sourceFlowTransportField = texture2D(uFlowFieldTex, sourceFlowTransportUv).rgb;
       vec2 sourceFlowTransportRaw = sourceFlowTransportField.rg * 2.0 - 1.0;
       vec2 sourceFlowTransportTangent = sourceFlowTransportRaw / max(length(sourceFlowTransportRaw), 1e-4);
-      vec2 sourceFlowTransportNormal = vec2(-sourceFlowTransportTangent.y, sourceFlowTransportTangent.x);
-      float sourceFlowTransportBroadPhase = texture2D(uPhaseTex, sourceFlowTransportUv).r * uSourceFlowTransportPhaseScale;
-      float sourceFlowTransportDetailPhase = texture2D(uPhaseTex2, sourceFlowTransportUv).r * uSourceFlowTransportPhaseScale * 0.25;
-      float sourceFlowTransportStepPhase = float(sourceFlowTransportStep) * 0.12732200375;
-      float sourceFlowTransportMacroAngleA = TAU * (
-        uTime * uSourceFlowTransportMacroCycles + sourceFlowTransportBroadPhase + sourceFlowTransportStepPhase
+      vec2 sourceFlowTransportTraceUv = sourceFlowTransportUv;
+      vec2 sourceFlowTransportAccum = vec2(0.0);
+      vec2 sourceFlowTransportStep = vec2(uSourceFlowTransportMacroDisplacementPx / 6.0) /
+        max(uTextureSize, vec2(1.0));
+      for (int sourceFlowTransportStepI = 0; sourceFlowTransportStepI < 6; sourceFlowTransportStepI++) {
+        vec3 sourceFlowTransportTraceField = texture2D(uFlowFieldTex, sourceFlowTransportTraceUv).rgb;
+        vec2 sourceFlowTransportTraceRaw = sourceFlowTransportTraceField.rg * 2.0 - 1.0;
+        vec2 sourceFlowTransportTraceTangent =
+          sourceFlowTransportTraceRaw / max(length(sourceFlowTransportTraceRaw), 1e-4);
+        sourceFlowTransportAccum += sourceFlowTransportTraceTangent;
+        sourceFlowTransportTraceUv += sourceFlowTransportTraceTangent * sourceFlowTransportStep;
+        sourceFlowTransportTraceUv = clamp(sourceFlowTransportTraceUv, 0.0, 1.0);
+      }
+      sourceFlowTransportTangent = sourceFlowTransportAccum / max(length(sourceFlowTransportAccum), 1e-4);
+      float sourceFlowTransportBroadPhase =
+        texture2D(uPhaseTex, sourceFlowTransportUv).r * uSourceFlowTransportPhaseScale;
+      float sourceFlowTransportCoord = dot(sourceFlowTransportUv * uTextureSize, sourceFlowTransportTangent) /
+        max(uSourceFlowTransportMacroDisplacementPx, 8.0);
+      float sourceFlowTransportDrive = sourceFlowStreamDrive(
+        uTime,
+        float(uSourceFlowTransportMacroCycles),
+        -sourceFlowTransportCoord + sourceFlowTransportBroadPhase
       );
-      float sourceFlowTransportMacroAngleB = TAU * (
-        uTime * (uSourceFlowTransportMacroCycles + 1.0) + sourceFlowTransportDetailPhase - sourceFlowTransportStepPhase * 0.61803398875
+      float sourceFlowTransportEdge = sourceEdgeStrength(sourceFlowTransportUv, 4.0);
+      float sourceFlowTransportSupport = mix(
+        0.78,
+        1.0,
+        smoothstep(0.02, 0.18, sourceFlowTransportEdge)
       );
-      vec2 sourceFlowTransportDirectionRaw =
-        sourceFlowTransportTangent * sin(sourceFlowTransportMacroAngleA) +
-        sourceFlowTransportNormal * uSourceFlowTransportNormalMix * sin(sourceFlowTransportMacroAngleB);
-      vec2 sourceFlowTransportDirection = sourceFlowTransportDirectionRaw / max(1.0, length(sourceFlowTransportDirectionRaw));
-      float sourceFlowTransportFeature = sourceFeatureWeight(sourceFlowTransportUv, 0.05, 0.15, 0.8);
-      float sourceFlowTransportSupport = mix(0.55, 1.0, sourceFlowTransportFeature);
-      float sourceFlowTransportConfidence = mix(0.55, 1.0, smoothstep(0.0, 0.65, sourceFlowTransportField.b));
-      vec2 sourceFlowTransportDelta = sourceFlowTransportDirection * sourceFlowTransportStepPx *
-        uSourceFlowTransportAmount * sourceFlowTransportSupport * sourceFlowTransportConfidence;
-      sourceFlowTransportUv += edgePreservedSourceTransportDelta(sourceFlowTransportUv, sourceFlowTransportDelta);
-      sourceFlowTransportUv = clamp(sourceFlowTransportUv, 0.0, 1.0);
+      float sourceFlowTransportConfidence =
+        mix(0.85, 1.0, smoothstep(0.0, 0.65, sourceFlowTransportField.b));
+      vec2 sourceFlowTransportMaxDelta = sourceFlowTransportTangent *
+        (uSourceFlowTransportMacroDisplacementPx / max(uTextureSize, vec2(1.0)));
+      vec2 sourceFlowTransportDelta = -sourceFlowTransportMaxDelta *
+        sourceFlowTransportDrive *
+        uSourceFlowTransportAmount *
+        sourceFlowTransportSupport *
+        sourceFlowTransportConfidence;
+      // Stream mode: no edge-preserve freeze (cascade silhouettes must move).
+      sourceFlowTransportUv = clamp(sourceFlowTransportUv + sourceFlowTransportDelta, 0.0, 1.0);
+      sampleUv = sourceFlowTransportUv;
+    } else {
+      vec2 sourceFlowTransportStepPx = vec2(uSourceFlowTransportMacroDisplacementPx / 6.0) / max(uTextureSize, vec2(1.0));
+      for (int sourceFlowTransportStep = 0; sourceFlowTransportStep < 6; sourceFlowTransportStep++) {
+        vec3 sourceFlowTransportField = texture2D(uFlowFieldTex, sourceFlowTransportUv).rgb;
+        vec2 sourceFlowTransportRaw = sourceFlowTransportField.rg * 2.0 - 1.0;
+        vec2 sourceFlowTransportTangent = sourceFlowTransportRaw / max(length(sourceFlowTransportRaw), 1e-4);
+        vec2 sourceFlowTransportNormal = vec2(-sourceFlowTransportTangent.y, sourceFlowTransportTangent.x);
+        float sourceFlowTransportBroadPhase = texture2D(uPhaseTex, sourceFlowTransportUv).r * uSourceFlowTransportPhaseScale;
+        float sourceFlowTransportDetailPhase = texture2D(uPhaseTex2, sourceFlowTransportUv).r * uSourceFlowTransportPhaseScale * 0.25;
+        float sourceFlowTransportStepPhase = float(sourceFlowTransportStep) * 0.12732200375;
+        float sourceFlowTransportMacroAngleA = TAU * (
+          uTime * uSourceFlowTransportMacroCycles + sourceFlowTransportBroadPhase + sourceFlowTransportStepPhase
+        );
+        float sourceFlowTransportMacroAngleB = TAU * (
+          uTime * (uSourceFlowTransportMacroCycles + 1.0) + sourceFlowTransportDetailPhase - sourceFlowTransportStepPhase * 0.61803398875
+        );
+        vec2 sourceFlowTransportDirectionRaw =
+          sourceFlowTransportTangent * sourceFlowForwardTravel(
+            sourceFlowTransportMacroAngleA,
+            uSourceFlowTransportForwardBias
+          ) +
+          sourceFlowTransportNormal * uSourceFlowTransportNormalMix * sourceFlowForwardTravel(
+            sourceFlowTransportMacroAngleB,
+            uSourceFlowTransportForwardBias
+          );
+        vec2 sourceFlowTransportDirection = sourceFlowTransportDirectionRaw / max(1.0, length(sourceFlowTransportDirectionRaw));
+        float sourceFlowTransportFeature = sourceFeatureWeight(sourceFlowTransportUv, 0.05, 0.15, 0.8);
+        float sourceFlowTransportSupport = mix(0.55, 1.0, sourceFlowTransportFeature);
+        float sourceFlowTransportConfidence = mix(0.55, 1.0, smoothstep(0.0, 0.65, sourceFlowTransportField.b));
+        vec2 sourceFlowTransportDelta = sourceFlowTransportDirection * sourceFlowTransportStepPx *
+          uSourceFlowTransportAmount * sourceFlowTransportSupport * sourceFlowTransportConfidence;
+        sourceFlowTransportUv += edgePreservedSourceTransportDelta(sourceFlowTransportUv, sourceFlowTransportDelta);
+        sourceFlowTransportUv = clamp(sourceFlowTransportUv, 0.0, 1.0);
+      }
+      sampleUv = sourceFlowTransportUv;
     }
-    sampleUv = sourceFlowTransportUv;
   }
   if (uSourceStreamFlowAmount > 0.0001 && uSourceStreamFlowMaxDisplacementPx > 0.0001) {
     vec2 sourceStreamUv = sampleUv;

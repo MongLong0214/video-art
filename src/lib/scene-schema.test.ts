@@ -247,6 +247,8 @@ describe("sceneSchema", () => {
       normalMix: 0.35,
       edgePreserve: 1,
       detailGain: 1,
+      forwardBias: 0,
+      fieldAlign: 0,
     });
     expect(result.layers[0].animation.sourceFlowTransport).toEqual({
       amount: 0,
@@ -258,6 +260,7 @@ describe("sceneSchema", () => {
       normalMix: 0.35,
       edgePreserve: 1,
       colorAmount: 0,
+      forwardBias: 0,
     });
     expect(result.layers[0].animation.sourceStreamFlow).toEqual({
       amount: 0,
@@ -681,13 +684,13 @@ describe("sceneSchema", () => {
   });
 
   it.each([
-    ["amount", { amount: 1.1, maxDisplacementPx: 64, cycles: 24, phaseScale: 8, normalMix: 1, edgePreserve: 1 }],
-    ["maxDisplacementPx", { amount: 1, maxDisplacementPx: 64.1, cycles: 24, phaseScale: 8, normalMix: 1, edgePreserve: 1 }],
-    ["cycles", { amount: 1, maxDisplacementPx: 64, cycles: 25, phaseScale: 8, normalMix: 1, edgePreserve: 1 }],
-    ["phaseScale", { amount: 1, maxDisplacementPx: 64, cycles: 24, phaseScale: 8.1, normalMix: 1, edgePreserve: 1 }],
-    ["normalMix", { amount: 1, maxDisplacementPx: 64, cycles: 24, phaseScale: 8, normalMix: 1.1, edgePreserve: 1 }],
-    ["edgePreserve", { amount: 1, maxDisplacementPx: 64, cycles: 24, phaseScale: 8, normalMix: 1, edgePreserve: 1.1 }],
-    ["detailGain", { amount: 1, maxDisplacementPx: 64, cycles: 24, phaseScale: 8, normalMix: 1, edgePreserve: 1, detailGain: 6.1 }],
+    ["amount", { amount: 1.1, maxDisplacementPx: 256, cycles: 24, phaseScale: 8, normalMix: 1, edgePreserve: 1 }],
+    ["maxDisplacementPx", { amount: 1, maxDisplacementPx: 256.1, cycles: 24, phaseScale: 8, normalMix: 1, edgePreserve: 1 }],
+    ["cycles", { amount: 1, maxDisplacementPx: 256, cycles: 25, phaseScale: 8, normalMix: 1, edgePreserve: 1 }],
+    ["phaseScale", { amount: 1, maxDisplacementPx: 256, cycles: 24, phaseScale: 8.1, normalMix: 1, edgePreserve: 1 }],
+    ["normalMix", { amount: 1, maxDisplacementPx: 256, cycles: 24, phaseScale: 8, normalMix: 1.1, edgePreserve: 1 }],
+    ["edgePreserve", { amount: 1, maxDisplacementPx: 256, cycles: 24, phaseScale: 8, normalMix: 1, edgePreserve: 1.1 }],
+    ["detailGain", { amount: 1, maxDisplacementPx: 256, cycles: 24, phaseScale: 8, normalMix: 1, edgePreserve: 1, detailGain: 6.1 }],
   ])("rejects an out-of-range source-flow advection %s", (_field, sourceFlowAdvection) => {
     const result = sceneSchema.safeParse({
       ...validScene,
@@ -705,15 +708,15 @@ describe("sceneSchema", () => {
   });
 
   it.each([
-    ["amount", { amount: 1.1, macroDisplacementPx: 96, macroCycles: 8, microDisplacementPx: 24, microCycles: 48, phaseScale: 8, normalMix: 1, edgePreserve: 1, colorAmount: 1 }],
-    ["macroDisplacementPx", { amount: 1, macroDisplacementPx: 96.1, macroCycles: 8, microDisplacementPx: 24, microCycles: 48, phaseScale: 8, normalMix: 1, edgePreserve: 1, colorAmount: 1 }],
-    ["macroCycles", { amount: 1, macroDisplacementPx: 96, macroCycles: 9, microDisplacementPx: 24, microCycles: 48, phaseScale: 8, normalMix: 1, edgePreserve: 1, colorAmount: 1 }],
-    ["microDisplacementPx", { amount: 1, macroDisplacementPx: 96, macroCycles: 8, microDisplacementPx: 24.1, microCycles: 48, phaseScale: 8, normalMix: 1, edgePreserve: 1, colorAmount: 1 }],
-    ["microCycles", { amount: 1, macroDisplacementPx: 96, macroCycles: 8, microDisplacementPx: 24, microCycles: 49, phaseScale: 8, normalMix: 1, edgePreserve: 1, colorAmount: 1 }],
-    ["phaseScale", { amount: 1, macroDisplacementPx: 96, macroCycles: 8, microDisplacementPx: 24, microCycles: 48, phaseScale: 8.1, normalMix: 1, edgePreserve: 1, colorAmount: 1 }],
-    ["normalMix", { amount: 1, macroDisplacementPx: 96, macroCycles: 8, microDisplacementPx: 24, microCycles: 48, phaseScale: 8, normalMix: 1.1, edgePreserve: 1, colorAmount: 1 }],
-    ["edgePreserve", { amount: 1, macroDisplacementPx: 96, macroCycles: 8, microDisplacementPx: 24, microCycles: 48, phaseScale: 8, normalMix: 1, edgePreserve: 1.1, colorAmount: 1 }],
-    ["colorAmount", { amount: 1, macroDisplacementPx: 96, macroCycles: 8, microDisplacementPx: 24, microCycles: 48, phaseScale: 8, normalMix: 1, edgePreserve: 1, colorAmount: 1.1 }],
+    ["amount", { amount: 1.1, macroDisplacementPx: 192, macroCycles: 8, microDisplacementPx: 24, microCycles: 48, phaseScale: 8, normalMix: 1, edgePreserve: 1, colorAmount: 1 }],
+    ["macroDisplacementPx", { amount: 1, macroDisplacementPx: 192.1, macroCycles: 8, microDisplacementPx: 24, microCycles: 48, phaseScale: 8, normalMix: 1, edgePreserve: 1, colorAmount: 1 }],
+    ["macroCycles", { amount: 1, macroDisplacementPx: 192, macroCycles: 9, microDisplacementPx: 24, microCycles: 48, phaseScale: 8, normalMix: 1, edgePreserve: 1, colorAmount: 1 }],
+    ["microDisplacementPx", { amount: 1, macroDisplacementPx: 192, macroCycles: 8, microDisplacementPx: 24.1, microCycles: 48, phaseScale: 8, normalMix: 1, edgePreserve: 1, colorAmount: 1 }],
+    ["microCycles", { amount: 1, macroDisplacementPx: 192, macroCycles: 8, microDisplacementPx: 24, microCycles: 49, phaseScale: 8, normalMix: 1, edgePreserve: 1, colorAmount: 1 }],
+    ["phaseScale", { amount: 1, macroDisplacementPx: 192, macroCycles: 8, microDisplacementPx: 24, microCycles: 48, phaseScale: 8.1, normalMix: 1, edgePreserve: 1, colorAmount: 1 }],
+    ["normalMix", { amount: 1, macroDisplacementPx: 192, macroCycles: 8, microDisplacementPx: 24, microCycles: 48, phaseScale: 8, normalMix: 1.1, edgePreserve: 1, colorAmount: 1 }],
+    ["edgePreserve", { amount: 1, macroDisplacementPx: 192, macroCycles: 8, microDisplacementPx: 24, microCycles: 48, phaseScale: 8, normalMix: 1, edgePreserve: 1.1, colorAmount: 1 }],
+    ["colorAmount", { amount: 1, macroDisplacementPx: 192, macroCycles: 8, microDisplacementPx: 24, microCycles: 48, phaseScale: 8, normalMix: 1, edgePreserve: 1, colorAmount: 1.1 }],
   ])("rejects an out-of-range source-flow transport %s", (_field, sourceFlowTransport) => {
     const result = sceneSchema.safeParse({
       ...validScene,

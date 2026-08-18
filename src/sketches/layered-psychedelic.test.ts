@@ -142,6 +142,8 @@ describe("layered-psychedelic.ts — iterative source-flow advection", () => {
     expect(rendererSrc).toMatch(/uSourceFlowAdvectionNormalMix:\s*\{\s*value:\s*anim\.sourceFlowAdvection\.normalMix\s*\}/);
     expect(rendererSrc).toMatch(/uSourceFlowAdvectionEdgePreserve:\s*\{\s*value:\s*anim\.sourceFlowAdvection\.edgePreserve\s*\}/);
     expect(rendererSrc).toMatch(/uSourceFlowAdvectionDetailGain:\s*\{\s*value:\s*anim\.sourceFlowAdvection\.detailGain\s*\}/);
+    expect(rendererSrc).toMatch(/uSourceFlowAdvectionForwardBias:\s*\{\s*value:\s*anim\.sourceFlowAdvection\.forwardBias\s*\}/);
+    expect(rendererSrc).toMatch(/uSourceFlowAdvectionFieldAlign:\s*\{\s*value:\s*anim\.sourceFlowAdvection\.fieldAlign\s*\}/);
   });
 });
 
@@ -156,6 +158,7 @@ describe("layered-psychedelic.ts — dual-band source-flow transport", () => {
     expect(rendererSrc).toMatch(/uSourceFlowTransportNormalMix:\s*\{\s*value:\s*anim\.sourceFlowTransport\.normalMix\s*\}/);
     expect(rendererSrc).toMatch(/uSourceFlowTransportEdgePreserve:\s*\{\s*value:\s*anim\.sourceFlowTransport\.edgePreserve\s*\}/);
     expect(rendererSrc).toMatch(/uSourceFlowTransportColorAmount:\s*\{\s*value:\s*anim\.sourceFlowTransport\.colorAmount\s*\}/);
+    expect(rendererSrc).toMatch(/uSourceFlowTransportForwardBias:\s*\{\s*value:\s*anim\.sourceFlowTransport\.forwardBias\s*\}/);
   });
 });
 
