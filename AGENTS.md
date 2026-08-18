@@ -5,12 +5,13 @@
 **All image→loop / locks / Instagram reel agent work starts here:**
 
 1. **`docs/video-os/00-INDEX.md`** — folder map, conflict rules, hard bans  
-2. **`docs/video-os/01-CREATE-OS.md`** — create / classify / gate / cases (sole creation OS)  
-3. **`docs/video-os/02-REPRO-LOCKS.md`** — closed-product rebuild / what to commit  
-4. **`docs/video-os/03-INSTAGRAM-REELS.md`** — reel edit logs (not creation aesthetics)  
-5. `recipes/golden/*.json` — **new** source start templates only  
-6. `recipes/locks/manifest.json` — closed inventory + shas + commands  
-7. `docs/video-os/archive/` — optional deep evidence / legacy only  
+2. **`docs/video-os/04-QUALITY-CONTRACT.md`** — zero-context bar (hero motion, no box, plates)  
+3. **`docs/video-os/01-CREATE-OS.md`** — create / classify / gate / cases (sole creation OS)  
+4. **`docs/video-os/02-REPRO-LOCKS.md`** — closed-product rebuild / what to commit  
+5. **`docs/video-os/03-INSTAGRAM-REELS.md`** — reel edit logs (not creation aesthetics)  
+6. `recipes/golden/*.json` — **new** source start templates only  
+7. `recipes/locks/manifest.json` — closed inventory + shas + commands  
+8. `docs/video-os/archive/` — optional deep evidence / legacy only  
 
 **Conflict rule:** creation aesthetics → `01-CREATE-OS.md`.  
 **Conflict rule:** pull / other PC / lock / commit media → `02-REPRO-LOCKS.md`.  
@@ -33,28 +34,15 @@ npx tsx scripts/export-layered.ts \
   --preview
 ```
 
-Then stills + `qa-motion` + case ledger per `docs/video-os/01-CREATE-OS.md`.
+Then **hero-motion tree + pre-Isaac checklist** in `docs/video-os/04-QUALITY-CONTRACT.md` (not optional). Then stills + `qa-motion` + case ledger per `docs/video-os/01-CREATE-OS.md`.
 
 ## Rebuild closed final (any machine)
 
-**Do not improvise — follow `docs/video-os/02-REPRO-LOCKS.md` §3 end-to-end.**
+**Do not improvise — `npx tsx scripts/rebuild-closed-lock.ts --slug <slug>`.**  
+That script runs scaffold → **`manifest.plates`** → `cp lock → scene.json` → sha/gate checks.  
+Skipping plates on r325/r342 produces the wrong movie even if knobs match. Full only with `--full` after Isaac asks.
 
-Summary (r242):
-
-```bash
-SLUG=r242-handface-phase-river-gatepass
-npx tsx scripts/scaffold-layered-run.ts \
-  --source sources/approved/r242-hand-face.png \
-  --slug "$SLUG" \
-  --recipe "recipes/locks/${SLUG}.json" \
-  --work-dir "out/manual-runs/${SLUG}"
-cp "recipes/locks/${SLUG}.json" "out/manual-runs/${SLUG}/scene.json"   # REQUIRED
-npx tsx scripts/export-layered.ts \
-  --title "${SLUG}-final" \
-  --work-dir "out/manual-runs/${SLUG}" \
-  --full-res \
-  --gate-report "recipes/locks/${SLUG}.gate.json"
-```
+Manual equivalent: `docs/video-os/02-REPRO-LOCKS.md` §3 end-to-end.
 
 ## Close a final into git (lock pack)
 

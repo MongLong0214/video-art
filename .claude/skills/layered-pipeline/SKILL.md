@@ -16,6 +16,7 @@ description: >
 | Order | File | Role |
 |------:|------|------|
 | 0 | `docs/video-os/00-INDEX.md` | entry + conflict rules |
+| Q | `docs/video-os/04-QUALITY-CONTRACT.md` | **zero-context bar** — hero motion, no box, plates |
 | 1 | `docs/video-os/01-CREATE-OS.md` | **sole create OS** (type tree, runbook, gate, cases) |
 | 2 | `docs/video-os/02-REPRO-LOCKS.md` | closed rebuild only |
 | 3 | `docs/video-os/03-INSTAGRAM-REELS.md` | reel edit log only |
@@ -58,6 +59,8 @@ npx tsx scripts/export-layered.ts \
 
 Commands in `01-CREATE-OS.md` §4. Append case ledger there.
 
+**After scaffold, before Isaac:** hero-motion tree in `04-QUALITY-CONTRACT.md` §2. Frozen rings/pour is not a delivery.
+
 ### 4. Full (only after Isaac visual OK or explicit 풀렌더)
 
 ```bash
@@ -72,7 +75,7 @@ Requires gate PASS or Isaac `humanOverride` on that report.
 
 ### 5. Closed rebuild
 
-**Never improvise** — `docs/video-os/02-REPRO-LOCKS.md` (cp lock → scene.json required).
+**Never improvise** — `npx tsx scripts/rebuild-closed-lock.ts --slug <slug>` (plates + cp lock required).
 
 ## Hard bans
 

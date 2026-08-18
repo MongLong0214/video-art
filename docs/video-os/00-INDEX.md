@@ -17,14 +17,16 @@ Human-facing prose is secondary. Optimize for agent compliance.
 | Order | File | When |
 |------:|------|------|
 | **0** | **this file** | always |
+| **Q** | `04-QUALITY-CONTRACT.md` | **always** — zero-context execution bar (hero motion, no box, plates) |
 | **1** | `01-CREATE-OS.md` | any new source, preview, full, gate, aesthetic rules |
 | **2** | `02-REPRO-LOCKS.md` | rebuild closed final, lock pack, other machine, what to commit |
 | **3** | `03-INSTAGRAM-REELS.md` | IG reel cut / dual render / audio mux craft log |
-| **on demand** | `archive/` | recurrence evidence only — **never** overrides 01 |
+| **on demand** | `archive/` | recurrence evidence only — **never** overrides 01 / 04 |
 
 **Conflict rule:** `01-CREATE-OS.md` wins over every legacy path and archive file.  
 **Conflict rule:** closed product rebuild → `02-REPRO-LOCKS.md` + locks JSON, not golden improvisation.  
-**Conflict rule:** reel *edit* history → `03`; reel *look* of the 20s loop → `01`.
+**Conflict rule:** reel *edit* history → `03`; reel *look* of the 20s loop → `01`.  
+**Conflict rule:** “what must the agent actually do so Isaac can judge” → `04-QUALITY-CONTRACT.md` (does not override 01 aesthetics).
 
 ---
 
@@ -36,6 +38,7 @@ docs/video-os/
   01-CREATE-OS.md             ← former root OUTPUT_GAP_ANALYSIS.md (canonical)
   02-REPRO-LOCKS.md           ← former docs/REPRO_LOCKS_PLAYBOOK.md (canonical)
   03-INSTAGRAM-REELS.md       ← 2026-07-16 + 2026-07-22 session logs merged
+  04-QUALITY-CONTRACT.md      ← zero-context execution bar (mandatory)
   archive/
     legacy/                   ← SUPERSEDED playbooks (do not follow defaults)
     sessions/                 ← dated handoffs
@@ -79,7 +82,8 @@ npx tsx scripts/export-layered.ts \
 
 Then stills + `qa-motion` + case ledger per `01-CREATE-OS.md`.
 
-**Rebuild closed final:** follow `02-REPRO-LOCKS.md` §3 end-to-end (scaffold → **cp lock → scene.json** → full + gate-report).
+**Rebuild closed final:** `npx tsx scripts/rebuild-closed-lock.ts --slug <slug>`  
+(do **not** skip `manifest.plates` — `02-REPRO-LOCKS.md` §3).
 
 ---
 

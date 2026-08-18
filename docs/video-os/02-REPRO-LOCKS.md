@@ -27,11 +27,13 @@ git pull
   → sources/approved/*.png          (pixels)
   → recipes/locks/<slug>.json       (final knobs)
   → recipes/locks/<slug>.gate.json  (PASS or REJECT+Isaac override)
-  → scaffold (regenerate layers from PNG)
-  → cp lock → scene.json            (restore exact scene sha for gate)
-  → export --full-res --gate-report
+  → npx tsx scripts/rebuild-closed-lock.ts --slug <slug>
+       scaffold → manifest.plates (REQUIRED if present) → cp lock → verify
+  → export --full-res --gate-report   (or rebuild-closed-lock --full)
   → (optional) ffmpeg mux local WAV
 ```
+
+**If `manifest.plates` is set and you skip it, the product is wrong** even when scene knobs match (r325 halo/deity, r342 fall/hold).
 
 **Never** commit MP4, WAV, or `out/**`.  
 **Never** treat golden recipes alone as the closed final (locks have extra deltas).
@@ -109,7 +111,15 @@ Required tools: Node, `npx`, `ffmpeg` (for stills/mux only).
 
 Pick a closed entry from `recipes/locks/manifest.json` → field `approved[]`.
 
-### 3.2 Rebuild procedure (copy-paste; do in order)
+**Preferred (zero-context):** one command — verifies shas, scaffolds, runs `plates`, pins scene:
+
+```bash
+npx tsx scripts/rebuild-closed-lock.ts --slug r342-cosmic-buddha-eye-fall
+# Isaac asked 풀렌더:
+npx tsx scripts/rebuild-closed-lock.ts --slug r342-cosmic-buddha-eye-fall --full
+```
+
+### 3.2 Rebuild procedure (manual equivalent — do in order)
 
 Replace `SLUG` and paths with the manifest entry. Example uses **r242**.
 
@@ -154,6 +164,19 @@ npx tsx scripts/scaffold-layered-run.ts \
 ```
 
 Expect: `$WORKDIR/layers/` populated, `$WORKDIR/source.png` present.
+
+**Step 1b — custom plates (CRITICAL when `manifest.plates` is set)**
+
+Scaffold only writes golden phase/flow. r325/r342 **are** the custom plates.
+
+```bash
+# Copy the `plates` string from the manifest entry. Example r342:
+node scripts/locks/r342-build-fall-plates.mjs
+node scripts/locks/r342-build-nobox-hold.mjs
+```
+
+If `plates` is missing/empty (r221/r242/r274), skip.  
+If `plates` is present and you skip it → **wrong movie**. Stop. Do not full.
 
 **Step 2 — pin locked scene (CRITICAL)**
 
@@ -294,6 +317,7 @@ Every `approved[]` item **must** include:
   "gate": "recipes/locks/r242-handface-phase-river-gatepass.gate.json",
   "audio": "<track title + artist + start; or 'none'>",
   "scaffold": "<exact scaffold command>",
+  "plates": "<optional; &&-separated node scripts/locks/*.mjs and in-workdir cp>",
   "exportFull": "<exact full export command>",
   "notes": "<gate status, key knob deltas, warnings>"
 }

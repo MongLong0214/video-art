@@ -38,7 +38,8 @@ If two docs disagree: **this file wins.** Archive is not deleted knowledge — i
 8. **2 misses → stop (R-013).** No third blind render. 6 previews/source/session max (R-021).
 9. **No rotation / spin / angular phase (R-060).** Never `phase-angular.png` as phaseField/phaseField2; never multipass `rotate≠0`; never kaleidoscope / polarTwist / rotateSpeed. Phase fields stay on **golden defaults** (r221: `phase-edge` + `phase-mix`). Spiral/Ganesha/mandala sources: color+flow only — do not add geometric spin to “match” the picture (Isaac: 극도로 구림).
 
-**Roles:** implementation may use any coding agent · orchestration agent records cases · **Isaac = final aesthetic judge**.
+**Roles:** implementation may use any coding agent · orchestration agent records cases · **Isaac = final aesthetic judge**.  
+**Zero-context execution bar (mandatory):** `docs/video-os/04-QUALITY-CONTRACT.md` — hero motion, no rectangle hold, closed-lock plates.
 
 ---
 
@@ -53,7 +54,7 @@ If two docs disagree: **this file wins.** Archive is not deleted knowledge — i
 | Codec final | H.264 yuv420p |
 | Work dir | `out/manual-runs/<slug>/` (local; scaffold here) |
 | **Approved sources (git)** | `sources/approved/*.png` |
-| **Approved locks (git)** | `recipes/locks/<slug>.json` + `<slug>.gate.json` — **pull → scaffold → cp lock → full** |
+| **Approved locks (git)** | `recipes/locks/<slug>.json` + `<slug>.gate.json` — **`rebuild-closed-lock.ts` (plates + cp lock)** |
 | Repro index | `recipes/locks/manifest.json` |
 | **Repro playbook (agents)** | `docs/REPRO_LOCKS_PLAYBOOK.md` — usage · management · maintenance (mandatory for locks) |
 | Archive | `out/layered/<date>_<slug>_<hash>/` (**not** in git) |
@@ -148,7 +149,7 @@ npx tsx scripts/analyze-source.ts <source.png> --out out/manual-runs/<slug>/anal
 | 2 | `busyness ≥ 0.08` **and** directional line texture (print/woodcut) | `busy-line` | `woodblock-phase-advect-r139.json` |
 | 3 | all-over marble/swirl/galaxy, figure not the color problem | `allover-vivid` | `cosmos-vivid-oklch-r24b.json` |
 | 4 | `greenRisk true` **or** pastel/low-sat majority with few vivid focals | `pastel-greenrisk` | start from r221 **or** cosmos but **hueKey/lumKey low + clamp≤0.18**; never full peacock |
-| 5 | figure/face/deity + finished vivid paint (`finishedVivid` useful; skin/face large) | `figure-vivid` | `eye-mirror-phase-advect-r221.json` |
+| 5 | figure/face/deity + finished vivid paint (`finishedVivid` useful; skin/face large) | `figure-vivid` | `eye-mirror-phase-advect-r221.json` then **hero tree** (`04` §2) — do not ship frozen rings/pour |
 | 6 | dense full-frame pattern figure (hand/mushroom/forest) without soft skin wash risk | `dense-pattern-figure` | **first try** `woodblock-phase-advect-r139.json` (hand-face r240 Isaac OK); multi-layer r65 only if layers already exist; avoid body colorCycle as first path (r241 alt only) |
 | 7 | else | `unknown` | scaffold r221 **one** preview → if repaint FAIL, stop and escalate |
 
@@ -156,7 +157,7 @@ npx tsx scripts/analyze-source.ts <source.png> --out out/manual-runs/<slug>/anal
 
 | Type | MUST | MUST NOT |
 |------|------|----------|
-| `figure-vivid` | single layer; colorCycle **0** on r221 path; sourcePrism on | body colorCycle, peacock satBoost 1.8+palette, overlays |
+| `figure-vivid` | colorCycle **0**; sourcePrism on; **hero must travel** (`04` §2). 2-layer source+hold is legal when it prevents freeze-hero or melt-face (both layers = source pixels) | body colorCycle, peacock, foreign overlay, `nx/ny` box hold |
 | `busy-line` | UV fixed; phaseMix=0; phaseFlowPx ∝ width | copy r139 px blindly without width scale |
 | `dense-pattern-figure` | start **r139** path; colorCycle **0** first; for **gate/final** clamp maxDrift **≤0.26** (r242) | default colorCycle/hueKey; shipping with clamp 0.42+ without re-gate |
 | `allover-vivid` | OKLCH; integer cycle; satInj 0 | HSV + high satFloor |
@@ -184,6 +185,7 @@ npx tsx scripts/scaffold-layered-run.ts \
 3. Read `out/manual-runs/<SLUG>/analysis.json` → assign Type ID (§3.1).
 4. If Type ID wrong for chosen recipe: re-scaffold with correct golden recipe (overwrite work-dir).
 5. Open §5 KILLED — confirm plan is not a killed axis.
+6. **Hero motion (`04-QUALITY-CONTRACT.md` §2).** Name the one thing that must travel. If it is rings/pour/beam, build a custom flow **before** the first Isaac preview. Scaffold-only r221 on a halo/pour source is a known miss (r325 v1–v5).
 
 ### Step B — Preview
 
@@ -232,7 +234,7 @@ Append to §9 using the template. No case = work incomplete.
 |---------|--------|
 | FAIL #1 | Change **one axis** only (recipe family or single param group). Re-preview. |
 | FAIL #2 same source | **STOP.** Deliver best 1–2 previews + question to Isaac (R-013/R-021). |
-| Soft pass, want Isaac eyes | Deliver preview path + contact/subsec. **No full. No audio.** |
+| Soft pass, want Isaac eyes | `04` §4 checklist then deliver preview path + contact/subsec. **No full. No audio.** |
 | Isaac: “맘에 든다 / 221처럼 이걸로” | Full render §7.1 then wait for audio request |
 | Isaac: defect note | §8 triage — crop 3-way before knobs |
 
@@ -259,6 +261,7 @@ Append to §9 using the template. No case = work incomplete.
 | **cosmos-vivid / body colorCycle as “anti-wobble” on figure-vivid / Ganesha** | R-018 · R-063 · r299-v2 FAIL |
 | **Zero sourcePrism + glow/godRays-only “structure lock” on figure-vivid** | R-038 · R-063 · r299-v3/v4 FAIL |
 | **phase-angular / multipass.rotate spin “for Ganesha/mandala”** | R-062 · §0 item 9 |
+| **Axis-aligned hold box (`nx/ny` clip) around a figure** | r325 knee wall · r342 sky rectangle — Isaac always sees it |
 
 ---
 
