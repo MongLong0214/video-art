@@ -18,6 +18,7 @@
 | **r274 릴스** (before→hard-cut→halluc + drop) | 실험 v1–v7 | 카메라 눈 팬 실패 다수; **v7 풀프레임 Ken Burns 눈 팬**이 기술적으로 맞음 |
 | **r275 mushroom-crown** | 20s prism full + 별도 narration full | 본편 룩 OK, narration-final 보류 호평 |
 | **r275 릴스** | 실험 v1–v14 | **최종 선택: `r275-mushroom-crown-reel-v10-matchcut.mp4`** |
+| **r325 Ganesha rainbow-rings v8b** | 20s full + Mama India @6:27 | Isaac “이게 젤 나아” → 풀버전 |
 
 ---
 
@@ -577,3 +578,60 @@ out: 1632×2912, 30fps, H.264 yuv420p CRF17, AAC 320k, 20s
 ---
 
 *Logged: 2026-07-22. Session: r282–r284 waterline Buddha + dual reel + All Around Us @2:39. Author: agent for Isaac.*
+
+## 2026-08-03 — r312 Adhana mux (single 20s full)
+
+| | |
+|--|--|
+| video | `out/layered/2026-08-03_r312-folder30-b-v7-halluc-slow-river-final-42db4852/r312-folder30-b-v7-halluc-slow-river-final.mp4` |
+| +audio | `…-final-with-adhana.mp4` |
+| track | `Vini Vici & Astrix - Adhana.wav` (Downloads) |
+| start | **3:03 / t=183s** · 20s · AAC 320k · `-c:v copy` |
+| look | creation aesthetics → CREATE-OS r312-v7 (not this file) |
+
+```bash
+ffmpeg -y \
+  -i "out/layered/2026-08-03_r312-folder30-b-v7-halluc-slow-river-final-42db4852/r312-folder30-b-v7-halluc-slow-river-final.mp4" \
+  -ss 183 -i "/Users/isaac/Downloads/Vini Vici & Astrix - Adhana.wav" \
+  -t 20 -map 0:v:0 -map 1:a:0 -c:v copy -c:a aac -b:a 320k -shortest \
+  "out/layered/2026-08-03_r312-folder30-b-v7-halluc-slow-river-final-42db4852/r312-folder30-b-v7-halluc-slow-river-final-with-adhana.mp4"
+```
+
+## 2026-08-10 — r339 Bloody Mary mux (single 20s full)
+
+| | |
+|--|--|
+| video | `out/layered/2026-08-10_r339-dual-face-prism-faster-native-final-596cec48/r339-dual-face-prism-faster-native-final.mp4` |
+| +audio | `…/r339-dual-face-prism-faster-native-final-with-bloody-mary-t191.mp4` |
+| track | `Bloody Mary - Love is Acid.wav` (Downloads) |
+| start | **3:11 / t=191s** · 20s · AAC 320k · `-c:v copy` |
+| look | creation / gate / QA → CREATE-OS r339-v1; single source layer, no circle overlay |
+
+## 2026-08-13 — r325 Mama India mux (single 20s full)
+
+| | |
+|--|--|
+| video | `out/layered/2026-08-13_r325-ganesha-rainbow-rings-master-v8b-knee-final-f3bfc5a4/r325-ganesha-rainbow-rings-master-v8b-knee-final.mp4` |
+| +audio | `…-final-with-mama-india.mp4` |
+| track | `Technical Hitch - Mama India (Outside The Universe Remix).wav` (Downloads) |
+| start | **6:27 / t=387s** · 20s · AAC 320k · `-c:v copy` · 600f verified |
+| look | creation / gate → CREATE-OS r325-v8b (Isaac pick); not a reel cut |
+
+```bash
+ffmpeg -y \
+  -i "out/layered/2026-08-13_r325-ganesha-rainbow-rings-master-v8b-knee-final-f3bfc5a4/r325-ganesha-rainbow-rings-master-v8b-knee-final.mp4" \
+  -ss 387 -i "/Users/isaac/Downloads/Technical Hitch - Mama India (Outside The Universe Remix).wav" \
+  -map 0:v:0 -map 1:a:0 -c:v copy -c:a aac -b:a 320k -ar 48000 -ac 2 -shortest \
+  "out/layered/2026-08-13_r325-ganesha-rainbow-rings-master-v8b-knee-final-f3bfc5a4/r325-ganesha-rainbow-rings-master-v8b-knee-final-with-mama-india.mp4"
+```
+
+## 2026-08-18 — r342 Shaman Trance mux (single 20s full)
+
+| | |
+|--|--|
+| video | `out/layered/2026-08-18_r342-cosmic-buddha-eye-fall-v1c-nobox-final-22fa7aba/r342-cosmic-buddha-eye-fall-v1c-nobox-final.mp4` |
+| +audio | `…-final-with-shaman-trance.mp4` |
+| track | `Shaman Trance.wav` (Downloads) |
+| start | **0:00 / t=0s** (Isaac did not specify an offset) · 20s · AAC 320k · `-c:v copy` · 600f verified |
+| look | CREATE-OS r342-v1c (Isaac pick); not a reel cut |
+

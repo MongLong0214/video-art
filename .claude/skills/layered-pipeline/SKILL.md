@@ -79,6 +79,7 @@ Requires gate PASS or Isaac `humanOverride` on that report.
 - img2video APIs  
 - Commit MP4 / WAV / `out/**` / regenerated layers  
 - Re-tune closed locks without new Isaac defect  
+- **Rotation / spin (R-060):** never `phase-angular.png`; never multipass `rotate≠0`; never kaleidoscope / polarTwist / rotateSpeed. After scaffold, **do not swap** golden `phaseField`/`phaseField2` to radial+angular “for spiral/Ganesha”. Halluc = phaseFlow/sat/multipass/glow only, on golden phase maps.
 
 ## Prerequisites
 

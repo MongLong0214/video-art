@@ -73,6 +73,7 @@ Follow `docs/video-os/02-REPRO-LOCKS.md` checklist. Minimum commits:
 - Full render without gate PASS or Isaac humanOverride  
 - Re-tuning closed locks without new Isaac defect  
 - **Committing** MP4, WAV, `out/**`, or phase `layers/`  
+- **Rotation / spin / twist motion (R-060, permanent):** never set `phaseField`/`phaseField2` to `phase-angular.png`; never `multipassFeedback.rotate ≠ 0`; never kaleidoscope / polarTwist / rotateSpeed / camera spin. Keep golden phase fields only (`phase-edge` + `phase-mix` for r221; `phase-edge` + `phase-luma-hybrid` for r139). Do **not** “match” a spiral source by adding angular/radial spin — Isaac rejects it as cheap (esp. Ganesha / mandala / spiral BGs).
 
 ## Do not commit
 
