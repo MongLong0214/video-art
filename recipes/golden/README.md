@@ -29,13 +29,13 @@ Versioned starting `scene.json` templates. **New agents start only from these + 
 ## Use
 
 ```bash
-npx tsx scripts/scaffold-layered-run.ts \
+npx tsx scripts/prepare-new-source.ts \
   --source /path/to.png \
   --slug rNNN-name \
   --recipe recipes/golden/eye-mirror-phase-advect-r221.json \
   --work-dir out/manual-runs/rNNN-name
 ```
 
-Do not edit golden files for one-offs. Scaffold → patch under `out/manual-runs/`.
+Do not edit golden files for one-offs. Prepare writes plates under `out/manual-runs/`. Scaffold-only on halo/pour/beam is a session-grade FAIL.
 
 **Closed finals:** `sources/approved/` + `recipes/locks/` + **`docs/video-os/02-REPRO-LOCKS.md`**.

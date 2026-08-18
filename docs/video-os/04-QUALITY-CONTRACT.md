@@ -17,7 +17,7 @@ If you skip this file, you will ship a golden-r221 preview and call it done. Tha
 | Job | Goal | Command of record |
 |-----|------|-------------------|
 | **Rebuild closed** | Byte-same knobs + custom plates as the lock | `npx tsx scripts/rebuild-closed-lock.ts --slug <slug>` then `--full` only if asked |
-| **New source** | First preview already has **hero motion traveling** + **no rectangle hold** | `01` classify → hero tree (§2) → preview → stills → this file §4 check → Isaac |
+| **New source** | First preview already has **hero motion traveling** + **no rectangle hold** | `npx tsx scripts/prepare-new-source.ts --source … --slug … --recipe … --work-dir …` then `export-layered --preview` |
 
 Closed rebuild is not “scaffold + full”. Custom plates are the look.
 
@@ -28,7 +28,7 @@ Closed rebuild is not “scaffold + full”. Custom plates are the look.
 1. **`sourcePrism` is chroma, not travel.** If rings/pour/beam look static, advection along a **custom flow field** is required. Prism-only = FAIL (r325 v1–v5).
 2. **Do not hold the hero.** Optical void/body/figure that covers the painted rings/pour/beam freezes it. Hold the form *around* the hero (r325, r342).
 3. **No axis-aligned hold.** Never `nx < 0.82` / `ny < 0.88` boxes. Isaac sees the rectangle immediately (r325 knee, r342 sky box). Hold = silhouette / ellipses / color, then feather.
-4. **No spin (R-060).** Never `phase-angular` as phase; never `rotate ≠ 0`; never kaleidoscope / polarTwist. Concentric art is **not** a reason to add angular phase. **Allowed:** custom `phase-halo` / `phase-fall` (radial distance or vertical). That is travel, not spin. “Keep golden phase only after scaffold” is **false** when §2 requires a custom field.
+4. **No spin (R-060).** Never `phase-angular` as phase; never `rotate ≠ 0`; never kaleidoscope / polarTwist / rotateSpeed. Concentric art is **not** a reason to add angular phase. **Allowed:** custom `phase-halo` / `phase-fall` / `phase-beam` (radial distance or vertical). That is travel, not spin. “Keep golden phase only after scaffold” is **false** when §2 requires a custom field.
 5. **2-layer source+hold is legal** on figure-vivid when a single layer would freeze the hero or melt the face. It is not a foreign overlay if both layers are source pixels (r323 / r325 / r342).
 6. **QA PASS ≠ success (R-020).** Olive/seam guards are not “Isaac will like this.”
 7. **2 misses → stop (R-013).** Do not invent a third family. Show 1–2 previews + ask.
@@ -36,13 +36,19 @@ Closed rebuild is not “scaffold + full”. Custom plates are the look.
 
 ---
 
-## 2. Hero-motion tree (new source — mandatory before first preview)
+## 2. Hero-motion tree (enforced — not a suggestion)
 
-Look at the PNG. Name **one hero** that must travel. Then pick the field.
+`scripts/prepare-new-source.ts` **measures** the hero (`scripts/lib/hero-detect.ts`) and writes plates. `export-layered` **refuses** unless `session-grade` passes (`scripts/lib/session-grade.ts`). There is no skip flag.
 
-Do this **after** type→golden scaffold and **before the first export you will show Isaac**. A first *internal* scaffold smoke preview is optional; **do not** send Isaac a frozen-hero r221.
+Closed rebuild (`source`+`scene` sha match `manifest.json`): only checks that every `layer.file` exists and matches the source pixel size. It does **not** re-judge Isaac-approved holds or a lock’s `rotate: 0.002`.
 
-If the chat image is not 1632×2912, lanczos to 1632×2912 first (`sources/incoming/rNNN-….png`).
+A zero-context agent that only scaffolds r221 and exports will get a hard FAIL on halo/pour/beam sources (r325 / r342 class). That is the product.
+
+Name **one hero** that must travel (the detector names it; you still write it in the case note).
+
+If the chat image is not 1632×2912, prepare lanczos-upscales (`cover` + center crop) to `sources/incoming/<slug>.png`.
+
+Detector kinds (`hero.json`): `halo` · `pour` · `beam` · `sheet` · `form`. `sheet` must start from `oil-slick-macro-bands` or `paint-smear-multipass`, not r221.
 
 | If the picture’s living part is… | Do | Do not |
 |----------------------------------|----|--------|
@@ -76,11 +82,12 @@ If you only `scaffold` + `cp lock` + full on r325/r342, the halo/pour plates are
 
 Refuse to present if any box is unchecked.
 
+- [ ] `session-grade.json` exists and `ok: true` (prepare-new-source / export enforced).
 - [ ] Source is 1632×2912 (lanczos if the chat file was ~1121).
-- [ ] Hero named in the case note (one sentence).
+- [ ] Hero named in the case note (one sentence). `hero.json` kind matches.
 - [ ] Subsec `6.00 / 6.15 / 6.30` on the **hero crop** — travel is visible, not boil-in-place.
-- [ ] Hold debug (if a hold layer exists): no vertical/horizontal wall at a constant `nx`/`ny`. Steepest alpha drop **moves** across rows.
-- [ ] `colorCycle.speed === 0` on figure-vivid. `rotate === 0`. No `phase-angular` as phase. (`scripts/lib/figure-vivid-legal.ts` if figure-vivid.)
+- [ ] Hold debug (if a hold layer exists): no **constant-nx vertical wall**. (Waterline / seated base may be horizontal.)
+- [ ] Figure-vivid / prism scenes: `colorCycle.speed === 0`. `rotate === 0`. No `phase-angular`. Cosmos colorCycle is legal when there is no `sourcePrism`.
 - [ ] Still vs source: identity not washed to cyan/magenta dayglo (R-001).
 - [ ] Case ledger row appended in `01-CREATE-OS.md` §9 (PASS and FAIL).
 - [ ] Preview path given. **No full. No audio.**
@@ -91,8 +98,18 @@ Refuse to present if any box is unchecked.
 
 Isaac may still reject the look. That is the job.
 
-This contract guarantees the agent will not: freeze the hero, draw a rectangle, add spin, skip custom plates on a lock, or treat QA PASS as success.
+This contract + `prepare-new-source` + `export-layered` session-grade **guarantees the agent cannot ship** a frozen-hero r221, a rectangle hold, dummy-sized plates, spin, or a lock rebuild that skipped plates.
+
+It does **not** guarantee Isaac will like the look.
+
+Regression:
+
+```bash
+npx vitest run scripts/lib/hero-detect.test.ts scripts/lib/hold-walls.test.ts \
+  scripts/lib/session-scene.test.ts scripts/lib/session-grade.test.ts \
+  scripts/lib/figure-vivid-legal.test.ts scripts/export-layered.test.ts
+```
 
 ---
 
-*Extracted 2026-08-18 from r325 (halo river / no box knee) and r342 (pour / no sky-box). Update this file when Isaac teaches a new hard rule — do not bury it only in §9 cases.*
+*Enforced 2026-08-18 from r325 (halo river / no box knee) and r342 (pour / no sky-box). Update this file when Isaac teaches a new hard rule — do not bury it only in §9 cases.*

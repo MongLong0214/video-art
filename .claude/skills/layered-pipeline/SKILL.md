@@ -20,4 +20,14 @@ Closed rebuild:
 npx tsx scripts/rebuild-closed-lock.ts --slug <manifest-slug>
 ```
 
-New source: follow `00` job A (classify → hero tree → preview). Scaffold-only r221 on rings/pour is a miss.
+New source (command of record — export will refuse without this):
+
+```bash
+npx tsx scripts/prepare-new-source.ts \
+  --source <png> --slug <slug> \
+  --recipe recipes/golden/<golden>.json \
+  --work-dir out/manual-runs/<slug>
+npx tsx scripts/export-layered.ts --title <slug> --work-dir out/manual-runs/<slug> --preview
+```
+
+Scaffold-only r221 on rings/pour/beam is a hard FAIL (`session-grade`). There is no skip flag. Closed rebuild: `rebuild-closed-lock.ts` then export (grade checks lock layer files + size only).

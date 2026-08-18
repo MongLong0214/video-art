@@ -82,8 +82,8 @@
 
 ```
 source
-  → scaffold (fields + golden scene)
-  → preview export
+  → prepare-new-source (lanczos + scaffold + hero detect + plates + session-grade)
+  → preview export (blocked unless session-grade OK)
   → stills + qa-motion
   → (if region-affinity) authority audit before preview
   → gate:psychedelic vs 2 refs
@@ -96,7 +96,8 @@ source
 
 | Step | Exact command |
 |------|----------------|
-| Scaffold | `npx tsx scripts/scaffold-layered-run.ts --source <png> --slug <slug> --recipe recipes/golden/<file>.json --work-dir out/manual-runs/<slug>` |
+| Prepare (new source) | `npx tsx scripts/prepare-new-source.ts --source <png> --slug <slug> --recipe recipes/golden/<file>.json --work-dir out/manual-runs/<slug>` |
+| Scaffold (internal only) | called by prepare / rebuild-closed-lock — do not export from scaffold-only on halo/pour |
 | Preview | `npx tsx scripts/export-layered.ts --title <slug> --work-dir out/manual-runs/<slug> --preview` |
 | QA | `npx tsx scripts/qa-motion.ts out/layered/*<slug>*/<slug>-preview.mp4 --source out/manual-runs/<slug>/source.png --json out/manual-runs/<slug>/qa-preview.json` |
 | Stills | §6.2 commands |
@@ -133,9 +134,9 @@ npx tsx scripts/analyze-source.ts <source.png> --out out/manual-runs/<slug>/anal
 | 2 | `busyness ≥ 0.08` **and** directional line texture (print/woodcut) | `busy-line` | `woodblock-phase-advect-r139.json` |
 | 3 | all-over marble/swirl/galaxy, figure not the color problem | `allover-vivid` | `cosmos-vivid-oklch-r24b.json` |
 | 4 | `greenRisk true` **or** pastel/low-sat majority with few vivid focals | `pastel-greenrisk` | start from r221 **or** cosmos but **hueKey/lumKey low + clamp≤0.18**; never full peacock |
-| 5 | figure/face/deity + finished vivid paint (`finishedVivid` useful; skin/face large) | `figure-vivid` | `eye-mirror-phase-advect-r221.json` then **hero tree** (`04` §2) — do not ship frozen rings/pour |
+| 5 | figure/face/deity + finished vivid paint (`finishedVivid` useful; skin/face large) | `figure-vivid` | `eye-mirror-phase-advect-r221.json` via **`prepare-new-source`** — hero detect writes halo/pour/beam plates; scaffold-only r221 is a FAIL |
 | 6 | dense full-frame pattern figure (hand/mushroom/forest) without soft skin wash risk | `dense-pattern-figure` | **first try** `woodblock-phase-advect-r139.json` (hand-face r240 Isaac OK); multi-layer r65 only if layers already exist; avoid body colorCycle as first path (r241 alt only) |
-| 7 | else | `unknown` | scaffold r221 **one** preview → if repaint FAIL, stop and escalate |
+| 7 | else | `unknown` | `prepare-new-source` r221 **one** preview → if repaint FAIL, stop and escalate |
 
 ### 3.2 Hard type rules
 
@@ -155,21 +156,21 @@ Replace `<SOURCE>`, `<SLUG>`, `<RECIPE>` only.
 
 ### Step A — Classify (no render yet)
 
-1. Open image. Note face/skin vs all-over pattern vs line print.
-2. Scaffold (also runs analysis + phase fields):
+1. Open image. Note face/skin vs all-over pattern vs line print. Pick the golden from §3.1.
+2. Prepare (lanczos + scaffold + hero detect + plates + session-grade):
 
 ```bash
-npx tsx scripts/scaffold-layered-run.ts \
+npx tsx scripts/prepare-new-source.ts \
   --source "<SOURCE>" \
   --slug "<SLUG>" \
   --recipe "recipes/golden/<RECIPE>.json" \
   --work-dir "out/manual-runs/<SLUG>"
 ```
 
-3. Read `out/manual-runs/<SLUG>/analysis.json` → assign Type ID (§3.1).
-4. If Type ID wrong for chosen recipe: re-scaffold with correct golden recipe (overwrite work-dir).
+3. Read `out/manual-runs/<SLUG>/hero.json` + `analysis.json` → assign Type ID (§3.1). Confirm `hero.kind` matches what you see.
+4. If Type ID wrong for chosen recipe: re-prepare with the correct golden (overwrite work-dir).
 5. Open §5 KILLED — confirm plan is not a killed axis.
-6. **Hero motion (`04-QUALITY-CONTRACT.md` §2).** Name the one thing that must travel. If it is rings/pour/beam, build a custom flow **before** the first Isaac preview. Scaffold-only r221 on a halo/pour source is a known miss (r325 v1–v5).
+6. If prepare / export says `session-grade FAIL`, **do not** show Isaac. Fix plates/hold. There is no skip flag.
 
 ### Step B — Preview
 
@@ -1107,6 +1108,8 @@ Tier: L=law E=established P=provisional.
 
 | Concern | Module |
 |---------|--------|
+| New-source prepare | `scripts/prepare-new-source.ts` |
+| Hero detect / hold walls / session-grade | `scripts/lib/hero-detect.ts` · `hold-walls.ts` · `session-grade.ts` |
 | Scaffold run | `scripts/scaffold-layered-run.ts` |
 | Phase fields | `scripts/make-phase-field.ts` |
 | Affinity capacity H80 | `scripts/lib/source-region-capacity.ts` |
@@ -1120,7 +1123,12 @@ Tier: L=law E=established P=provisional.
 
 ```bash
 # regression for ops agents
-npx vitest run scripts/lib/source-region-capacity.test.ts \
+npx vitest run scripts/lib/hero-detect.test.ts \
+  scripts/lib/hold-walls.test.ts \
+  scripts/lib/session-grade.test.ts \
+  scripts/lib/session-scene.test.ts \
+  scripts/lib/figure-vivid-legal.test.ts \
+  scripts/lib/source-region-capacity.test.ts \
   scripts/lib/psychedelic-learning.test.ts \
   scripts/lib/region-affinity-authority-audit.test.ts \
   scripts/lib/psychedelic-final-guard.test.ts \
@@ -1133,6 +1141,7 @@ npx vitest run scripts/lib/source-region-capacity.test.ts \
 
 Work is **not done** until:
 
+- [ ] `prepare-new-source` ran; `hero.json` + `session-grade.json` exist and ok  
 - [ ] Type ID assigned with analysis numbers  
 - [ ] Recipe is a golden file or single-axis delta from golden  
 - [ ] Preview exists under `out/layered/`  
@@ -1145,9 +1154,9 @@ Work is **not done** until:
 
 ---
 
-*Version: 2026-07-30.1 — r299 Ganesha failure ledger (§9.2c) + R-062/063/064; enterprise v2 fast-silk QA PASS hold; r274/r275 prior closed.  
-Ops: this file + `docs/video-os/02-REPRO-LOCKS.md` + `docs/video-os/03-INSTAGRAM-REELS.md` + `recipes/golden/*` + `recipes/locks/*` + `sources/approved/*` + scripts.  
-Evidence: `docs/archive/OUTPUT_GAP_ANALYSIS.pre-refactor-2026-07-15.md` (git snapshot `be59eb8`, ~1640 lines).*
+*Version: 2026-08-18.1 — session-grade / prepare-new-source is the new-source command of record (00/04). Prior: r299 ledger + R-062/063/064; r325/r342 closed.  
+Ops: `00-INDEX.md` + `04-QUALITY-CONTRACT.md` + this file + `02` + `03` + `recipes/golden/*` + `recipes/locks/*` + `sources/approved/*` + scripts.  
+Evidence: `docs/archive/OUTPUT_GAP_ANALYSIS.pre-refactor-2026-07-15.md` (git snapshot `be59eb8`).*
 
 #### CASE-2026-08-04-r319-v1 | eye-mushroom-cascade river (HOLD Isaac)
 - source: chat giant-eye + tear-cascade + mushroom cluster (1121→lanczos 1632) — figure-vivid finishedVivid≈0.24 sat≈0.35 greenRisk**false** busyness≈0.044

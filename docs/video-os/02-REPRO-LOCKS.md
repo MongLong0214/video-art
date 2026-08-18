@@ -26,10 +26,12 @@ git pull
   → npx tsx scripts/rebuild-closed-lock.ts --slug <slug>
        scaffold → manifest.plates (REQUIRED if present) → cp lock → verify
   → export --full-res --gate-report   (or rebuild-closed-lock --full)
+       session-grade: lock layer files exist + same pixel size as source
+       (does not re-judge Isaac holds / lock rotate)
   → (optional) ffmpeg mux local WAV
 ```
 
-**If `manifest.plates` is set and you skip it, the product is wrong** even when scene knobs match (r325 halo/deity, r342 fall/hold).
+**If `manifest.plates` is set and you skip it, the product is wrong** even when scene knobs match (r325 halo/deity, r342 fall/hold). `export-layered` session-grades closed locks as **files + pixel size only** (missing `deity.png` / `figure-hold.png` → FAIL). It does not re-scan the approved hold for walls.
 
 **Never** commit MP4, WAV, or `out/**`.  
 **Never** treat golden recipes alone as the closed final (locks have extra deltas).
