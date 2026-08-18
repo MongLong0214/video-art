@@ -14,12 +14,15 @@ type LooseScene = {
       colorCycle?: { speed?: number };
       phaseField?: string;
       phaseField2?: string;
+      polarTwist?: number;
+      rotateSpeed?: number;
       sourcePrism?: { amount?: number; phaseFlowPx?: number } | null;
     };
   }>;
   effects?: {
     multipassFeedback?: { rotate?: number };
     godRays?: { intensity?: number };
+    kaleidoscope?: { segments?: number };
   };
 };
 
@@ -44,6 +47,16 @@ export const assertFigureVividLegal = (scene: LooseScene): FigureVividLegalResul
   }
   if (rotate !== 0) {
     reasons.push(`multipassFeedback.rotate must be 0 (got ${rotate})`);
+  }
+  if ((anim.polarTwist ?? 0) !== 0) {
+    reasons.push(`polarTwist must be 0 (got ${anim.polarTwist})`);
+  }
+  if ((anim.rotateSpeed ?? 0) !== 0) {
+    reasons.push(`rotateSpeed must be 0 (got ${anim.rotateSpeed})`);
+  }
+  const kaleido = scene.effects?.kaleidoscope?.segments ?? 0;
+  if (kaleido !== 0) {
+    reasons.push(`kaleidoscope.segments must be 0 (got ${kaleido})`);
   }
   if (godRays > 0.5) {
     reasons.push(`godRays.intensity ${godRays} looks like main motion (R-038 kill); keep 0 or auxiliary only`);

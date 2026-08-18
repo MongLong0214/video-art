@@ -58,13 +58,18 @@ describe("export-layered encoding defaults (T4)", () => {
   it("--full-res preserves source dimensions for final H.264 output", () => {
     expect(exportSrc).toContain('"--full-res"');
     expect(exportSrc).toContain("fullResFlag");
-    expect(exportSrc).toContain("scale=iw:ih");
+    expect(exportSrc).toContain("scale=trunc(iw/2)*2:trunc(ih/2)*2");
     expect(exportSrc).toContain('"-level:v", "5.1"');
   });
 
   it("requires a matching psychedelic gate report before a non-preview render", () => {
     expect(exportSrc).toContain('"--gate-report"');
     expect(exportSrc).toContain("assertPsychedelicFullRenderGate");
+  });
+
+  it("refuses a work-dir export unless session-grade passes", () => {
+    expect(exportSrc).toContain("enforceSessionGrade");
+    expect(exportSrc).not.toContain("--skip-session-grade");
   });
 
   it("requires a region-affinity authority audit before a region-affinity preview", () => {

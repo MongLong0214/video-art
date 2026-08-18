@@ -54,6 +54,14 @@ describe("assertFigureVividLegal", () => {
     expect(r.reasons.some((x) => x.includes("rotate"))).toBe(true);
   });
 
+  it("rejects kaleidoscope segments (R-060)", () => {
+    const s = baseLegal() as ReturnType<typeof baseLegal> & { effects: { kaleidoscope?: { segments: number } } };
+    s.effects.kaleidoscope = { segments: 6 };
+    const r = assertFigureVividLegal(s);
+    expect(r.ok).toBe(false);
+    expect(r.reasons.some((x) => x.includes("kaleidoscope"))).toBe(true);
+  });
+
   it("rejects missing sourcePrism", () => {
     const s = baseLegal();
     s.layers[0].animation.sourcePrism = null as unknown as {

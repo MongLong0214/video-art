@@ -15,6 +15,7 @@ import { sceneSchema, type SceneConfig } from "../src/lib/scene-schema.js";
 
 import { waitForServer } from "./lib/browser-utils.js";
 import { assertPsychedelicFullRenderGate } from "./lib/psychedelic-final-guard.js";
+import { enforceSessionGrade } from "./lib/session-grade.js";
 import {
   assertRegionAffinityAuthorityAudit,
   sceneUsesRegionAffinity,
@@ -307,6 +308,10 @@ async function main() {
   const scenePath = path.join(sourceDir, "scene.json");
   if (!fs.existsSync(scenePath)) {
     throw new Error(`scene.json not found at ${scenePath}. Run pipeline-pro first.`);
+  }
+  const gradeDir = workDir || sourceDir;
+  if (fs.existsSync(path.join(gradeDir, "source.png"))) {
+    await enforceSessionGrade(path.resolve(gradeDir));
   }
   if (!preview) {
     const gateReportIdx = process.argv.indexOf("--gate-report");
