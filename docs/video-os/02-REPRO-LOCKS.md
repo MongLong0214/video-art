@@ -1,15 +1,11 @@
-> **Canonical path:** `docs/video-os/02-REPRO-LOCKS.md` under `docs/video-os/`. Entry: `docs/video-os/00-INDEX.md`.
+> **Canonical path:** `docs/video-os/02-REPRO-LOCKS.md`. **Start page:** `00-INDEX.md`.
 >
-> Old root/docs paths are stubs. If this file and a legacy playbook disagree, **this file wins** (create OS) or **02-REPRO-LOCKS** (rebuild).
+> **SSOT for:** closed rebuild, lock pack, what to commit. Prefer `scripts/rebuild-closed-lock.ts`.
+> **Not SSOT for:** new-source look (`01`/`04`) · start-page (`00`).
 
-# Repro + Locks Playbook (Agent operating manual)
+# Repro + Locks Playbook
 
-**READ THIS before any “다른 PC / pull 후 재현 / 최종 잠금 / sources·locks 수정” 작업.**
-
-This document is the **only complete** procedure for multi-machine reproduction of closed psychedelic loop finals.  
-If this file conflicts with chat memory or old notes: **follow this file + `docs/video-os/01-CREATE-OS.md`.**
-
-Target reader: an agent with **no prior context**. Do not improvise. Do not skip verification steps.
+**READ THIS** for “다른 PC / pull 후 재현 / 최종 잠금”. Zero-context: do not improvise. Do not skip `manifest.plates`.
 
 ---
 

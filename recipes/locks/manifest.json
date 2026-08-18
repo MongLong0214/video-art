@@ -1,7 +1,7 @@
 {
   "version": 2,
   "createdAt": "2026-07-15T07:49:14.286872+00:00",
-  "policy": "Minimal git repro: sources/approved PNG + recipes/locks scene+gate. No MP4, no layers. Full agent procedure: docs/REPRO_LOCKS_PLAYBOOK.md",
+  "policy": "Minimal git repro: sources/approved PNG + recipes/locks scene+gate. No MP4, no layers. Procedure: docs/video-os/02-REPRO-LOCKS.md + scripts/rebuild-closed-lock.ts",
   "approved": [
     {
       "slug": "r221-eye-mirror-phase-advect-peak",
@@ -14,7 +14,7 @@
       "scaffold": "npx tsx scripts/scaffold-layered-run.ts --source sources/approved/r221-eye-mirror.png --slug r221-eye-mirror-phase-advect-peak --recipe recipes/locks/r221-eye-mirror-phase-advect-peak.json --work-dir out/manual-runs/r221-eye-mirror-phase-advect-peak",
       "exportFull": "npx tsx scripts/export-layered.ts --title r221-eye-mirror-phase-advect-peak-final --work-dir out/manual-runs/r221-eye-mirror-phase-advect-peak --full-res --gate-report recipes/locks/r221-eye-mirror-phase-advect-peak.gate.json",
       "notes": "After scaffold, overwrite scene.json with lock (or use lock as --recipe). Gate has humanOverride.",
-      "playbookSection": "docs/REPRO_LOCKS_PLAYBOOK.md \u00a73 (rebuild) \u00b7 \u00a74 (lock) \u00b7 \u00a75 (maintenance)"
+      "playbookSection": "docs/video-os/02-REPRO-LOCKS.md \u00a73"
     },
     {
       "slug": "r242-handface-phase-river-gatepass",
@@ -27,7 +27,7 @@
       "scaffold": "npx tsx scripts/scaffold-layered-run.ts --source sources/approved/r242-hand-face.png --slug r242-handface-phase-river-gatepass --recipe recipes/locks/r242-handface-phase-river-gatepass.json --work-dir out/manual-runs/r242-handface-phase-river-gatepass",
       "exportFull": "npx tsx scripts/export-layered.ts --title r242-handface-phase-river-gatepass-final --work-dir out/manual-runs/r242-handface-phase-river-gatepass --full-res --gate-report recipes/locks/r242-handface-phase-river-gatepass.gate.json",
       "notes": "gate PASS; clamp maxDrift 0.26. Scaffold with lock as recipe regenerates layers from source. | ALWAYS cp lock\u2192scene.json after scaffold before full export.",
-      "playbookSection": "docs/REPRO_LOCKS_PLAYBOOK.md \u00a73 (rebuild) \u00b7 \u00a74 (lock) \u00b7 \u00a75 (maintenance)"
+      "playbookSection": "docs/video-os/02-REPRO-LOCKS.md \u00a73"
     },
     {
       "slug": "r274-dual-abstract-a-beam-focus",
@@ -42,7 +42,7 @@
       "scaffold": "npx tsx scripts/scaffold-layered-run.ts --source sources/approved/r274-dual-abstract-beam.png --slug r274-dual-abstract-a-beam-focus --recipe recipes/locks/r274-dual-abstract-a-beam-focus.json --work-dir out/manual-runs/r274-dual-abstract-a-beam-focus",
       "exportFull": "npx tsx scripts/export-layered.ts --title r274-dual-abstract-a-beam-focus-final --work-dir out/manual-runs/r274-dual-abstract-a-beam-focus --full-res --gate-report recipes/locks/r274-dual-abstract-a-beam-focus.gate.json",
       "notes": "Isaac liked 2026-07-16. Beam-focus: godRays from third-eye + bloom threshold + colorMotionMask lum/sat. Gate PASS. Parent r272 extreme; r273 near-miss temporal 0.8095.",
-      "playbookSection": "docs/REPRO_LOCKS_PLAYBOOK.md \u00a73 (rebuild) \u00b7 \u00a74 (lock) \u00b7 \u00a75 (maintenance)"
+      "playbookSection": "docs/video-os/02-REPRO-LOCKS.md \u00a73"
     },
     {
       "slug": "r325-ganesha-rainbow-rings-master",
@@ -58,7 +58,7 @@
       "plates": "node scripts/locks/r325-build-halo-plates.mjs && node scripts/locks/r325-build-counterflow.mjs && cp out/manual-runs/r325-ganesha-rainbow-rings-master/layers/deity.png out/manual-runs/r325-ganesha-rainbow-rings-master/layers/deity-v8.png && node scripts/locks/r325-build-knee-hold.mjs",
       "exportFull": "npx tsx scripts/export-layered.ts --title r325-ganesha-rainbow-rings-master-v8b-knee-final --work-dir out/manual-runs/r325-ganesha-rainbow-rings-master --full-res --gate-report recipes/locks/r325-ganesha-rainbow-rings-master.gate.json",
       "notes": "Isaac 2026-08-13 \uc774\uac8c \uc824 \ub098\uc544 + \ud480\ubc84\uc804. v8 counterhalo + right-knee hold patch. Gate REJECT + humanOverride. After scaffold: run plates then cp lock\u2192scene.json. Custom plates: phase-halo, flow-halo-counter, deity.",
-      "playbookSection": "docs/video-os/02-REPRO-LOCKS.md \u00a73 (rebuild) \u00b7 \u00a74 (lock)"
+      "playbookSection": "docs/video-os/02-REPRO-LOCKS.md \u00a73"
     },
     {
       "slug": "r342-cosmic-buddha-eye-fall",
@@ -74,9 +74,9 @@
       "plates": "node scripts/locks/r342-build-fall-plates.mjs && node scripts/locks/r342-build-nobox-hold.mjs",
       "exportFull": "npx tsx scripts/export-layered.ts --title r342-cosmic-buddha-eye-fall-v1c-nobox-final --work-dir out/manual-runs/r342-cosmic-buddha-eye-fall --full-res --gate-report recipes/locks/r342-cosmic-buddha-eye-fall.gate.json",
       "notes": "Isaac 2026-08-18 \ub9d8\uc5d0\ub4e0\ub2e4 + \ud480\ub80c\ub354. v1 river + head-only hold (no rectangle). Gate REJECT + humanOverride. After scaffold: run plates then cp lock\u2192scene.json. Custom plates: flow-fall, phase-fall, figure-hold.",
-      "playbookSection": "docs/video-os/02-REPRO-LOCKS.md \u00a73 (rebuild) \u00b7 \u00a74 (lock)"
+      "playbookSection": "docs/video-os/02-REPRO-LOCKS.md \u00a73"
     }
   ],
-  "playbook": "docs/REPRO_LOCKS_PLAYBOOK.md",
+  "playbook": "docs/video-os/02-REPRO-LOCKS.md",
   "updatedAt": "2026-08-18T02:55:08.868504+00:00"
 }

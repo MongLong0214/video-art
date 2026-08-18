@@ -1,28 +1,12 @@
-> **Canonical path:** `docs/video-os/01-CREATE-OS.md` under `docs/video-os/`. Entry: `docs/video-os/00-INDEX.md`.
+> **Canonical path:** `docs/video-os/01-CREATE-OS.md`. **Start page:** `00-INDEX.md`.
 >
-> Old root/docs paths are stubs. If this file and a legacy playbook disagree, **this file wins** (create OS) or **02-REPRO-LOCKS** (rebuild).
+> **SSOT for:** classify, create runbook, gate, killed axes, case ledger.
+> **Not SSOT for:** start-page / job routing (`00`) · pre-Isaac execution bar (`04`) · rebuild/lock (`02`).
+> If 01 and 04 disagree on what to do *before showing Isaac* → **04**.
+> If 01 and 02 disagree on rebuild → **02**.
+> If 01 and archive/legacy disagree on look → **01**.
 
-# Masterpiece Pipeline — Agent Operating System
-
-**READ THIS FIRST. This file is the only operating truth for image→20s psychedelic loop work.**
-
-| Layer | Path | When to open |
-|-------|------|----------------|
-| **Index** | `docs/video-os/00-INDEX.md` | Always first |
-| **OS (this file)** | `docs/video-os/01-CREATE-OS.md` | Always — create / judge / gate / cases |
-| **Repro + locks** | `docs/video-os/02-REPRO-LOCKS.md` | Closed product store/rebuild / other PC / what to commit |
-| **IG reels log** | `docs/video-os/03-INSTAGRAM-REELS.md` | Reel cuts / dual render / audio mux history |
-| **Evidence archive** | `docs/video-os/archive/` + `docs/archive/` | Recurrence only — never overrides this file |
-| **Golden recipes** | `recipes/golden/*` | Every **new** source start (not closed re-export) |
-| **Locks + sources** | `recipes/locks/*` + `sources/approved/*` | Closed finals only |
-
-| Supersedes (if conflict) | Action |
-|--------------------------|--------|
-| `IMAGE_TO_LOOP_WORKFLOW.md` peacock-default | **Ignore** for figure-vivid finals |
-| `PER_IMAGE_TUNING_GUIDE.md` tone presets | Do not invent prism-sunset for finished vivid |
-| Archive peacock / legacy preserve recipes | Archive is evidence, **not** current defaults |
-
-If two docs disagree: **this file wins.** Archive is not deleted knowledge — it is **read-on-demand**.
+# Create OS — classify, runbook, gate, cases
 
 ---
 
@@ -36,7 +20,7 @@ If two docs disagree: **this file wins.** Archive is not deleted knowledge — i
 6. **No audio** until Isaac explicitly requests a track (R-043).
 7. **Record every render** in §9 case ledger (PASS and FAIL).
 8. **2 misses → stop (R-013).** No third blind render. 6 previews/source/session max (R-021).
-9. **No rotation / spin / angular phase (R-060).** Never `phase-angular.png` as phaseField/phaseField2; never multipass `rotate≠0`; never kaleidoscope / polarTwist / rotateSpeed. Phase fields stay on **golden defaults** (r221: `phase-edge` + `phase-mix`). Spiral/Ganesha/mandala sources: color+flow only — do not add geometric spin to “match” the picture (Isaac: 극도로 구림).
+9. **No rotation / spin / angular phase (R-060).** Never `phase-angular.png` as phaseField/phaseField2; never multipass `rotate≠0`; never kaleidoscope / polarTwist / rotateSpeed. Do **not** add geometric spin to “match” a spiral/Ganesha/mandala (Isaac: 극도로 구림). **Custom `phase-halo` / `phase-fall` (distance or vertical) is required when 04 §2 says so** — that is not spin. Do not stay on golden `phase-edge`+`mix` if it freezes the hero.
 
 **Roles:** implementation may use any coding agent · orchestration agent records cases · **Isaac = final aesthetic judge**.  
 **Zero-context execution bar (mandatory):** `docs/video-os/04-QUALITY-CONTRACT.md` — hero motion, no rectangle hold, closed-lock plates.
@@ -56,7 +40,7 @@ If two docs disagree: **this file wins.** Archive is not deleted knowledge — i
 | **Approved sources (git)** | `sources/approved/*.png` |
 | **Approved locks (git)** | `recipes/locks/<slug>.json` + `<slug>.gate.json` — **`rebuild-closed-lock.ts` (plates + cp lock)** |
 | Repro index | `recipes/locks/manifest.json` |
-| **Repro playbook (agents)** | `docs/REPRO_LOCKS_PLAYBOOK.md` — usage · management · maintenance (mandatory for locks) |
+| **Repro playbook (agents)** | `docs/video-os/02-REPRO-LOCKS.md` |
 | Archive | `out/layered/<date>_<slug>_<hash>/` (**not** in git) |
 | Golden recipes | `recipes/golden/*.json` (new-source start templates) |
 | Ops KB | this file |

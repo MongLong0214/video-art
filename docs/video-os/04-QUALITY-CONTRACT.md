@@ -1,7 +1,8 @@
-> **Canonical path:** `docs/video-os/04-QUALITY-CONTRACT.md`. Entry: `docs/video-os/00-INDEX.md`.
+> **Canonical path:** `docs/video-os/04-QUALITY-CONTRACT.md`. **Start page:** `00-INDEX.md`.
 >
-> Zero-context execution contract. Aesthetics detail → `01-CREATE-OS.md`. Closed rebuild → `02-REPRO-LOCKS.md`.
-> Isaac is the final judge. This file is what the agent must **do** so the work is even worth judging.
+> **SSOT for:** what the agent must do so Isaac can judge (hero travel, no box, no spin, lock plates).
+> **Not SSOT for:** classify/gate/cases (`01`) · rebuild/lock (`02`) · reel cuts (`03`).
+> If 04 and 01 disagree on *pre-Isaac execution* → **04**. If they disagree on *look law* → **01**.
 
 # Quality contract — zero-context agent = session-grade execution
 
@@ -27,7 +28,7 @@ Closed rebuild is not “scaffold + full”. Custom plates are the look.
 1. **`sourcePrism` is chroma, not travel.** If rings/pour/beam look static, advection along a **custom flow field** is required. Prism-only = FAIL (r325 v1–v5).
 2. **Do not hold the hero.** Optical void/body/figure that covers the painted rings/pour/beam freezes it. Hold the form *around* the hero (r325, r342).
 3. **No axis-aligned hold.** Never `nx < 0.82` / `ny < 0.88` boxes. Isaac sees the rectangle immediately (r325 knee, r342 sky box). Hold = silhouette / ellipses / color, then feather.
-4. **No spin (R-060).** Never `phase-angular` as phase; never `rotate ≠ 0`; never kaleidoscope / polarTwist. Concentric art is **not** a reason to add angular phase.
+4. **No spin (R-060).** Never `phase-angular` as phase; never `rotate ≠ 0`; never kaleidoscope / polarTwist. Concentric art is **not** a reason to add angular phase. **Allowed:** custom `phase-halo` / `phase-fall` (radial distance or vertical). That is travel, not spin. “Keep golden phase only after scaffold” is **false** when §2 requires a custom field.
 5. **2-layer source+hold is legal** on figure-vivid when a single layer would freeze the hero or melt the face. It is not a foreign overlay if both layers are source pixels (r323 / r325 / r342).
 6. **QA PASS ≠ success (R-020).** Olive/seam guards are not “Isaac will like this.”
 7. **2 misses → stop (R-013).** Do not invent a third family. Show 1–2 previews + ask.
@@ -37,7 +38,11 @@ Closed rebuild is not “scaffold + full”. Custom plates are the look.
 
 ## 2. Hero-motion tree (new source — mandatory before first preview)
 
-Look at the PNG. Name **one hero** that must travel. Then pick the field. Do this **after** type→golden scaffold, **before** showing Isaac.
+Look at the PNG. Name **one hero** that must travel. Then pick the field.
+
+Do this **after** type→golden scaffold and **before the first export you will show Isaac**. A first *internal* scaffold smoke preview is optional; **do not** send Isaac a frozen-hero r221.
+
+If the chat image is not 1632×2912, lanczos to 1632×2912 first (`sources/incoming/rNNN-….png`).
 
 | If the picture’s living part is… | Do | Do not |
 |----------------------------------|----|--------|
@@ -71,10 +76,11 @@ If you only `scaffold` + `cp lock` + full on r325/r342, the halo/pour plates are
 
 Refuse to present if any box is unchecked.
 
+- [ ] Source is 1632×2912 (lanczos if the chat file was ~1121).
 - [ ] Hero named in the case note (one sentence).
 - [ ] Subsec `6.00 / 6.15 / 6.30` on the **hero crop** — travel is visible, not boil-in-place.
 - [ ] Hold debug (if a hold layer exists): no vertical/horizontal wall at a constant `nx`/`ny`. Steepest alpha drop **moves** across rows.
-- [ ] `colorCycle.speed === 0` on figure-vivid. `rotate === 0`. No `phase-angular` as phase.
+- [ ] `colorCycle.speed === 0` on figure-vivid. `rotate === 0`. No `phase-angular` as phase. (`scripts/lib/figure-vivid-legal.ts` if figure-vivid.)
 - [ ] Still vs source: identity not washed to cyan/magenta dayglo (R-001).
 - [ ] Case ledger row appended in `01-CREATE-OS.md` §9 (PASS and FAIL).
 - [ ] Preview path given. **No full. No audio.**

@@ -5,8 +5,8 @@
 # Instagram Reels 작업 로그 — 2026-07-16
 
 > **목적:** 이 세션(및 직전 연속 작업)에서 한 인스타 릴스 편집·파이프라인 실험을 **빠짐없이** 기록한다.  
-> **정본 충돌 규칙:** 이미지→루프 *생성* 미학 = `OUTPUT_GAP_ANALYSIS.md`. 닫힌 프로덕트 재현 = `docs/REPRO_LOCKS_PLAYBOOK.md`.  
-> **이 문서:** 인스타 *배포 컷 / 릴스 편집 실험* 전용 세션 로그 (MP4는 git에 넣지 않음).
+> **정본:** start `docs/video-os/00-INDEX.md`. Loop look = `01-CREATE-OS.md`. Rebuild = `02-REPRO-LOCKS.md`.  
+> **이 문서:** 인스타 *배포 컷 / 릴스 편집* 로그만 (MP4는 git에 넣지 않음).
 
 ---
 
@@ -320,9 +320,7 @@ out/instagram/r275-mushroom-crown-reel-v10-matchcut.mp4
 
 
 > **목적:** 오늘(2026-07-22) 세션의 소스 런(r282–r284) · dual-energy 릴스 · 오디오 합 · 컷 점프 디버그 · **최종 픽**을 빠짐없이 기록.  
-> **정본 충돌:** 이미지→루프 *생성* 미학 = `OUTPUT_GAP_ANALYSIS.md`. 닫힌 프로덕트 재현 = `docs/REPRO_LOCKS_PLAYBOOK.md`.  
-> **이 문서:** 인스타 배포 컷 / dual 렌더 편집 실험 + 당일 생성 로그 (MP4·`out/**`는 git 금지).  
-> **선행 로그:** `docs/INSTAGRAM_REELS_SESSION_2026-07-16.md` (r274/r275).
+> **정본:** `docs/video-os/00-INDEX.md`. Look = `01`. Rebuild = `02`. This part = 2026-07-22 reel log only.
 
 ---
 
@@ -571,7 +569,7 @@ out: 1632×2912, 30fps, H.264 yuv420p CRF17, AAC 320k, 20s
 ## 10. 미완 / 미커밋
 
 - [ ] 소스 `sources/approved` + lock pack (Isaac 본편 단독 클로즈 시)  
-- [ ] `OUTPUT_GAP_ANALYSIS.md` CASE 1행 링크 (선택)  
+- [ ] `01-CREATE-OS.md` CASE 1행 링크 (선택)  
 - [ ] gate temporal-boiling 완화용 연결 모션 프리미티브 실험 (점묘 소스 전용)  
 - [ ] 본 문서 git 커밋 (Isaac 요청 시 — docs only)
 
