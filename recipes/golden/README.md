@@ -2,11 +2,25 @@
 
 Versioned starting `scene.json` templates. **New agents start only from these + create OS.**
 
-| File | Type | Notes |
-|------|------|--------|
-| `eye-mirror-phase-advect-r221.json` | figure-vivid | colorCycle 0 + sourcePrism |
-| `woodblock-phase-advect-r139.json` | busy-line **+ dense-pattern-figure** | Scale `phaseFlowPx` with width |
-| `cosmos-vivid-oklch-r24b.json` | allover-vivid | Integer colorCycle OKLCH |
+| File | Type / texture | Notes |
+|------|----------------|--------|
+| `eye-mirror-phase-advect-r221.json` | figure-vivid · **fine river** | phase-edge + mix · default new figure |
+| `woodblock-phase-advect-r139.json` | busy-line · **dense edge** | phase-edge + luma-hybrid · scale `phaseFlowPx` |
+| `cosmos-vivid-oklch-r24b.json` | allover-vivid · **colorCycle wash** | Integer colorCycle OKLCH |
+| `oil-slick-macro-bands.json` | figure/cosmos · **coarse oil bands** | vertical + luma-hybrid · low surface · multipass smear · when r221 feels samey |
+| `paint-smear-multipass.json` | figure · **paint smear** | edge + detail · high multipass · directional prism |
+
+### Texture families (pick deliberately)
+
+| Family | Look | Prefer when |
+|--------|------|-------------|
+| fine river (r221) | fine psych grain + phase river | eyes, faces, classic figure-vivid |
+| dense edge (r139) | edge-locked woodblock advection | line art, busy pattern figures |
+| oil-slick macro | large directional oil/paint sheets | water, whale, cosmos plates, “not another r221” |
+| paint smear | heavy feedback trails | abstract motion, wet-paint look |
+| colorCycle cosmos | global hue wash | allover-vivid fields |
+
+**Do not** elevate every run with the same surface~32 / edge+mix / flowField-glow stack — Isaac rejects texture monotony.
 
 ## Agent docs
 
