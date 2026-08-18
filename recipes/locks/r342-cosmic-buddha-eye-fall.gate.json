@@ -1,0 +1,114 @@
+{
+  "version": 1,
+  "createdAt": "2026-08-18T02:40:12.964Z",
+  "status": "REJECT",
+  "candidate": {
+    "path": "/Users/isaac/WebstormProjects/video-art/out/layered/2026-08-18_r342-cosmic-buddha-eye-fall-v1c-nobox-6399219c/r342-cosmic-buddha-eye-fall-v1c-nobox-preview.mp4",
+    "sha256": "94622fb34566e0eed85db06b93797e9136fd62cf667d07239493c6a7a45a3a5c"
+  },
+  "source": {
+    "path": "/Users/isaac/WebstormProjects/video-art/out/manual-runs/r342-cosmic-buddha-eye-fall/source.png",
+    "sha256": "fc83247725f4a08be0a2e29a60fe4db00ef5a1841615a68922c599284a03b1b9"
+  },
+  "scene": {
+    "path": "/Users/isaac/WebstormProjects/video-art/out/manual-runs/r342-cosmic-buddha-eye-fall/scene.json",
+    "sha256": "502aa11d1e71ba9c5e1e9293b79021d2f1dbca54aec19c1a9cebdb9cc8bf3885"
+  },
+  "axis": "source-prism-phase-advection",
+  "primitive": "eye-fall-nobox",
+  "candidateMetrics": {
+    "frameCount": 300,
+    "adjacentLumaMotion": 0.012436899179550095,
+    "adjacentChromaMotion": 0.04953878973240449,
+    "chromaToLumaMotion": 3.9832106875852764,
+    "hueStep95": 33,
+    "hueDegreesPerSecond95": 495,
+    "activeTextureCoverage": 0.9666788499025342,
+    "connectedMotionCoverage": 0.41005184514919596,
+    "globalChromaMotionShare": 0.24157764477744081,
+    "edgeMotionRatio": 1.0001161367167224,
+    "edgePersistence": 0.8101128655772484,
+    "temporalCoherence": 0.7848998189697267,
+    "fineMotionRatio": 0.19841115546252783,
+    "loopClosureRatio": 1.0122034779691136
+  },
+  "sourceFidelity": {
+    "edgeCorrelationP05": 0.8003323281392072,
+    "frameRgbDriftP95": 0.14978195260092406,
+    "localRgbDriftP95": 0.2481250981546011
+  },
+  "references": [
+    {
+      "path": "/Users/isaac/Downloads/double-iris-f38f09ba-prism-amber-with-audio.MP4",
+      "metrics": {
+        "frameCount": 600,
+        "adjacentLumaMotion": 0.012438118218913424,
+        "adjacentChromaMotion": 0.03802502095118416,
+        "chromaToLumaMotion": 3.0571361585358825,
+        "hueStep95": 39,
+        "hueDegreesPerSecond95": 1170,
+        "activeTextureCoverage": 0.4937256335282651,
+        "connectedMotionCoverage": 0.2713460072465396,
+        "globalChromaMotionShare": 0.15692917488941774,
+        "edgeMotionRatio": 5.171833994375517,
+        "edgePersistence": 0.7216339821148416,
+        "temporalCoherence": 0.9707721583197743,
+        "fineMotionRatio": 0.2466166532191631,
+        "loopClosureRatio": 1.1679192363733568
+      }
+    },
+    {
+      "path": "/Users/isaac/Downloads/lotus-clean-1x-separated-audio.MP4",
+      "metrics": {
+        "frameCount": 600,
+        "adjacentLumaMotion": 0.018594450589344804,
+        "adjacentChromaMotion": 0.05586344129862623,
+        "chromaToLumaMotion": 3.00430717381011,
+        "hueStep95": 20,
+        "hueDegreesPerSecond95": 600,
+        "activeTextureCoverage": 0.9694200779727096,
+        "connectedMotionCoverage": 0.37313679246770104,
+        "globalChromaMotionShare": 0.5628223667595174,
+        "edgeMotionRatio": 0.7854080155894346,
+        "edgePersistence": 0.6758484081495241,
+        "temporalCoherence": 0.9532026381945113,
+        "fineMotionRatio": 0.17118829445629094,
+        "loopClosureRatio": 1.0022572349200771
+      }
+    }
+  ],
+  "gate": {
+    "status": "REJECT",
+    "failures": [
+      {
+        "code": "temporal-boiling",
+        "observed": 0.7848998189697267,
+        "threshold": 0.8102222424653346,
+        "requirement": "motion must travel coherently rather than flicker as pointwise boil"
+      },
+      {
+        "code": "source-edge-damage",
+        "observed": 0.8003323281392072,
+        "threshold": 0.84,
+        "requirement": "source structure and anchor edges must remain stable"
+      }
+    ],
+    "envelope": {
+      "materialCoverageFloor": 0.12343140838206627,
+      "connectedCoverageFloor": 0.0678365018116349,
+      "temporalCoherenceFloor": 0.8102222424653346,
+      "fineMotionCeiling": 0.34,
+      "globalChromaMotionShareCeiling": 0.65
+    },
+    "nextPolicy": {
+      "fullRenderAllowed": false,
+      "blockedPrimitive": false,
+      "instruction": "preserve the source anchor before increasing motion; do not add an overlay or a fixed source base"
+    }
+  },
+  "humanOverride": {
+    "approvedBy": "isaac",
+    "reason": "\ub9d8\uc5d0\ub4e0\ub2e4 + \ud480\ub80c\ub354",
+    "at": "2026-08-18T12:00:00+09:00"
+  }
+}

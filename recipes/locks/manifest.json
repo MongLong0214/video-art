@@ -43,8 +43,40 @@
       "exportFull": "npx tsx scripts/export-layered.ts --title r274-dual-abstract-a-beam-focus-final --work-dir out/manual-runs/r274-dual-abstract-a-beam-focus --full-res --gate-report recipes/locks/r274-dual-abstract-a-beam-focus.gate.json",
       "notes": "Isaac liked 2026-07-16. Beam-focus: godRays from third-eye + bloom threshold + colorMotionMask lum/sat. Gate PASS. Parent r272 extreme; r273 near-miss temporal 0.8095.",
       "playbookSection": "docs/REPRO_LOCKS_PLAYBOOK.md \u00a73 (rebuild) \u00b7 \u00a74 (lock) \u00b7 \u00a75 (maintenance)"
+    },
+    {
+      "slug": "r325-ganesha-rainbow-rings-master",
+      "source": "sources/approved/r325-ganesha-rainbow-rings.png",
+      "sourceSha256": "5fed23a4a887393c708c22d01f6fad37fa74f53aeb03e510814cac7c80b8626c",
+      "lock": "recipes/locks/r325-ganesha-rainbow-rings-master.json",
+      "sceneSha256": "95562464780fa56ff54a1435a1116d1c8729ee29b9f69db263584ecb59fa8c95",
+      "gate": "recipes/locks/r325-ganesha-rainbow-rings-master.gate.json",
+      "audio": "Technical Hitch \u2014 Mama India (Outside The Universe Remix) @6:27 (387s) \u2014 WAV not in git",
+      "finalLocal": "out/layered/2026-08-13_r325-ganesha-rainbow-rings-master-v8b-knee-final-f3bfc5a4/r325-ganesha-rainbow-rings-master-v8b-knee-final.mp4",
+      "finalWithAudioLocal": "out/layered/2026-08-13_r325-ganesha-rainbow-rings-master-v8b-knee-final-f3bfc5a4/r325-ganesha-rainbow-rings-master-v8b-knee-final-with-mama-india.mp4",
+      "scaffold": "npx tsx scripts/scaffold-layered-run.ts --source sources/approved/r325-ganesha-rainbow-rings.png --slug r325-ganesha-rainbow-rings-master --recipe recipes/locks/r325-ganesha-rainbow-rings-master.json --work-dir out/manual-runs/r325-ganesha-rainbow-rings-master",
+      "plates": "node scripts/locks/r325-build-halo-plates.mjs && node scripts/locks/r325-build-counterflow.mjs && cp out/manual-runs/r325-ganesha-rainbow-rings-master/layers/deity.png out/manual-runs/r325-ganesha-rainbow-rings-master/layers/deity-v8.png && node scripts/locks/r325-build-knee-hold.mjs",
+      "exportFull": "npx tsx scripts/export-layered.ts --title r325-ganesha-rainbow-rings-master-v8b-knee-final --work-dir out/manual-runs/r325-ganesha-rainbow-rings-master --full-res --gate-report recipes/locks/r325-ganesha-rainbow-rings-master.gate.json",
+      "notes": "Isaac 2026-08-13 \uc774\uac8c \uc824 \ub098\uc544 + \ud480\ubc84\uc804. v8 counterhalo + right-knee hold patch. Gate REJECT + humanOverride. After scaffold: run plates then cp lock\u2192scene.json. Custom plates: phase-halo, flow-halo-counter, deity.",
+      "playbookSection": "docs/video-os/02-REPRO-LOCKS.md \u00a73 (rebuild) \u00b7 \u00a74 (lock)"
+    },
+    {
+      "slug": "r342-cosmic-buddha-eye-fall",
+      "source": "sources/approved/r342-cosmic-buddha-eye-fall.png",
+      "sourceSha256": "fc83247725f4a08be0a2e29a60fe4db00ef5a1841615a68922c599284a03b1b9",
+      "lock": "recipes/locks/r342-cosmic-buddha-eye-fall.json",
+      "sceneSha256": "502aa11d1e71ba9c5e1e9293b79021d2f1dbca54aec19c1a9cebdb9cc8bf3885",
+      "gate": "recipes/locks/r342-cosmic-buddha-eye-fall.gate.json",
+      "audio": "Shaman Trance @0:00 \u2014 WAV not in git",
+      "finalLocal": "out/layered/2026-08-18_r342-cosmic-buddha-eye-fall-v1c-nobox-final-22fa7aba/r342-cosmic-buddha-eye-fall-v1c-nobox-final.mp4",
+      "finalWithAudioLocal": "out/layered/2026-08-18_r342-cosmic-buddha-eye-fall-v1c-nobox-final-22fa7aba/r342-cosmic-buddha-eye-fall-v1c-nobox-final-with-shaman-trance.mp4",
+      "scaffold": "npx tsx scripts/scaffold-layered-run.ts --source sources/approved/r342-cosmic-buddha-eye-fall.png --slug r342-cosmic-buddha-eye-fall --recipe recipes/locks/r342-cosmic-buddha-eye-fall.json --work-dir out/manual-runs/r342-cosmic-buddha-eye-fall",
+      "plates": "node scripts/locks/r342-build-fall-plates.mjs && node scripts/locks/r342-build-nobox-hold.mjs",
+      "exportFull": "npx tsx scripts/export-layered.ts --title r342-cosmic-buddha-eye-fall-v1c-nobox-final --work-dir out/manual-runs/r342-cosmic-buddha-eye-fall --full-res --gate-report recipes/locks/r342-cosmic-buddha-eye-fall.gate.json",
+      "notes": "Isaac 2026-08-18 \ub9d8\uc5d0\ub4e0\ub2e4 + \ud480\ub80c\ub354. v1 river + head-only hold (no rectangle). Gate REJECT + humanOverride. After scaffold: run plates then cp lock\u2192scene.json. Custom plates: flow-fall, phase-fall, figure-hold.",
+      "playbookSection": "docs/video-os/02-REPRO-LOCKS.md \u00a73 (rebuild) \u00b7 \u00a74 (lock)"
     }
   ],
   "playbook": "docs/REPRO_LOCKS_PLAYBOOK.md",
-  "updatedAt": "2026-07-16T07:46:04.691956+00:00"
+  "updatedAt": "2026-08-18T02:55:08.868504+00:00"
 }
