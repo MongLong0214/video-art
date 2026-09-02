@@ -59,6 +59,10 @@ describe("patchSessionScene", () => {
     expect(patched.layers?.[0]?.animation?.phaseField).toBe("layers/phase-halo.png");
     expect(patched.layers?.[0]?.animation?.flowField).toBe("layers/flow-halo-counter.png");
     expect(patched.layers?.[1]?.file).toBe("layers/figure-hold.png");
+    // r346 v11: the hold is a textured second language, never a frozen sticker (surface6/floor0.08 default killed).
+    const hold = patched.layers?.[1]?.animation as { sourcePrism?: { surfaceCycles?: number }; colorMotionMask?: { floor?: number } };
+    expect(Number(hold.sourcePrism?.surfaceCycles)).toBeGreaterThanOrEqual(20);
+    expect(hold.colorMotionMask?.floor).toBe(1);
     expect(patched.effects?.multipassFeedback?.rotate).toBe(0);
     const adv = patched.layers?.[0]?.animation?.sourceFlowAdvection as { fieldAlign?: number };
     expect(Number(adv.fieldAlign)).toBeGreaterThanOrEqual(0.5);

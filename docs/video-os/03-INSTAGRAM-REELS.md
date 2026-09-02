@@ -283,7 +283,7 @@ out/instagram/r275-mushroom-crown-reel-v10-matchcut.mp4
 ## 8. 미완 / 미커밋
 
 - [ ] r275 source → `sources/approved` + lock pack (Isaac 본편 최종 확정 시)  
-- [ ] r275 CASE를 OUTPUT_GAP_ANALYSIS에 요약 링크 (본 문서 참조)  
+- [ ] r275 CASE를 `01-CREATE-OS.md` §9에 요약 링크 (본 문서 참조)  
 - [ ] v10 IG 업로드용 1080×1920 리인코드 (선택)  
 - [ ] 인물 좌우 점프 체감 — 필요 시 feature 기반 warp (전역 SAD는 0)
 

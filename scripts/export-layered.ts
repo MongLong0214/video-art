@@ -22,6 +22,11 @@ import {
 } from "./lib/region-affinity-authority-audit.js";
 
 const FEEDBACK_WARMUP_SECONDS = 2;
+// --sketch: language-grid tile. Quarter-res, 12fps, first 6s. Isaac picks a language from 4–6 tiles
+// before anyone spends a 1632 preview (00 §4). Not loop-closed on purpose.
+const SKETCH_SECONDS = 6;
+const SKETCH_FPS = 12;
+const SKETCH_SCALE = 0.25;
 
 type CaptureFrameOptions = {
   readonly outputDir: string;
@@ -37,8 +42,8 @@ function evenCeil(value: number): number {
   return Math.max(2, Math.ceil(value / 2) * 2);
 }
 
-function computePreviewResolution(resolution: readonly [number, number]): [number, number] {
-  return [evenCeil(resolution[0] * 0.5), evenCeil(resolution[1] * 0.5)];
+function computePreviewResolution(resolution: readonly [number, number], scale = 0.5): [number, number] {
+  return [evenCeil(resolution[0] * scale), evenCeil(resolution[1] * scale)];
 }
 
 function parseWarmupFrames(argv: readonly string[]): number | undefined {
@@ -272,7 +277,8 @@ function encodeVideo(inputFramesDir: string, outputPath: string, options: Encode
 
 async function main() {
   const keepFrames = process.argv.includes("--keep-frames");
-  const preview = process.argv.includes("--preview");
+  const sketch = process.argv.includes("--sketch");
+  const preview = process.argv.includes("--preview") || sketch;
   const proresFlag = process.argv.includes("--prores") && !preview;
   const fullResFlag = process.argv.includes("--full-res") && !preview && !proresFlag;
   const title = parseTitle(process.argv.slice(2));
@@ -336,24 +342,28 @@ async function main() {
     assertRegionAffinityAuthorityAudit(path.resolve(authorityPath), scenePath);
   }
   const config = sceneSchema.parse(sceneJson);
-  const DURATION = config.duration;
+  const DURATION = sketch ? Math.min(config.duration, SKETCH_SECONDS) : config.duration;
 
-  const FPS = preview ? 15 : cliFps ?? config.fps;
+  const FPS = sketch ? SKETCH_FPS : preview ? 15 : cliFps ?? config.fps;
   const totalFrames = FPS * DURATION;
   const cliWarmupFrames = parseWarmupFrames(process.argv);
   const defaultWarmupFrames = sceneNeedsFeedbackWarmup(config) ? Math.round(FPS * FEEDBACK_WARMUP_SECONDS) : 0;
   const warmupFrames = Math.min(totalFrames, cliWarmupFrames ?? defaultWarmupFrames);
 
   const ext = proresFlag ? ".mov" : ".mp4";
-  const outputPath = path.join(ctx.archiveDir, preview ? `${title}-preview${ext}` : `${title}${ext}`);
+  const outputPath = path.join(ctx.archiveDir, preview ? `${title}-${sketch ? "sketch" : "preview"}${ext}` : `${title}${ext}`);
 
-  const captureResolution = preview ? computePreviewResolution(config.resolution) : config.resolution;
-  const resScale = preview ? 0.5 : 1;
+  const captureResolution = sketch
+    ? computePreviewResolution(config.resolution, SKETCH_SCALE)
+    : preview
+      ? computePreviewResolution(config.resolution)
+      : config.resolution;
+  const resScale = sketch ? SKETCH_SCALE : preview ? 0.5 : 1;
   const [resW, resH] = captureResolution;
   console.log(`Title: ${title}`);
   console.log(`Archive: ${path.relative(projectRoot, ctx.archiveDir)}/`);
-  console.log(`Resolution: ${resW}x${resH}${preview ? " (preview half-res)" : ""}`);
-  console.log(`Duration: ${DURATION}s, ${totalFrames} frames @ ${FPS}fps${proresFlag ? " (ProRes 4444)" : preview ? " (preview)" : fullResFlag ? " (full-res H.264)" : ""}`);
+  console.log(`Resolution: ${resW}x${resH}${sketch ? " (sketch quarter-res)" : preview ? " (preview half-res)" : ""}`);
+  console.log(`Duration: ${DURATION}s, ${totalFrames} frames @ ${FPS}fps${proresFlag ? " (ProRes 4444)" : sketch ? " (sketch)" : preview ? " (preview)" : fullResFlag ? " (full-res H.264)" : ""}`);
   console.log(`Warmup frames: ${warmupFrames}${cliWarmupFrames === undefined ? " (auto)" : " (CLI)"}`);
 
   const estimatedMB = (totalFrames * 4.5).toFixed(0);

@@ -22,6 +22,8 @@ Versioned starting `scene.json` templates. **New agents start only from these + 
 
 **Do not** elevate every run with the same surface~32 / edge+mix / flowField-glow stack — Isaac rejects texture monotony.
 
+**Hold layer default (2026-09-02):** `prepare-new-source` writes the figure hold with the r346 v11 *textured* knobs (surface 27 · chroma 3 · glow 0.58/12 · `colorMotionMask.floor 1`). The hold is a second language (L5), not a frozen sticker. First defect knob if it bleaches: `sourceColorClamp.maxDrift` 0.42 → 0.26.
+
 ## Agent docs
 
 → **`docs/video-os/00-INDEX.md`** then `01-CREATE-OS.md` (type tree).

@@ -27,6 +27,10 @@ out/
 /analysis.json
 /incoming/
 
+# Unapproved source dumps (OS: never commit incoming / unsorted folders)
+sources/incoming/
+sources/folder30/
+
 # Audio render output
 out/audio/
 out/acid/

@@ -20,7 +20,17 @@ const clamp255 = (value: number): number => Math.min(255, Math.max(0, Math.round
 async function blurAlpha(alpha: Float32Array, width: number, height: number, sigma: number): Promise<Uint8Array> {
   const gray = Buffer.alloc(alpha.length);
   for (let i = 0; i < alpha.length; i++) gray[i] = clamp255(alpha[i] * 255);
-  return sharp(gray, { raw: { width, height, channels: 1 } }).blur(Math.max(0.3, sigma)).raw().toBuffer();
+  // sharp returns 3 channels for a blurred 1-channel raw buffer. Indexing it as 1 channel
+  // shifted every hold mask by a factor of 3 (silent — the PNG still looked plausible).
+  const { data, info } = await sharp(gray, { raw: { width, height, channels: 1 } })
+    .blur(Math.max(0.3, sigma))
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  const stride = info.channels;
+  if (stride === 1) return data;
+  const out = new Uint8Array(width * height);
+  for (let i = 0; i < out.length; i++) out[i] = data[i * stride];
+  return out;
 }
 
 function encodeFlow(dx: number, dy: number, coh: number): [number, number, number] {
@@ -104,6 +114,9 @@ export async function writeSessionPlates(layersDir: string, hero: HeroDetect): P
         const nx = x / w;
         const faceR = Math.hypot((nx - hero.cxN) / 0.28, (ny - (hero.cyN + 0.12)) / 0.34);
         hold = midSatFigure && !lava && !marble ? (1 - halo * 0.98) * (1 - smoothstep(0.92, 1.18, faceR)) : 0;
+        // 04 §1.2: never hold the hero. The figure ellipse can otherwise swallow the declared halo
+        // center (a `--hero` override placed on the figure), which session-grade then refuses.
+        hold *= smoothstep(rInner * 0.9, rInner * 1.6, pxR);
       } else {
         const nx = x / w;
         const water = ny > hero.waterNy - 0.01;

@@ -34,6 +34,26 @@ function loadManifest(cwd: string): ClosedLockManifest {
   return JSON.parse(fs.readFileSync(p, "utf8")) as ClosedLockManifest;
 }
 
+/**
+ * prepare-new-source writes hero.json (detector result or `--hero` override) tagged with the source sha.
+ * Grade that hero so an Isaac/agent override is enforced instead of silently re-detected away (r346/r348).
+ * A stale hero.json from another source (sha mismatch) is ignored.
+ */
+async function loadPreparedHero(workDir: string, sourcePath: string, sourceSha: string): Promise<HeroDetect> {
+  const heroPath = path.join(workDir, "hero.json");
+  if (fs.existsSync(heroPath)) {
+    try {
+      const parsed = JSON.parse(fs.readFileSync(heroPath, "utf8")) as Partial<HeroDetect>;
+      if (parsed.sourceSha256 === sourceSha && typeof parsed.kind === "string" && typeof parsed.cx === "number") {
+        return parsed as HeroDetect;
+      }
+    } catch {
+      // fall through to a fresh detect
+    }
+  }
+  return detectHero(sourcePath);
+}
+
 function layerFiles(scene: LooseScene): string[] {
   return (scene.layers ?? []).map((layer) => layer.file).filter((file): file is string => typeof file === "string");
 }
@@ -151,7 +171,7 @@ export async function gradeSession(workDir: string, cwd = process.cwd()): Promis
 
   reasons.push(...collectSpinReasons(scene));
 
-  const hero = await detectHero(sourcePath);
+  const hero = await loadPreparedHero(workDir, sourcePath, sourceSha);
 
   if (sceneUsesPrism(scene)) {
     const legal = assertFigureVividLegal(scene);

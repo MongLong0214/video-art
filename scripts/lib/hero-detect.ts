@@ -9,6 +9,9 @@ import { clamp01, rgbToHsv } from "./image-stats.js";
 
 export type HeroKind = "halo" | "pour" | "beam" | "sheet" | "form";
 
+/** Agent/Isaac named a living part the detector missed. Spec grammar: `kind@cxN,cyN[:rInnerPx/rOuterPx][:wWaterNy]`. */
+export type HeroOverride = { readonly spec: string; readonly reason: string };
+
 export type HeroDetect = {
   readonly kind: HeroKind;
   readonly cx: number;
@@ -32,6 +35,9 @@ export type HeroDetect = {
   readonly irisScore: number;
   readonly confidence: number;
   readonly reasons: readonly string[];
+  /** Written by prepare-new-source so session-grade judges the prepared hero, not a fresh detect. */
+  readonly sourceSha256?: string;
+  readonly override?: HeroOverride;
 };
 
 const DETECT_WIDTH = 400;
@@ -545,6 +551,42 @@ export async function detectHero(sourcePath: string): Promise<HeroDetect> {
 
 export function needsCustomTravel(kind: HeroKind): boolean {
   return kind === "halo" || kind === "pour" || kind === "beam";
+}
+
+const OVERRIDE_RE = /^(halo|pour|beam|sheet|form)@(\d*\.?\d+),(\d*\.?\d+)(?::(\d+)\/(\d+))?(?::w(\d*\.?\d+))?$/;
+
+/**
+ * r346 / r348: detector said `form`, the living part was a halo. Until now that override lived only in
+ * the case note and session-grade re-detected `form`. This makes the override a first-class object.
+ * Halo requires explicit radii (plates are built from them); pour/beam/sheet/form fall back to detected.
+ */
+export function applyHeroOverride(detected: HeroDetect, spec: string, reason: string): HeroDetect {
+  const m = OVERRIDE_RE.exec(spec.trim());
+  if (!m) throw new Error(`--hero must look like halo@0.50,0.20:130/630 or pour@0.46,0.28:w0.72 (got ${spec})`);
+  if (!reason.trim()) throw new Error("--hero requires --hero-reason: one sentence naming the living part the detector missed");
+  const kind = m[1] as HeroKind;
+  const cxN = Number(m[2]);
+  const cyN = Number(m[3]);
+  if (cxN < 0 || cxN > 1 || cyN < 0 || cyN > 1) throw new Error(`--hero center must be normalized 0..1 (got ${cxN},${cyN})`);
+  const rInner = m[4] ? Number(m[4]) : detected.rInner;
+  const rOuter = m[5] ? Number(m[5]) : detected.rOuter;
+  if (kind === "halo" && !m[4]) throw new Error("--hero halo requires radii in full-res px, e.g. halo@0.50,0.20:130/630");
+  if (rOuter <= rInner) throw new Error(`--hero rOuter must exceed rInner (got ${rInner}/${rOuter})`);
+  const waterNy = m[6] ? Number(m[6]) : detected.waterNy;
+  return {
+    ...detected,
+    kind,
+    cx: Math.round(cxN * detected.width),
+    cy: Math.round(cyN * detected.height),
+    cxN: round4(cxN),
+    cyN: round4(cyN),
+    rInner,
+    rOuter,
+    waterNy: round4(waterNy),
+    confidence: 1,
+    reasons: [...detected.reasons, `override ${spec.trim()}: ${reason.trim()}`],
+    override: { spec: spec.trim(), reason: reason.trim() },
+  };
 }
 
 async function main(argv: readonly string[] = process.argv.slice(2)): Promise<void> {

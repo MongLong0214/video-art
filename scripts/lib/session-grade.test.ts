@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
+import { createHash } from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import sharp from "sharp";
-import { detectHero } from "./hero-detect.js";
+import { applyHeroOverride, detectHero } from "./hero-detect.js";
 import { fillBoxAlpha } from "./hold-walls.js";
 import { writeSessionPlates } from "./session-plates.js";
 import { collectSpinReasons, gradeSession } from "./session-grade.js";
@@ -40,6 +41,43 @@ describe("collectSpinReasons", () => {
     expect(reasons.some((r) => r.includes("rotate"))).toBe(true);
     expect(reasons.some((r) => r.includes("kaleidoscope"))).toBe(true);
   });
+});
+
+describe("gradeSession hero.json (prepared hero wins over a fresh detect)", () => {
+  it(
+    "enforces a --hero override: r221 form source declared halo now requires halo plates",
+    async () => {
+      const dir = tmpWork();
+      fs.copyFileSync("sources/approved/r221-eye-mirror.png", path.join(dir, "source.png"));
+      fs.copyFileSync("recipes/golden/eye-mirror-phase-advect-r221.json", path.join(dir, "scene.json"));
+      const detected = await detectHero(path.join(dir, "source.png"));
+      expect(detected.kind).toBe("form");
+      const hero = applyHeroOverride(detected, "halo@0.50,0.30:120/600", "eye rings are the living part");
+      const sourceSha256 = createHash("sha256").update(fs.readFileSync(path.join(dir, "source.png"))).digest("hex");
+      fs.writeFileSync(path.join(dir, "hero.json"), JSON.stringify({ ...hero, sourceSha256 }));
+      const grade = await gradeSession(dir);
+      expect(grade.hero?.kind).toBe("halo");
+      expect(grade.hero?.override?.spec).toBe("halo@0.50,0.30:120/600");
+      expect(grade.ok).toBe(false);
+      expect(grade.reasons.some((r) => /hero=halo/.test(r))).toBe(true);
+    },
+    timeout,
+  );
+
+  it(
+    "ignores a stale hero.json whose source sha does not match",
+    async () => {
+      const dir = tmpWork();
+      fs.copyFileSync("sources/approved/r221-eye-mirror.png", path.join(dir, "source.png"));
+      fs.copyFileSync("recipes/golden/eye-mirror-phase-advect-r221.json", path.join(dir, "scene.json"));
+      const detected = await detectHero(path.join(dir, "source.png"));
+      const hero = applyHeroOverride(detected, "halo@0.50,0.30:120/600", "stale");
+      fs.writeFileSync(path.join(dir, "hero.json"), JSON.stringify({ ...hero, sourceSha256: "0".repeat(64) }));
+      const grade = await gradeSession(dir);
+      expect(grade.hero?.kind).toBe("form");
+    },
+    timeout,
+  );
 });
 
 describe("gradeSession", () => {
@@ -212,6 +250,33 @@ describe("gradeSession", () => {
       fs.writeFileSync(path.join(dir, "scene.json"), `${JSON.stringify(patchSessionScene(golden, hero), null, 2)}\n`);
       const grade = await gradeSession(dir);
       expect(grade.ok).toBe(true);
+    },
+    timeout,
+  );
+
+  it(
+    "writes a hold whose PNG alpha matches the mask it computed (sharp blur returns 3ch for 1ch raw)",
+    async () => {
+      const dir = tmpWork();
+      const layers = path.join(dir, "layers");
+      fs.mkdirSync(layers);
+      const src = "sources/approved/r325-ganesha-rainbow-rings.png";
+      fs.copyFileSync(src, path.join(dir, "source.png"));
+      fs.copyFileSync(src, path.join(layers, "source.png"));
+      const hero = await detectHero(path.join(dir, "source.png"));
+      await writeSessionPlates(layers, hero);
+      const hold = await sharp(path.join(layers, "figure-hold.png")).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+      const debug = await sharp(path.join(layers, "debug-hold.png")).raw().toBuffer({ resolveWithObject: true });
+      const n = hold.info.width * hold.info.height;
+      // debug-hold is the same mask painted as grey; a channel-stride bug desynchronises them.
+      let worst = 0;
+      for (let i = 0; i < n; i += 997) {
+        worst = Math.max(worst, Math.abs(hold.data[i * 4 + 3] - debug.data[i * debug.info.channels]));
+      }
+      expect(worst).toBeLessThanOrEqual(1);
+      // 04 §1.2: the hold must not cover the hero it is supposed to free.
+      const heroAlpha = hold.data[(hero.cy * hold.info.width + hero.cx) * 4 + 3] / 255;
+      expect(heroAlpha).toBeLessThanOrEqual(0.28);
     },
     timeout,
   );

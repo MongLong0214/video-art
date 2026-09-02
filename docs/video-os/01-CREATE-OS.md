@@ -8,6 +8,8 @@
 
 # Create OS — classify, runbook, gate, cases
 
+> **2026-09-02 (OS v2):** the operating law — loop, preview budget, ceiling contract, Isaac quote → axis — lives in **`00-INDEX.md`**. This file keeps the **type tree (§3)**, **killed axes (§5)**, command detail (§2/§4/§6/§7), and the **ledger (§9, append-only)**. Where §0–§8 prose and `00` disagree, `00` wins. Do not add R-numbers (frozen at R-064); add a `00` §4 row, a test, or a §9 case instead.
+
 ---
 
 ## 0. Non-negotiables (violate = wrong product)
@@ -19,7 +21,7 @@
 5. **Preview first.** Full render only after Isaac visual OK (or explicit “풀렌더”).
 6. **No audio** until Isaac explicitly requests a track (R-043).
 7. **Record every render** in §9 case ledger (PASS and FAIL).
-8. **2 misses → stop (R-013).** No third blind render. 6 previews/source/session max (R-021).
+8. **2 misses → stop (R-013).** No third blind render. Budget per source: 1–2 sketch grids + **≤3** 1632 previews after Isaac picks a language (`00` §2; supersedes the R-021 six-preview cap).
 9. **No rotation / spin / angular phase (R-060).** Never `phase-angular.png` as phaseField/phaseField2; never multipass `rotate≠0`; never kaleidoscope / polarTwist / rotateSpeed. Do **not** add geometric spin to “match” a spiral/Ganesha/mandala (Isaac: 극도로 구림). **Custom `phase-halo` / `phase-fall` (distance or vertical) is required when 04 §2 says so** — that is not spin. Do not stay on golden `phase-edge`+`mix` if it freezes the hero.
 
 **Roles:** implementation may use any coding agent · orchestration agent records cases · **Isaac = final aesthetic judge**.  
@@ -40,7 +42,7 @@
 | **Approved sources (git)** | `sources/approved/*.png` |
 | **Approved locks (git)** | `recipes/locks/<slug>.json` + `<slug>.gate.json` — **`rebuild-closed-lock.ts` (plates + cp lock)** |
 | Repro index | `recipes/locks/manifest.json` |
-| **Repro playbook (agents)** | `docs/video-os/02-REPRO-LOCKS.md` |
+| **Repro playbook (agents)** | `docs/video-os/02-REPRO-LOCKS.md` · close with `scripts/close-lock.ts` (default after full) |
 | Archive | `out/layered/<date>_<slug>_<hash>/` (**not** in git) |
 | Golden recipes | `recipes/golden/*.json` (new-source start templates) |
 | Ops KB | this file |
@@ -57,6 +59,11 @@
 | dual-abstract A (silhouettes + third-eye beam) | **r274** | git: `sources/approved/r274-dual-abstract-beam.png` + `recipes/locks/r274-dual-abstract-a-beam-focus.{json,gate.json}` · local final `out/layered/2026-07-16_r274-…-54cff7f8/…-final.mp4` | **Astrix — Sapana @2:58** (`…-with-sapana.mp4`) |
 | Ganesha rainbow-rings | **r325 v8b** | git: `sources/approved/r325-ganesha-rainbow-rings.png` + `recipes/locks/r325-ganesha-rainbow-rings-master.{json,gate.json}` · plates `scripts/locks/r325-build-*.mjs` · local final `out/layered/2026-08-13_r325-…-v8b-knee-final-f3bfc5a4/…-final.mp4` | **Mama India @6:27** |
 | cosmic Buddha eye-fall | **r342 v1c** | git: `sources/approved/r342-cosmic-buddha-eye-fall.png` + `recipes/locks/r342-cosmic-buddha-eye-fall.{json,gate.json}` · plates `scripts/locks/r342-build-*.mjs` · local final `out/layered/2026-08-18_r342-…-v1c-nobox-final-22fa7aba/…-final.mp4` | **Shaman Trance @0:00** |
+| mushroom-cap Ganesha oil | **r343 r221 v1** | local MP4 · lock pack TODO (`close-lock.ts` next touch) · `out/layered/2026-08-26_r343-mushroom-ganesha-r221-final-d6d0cbf5/…-final.mp4` | **Ancient Aum @0:00** |
+| engraved multi-eye swan | **r344 v3** | local MP4 · lock pack TODO · `out/layered/2026-08-27_r344-engraved-swan-eyes-final-1a283714/…-final.mp4` | **All Around Us @2:25** |
+| skeleton-baby halo | **r345 v1** | local MP4 · lock pack TODO · `out/layered/2026-08-28_r345-skeleton-baby-halo-final-7c74fd4d/…-final.mp4` | **Salaam @0:00** |
+| eye-mandala-sitter | **r346 v11** | local MP4 · lock pack TODO · `out/layered/2026-09-02_r346-eye-mandala-sitter-final-40c26252/…-final.mp4` | **Adhana @5:06** |
+
 
 ### Approved previews (Isaac visual OK — full only after gate PASS §7.1; do not re-open without new defect)
 
@@ -67,6 +74,11 @@
 | hand-face | r241 | same source (alt) | `out/layered/2026-07-15_r241-handface-chroma-trance-bc800728/r241-handface-chroma-trance-preview.mp4` | r139 delta: colorCycle 19 + hueKey 0.42 | alt only |
 | Ganesha rainbow-rings | **r325 v8b** | `figure-vivid` | preview `…v8b-knee-4b7a3f2e/…-preview.mp4` · **full** `out/layered/2026-08-13_r325-ganesha-rainbow-rings-master-v8b-knee-final-f3bfc5a4/r325-ganesha-rainbow-rings-master-v8b-knee-final.mp4` · **+audio** `…-final-with-mama-india.mp4` | v8 counterhalo + knee-only deity patch | Isaac **“이게 젤 나아”** + 풀버전 · Mama India @**6:27** · gate REJECT + humanOverride · do not re-tune without new defect |
 | cosmic Buddha eye-fall | **r342 v1c** | `figure-vivid` | preview `…v1c-nobox-6399219c/…-preview.mp4` · **full** `out/layered/2026-08-18_r342-cosmic-buddha-eye-fall-v1c-nobox-final-22fa7aba/r342-cosmic-buddha-eye-fall-v1c-nobox-final.mp4` · **+audio** `…-final-with-shaman-trance.mp4` | v1 river + head-only hold (no rectangle) | Isaac **“맘에든다”** + 풀렌더 + Shaman Trance @**0:00** · gate REJECT + humanOverride · do not re-tune without new defect |
+| mushroom-cap Ganesha oil | **r343 r221 v1** | `figure-vivid` | preview `…r221-33d6829b/…-preview.mp4` · **full** `out/layered/2026-08-26_r343-mushroom-ganesha-r221-final-d6d0cbf5/r343-mushroom-ganesha-r221-final.mp4` · **+audio** `…-final-with-ancient-aum.mp4` | golden r221 as-is (no silk, no hold) | Isaac **“이게 제일 낫다 다른거 다 아주 별로야”** + 풀렌더 + Ancient Aum @**0:00** · gate **PASS** · do not re-tune without new defect |
+| engraved multi-eye swan | **r344 v3** | `busy-line` | preview `…v3-18395171/…-preview.mp4` · **full** `out/layered/2026-08-27_r344-engraved-swan-eyes-final-1a283714/r344-engraved-swan-eyes-final.mp4` · **+audio** `…-final-with-all-around-us.mp4` | r139 slow-strong glow | Isaac **“ㅇㅇ 풀렌더”** + All Around Us @**2:25** · gate REJECT edge + humanOverride · do not re-tune without new defect |
+| skeleton-baby halo | **r345 v1** | `busy-line` | preview `…282b8e76/…-preview.mp4` · **full** `out/layered/2026-08-28_r345-skeleton-baby-halo-final-7c74fd4d/r345-skeleton-baby-halo-final.mp4` · **+audio** `…-final-with-salaam.mp4` | r139 golden as-is (v2 discarded) | Isaac **v1 path 풀렌더** + Salaam @**0:00** · gate REJECT local-drift + humanOverride · do not re-tune without new defect |
+| eye-mandala-sitter | **r346 v11** | `figure-vivid` | preview `…v11-8c9e2626/…-preview.mp4` · **full** `out/layered/2026-09-02_r346-eye-mandala-sitter-final-40c26252/r346-eye-mandala-sitter-final.mp4` · **+audio** `…-final-with-adhana.mp4` | v7 rings + figure r139 | Isaac **플렌더** + Adhana @**5:06** · gate REJECT edge/local-drift + humanOverride · do not re-tune without new defect |
+
 
 ### Golden recipe files (copy these)
 
@@ -78,34 +90,24 @@
 
 ---
 
-## 2. Machine closed loop (must run; not optional)
+## 2. Commands (loop is `00` §2 — do not invent a second loop)
 
-```
-source
-  → prepare-new-source (lanczos + scaffold + hero detect + plates + session-grade)
-  → preview export (blocked unless session-grade OK)
-  → stills + qa-motion
-  → (if region-affinity) authority audit before preview
-  → gate:psychedelic vs 2 refs
-  → plan:psychedelic (next action; never reselect blocked families)
-  → case ledger append
-  → Isaac visual
-  → full-res export ONLY with --gate-report (PASS or humanOverride)
-  → audio ONLY after explicit Isaac request
-```
+State machine: **INTAKE → PREPARE → SKETCH → PICK-LANGUAGE → PREVIEW → QUOTE → PICK → FULL → AUDIO → CLOSE**.  
+Isaac picks a **language tile**, not a knob. `gate:psychedelic` is optional diagnostics. Full-render permit = `isaac-pick.ts`.
 
 | Step | Exact command |
 |------|----------------|
-| Prepare (new source) | `npx tsx scripts/prepare-new-source.ts --source <png> --slug <slug> --recipe recipes/golden/<file>.json --work-dir out/manual-runs/<slug>` |
-| Scaffold (internal only) | called by prepare / rebuild-closed-lock — do not export from scaffold-only on halo/pour |
+| Intake | `npx tsx scripts/analyze-source.ts <png> --out out/manual-runs/<slug>/analysis.json` |
+| Prepare | `npx tsx scripts/prepare-new-source.ts --source <png> --slug <slug> --recipe recipes/golden/<file>.json --work-dir out/manual-runs/<slug>` `[--hero "kind@cx,cy[:rIn/rOut]" --hero-reason "<why>"]` |
+| Sketch | `npx tsx scripts/export-layered.ts --title <slug>-<tile> --work-dir out/manual-runs/<slug> --sketch` then `npx tsx scripts/sketch-grid.ts --out out/manual-runs/<slug>/sketch-grid.mp4 "A L1+L2=…/a-sketch.mp4" …` |
 | Preview | `npx tsx scripts/export-layered.ts --title <slug> --work-dir out/manual-runs/<slug> --preview` |
 | QA | `npx tsx scripts/qa-motion.ts out/layered/*<slug>*/<slug>-preview.mp4 --source out/manual-runs/<slug>/source.png --json out/manual-runs/<slug>/qa-preview.json` |
 | Stills | §6.2 commands |
-| Gate | `npm run gate:psychedelic -- --candidate <preview.mp4> --source <source.png> --reference "$REF1" --reference "$REF2" --work-dir out/manual-runs/<slug> --axis <axis> --primitive <primitive>` |
-| Plan next | `npm run plan:psychedelic -- --source <source.png> --report out/manual-runs/<slug>/psychedelic-gate.json --output out/manual-runs/<slug>/next-plan.json` |
-| Affinity audit | `npm run audit:region-affinity -- --source <png> --scene <scene.json> --work-dir <dir> --output <audit.json>` |
-| Full | `npx tsx scripts/export-layered.ts --title <slug>-final --work-dir <dir> --full-res --gate-report <report.json>` |
-| Audio | §7.3 |
+| Pick (full permit) | `npx tsx scripts/isaac-pick.ts --work-dir out/manual-runs/<slug> --quote "<verbatim>" [--audio "<Track> @m:ss"]` |
+| Gate (optional diagnostics) | `npm run gate:psychedelic -- --candidate <preview.mp4> --source <source.png> --reference "$REF1" --reference "$REF2" --work-dir out/manual-runs/<slug> --axis <axis> --primitive <primitive>` |
+| Full | `npx tsx scripts/export-layered.ts --title <slug>-final --work-dir <dir> --full-res --gate-report out/manual-runs/<slug>/psychedelic-gate.json` |
+| Audio | §7.3 — `-ss` is the start Isaac named. Never guess. |
+| Close (default after full) | `npx tsx scripts/close-lock.ts --slug <slug> [--audio "<Track> @m:ss"] [--plates "node scripts/locks/<x>.mjs"]` |
 
 **Reference videos (motion contract only, never as footage):**
 
@@ -114,7 +116,7 @@ REF1=/Users/isaac/Downloads/double-iris-f38f09ba-prism-amber-with-audio.MP4
 REF2=/Users/isaac/Downloads/lotus-clean-1x-separated-audio.MP4
 ```
 
-If refs missing on this machine: still run qa-motion + stills; note “gate skipped: refs missing” in case — do **not** invent PASS.
+If refs missing: still run qa-motion + stills. Do **not** invent a gate PASS. Do not block full on a missing gate — `isaac-pick.ts` is the permit.
 
 ---
 
@@ -157,22 +159,25 @@ Replace `<SOURCE>`, `<SLUG>`, `<RECIPE>` only.
 ### Step A — Classify (no render yet)
 
 1. Open image. Note face/skin vs all-over pattern vs line print. Pick the golden from §3.1.
-2. Prepare (lanczos + scaffold + hero detect + plates + session-grade):
+2. Prepare (lanczos + scaffold + hero detect + plates + session-grade). If the detector’s kind is not the living part, `--hero` + `--hero-reason` is the **only** legal override (`00` §2):
 
 ```bash
 npx tsx scripts/prepare-new-source.ts \
   --source "<SOURCE>" \
   --slug "<SLUG>" \
   --recipe "recipes/golden/<RECIPE>.json" \
-  --work-dir "out/manual-runs/<SLUG>"
+  --work-dir "out/manual-runs/<SLUG>" \
+  [--hero "halo@0.50,0.20:130/630" --hero-reason "<why>"]
 ```
 
-3. Read `out/manual-runs/<SLUG>/hero.json` + `analysis.json` → assign Type ID (§3.1). Confirm `hero.kind` matches what you see.
+3. Read `out/manual-runs/<SLUG>/hero.json` + `analysis.json` → assign Type ID (§3.1). Confirm `hero.kind` matches what you see (or `hero.json.override`).
 4. If Type ID wrong for chosen recipe: re-prepare with the correct golden (overwrite work-dir).
 5. Open §5 KILLED — confirm plan is not a killed axis.
 6. If prepare / export says `session-grade FAIL`, **do not** show Isaac. Fix plates/hold. There is no skip flag.
 
-### Step B — Preview
+### Step B — Sketch, then preview
+
+Loop: `00` §2. New source: **sketch grid first** (language tiles). Isaac picks a tile. Then one 1632 `--preview`. Do not answer “더 창의적으로” with a knob delta.
 
 ```bash
 npx tsx scripts/export-layered.ts \
@@ -292,21 +297,16 @@ npx tsx scripts/export-layered.ts \
   --gate-report "out/manual-runs/<SLUG>/psychedelic-gate.json"
 ```
 
-### 7.2 Isaac humanOverride (when gate REJECT but Isaac picked the look)
+### 7.2 Isaac pick (full-render permit)
 
-Only when Isaac **explicitly** selected that candidate (e.g. “221로”).
+Do **not** hand-edit `psychedelic-gate.json`. Verbatim quote is the permit (`00` §2 PICK):
 
-Edit `psychedelic-gate.json` to add (keep `status: "REJECT"` allowed):
-
-```json
-"humanOverride": {
-  "approvedBy": "isaac",
-  "reason": "<exact quote or selection>",
-  "at": "<ISO-8601>"
-}
+```bash
+npx tsx scripts/isaac-pick.ts --work-dir "out/manual-runs/<SLUG>" \
+  --quote "<Isaac verbatim>" [--preview <preview.mp4>] [--audio "<Track> @m:ss"]
 ```
 
-Scene SHA in report **must** match current `scene.json` (re-run gate after scene edit).
+Writes `isaac-pick.json` + `humanOverride` on the gate report. Audio start without `@m:ss` is refused. Scene SHA must match current `scene.json`.
 
 ### 7.3 Audio mux (Isaac track + start only)
 
@@ -346,6 +346,8 @@ ffprobe -v error -show_entries stream=codec_type,codec_name,nb_frames -of csv=p=
 - source: <path> <WxH> sha256=<16+> — type=<TypeID> M: satMean= vivid= busyness= greenRisk=
 - hypothesis: <one line>
 - recipe: golden=<file> OR delta=<knobs>
+- quote: "<Isaac verbatim that caused this round>" → axis=<DELTA|NEW-LANGUAGE|STOP|PICK> (00 §4)
+- language-map: hero=<L…> · figure=<L…> · field=<L…> · sky=<L…> (00 §3; no region empty)
 - work-dir: out/manual-runs/<slug>/
 - preview: out/layered/<archive>/<slug>-preview.mp4
 - QA: olive= bleach= seam= drift=/ local= static= motionDensity= verdict=
@@ -376,6 +378,13 @@ ffprobe -v error -show_entries stream=codec_type,codec_name,nb_frames -of csv=p=
 | r300-v1 rainbow-rings flow40 | **FAIL 꿀렁** | phaseFlow40 ≠ anti-wobble |
 | **r300-v2 anti-wobble** | **QA PASS · HOLD Isaac** | flow18 surface6; glow for energy |
 | **r301–r303 folder29 batch** | **QA PASS · HOLD Isaac** | native 1632 PNG×3; anti-wobble + bleach-safe bloom |
+| r343 mushroom-ganesha-oil | **FAIL look** | oil family discarded vs r221 v1 |
+| **r343 r221 v1** | **Isaac final + audio** | golden r221; v2–v4 “아주 별로”; gate PASS; Ancient Aum @0:00 |
+| **r344 v3** | **Isaac final + audio** | r139 slow-strong; All Around Us @2:25; gate REJECT + override |
+| **r345 v1** | **Isaac final + audio** | r139 golden; v2 not used; Salaam @0:00; gate REJECT + override |
+| **r346 v11** | **Isaac final + audio** | v7 rings + figure r139; Adhana @5:06; gate REJECT + override |
+| **OS v2 2026-09-02** | **method change** | floor+ceiling contracts; sketch grid before preview; quote→axis dictionary; `--hero` enforced; textured hold default; `isaac-pick`/`close-lock`; session-plates alpha stride bug fixed |
+| r349 uv-pills-face | **HOLD Isaac** · QA PASS | ESRGAN 2x→1632 cover · golden r221 as-is · hero form |
 
 ### 9.2b CASE detail — hand-face (2026-07-15)
 
@@ -1108,8 +1117,11 @@ Tier: L=law E=established P=provisional.
 
 | Concern | Module |
 |---------|--------|
-| New-source prepare | `scripts/prepare-new-source.ts` |
-| Hero detect / hold walls / session-grade | `scripts/lib/hero-detect.ts` · `hold-walls.ts` · `session-grade.ts` |
+| New-source prepare (+ `--hero` override) | `scripts/prepare-new-source.ts` |
+| Hero detect / override / hold walls / session-grade | `scripts/lib/hero-detect.ts` · `hold-walls.ts` · `session-grade.ts` |
+| Language sketches → Isaac picks | `scripts/export-layered.ts --sketch` · `scripts/sketch-grid.ts` |
+| Isaac pick = full-render permit | `scripts/isaac-pick.ts` · `scripts/lib/isaac-pick.ts` |
+| Close a final into a lock pack | `scripts/close-lock.ts` · `scripts/lib/close-lock.ts` |
 | Scaffold run | `scripts/scaffold-layered-run.ts` |
 | Phase fields | `scripts/make-phase-field.ts` |
 | Affinity capacity H80 | `scripts/lib/source-region-capacity.ts` |
@@ -1128,6 +1140,8 @@ npx vitest run scripts/lib/hero-detect.test.ts \
   scripts/lib/session-grade.test.ts \
   scripts/lib/session-scene.test.ts \
   scripts/lib/figure-vivid-legal.test.ts \
+  scripts/lib/isaac-pick.test.ts \
+  scripts/lib/close-lock.test.ts \
   scripts/lib/source-region-capacity.test.ts \
   scripts/lib/psychedelic-learning.test.ts \
   scripts/lib/region-affinity-authority-audit.test.ts \
@@ -1143,7 +1157,8 @@ Work is **not done** until:
 
 - [ ] `prepare-new-source` ran; `hero.json` + `session-grade.json` exist and ok  
 - [ ] Type ID assigned with analysis numbers  
-- [ ] Recipe is a golden file or single-axis delta from golden  
+- [ ] Language map declared (`00` §3.2); this round changed **either** one amplitude/tempo axis **or** ≤1 language — never a knob tour  
+- [ ] Isaac saw a sketch grid before the first 1632 preview (new source), or the case says why not  
 - [ ] Preview exists under `out/layered/`  
 - [ ] `stills/contact.png` + `stills/subsec.png` exist  
 - [ ] `qa-preview.json` exists  
@@ -1545,3 +1560,353 @@ Evidence: `docs/archive/OUTPUT_GAP_ANALYSIS.pre-refactor-2026-07-15.md` (git sna
 - full: `out/layered/2026-08-18_r342-cosmic-buddha-eye-fall-v1c-nobox-final-22fa7aba/r342-cosmic-buddha-eye-fall-v1c-nobox-final.mp4` 1632×2912 20s 30fps 600f
 - audio: `…-final-with-shaman-trance.mp4` — `/Users/isaac/Downloads/Shaman Trance.wav` **-ss 0** (start not specified) aac 320k · video copy 600f · duration 20.000s
 - status: **final + audio** — current best; lock pack not requested; do not re-tune without new defect
+
+#### CASE-2026-08-26-r343-v1 | mushroom-ganesha-oil (HOLD Isaac)
+- source: chat 1632×2912 re-encoded 1121×2000 → lanczos cover `sources/incoming/r343-mushroom-ganesha-oil.png` sha256=`62b73a38ff5587c9…` — type=`figure-vivid` (oil marble BG) M: satMean=0.49 vivid=37.5% busyness=0.034 greenRisk**true** (35deg conc) finishedVivid=0.41 figure=40%
+- hero.json: **form** @0.49,0.33 — not halo/pour/beam; living part = oil marble + paint-melt body; cap is solid form
+- hypothesis: 04 oil-sheet → `oil-slick-macro-bands` not another r221 river
+- recipe: golden=`oil-slick-macro-bands.json` (prism on, colorCycle 0, satBoost 1.72, phase-vertical)
+- work-dir: `out/manual-runs/r343-mushroom-ganesha-oil/`
+- session-grade: **OK** new-source hero=form
+- preview: `out/layered/2026-08-26_r343-mushroom-ganesha-oil-1749b5f0/r343-mushroom-ganesha-oil-preview.mp4`
+- QA: olive=0.057 **FAIL** (source 0.020) bleach PASS drift=0.124/local=0.209 seam=1.43 static=0 motionDensity=0.279 verdict=FAIL oliveDwell
+- stills: contact=`out/manual-runs/r343-mushroom-ganesha-oil/stills/contact.png` subsec=`…/stills/subsec.png`
+- judge: **HOLD** — marble travels (R-020 OK) · gold Ganesha crushed/dark + chroma (R-001 risk) · olive from yellow-orange body · no box · no full · no audio
+- learning: oil-slick on a yellow-gold figure trips olive even when BG marble is the right texture family
+- rules: R-020 confirm · R-001 watch · greenRisk true ≠ skip oil if 04 sheet
+- status: delivered-preview
+
+#### CASE-2026-08-26-r343-v4 | oil-slick + river (HOLD Isaac)
+- request: “더 싸이키델릭해야돼 고도화해”
+- keep: oil-slick-macro family · colorCycle 0 · rotate 0 · no box
+- delta: +sourceFlowAdvection fieldAlign 0.78 throw 38 · glow 0.62/13 + 0.40/24 · prism chroma2 surface16 mix 0.74 · greenCompress 0.84 (olive) · sat 1.62 (not up)
+- preview: `out/layered/2026-08-26_r343-mushroom-ganesha-oil-v4-fa21388f/r343-mushroom-ganesha-oil-v4-preview.mp4`
+- stills: contact=`out/manual-runs/r343-mushroom-ganesha-oil/stills-v4/contact.png` subsec=`…/stills-v4/subsec.png`
+- QA: olive=0.058 FAIL · motionDensity **0.374** (v1 0.279) · static=0 · hueJump95 36.7
+- judge: **FAIL look** — Isaac “다 뭉게지고 노이즈” (R-013 oil-slick axis exhausted)
+- status: discarded
+
+#### CASE-2026-08-26-r343-v5 | oil-slick restore + glow only (HOLD Isaac)
+- request: restore after v4 smear
+- keep: oil-slick-macro golden knobs · no advection · greenCompress 0.74 · glow speed 12/20 only
+- preview: `out/layered/2026-08-26_r343-mushroom-ganesha-oil-v5-658dec00/r343-mushroom-ganesha-oil-v5-preview.mp4` · scene=`out/manual-runs/r343-mushroom-ganesha-oil/scene-v5-oil.json`
+- stills: `out/manual-runs/r343-mushroom-ganesha-oil/stills-v5/`
+- judge: **not best** — Isaac “다른 프리셋 적용해봐 이게 최선이야 ?”
+- status: discarded as current pick (oil family closed)
+
+#### CASE-2026-08-26-r343-r221 | figure-vivid default (HOLD Isaac)
+- request: “다른 프리셋 적용해봐 이게 최선이야 ?”
+- type: still `figure-vivid` hero=**form** · same cleaned 1632 `sources/incoming/r343-mushroom-ganesha-oil.png` sha256=`ec9adcc28b62…`
+- hypothesis: oil-slick is not the type default; r221 fine-river is §3.1 row 5. Cosmos banned (R-018). paint-smear skipped (same smear family as v4).
+- recipe: golden=`recipes/golden/eye-mirror-phase-advect-r221.json` as-is (colorCycle 0, rotate 0, sat 1.48, surface 26, phaseFlow 27, edge+mix)
+- work-dir: `out/manual-runs/r343-mushroom-ganesha-r221/`
+- session-grade: **OK** new-source hero=form
+- preview: `out/layered/2026-08-26_r343-mushroom-ganesha-r221-33d6829b/r343-mushroom-ganesha-r221-preview.mp4`
+- stills: contact=`out/manual-runs/r343-mushroom-ganesha-r221/stills/contact.png` subsec=`…/stills/subsec.png`
+- QA: olive=0.0436 **PASS** (oil 0.057 FAIL) bleach PASS drift=0.100/local=0.183 seam=1.10 static=0 motionDensity=0.091 hue-pass verdict=**PASS**
+- judge: **PASS final** — Isaac 2026-08-26 “이게 제일 낫다 다른거 다 아주 별로야”
+- gate: **PASS** coverage 0.994 connected 0.561 coherence 0.872 edges 0.922 drift 0.123/0.242 — no humanOverride
+- full: `out/layered/2026-08-26_r343-mushroom-ganesha-r221-final-d6d0cbf5/r343-mushroom-ganesha-r221-final.mp4` 1632×2912 20s 30fps 600f
+- audio: `…-final-with-ancient-aum.mp4` — `/Users/isaac/Downloads/Electric Universe & Ace Ventura - Ancient Aum.wav` **-ss 0** aac 320k · video copy 600f · duration 20.000s
+- learning: Isaac picked **untuned r221 golden** over oil-slick, silk, and 2-layer hold. Do not re-open v2–v4 or oil without a new defect.
+- rules: R-008 confirm (Isaac quote) · R-013 confirm (later families discarded)
+- status: **final + audio** — current best; lock pack not requested; do not re-tune without new defect
+
+#### CASE-2026-08-26-r343-r221-v2 | r221 silk identity (HOLD Isaac)
+- request: “221을 좀만 더 다듬어줘”
+- keep: r221 edge+mix · colorCycle 0 · rotate 0 · phaseFlow **27** · no advection · no cosmos
+- delta (identity silk only): surface **26→12** detail **1.05→0.92** greenCompress **0.52→0.68** clamp **0.26→0.22** CA **0.06→0.045** hueShift **0.008→0.003** glow **0.16/18 + 0.10/28** (R-063 energy, not extra flow)
+- work-dir: `out/manual-runs/r343-mushroom-ganesha-r221/` · v1 scene=`scene-v1-r221.json`
+- preview: `out/layered/2026-08-26_r343-mushroom-ganesha-r221-v2-52d05b28/r343-mushroom-ganesha-r221-v2-preview.mp4`
+- stills: contact=`out/manual-runs/r343-mushroom-ganesha-r221/stills-v2/contact.png` subsec=`…/stills-v2/subsec.png`
+- QA: olive=0.0415 PASS · localDrift=0.166 · hueJump95 **30** (v1 66) · motionDensity **0.123** (v1 0.091) verdict=**PASS**
+- judge: **FAIL look** — Isaac “다른거 다 아주 별로야” vs v1
+- status: discarded
+
+#### CASE-2026-08-26-r343-r221-v3 | Ganesha silhouette hold (HOLD Isaac)
+- request: “좀만 더 다듬어줘 가네샤가 더 돋보여야돼”
+- keep: r221 v2 river knobs · colorCycle 0 · rotate 0 · no advection · mushroom cap/stem/marble **open**
+- delta: 2-layer legal source+hold · `layers/figure-hold.png` gold/contour ellipses (stem slab removed after debug showed rectangle) · hold walls **ok** · hold prism surface6/flow8 (not sticker)
+- work-dir: `out/manual-runs/r343-mushroom-ganesha-r221/` · v2 scene=`scene-v2-r221.json`
+- preview: `out/layered/2026-08-26_r343-mushroom-ganesha-r221-v3-54153ad7/r343-mushroom-ganesha-r221-v3-preview.mp4`
+- stills: contact=`out/manual-runs/r343-mushroom-ganesha-r221/stills-v3/contact.png` subsec=`…/stills-v3/subsec.png` debug=`…/layers/debug-hold.png`
+- QA: olive=0.032 PASS · localDrift=0.157 · motionDensity=0.121 · hueJump95 WARN 27.1 · verdict=**PASS with warnings**
+- judge: **FAIL look** — Isaac “가네샤는 이제 그냥 멈춰있는거 처럼 보이는데 ?” (R-038 sticker; alpha 1 + flow8 froze form)
+- status: discarded
+
+#### CASE-2026-08-26-r343-r221-v4 | unfreeze Ganesha hold (HOLD Isaac)
+- request: Ganesha looked frozen on v3
+- keep: r221 v2 river · 2-layer silhouette (no box, no stem slab) · colorCycle 0 · rotate 0 · no advection
+- delta: hold core alpha **1.0→0.5** · hold prism surface **6→10** flow **8→22** · CMM floor **0.08→0.03** lumW **0.72→0.35** · glow 0.28/16 (R-063)
+- preview: `out/layered/2026-08-26_r343-mushroom-ganesha-r221-v4-a5d52d47/r343-mushroom-ganesha-r221-v4-preview.mp4`
+- stills: contact=`out/manual-runs/r343-mushroom-ganesha-r221/stills-v4/contact.png` subsec=`…/stills-v4/subsec.png`
+- QA: olive=0.032 PASS · localDrift=0.158 · motionDensity=0.121 verdict=**PASS**
+- judge: **FAIL look** — Isaac “다른거 다 아주 별로야” vs v1
+- status: discarded
+
+#### CASE-2026-08-27-r344-v1 | engraved-swan-eyes (HOLD Isaac)
+- source: native 1632×2912 PNG `sources/incoming/r344-engraved-swan-eyes.png` sha256=`8ce3ef902df3bd42…` (Downloads monglong surreal swan; chat JPEG 1121 unused) — type=`busy-line` (engraved figure + oil BG) M: satMean=0.35 vivid=11.8% busyness=**0.0885** greenRisk**true** finishedVivid=0.13 dark=26%
+- hero.json: **form** @0.56,0.15 — not halo/pour/beam/sheet (highSatPct=0.003)
+- hypothesis: §3.1 row 2 busyness≥0.08 + woodcut hatch → r139 (r240 class). Oil BG is not the type first match. Cosmos banned on figure. No r343 re-tune.
+- recipe: golden=`recipes/golden/woodblock-phase-advect-r139.json` as-is (colorCycle 0, rotate 0, phaseMix 0, sat 1.45, surface 27, phaseFlow 28, edge+luma-hybrid)
+- work-dir: `out/manual-runs/r344-engraved-swan-eyes/`
+- session-grade: **OK** new-source hero=form
+- preview: `out/layered/2026-08-27_r344-engraved-swan-eyes-f6c44f75/r344-engraved-swan-eyes-preview.mp4`
+- stills: contact=`out/manual-runs/r344-engraved-swan-eyes/stills/contact.png` subsec=`…/stills/subsec.png`
+- QA: olive=0.040 PASS bleach=0.048 PASS drift=0.055/local=0.125 seam=1.09 static=0 motionDensity=0.042 hue-pass verdict=**PASS**
+- judge: **HOLD Isaac** — hatch/eyes readable · oil prism crawls onto paper (R-001) · no box · no spin · no full · no audio
+- learning: busy-line r139 on B&W engraving + oil sheet puts chroma river on the paper; Isaac judges identity vs oil travel.
+- rules: R-003 confirm (type→r139) · R-060 confirm · R-001 watch
+- status: superseded by v2 (Isaac “너무 약해”)
+
+#### CASE-2026-08-27-r344-v2 | r139 energy (HOLD Isaac)
+- request: “너무 약해”
+- keep: r139 · colorCycle 0 · rotate 0 · phaseMix 0 · surface **27** (no hatch boil)
+- delta: glow **0→0.42/0.26** · phaseFlow **28→42** cycles **5→7** · chroma **0→2** · sat **1.45→1.62** · bloom **0.34** · CA **0.055** · mp **0.14** warp **0.004**
+- preview: `out/layered/2026-08-27_r344-engraved-swan-eyes-v2-f12eab00/r344-engraved-swan-eyes-v2-preview.mp4`
+- stills: contact=`out/manual-runs/r344-engraved-swan-eyes/stills-v2/contact.png` subsec=`…/stills-v2/subsec.png`
+- QA: olive=0.049 PASS bleach=**0.098 FAIL** (v1 0.048) drift=0.069/local=0.139 motionDensity=**0.251** (v1 0.042) verdict=**FAIL bleachDwell**
+- judge: **HOLD Isaac** — river/glow clearly up · eyes/hatch still read · paper whites bleach (R-020 preview OK to show) · no full · no audio
+- status: superseded by v3 (Isaac “너무 스피디해 그리고 아직 약해”)
+
+#### CASE-2026-08-27-r344-v3 | slow-strong (HOLD Isaac)
+- request: “너무 스피디해 그리고 아직 약해”
+- keep: r139 · colorCycle 0 · rotate 0 · phaseMix 0 · surface 27
+- delta: glow speed **36/58→12/22** strength **0.42/0.26→0.58/0.36** · phaseFlow **42→32** cycles **7→4** · chroma **2→3** · sat **1.62→1.74** · bloom thr **0.62→0.70** (R-063: energy via glow strength, not extra flow)
+- preview: `out/layered/2026-08-27_r344-engraved-swan-eyes-v3-18395171/r344-engraved-swan-eyes-v3-preview.mp4`
+- stills: contact=`out/manual-runs/r344-engraved-swan-eyes/stills-v3/contact.png` subsec=`…/stills-v3/subsec.png`
+- QA: olive=0.051 **FAIL** bleach=0.097 FAIL · hueJump95 **80** (v2 91) · motionDensity=**0.366** (v2 0.251) verdict=**FAIL** olive+bleach
+- judge: **PASS final** — Isaac 2026-08-27 “ㅇㅇ 풀렌더돌려”
+- gate: REJECT source-edge-damage 0.827 / 0.84 · **humanOverride** isaac “ㅇㅇ 풀렌더돌려”
+- full: `out/layered/2026-08-27_r344-engraved-swan-eyes-final-1a283714/r344-engraved-swan-eyes-final.mp4` 1632×2912 20s 30fps 600f
+- audio: `…-final-with-all-around-us.mp4` — `/Users/isaac/Downloads/Audiotec & Faders - All Around Us ｜ Tip World.wav` **-ss 145** (2:25; RMS rise at 145 after 132–144 dip) aac 320k · video copy 600f · duration 20.000s
+- status: **final + audio** — current best; lock pack not requested; do not re-tune without new defect
+
+#### CASE-2026-08-28-r345-v1 | skeleton-baby-halo (Isaac final)
+- source: native 1632×2912 PNG `sources/incoming/r345-skeleton-baby-halo.png` sha256=`8efb5e3ba323ce37…` (chat JPEG 1121 unused) — type=`busy-line` (line-print + finished vivid figures) M: satMean=0.53 vivid=34% busyness=**0.0814** greenRisk**false** finishedVivid=0.58 dark=3.7%
+- hero.json: **form** @0.50,0.35 — concentric sunburst present but detector peaks=0 (not halo/pour/beam)
+- hypothesis: §3.1 row 2 busyness≥0.08 + directional line → r139. Not cosmos (figure-critical). No spin on concentric lines (R-060).
+- recipe: golden=`recipes/golden/woodblock-phase-advect-r139.json` as-is (colorCycle 0, rotate 0, phaseMix 0)
+- work-dir: `out/manual-runs/r345-skeleton-baby-halo/`
+- session-grade: **OK** new-source hero=form
+- preview: `out/layered/2026-08-28_r345-skeleton-baby-halo-282b8e76/r345-skeleton-baby-halo-preview.mp4`
+- stills: contact=`out/manual-runs/r345-skeleton-baby-halo/stills/contact.png` subsec=`…/stills/subsec.png`
+- QA: olive=0.062 PASS (source 0.27) bleach=**0.140 FAIL** drift=0.135/local=0.276 motionDensity=0.058 hue-pass verdict=**FAIL bleachDwell**
+- judge: **PASS final** — Isaac 2026-08-28 picked v1 preview path for 풀렌더 (v2 polish not used)
+- gate: REJECT source-local-drift 0.340 / 0.30 · **humanOverride** isaac “v1 풀렌더 + Salaam”
+- full: `out/layered/2026-08-28_r345-skeleton-baby-halo-final-7c74fd4d/r345-skeleton-baby-halo-final.mp4` 1632×2912 20s 30fps 600f
+- audio: `…-final-with-salaam.mp4` — `/Users/isaac/Downloads/Salaam - Bedouin, HIYA.wav` **-ss 0** (no mute intro; RMS ~-9dB from t=0) aac 320k · video copy 600f · duration 20.000s
+- status: **final + audio** — current best; lock pack not requested; do not re-tune without new defect
+
+#### CASE-2026-08-28-r345-v2 | silk + slow glow (HOLD Isaac)
+- request: “쫌만 더 다듬어봐” after v1 like + residual yellow-wash/weak-motion
+- keep: r139 · colorCycle 0 · rotate 0 · phaseMix 0 · phaseFlow **28** (no speed-up)
+- delta: glow **0→0.20/0.12** speed **10/18** · surface **27→16** detail **0.92** · clamp **0.55→0.32** · greenCompress **0.40→0.52**
+- preview: `out/layered/2026-08-28_r345-skeleton-baby-halo-v2-8eb2b368/r345-skeleton-baby-halo-v2-preview.mp4`
+- stills: contact=`out/manual-runs/r345-skeleton-baby-halo/stills-v2/contact.png` subsec=`…/stills-v2/subsec.png`
+- QA: bleach=0.128 FAIL (v1 0.140) · hueJump **43** (v1 69) · localDrift=0.219 (v1 0.276) · motionDensity=**0.176** (v1 0.058) verdict=**FAIL bleachDwell**
+- judge: **FAIL look vs v1** — Isaac full-rendered v1 path instead
+- status: discarded
+
+#### CASE-2026-09-02-r346-v1 | eye-mandala-sitter (HOLD Isaac)
+- source: native 1632×2912 PNG `sources/incoming/r346-eye-mandala-sitter.png` sha256=`969151fc04529868…` (chat JPEG 1121 unused) — type=`figure-vivid` (eye mandala + star silhouette) M: satMean=0.57 vivid=51% busyness=0.055 greenRisk**false** finishedVivid=0.24 dark=25%
+- detector: **form** peaks=0 @0.29,0.14 — override: living part = concentric eye rings → **halo** @0.50,0.20 rOuter=1120 (04 §2; r325 class)
+- recipe: golden r221 + `writeSessionPlates` halo counterflow (in/out bands) + silhouette hold (no nx wall) · colorCycle 0 · rotate 0 · no phase-angular
+- work-dir: `out/manual-runs/r346-eye-mandala-sitter/`
+- session-grade: **OK** new-source hero=halo
+- preview: `out/layered/2026-09-02_r346-eye-mandala-sitter-ed4dc490/r346-eye-mandala-sitter-preview.mp4`
+- stills: contact=`out/manual-runs/r346-eye-mandala-sitter/stills/contact.png` subsec=`…/stills/subsec.png` rings=`…/stills/subsec-rings.png`
+- QA: olive PASS bleach PASS drift=0.094/local=0.203 motionDensity=0.157 verdict=**PASS**
+- judge: **HOLD Isaac** — rings travel (core pulse) · no spin · silhouette held · orange field chroma-washed (R-001) · no box · no full · no audio
+- rules: R-060 confirm · 04 halo vs detector form
+- status: superseded by v2 (Isaac “더 싸이키델릭하게 해”)
+
+#### CASE-2026-09-02-r346-v2 | halo energy (HOLD Isaac)
+- request: “더 싸이키델릭하게 해”
+- keep: r221 + halo counterflow plates · silhouette hold · colorCycle 0 · rotate 0 · no phase-angular · advection throw **48** (no smear axis)
+- delta: glow **0.10/15→0.42/12** · sat **1.48→1.68** · chroma **0→3** · phaseFlow **27→34** · bloom **0.42** · mp **0.16**
+- preview: `out/layered/2026-09-02_r346-eye-mandala-sitter-v2-e74fce32/r346-eye-mandala-sitter-v2-preview.mp4`
+- stills: contact=`out/manual-runs/r346-eye-mandala-sitter/stills-v2/contact.png` subsec=`…/stills-v2/subsec.png` rings=`…/stills-v2/subsec-rings.png`
+- QA: PASS · motionDensity=**0.353** (v1 0.157) · localDrift=0.235
+- judge: **HOLD Isaac** — denser chroma · rings still travel · silhouette held · orange more washed · no full · no audio
+- status: superseded by v3 (Isaac “더 창의적으로 좀 해봐”)
+
+#### CASE-2026-09-02-r346-v3 | 24-band counterflow (HOLD Isaac)
+- request: “더 창의적으로 좀 해봐” — not more sat; different ring language
+- keep: r221 halo family · colorCycle 0 · rotate 0 · no phase-angular · throw 48
+- delta: flow-halo-counter **24 in/out bands** (was ~8) · fieldAlign **0.68→0.92** · glowWavePhaseSource **phaseField** · hold star-glow up · godRays **0.16** at spiral (accent only)
+- preview: `out/layered/2026-09-02_r346-eye-mandala-sitter-v3-23ae2867/r346-eye-mandala-sitter-v3-preview.mp4`
+- stills: contact=`out/manual-runs/r346-eye-mandala-sitter/stills-v3/contact.png` subsec=`…/stills-v3/subsec.png` rings=`…/stills-v3/subsec-rings.png`
+- QA: PASS · motionDensity=0.348
+- judge: **HOLD Isaac** — adjacent eye rings oppose · core pulses · silhouette held · no spin · no full · no audio
+- status: superseded by v4 (Isaac “더 고도화 해줘”)
+
+#### CASE-2026-09-02-r346-v4 | dual-scale silk (HOLD Isaac)
+- request: “더 고도화 해줘” — keep v3 bands; add eye-scale river; less wash
+- keep: 24-band counterflow · fieldAlign 0.92 · colorCycle 0 · rotate 0 · throw 48 · silhouette hold
+- delta: phaseField2 **phase-detail** mix **0.34** · surface **26→16** · chroma **3→2** · clamp **0.30→0.24** · greenCompress **0.64** · CA **0.05** · micro transport 12/7
+- preview: `out/layered/2026-09-02_r346-eye-mandala-sitter-v4-cc80d062/r346-eye-mandala-sitter-v4-preview.mp4`
+- stills: contact=`out/manual-runs/r346-eye-mandala-sitter/stills-v4/contact.png` subsec=`…/stills-v4/subsec.png` rings=`…/stills-v4/subsec-rings.png`
+- QA: PASS with hueJump WARN · localDrift=**0.177** (v3 0.234) · hueJump **32** (v3 72) · motionDensity=0.272
+- judge: **HOLD Isaac** — orange/eyes more readable · rings still travel · no spin · no full · no audio
+- status: superseded by v5 (Isaac “노이즈 낀거같아 다듬어줘”)
+
+#### CASE-2026-09-02-r346-v5 | denoise crisp (HOLD Isaac)
+- request: “더 선명하고 쩅하게” / “전반적으로 노이즈”
+- keep: 24-band counterflow · fieldAlign 0.92 · throw 48 · silhouette hold · colorCycle 0 · rotate 0
+- delta: surface **16→8** chroma **2→0** detail **0.72** mix **0.12** CA **0.022** mp **0.08/warp0.002** sat **1.52** bloom thr **0.74** edgePreserve **0.28** (r244 HF noise)
+- preview: `out/layered/2026-09-02_r346-eye-mandala-sitter-v5-5c7a8afd/r346-eye-mandala-sitter-v5-preview.mp4`
+- stills: contact=`out/manual-runs/r346-eye-mandala-sitter/stills-v5/contact.png` subsec=`…/stills-v5/subsec.png` rings=`…/stills-v5/subsec-rings.png`
+- QA: PASS with WARN · hueJump **24** (v4 32) · localDrift=0.173 · motionDensity=0.227
+- judge: **HOLD Isaac** — eyes/orange cleaner · rings still travel · no spin · no full · no audio
+- status: superseded by v6 (Isaac “최종본으로 다듬어줘 너가 알아서”)
+
+#### CASE-2026-09-02-r346-v6 | ship snap (Isaac final)
+- request: “최종본으로 다듬어줘 너가 알아서”
+- keep: 24-band counterflow · fieldAlign 0.92 · throw 48 · silhouette hold · colorCycle 0 · rotate 0 · surface **8** · chroma **0** · no HF restore
+- delta: river glow **0.36/11→0.42/9** · hold glow **0.40/8→0.46/7** · bloom **0.26/0.38→0.32/0.30** thr **0.78** · CA **0.022→0.014** · contrast **1.08→1.12** sCurve **0.07→0.10**
+- preview: `out/layered/2026-09-02_r346-eye-mandala-sitter-v6-99e129df/r346-eye-mandala-sitter-v6-preview.mp4`
+- stills: contact=`out/manual-runs/r346-eye-mandala-sitter/stills-v6/contact.png` subsec=`…/stills-v6/subsec.png` rings=`…/stills-v6/subsec-rings.png`
+- QA: PASS with WARN · hueJump **22** (v5 24) · localDrift=0.175 · motionDensity=**0.254** (v5 0.227) · darkDwell WARN 0.46
+- gate: **REJECT** temporal-boiling 0.563/0.81 + humanOverride “최종본으로 다듬어줘 너가 알아서”; report=`out/manual-runs/r346-eye-mandala-sitter/psychedelic-gate.json` scene sha=`1f1403836b1d59de…`
+- full: `out/layered/2026-09-02_r346-eye-mandala-sitter-final-f384a90e/r346-eye-mandala-sitter-final.mp4` 1632×2912 600f 20s h264 silent
+- audio: none (no track named)
+- judge: **FAIL Isaac** — “너무 구려 하나도 싸이키델릭하지않아. 링이 안팎으로 흐르는건 맘에 들어 나머지는 다 맘에 안들어”
+- rules: R-060 confirm · keep 24-band in/out · denoise/crisp path killed psych
+- status: **discard** (full exists but look rejected; do not ship)
+
+#### CASE-2026-09-02-r346-v7 | psych restore on 24-band (HOLD Isaac)
+- request: “너무 구려 하나도 싸이키델릭하지않아” / “링이 안팎으로 흐르는건 맘에 들어 나머지는 다 맘에 안들어”
+- keep: 24-band `flow-halo-counter` · fieldAlign 0.92 · throw 48 · silhouette hold · colorCycle 0 · rotate 0 · no phase-angular
+- delta: undo v5–v6 denoise · restore v3 psych + push — chroma **0→3** · surface **8→16** · sat **1.52→1.74** · glow **0.50/11** · bloom **0.46/0.58** · CA **0.05** · mp **0.16** · phaseField2 **phase-mix** · hold chroma **2**
+- preview: `out/layered/2026-09-02_r346-eye-mandala-sitter-v7-ae333c5f/r346-eye-mandala-sitter-v7-preview.mp4`
+- stills: contact=`out/manual-runs/r346-eye-mandala-sitter/stills-v7/contact.png` subsec=`…/stills-v7/subsec.png` rings=`…/stills-v7/subsec-rings.png`
+- QA: PASS with hueJump WARN · localDrift=0.246 · motionDensity=**0.401** (v6 0.254)
+- judge: **HOLD Isaac** — rings still in/out · chroma/bloom restored · no spin · no full · no audio
+- status: superseded by v10 (Isaac “사람 형태가 너무 정적이야 하나도 싸이키델릭한 패턴이 없어”)
+
+#### CASE-2026-09-02-r346-v8 | figure advection on opaque void (FAIL agent)
+- request: figure too static
+- delta: hold advection 36 + drop colorMotionMask · still black sticker (source body is black)
+- preview: `out/layered/2026-09-02_r346-eye-mandala-sitter-v8-9e183373/…-preview.mp4`
+- judge: **FAIL agent** — not shown
+- status: discard
+
+#### CASE-2026-09-02-r346-v9 | open-interior hold (FAIL agent)
+- delta: rim-open alpha over same black source river
+- preview: `out/layered/2026-09-02_r346-eye-mandala-sitter-v9-31702368/…-preview.mp4`
+- judge: **FAIL agent** — still a black window
+- status: discard
+
+#### CASE-2026-09-02-r346-v10 | halo ingest into silhouette (HOLD Isaac)
+- request: “사람 형태가 너무 정적이야 하나도 싸이키델릭한 패턴이 없어”
+- keep: 24-band ring in/out · colorCycle 0 · rotate 0 · no phase-angular
+- delta: figure flow `flow-figure-ingest` toward halo · advection **180px** fieldAlign 1 · opaque silhouette window · river unchanged
+- preview: `out/layered/2026-09-02_r346-eye-mandala-sitter-v10-758fe321/r346-eye-mandala-sitter-v10-preview.mp4`
+- stills: contact=`out/manual-runs/r346-eye-mandala-sitter/stills-v10/contact.png` subsec=`…/stills-v10/subsec.png` figure=`…/stills-v10/subsec-figure.png`
+- QA: PASS with WARN hueJump/darkDwell · motionDensity=0.411
+- judge: **FAIL Isaac** — “구려 완전 별로야” · kill figure-ingest / silhouette melt
+- status: **discard** · axis blocked (R-013)
+
+#### CASE-2026-09-02-r346-v11 | figure r139 only (Isaac final)
+- request: “사람한테만 다른 프리셋 적용해봐 싸이키델릭한 텍스쳐들 생기게”
+- keep: v7 river 24-band in/out · silhouette shape · colorCycle 0 · rotate 0 · no ingest
+- delta: figure layer only = r139/r344 v3 knobs — surface **27** chroma **3** glow **0.58/12** · colorMotionMask floor **1** (dark body gets prism) · no advection
+- preview: `out/layered/2026-09-02_r346-eye-mandala-sitter-v11-8c9e2626/r346-eye-mandala-sitter-v11-preview.mp4`
+- stills: contact=`out/manual-runs/r346-eye-mandala-sitter/stills-v11/contact.png` subsec=`…/stills-v11/subsec.png` figure=`…/stills-v11/subsec-figure.png`
+- QA: PASS with hueJump WARN · motionDensity=0.402
+- gate: **REJECT** edge 0.829/0.84 + localDrift 0.326/0.30 + humanOverride “플렌더”
+- full: `out/layered/2026-09-02_r346-eye-mandala-sitter-final-40c26252/r346-eye-mandala-sitter-final.mp4` 1632×2912 600f 20s h264
+- audio: `…-final-with-adhana.mp4` Adhana @**5:06** aac 320k 20s 600f
+- judge: **Isaac final** — “플렌더” + Adhana 5:06
+- status: **final**
+
+#### CASE-2026-09-02-r349-v1 | uv-pills-face (HOLD Isaac)
+- source: chat JPEG 1163×1783 → Real-ESRGAN 2x (2326×3566) → lanczos cover `sources/incoming/r349-uv-pills-face.png` 1632×2912 sha256=`0e16ab5ebe710018…` (no native 1632 PNG found; R-064) — type=`figure-vivid` M: satMean=0.616 vivid=51.5% busyness=0.009 greenRisk**false** finishedVivid=0.58 dark=18% figure=40%
+- hero: **form** @0.31,0.34 (peaks=0 iris=0.90 pourScore=0.66 unused) — living part = UV painted face + tongue pills, not halo/pour. No custom travel plates. No hold (full-frame face is the hero).
+- recipe: golden r221 as-is · colorCycle 0 · rotate 0 · no phase-angular · clamp 0.26 · no sourceFlowAdvection
+- work-dir: `out/manual-runs/r349-uv-pills-face/` · session-grade=OK hero=form
+- preview: `out/layered/2026-09-02_r349-uv-pills-face-51d28a3d/r349-uv-pills-face-preview.mp4`
+- stills: contact=`out/manual-runs/r349-uv-pills-face/stills/contact.png` subsec=`…/stills/subsec.png` hero=`…/stills/subsec-hero.png`
+- QA: olive PASS (src olive 0.24) bleach PASS drift=0.125/local=0.240 motionDensity=0.112 (hue-pass) verdict=**PASS**
+- judge: **HOLD Isaac** — contour crawl on paint · identity cyan-shift vs lime/magenta source (R-001 risk) · no box · no spin · no full · no audio
+- rules: R-060 confirm · R-064 ESRGAN+cover vs native
+- status: delivered-preview
+
+#### CASE-2026-09-02-OS-v2 | operating-system rewrite + session-plates alpha bug (no render)
+- request: Isaac "환각적인 요소들이 너무 적어 … 새로운 작업 방식이 필요해 / 기존 작업방식 싹 갈아엎어도돼 다 너맘대로해"
+- diagnosis: the OS had a **floor** (nothing dead/boxed/spinning ships) and no **ceiling** (nothing knob-only ships). With only a floor, the agent's optimum is the untouched golden — r343 and r345 finals literally were. Gate is anti-correlated with Isaac: last 6 finals = 5× REJECT+override, the only PASS (r343) had the lowest motionDensity (0.091). Isaac's accepted moves were always *language* changes (r346 v3 24-band counterflow, v11 figure-only r139); the five knob rounds in between were all "하나도 싸이키델릭하지않아".
+- shipped (docs): `00-INDEX.md` **v2** = two contracts + state-machine loop + ceiling contract (language set L1–L10, region map, ≥3 languages, ≥2 scales/tempos) + **Isaac quote → axis dictionary** + knowledge-lifetime table (R-numbers frozen at R-064). 01 keeps §3 type tree, §5 killed, §9 ledger. 7 root redirect stubs deleted; `AGENTS.md` + skill now point at 00 only.
+- shipped (code): `--hero <kind@cx,cy[:rIn/rOut][:wNy]> --hero-reason` written to `hero.json` (sha-tagged) and **enforced by session-grade** (r346/r348 overrides used to be re-detected away) · hold layer default = r346 v11 textured figure knobs (surface 27 / chroma 3 / glow 0.58/12 / CMM floor 1) replacing surface 6 / floor 0.08 "sticker" · halo hold now punches out the hero radius · `export-layered --sketch` (¼ res / 12fps / 6s) + `scripts/sketch-grid.ts` (2–6 language tiles, one grid, legend) · `scripts/isaac-pick.ts` (verbatim quote = full-render permit; no more hand-edited humanOverride; refuses an audio start without `@m:ss`) · `scripts/close-lock.ts` (lock pack is the default close, 02 §4.2 E–H) · qa-motion `deadZone` WARN (hue-static AND luma-static cells).
+- **bug found + fixed:** `session-plates.ts` `blurAlpha` read sharp's blurred output as 1 channel; sharp returns **3** for a 1-channel raw input. Every generated `figure-hold.png` alpha was sampled with a 3× stride — the hold mask did not match the mask that was computed or wall-scanned. Silent since 757aff5 (r325/r342 ship lock plates, so their products are unaffected). Now strided by `info.channels`, with a regression test comparing `figure-hold` alpha to `debug-hold` grey plus a hero-alpha ≤0.28 assertion.
+- verification: 77+ tests green (`hero-detect`, `session-grade`, `session-scene`, `hold-walls`, `figure-vivid-legal`, `export-layered`, `isaac-pick`, `close-lock`, `qa-motion-core`, `psychedelic-final-guard`, `rebuild-closed-lock`); `tsc --noEmit` clean on touched files; prepare smoke on r325 (halo), r342 (pour) and r221+override (halo) all `session-grade OK`; `isaac-pick` → `close-lock` → `rebuild-closed-lock` sha verify in an isolated temp repo; `sketch-grid` 3-tile output 1224×728 + legend.
+- open for Isaac (05 §6): **L6** vection (`feedback.zoom` 1.003–1.010 + micro `camDrift`) · **L7** luminance-only reaction-diffusion on field/ground masks · **L9** integer `colorCycle` on non-skin region masks (R-018 re-entry by region). All three are built in the shader and unused; the rest of the ceiling works without them.
+- rules: R-numbers frozen at R-064 — new lessons go to `00` §4 (taste), a test (mechanical), or this ledger (evidence)
+- status: **shipped, unrendered** — no preview, no full, no audio in this session
+
+#### CASE-2026-09-01-r346-v1 | cosmic-eyes void tunnel (HOLD Isaac)
+- source: native 1632×2912 PNG `/Users/isaac/Downloads/monglong_vibrant_psychedelic_illustration_depicting_a_black_sil_3fc6ae00-ffcd-4517-ae31-8b142907bbb9.PNG` sha256=`ec249918ed67d242…` — type=`figure-vivid`; satMean=0.4723 vivid=30.9327% busyness=0.0347 greenRisk=false finishedVivid=0.1938 figure=40%
+- hero correction: auto detector called the small red sphere `form` at `(0.593,0.311)`, but visual review identified the living subject as the repeated-iris tunnel converging on the red void. Its working hero is a measured `halo` at `(0.500,0.339)`, inner/outer radii `130/630`; no spin.
+- recipe: r221 source-derived two-layer halo path — custom `flow-halo-counter` + `phase-halo`, alternating in/out iris bands, `sourceFlowAdvection` 48px / fieldAlign 0.68 and transport 34px on the source; soft source-pixel figure hold only. `colorCycle=0`, noise=0, angular phase absent, rotate=0; no decorative overlay, rim, or added texture.
+- work-dir: `out/manual-runs/r346-cosmic-eyes-void/` · session-grade=OK · custom hold-wall scan=OK
+- preview: `out/layered/2026-09-01_r346-cosmic-eyes-void-03901cd2/r346-cosmic-eyes-void-preview.mp4`
+- stills: contact=`out/manual-runs/r346-cosmic-eyes-void/stills-v1/contact.png` subsec=`…/stills-v1/subsec.png` hero-subsec=`…/stills-v1/hero-subsec.png`
+- QA: olive=0.0424 bleach=0.0026 seam=1.1070 drift=0.0837/local=0.1655 static=0.0022 motionDensity=0.1176 verdict=**PASS with hueJump95 WARN**; lumFlicker=0.0020
+- gate: **PASS** material=0.9907 connected=0.4892 coherence=0.8597 edge=0.8970 drift=0.1165/local=0.2375; report=`out/manual-runs/r346-cosmic-eyes-void/psychedelic-gate-v1.json`, exact scene sha=`3989550af0c4776862f1093a64ab9028b69c36e11f20da6b04d5a8039484d305`
+- judge: **FAIL Isaac** — “구려 다른 프리셋 돌려봐”. The r221 global prism read as a plastic recolor despite valid halo travel; no full and no audio.
+- status: discarded
+
+#### CASE-2026-09-01-r347-v1 | cosmic-eyes r139 pattern river (HOLD Isaac)
+- source: same native 1632×2912 r346 PNG sha256=`ec249918ed67d242…` — reclassified `dense-pattern-figure`: the repeated iris field is visually dominant and the cosmic silhouette has no soft-skin color to protect; M remains satMean=0.4723 vivid=30.9327% busyness=0.0347 greenRisk=false figure=40%.
+- request: after r346 rejection, Isaac asked for a different preset. This is a recipe-family switch only: r221 → `woodblock-phase-advect-r139`.
+- hero: identical visually measured eye-tunnel `halo` at `(0.500,0.339)`, radii `130/630`; custom `flow-halo-counter` + `phase-halo` make alternating iris bands source-advect toward/away from the red void. Soft source-pixel figure hold has no axis-aligned wall.
+- recipe: r139 fixed-UV source prism, `colorCycle=0`, no palette/noise/CA/bloom/feedback; clamp=`0.26`; real source advection 48px plus transport 34px. No overlay, rim, angular phase, or rotation.
+- work-dir: `out/manual-runs/r347-cosmic-eyes-r139/` · session-grade=OK · custom hold-wall scan=OK
+- preview: `out/layered/2026-09-01_r347-cosmic-eyes-r139-eeb39ed6/r347-cosmic-eyes-r139-preview.mp4`
+- stills: contact=`out/manual-runs/r347-cosmic-eyes-r139/stills-v1/contact.png` subsec=`…/stills-v1/subsec.png` hero-subsec=`…/stills-v1/hero-subsec.png`
+- QA: olive=0.0414 bleach=0.0005 seam=1.1580 drift=0.0874/local=0.1691 static=0.0016 motionDensity=0.0655 verdict=**PASS with hueJump95 WARN**; lumFlicker=0.0007.
+- gate: **PASS** material=0.9585 connected=0.4477 coherence=0.8397 edge=0.9225 drift=0.1049/local=0.2100; report=`out/manual-runs/r347-cosmic-eyes-r139/psychedelic-gate-v1.json`.
+- judge: **HOLD Isaac** — R-020=yes (continuous eye-tunnel travel in the 6.00/6.15/6.30 hero crop); R-002 pending. No full and no audio.
+- status: delivered-preview
+
+#### CASE-2026-09-01-r348-v1 | brushed-eye-tunnel r139 (INTERNAL REJECT)
+- source: native 1632×2912 PNG `/Users/isaac/Downloads/monglong_psychedelic_artwork_featuring_a_silhouette_of_a_person_1ff94c62-77f7-474e-87ed-838140f08b2b.PNG` sha256=`969151fc04529868…` — type=`dense-pattern-figure`; satMean=0.5734 vivid=51.3647% busyness=0.0554 greenRisk=false finishedVivid=0.2421 figure=40%.
+- hero correction: detector falsely picked a peripheral upper-left eye (`form` @0.295,0.136). Visual hero is the central luminous pupil and surrounding iris tunnel; working `halo` @`(0.500,0.206)`, radii `80/550`, no spin.
+- recipe: r139 + custom `flow-halo-counter` / `phase-halo` / soft source-pixel figure hold; sourcePrism surface14/flow34/3 cycles, clamp0.24, all visible imagery source-derived.
+- preview: `out/layered/2026-09-01_r348-brushed-eye-tunnel-5d118b6e/r348-brushed-eye-tunnel-preview.mp4`
+- QA: PASS with hueJump95 WARN; olive=0.0214 bleach=0.0009 seam=1.2867 drift=0.0814/local=0.1673.
+- judge: **INTERNAL REJECT** — central architecture travels, but prism amount=1 makes the painted eye texture read as a broad magenta/cyan recolor rather than native paint motion; not presented to Isaac.
+- status: discarded
+
+#### CASE-2026-09-01-r348-v2 | brushed-eye-tunnel silk (STOP gate)
+- request: new source supplied after r347; preserve the source’s red paint, black star-silhouette, and individual eyelash/iris texture while retaining the central eye tunnel as the moving hero.
+- one-axis correction from v1: source color treatment only — prism amount `1→0.32`, saturation `1.45→1.12`, clamp `0.24→0.16`; halo source advection/transport and all geometry unchanged. No overlay, noise, angular phase, or rotation.
+- preview: `out/layered/2026-09-01_r348-brushed-eye-tunnel-v2-silk-292b3a62/r348-brushed-eye-tunnel-v2-silk-preview.mp4`
+- stills: contact=`out/manual-runs/r348-brushed-eye-tunnel/stills-v2-silk/contact.png` subsec=`…/stills-v2-silk/subsec.png` hero-subsec=`…/stills-v2-silk/hero-subsec.png`
+- QA: **FAIL seamRatio=1.5878**; other hard metrics pass — olive=0.0431 bleach=0.0000 drift=0.0666/local=0.1393; hueJump95 WARN.
+- gate: **REJECT temporal-boiling** coherence=0.6364 (<0.8102), fineMotion=0.3960 (>0.34); source edges=0.9287 and drift=0.0691/local=0.1477. Report=`out/manual-runs/r348-brushed-eye-tunnel/psychedelic-gate-v2-silk.json`.
+- judge: **HOLD Isaac** — R-001 visual texture preservation improved versus v1; R-020 visible in hero subsec, but r348 has two internal misses (v1 recolor, v2 QA/gate), so stop under R-013. No full and no audio.
+- status: stopped-for-direction
+
+#### CASE-2026-09-01-r348-v3 | extreme halo transport (INTERNAL REJECT)
+- request: Isaac explicitly reopened the stopped source with “훨씬더 극도로 싸이키델릭해야되고 스피디해야돼”. The prior stopped audit is retained; this is a fresh direction, not a retune of v2.
+- hypothesis: replace the rejected high-detail advection regime with one fast, connected source-material transport along the measured central halo; keep the black star-silhouette as a source-pixel hold. No overlay, spin, angular phase, noise, palette, or fixed base.
+- recipe: custom halo flow, minimal required advection (24px/1 cycle) plus dominant `sourceFlowTransport` (84px/5 macro cycles; 6px/7 micro cycles), static source prism surface map, saturated source-derived colour; no artificial strobe.
+- work-dir: `out/manual-runs/r348-brushed-eye-tunnel-v3-transport/` · session-grade=OK · hold-wall scan=OK.
+- preview: `out/layered/2026-09-01_r348-brushed-eye-tunnel-v3-transport-8219918e/r348-brushed-eye-tunnel-v3-transport-preview.mp4`
+- stills: contact=`out/manual-runs/r348-brushed-eye-tunnel-v3-transport/stills-v3-transport/contact.png` subsec=`…/stills-v3-transport/subsecond-contact.png`
+- QA: **PASS with hueJump95 WARN**; olive=0.0288 bleach=0.0002 seam=1.3268 drift=0.0814/local=0.1637 motionDensity=0.1845.
+- gate: **REJECT temporal-boiling + source-edge-damage** — coherence=0.7112 (<0.8102), source edges=0.8266 (<0.8400), fineMotion=0.3373. Report=`out/manual-runs/r348-brushed-eye-tunnel-v3-transport/psychedelic-gate.json`.
+- causal diagnostic: removed transport, glow and hold prism only; anchors recover (edges=0.9671, drift=0.0442/local=0.1094), but resulting motion is too static/non-connected. Evidence=`out/manual-runs/r348-brushed-eye-tunnel-v3-causal-diagnostic/diagnostic-evidence/{source-reference-candidate-contact,amplified-difference-t6}.png` · fresh gate report=`…/psychedelic-gate.json`.
+- status: discarded; source transport is blocked for this direction.
+
+#### CASE-2026-09-01-r348-v4 | fast source stream pulse (STOP gate)
+- hypothesis: after causal isolation, replace v3 transport—not its amplitude—with broad, radial source-stream pulses through the same custom central halo. The eye tunnel should pulse rapidly without dissolving individual painted eyes.
+- recipe: minimal required advection retained; `sourceFlowTransport=0`; new `sourceStreamFlow`=38px/9 cycles/wavelength168, high edge preservation; source prism=0.48, saturation=1.32. No overlay, rotation, angular phase, glow, bloom, noise, or palette.
+- work-dir: `out/manual-runs/r348-brushed-eye-tunnel-v4-stream-pulse/` · session-grade=OK.
+- preview: `out/layered/2026-09-01_r348-brushed-eye-tunnel-v4-stream-pulse-175180b1/r348-brushed-eye-tunnel-v4-stream-pulse-preview.mp4`
+- stills: contact=`out/manual-runs/r348-brushed-eye-tunnel-v4-stream-pulse/stills-v4-stream-pulse/contact.png` subsec=`…/stills-v4-stream-pulse/subsecond-contact.png`
+- QA: **FAIL seamRatio=1.5758**; hard colour bounds pass (olive=0.0466 bleach=0, drift=0.0608/local=0.1342).
+- gate: **REJECT temporal-boiling** — coherence=0.6489 (<0.8102), fineMotion=0.3712 (>0.34), source edges=0.9637. Report=`out/manual-runs/r348-brushed-eye-tunnel-v4-stream-pulse/psychedelic-gate.json`.
+- decision: two fresh-direction candidates are rejected (R-013). Do not make a third blind render; no full and no audio. Isaac must select a preview for explicit human override or name a narrower new visual direction.
+- status: stopped-for-direction

@@ -5,14 +5,19 @@
  *     --source /path/to.png \
  *     --slug rNNN-descriptive \
  *     --recipe recipes/golden/eye-mirror-phase-advect-r221.json \
- *     --work-dir out/manual-runs/rNNN-descriptive
+ *     --work-dir out/manual-runs/rNNN-descriptive \
+ *     [--hero halo@0.50,0.20:130/630 --hero-reason "eye rings are the living part; detector saw form"]
+ *
+ * `--hero` is the only legal way to disagree with the detector. It is written to hero.json with the
+ * source sha, and session-grade judges that hero (not a fresh detect), so the override is enforced.
  */
+import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import sharp from "sharp";
 import { z } from "zod";
-import { detectHero, needsCustomTravel } from "./lib/hero-detect.js";
+import { applyHeroOverride, detectHero, needsCustomTravel } from "./lib/hero-detect.js";
 import { writeSessionPlates } from "./lib/session-plates.js";
 import { patchSessionScene, type LooseScene } from "./lib/session-scene.js";
 import { enforceSessionGrade } from "./lib/session-grade.js";
@@ -26,28 +31,35 @@ function req(argv: readonly string[], i: number, flag: string): string {
   return arg.parse(v);
 }
 
-function parse(argv: readonly string[]): {
+type Args = {
   source: string;
   slug: string;
   recipe: string;
   workDir: string;
-} {
-  let source: string | undefined;
-  let slug: string | undefined;
-  let recipe: string | undefined;
-  let workDir: string | undefined;
+  hero?: string;
+  heroReason?: string;
+};
+
+function parse(argv: readonly string[]): Args {
+  const out: Partial<Args> = {};
   for (let i = 0; i < argv.length; i++) {
     const f = argv[i];
-    if (f === "--source") source = req(argv, i++, f);
-    else if (f === "--slug") slug = req(argv, i++, f);
-    else if (f === "--recipe") recipe = req(argv, i++, f);
-    else if (f === "--work-dir") workDir = req(argv, i++, f);
+    if (f === "--source") out.source = req(argv, i++, f);
+    else if (f === "--slug") out.slug = req(argv, i++, f);
+    else if (f === "--recipe") out.recipe = req(argv, i++, f);
+    else if (f === "--work-dir") out.workDir = req(argv, i++, f);
+    else if (f === "--hero") out.hero = req(argv, i++, f);
+    else if (f === "--hero-reason") out.heroReason = req(argv, i++, f);
     else throw new Error(`unknown arg: ${f}`);
   }
-  if (!source || !slug || !recipe || !workDir) {
-    throw new Error("usage: --source <png> --slug <name> --recipe <golden.json> --work-dir <dir>");
+  if (!out.source || !out.slug || !out.recipe || !out.workDir) {
+    throw new Error(
+      "usage: --source <png> --slug <name> --recipe <golden.json> --work-dir <dir> [--hero <kind@cx,cy[:rIn/rOut]> --hero-reason <text>]",
+    );
   }
-  return { source, slug, recipe, workDir };
+  if (out.hero && !out.heroReason) throw new Error("--hero requires --hero-reason");
+  if (out.heroReason && !out.hero) throw new Error("--hero-reason requires --hero");
+  return out as Args;
 }
 
 async function ensureTargetSize(sourcePath: string, slug: string): Promise<string> {
@@ -67,6 +79,10 @@ async function ensureTargetSize(sourcePath: string, slug: string): Promise<strin
     .toFile(dest);
   process.stdout.write(`lanczos ${meta.width}x${meta.height} → ${TARGET[0]}x${TARGET[1]} ${dest}\n`);
   return dest;
+}
+
+function sha256File(filePath: string): string {
+  return createHash("sha256").update(fs.readFileSync(filePath)).digest("hex");
 }
 
 async function main(argv: readonly string[] = process.argv.slice(2)): Promise<void> {
@@ -94,9 +110,15 @@ async function main(argv: readonly string[] = process.argv.slice(2)): Promise<vo
   );
 
   const sourcePng = path.join(workDir, "source.png");
-  const hero = await detectHero(sourcePng);
+  const detected = await detectHero(sourcePng);
+  const hero = {
+    ...(args.hero ? applyHeroOverride(detected, args.hero, args.heroReason ?? "") : detected),
+    sourceSha256: sha256File(sourcePng),
+  };
   fs.writeFileSync(path.join(workDir, "hero.json"), `${JSON.stringify(hero, null, 2)}\n`);
-  process.stdout.write(`hero ${hero.kind} @ ${hero.cxN.toFixed(3)},${hero.cyN.toFixed(3)} ${hero.reasons.join("; ")}\n`);
+  process.stdout.write(
+    `hero ${hero.kind} @ ${hero.cxN.toFixed(3)},${hero.cyN.toFixed(3)}${hero.override ? " (override)" : ""} ${hero.reasons.join("; ")}\n`,
+  );
 
   if (needsCustomTravel(hero.kind)) {
     const plates = await writeSessionPlates(path.join(workDir, "layers"), hero);
@@ -112,8 +134,10 @@ async function main(argv: readonly string[] = process.argv.slice(2)): Promise<vo
 
   const grade = await enforceSessionGrade(workDir, cwd);
   process.stdout.write(`session-grade OK (${grade.job} hero=${hero.kind})\n`);
+  const rel = path.relative(cwd, workDir);
   process.stdout.write(
-    `next: npx tsx scripts/export-layered.ts --title ${args.slug} --work-dir ${path.relative(cwd, workDir)} --preview\n`,
+    `next (language sketches, Isaac picks a language): npx tsx scripts/export-layered.ts --title ${args.slug} --work-dir ${rel} --sketch\n` +
+      `next (one 1632 preview): npx tsx scripts/export-layered.ts --title ${args.slug} --work-dir ${rel} --preview\n`,
   );
 }
 

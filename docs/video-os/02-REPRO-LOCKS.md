@@ -280,6 +280,15 @@ Do **not** lock every preview experiment.
 
 ### 4.2 Close-out checklist (agent must complete every box)
 
+**Preferred (default after every Isaac full, `00` §2 CLOSE):**
+
+```bash
+npx tsx scripts/close-lock.ts --slug <slug> --audio "<Track> @m:ss" [--plates "node scripts/locks/<x>.mjs && …"] [--final <final.mp4>]
+npx tsx scripts/rebuild-closed-lock.ts --slug <slug>    # verify it reproduces
+```
+
+It performs E–H below (copies, shas, manifest upsert), refuses a gate without permit or a scene/gate sha mismatch, and prints the `git add` list. Boxes A–D and I–M remain yours. The manual steps below are the equivalent for reference.
+
 Work from the successful local work dir, e.g. `out/manual-runs/<slug>/`.
 
 ```text
@@ -492,7 +501,7 @@ Is the task about a CLOSED product (r221, r242, …)?
 │    → Isaac defect? If no, STOP and ask.
 │    → If yes, §5.2 revise lock (new gate mandatory).
 └─ NO, new source / experiment
-     → OUTPUT_GAP_ANALYSIS runbook + recipes/golden/*
+     → 00-INDEX §2 loop + recipes/golden/*
      → When Isaac closes it → §4 lock checklist
 ```
 

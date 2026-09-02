@@ -24,6 +24,7 @@ const THRESH = {
   staticZone: 0.15,
   lightStaticZone: 0.15,
   lightStaticStd: 0.018,
+  deadZone: 0.15,
   motionDensity: 0.12,
   sourceColorDrift95: 0.18,
   sourceColorLocalDrift95: 0.3,
@@ -52,6 +53,8 @@ type Metrics = {
   readonly seamRatio: number;
   readonly staticZone: number;
   readonly lightStaticZone: number;
+  /** Cells with neither hue nor luma motion — the R-023 "whole frame must live" floor (00 §3). */
+  readonly deadZone: number;
   readonly motionDensity: number;
   readonly sourceColorDrift95?: number;
   readonly sourceColorLocalDrift95?: number;
@@ -330,12 +333,16 @@ export async function analyzeFrameBuffer(buf: Buffer, masksDir?: string, sourceG
 
   let staticCells = 0;
   let lightStaticCells = 0;
+  let deadCells = 0;
   const lumRanges: number[] = [];
   for (let cell = 0; cell < CELL_COUNT; cell++) {
     const hues = hueFrames.map((frame) => frame[cell]);
     const lums = lumFrames.map((frame) => frame[cell]);
-    if (circularStdDeg(hues) < 2) staticCells++;
-    if (std(lums) < THRESH.lightStaticStd) lightStaticCells++;
+    const hueStatic = circularStdDeg(hues) < 2;
+    const lumStatic = std(lums) < THRESH.lightStaticStd;
+    if (hueStatic) staticCells++;
+    if (lumStatic) lightStaticCells++;
+    if (hueStatic && lumStatic) deadCells++;
     lumRanges.push(range(lums));
   }
 
@@ -355,6 +362,7 @@ export async function analyzeFrameBuffer(buf: Buffer, masksDir?: string, sourceG
       seamRatio: adjacentMedian <= 1e-9 ? (seamDiff <= 1e-9 ? 0 : 9999) : seamDiff / adjacentMedian,
       staticZone: staticCells / CELL_COUNT,
       lightStaticZone: lightStaticCells / CELL_COUNT,
+      deadZone: deadCells / CELL_COUNT,
       motionDensity: percentile(lumRanges, 0.95),
       sourceColorDrift95: sourceColorDrift?.frameMean95,
       sourceColorLocalDrift95: sourceColorDrift?.local95,
@@ -426,6 +434,8 @@ export function buildMetricRows(metrics: Metrics, source?: QaSourceReport): read
     row("staticZone", metrics.staticZone, THRESH.staticZone, "<= 0.15", "WARN"),
     lightMotionRow("lightStaticZone", metrics.lightStaticZone, THRESH.lightStaticZone, "<= 0.15", "max", metrics.staticZone, `std<${formatValue(THRESH.lightStaticStd)}`),
     lightMotionRow("motionDensity", metrics.motionDensity, THRESH.motionDensity, ">= 0.12", "min", metrics.staticZone),
+    // ponytail: 32×57 grid cannot see micro-scale energy or flow direction count; add those from full-res frames when H-score is calibrated.
+    row("deadZone", metrics.deadZone, THRESH.deadZone, "<= 0.15", "WARN"),
     row("hierarchy", metrics.hierarchy, THRESH.hierarchy, ">= 0.60", "WARN", "min"),
     row("subjectHold", metrics.subjectHold, THRESH.subjectHold, "<= 0.25", "WARN", "max", metrics.subjectHoldMask ? `mask=${metrics.subjectHoldMask}` : undefined),
   ];

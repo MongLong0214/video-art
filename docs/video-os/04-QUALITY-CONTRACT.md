@@ -17,7 +17,7 @@ If you skip this file, you will ship a golden-r221 preview and call it done. Tha
 | Job | Goal | Command of record |
 |-----|------|-------------------|
 | **Rebuild closed** | Byte-same knobs + custom plates as the lock | `npx tsx scripts/rebuild-closed-lock.ts --slug <slug>` then `--full` only if asked |
-| **New source** | First preview already has **hero motion traveling** + **no rectangle hold** | `npx tsx scripts/prepare-new-source.ts --source … --slug … --recipe … --work-dir …` then `export-layered --preview` |
+| **New source** | First preview already has **hero motion traveling** + **no rectangle hold** + a **textured** hold (not a frozen sticker) | `npx tsx scripts/prepare-new-source.ts --source … --slug … --recipe … --work-dir … [--hero … --hero-reason …]` then `export-layered --sketch` tiles → Isaac picks a language → `--preview` (`00` §2) |
 
 Closed rebuild is not “scaffold + full”. Custom plates are the look.
 
@@ -44,7 +44,7 @@ Closed rebuild (`source`+`scene` sha match `manifest.json`): only checks that ev
 
 A zero-context agent that only scaffolds r221 and exports will get a hard FAIL on halo/pour/beam sources (r325 / r342 class). That is the product.
 
-Name **one hero** that must travel (the detector names it; you still write it in the case note).
+Name **one hero** that must travel. The detector names it in `hero.json`. If the living part you see is not what it named (r346 / r348: detector `form`, hero = eye-ring halo), disagree **only** through the flag — `prepare-new-source … --hero halo@0.50,0.20:130/630 --hero-reason "eye rings are the living part"`. `session-grade` then judges the overridden hero (it reads `hero.json`, sha-tagged to the source), so an override in a case note that never reached the flag does not exist.
 
 If the chat image is not 1632×2912, prepare lanczos-upscales (`cover` + center crop) to `sources/incoming/<slug>.png`.
 
@@ -84,7 +84,9 @@ Refuse to present if any box is unchecked.
 
 - [ ] `session-grade.json` exists and `ok: true` (prepare-new-source / export enforced).
 - [ ] Source is 1632×2912 (lanczos if the chat file was ~1121).
-- [ ] Hero named in the case note (one sentence). `hero.json` kind matches.
+- [ ] Hero named in the case note (one sentence). `hero.json` kind matches — or `hero.json.override` records why not.
+- [ ] Language map declared (`00` §3.2): every region has a language; ≥3 languages; micro does not dominate.
+- [ ] For a **full**: `isaac-pick.json` exists with Isaac’s verbatim quote (`scripts/isaac-pick.ts`). No hand-edited `humanOverride`.
 - [ ] Subsec `6.00 / 6.15 / 6.30` on the **hero crop** — travel is visible, not boil-in-place.
 - [ ] Hold debug (if a hold layer exists): no **constant-nx vertical wall**. (Waterline / seated base may be horizontal.)
 - [ ] Figure-vivid / prism scenes: `colorCycle.speed === 0`. `rotate === 0`. No `phase-angular`. Cosmos colorCycle is legal when there is no `sourcePrism`.
@@ -107,7 +109,8 @@ Regression:
 ```bash
 npx vitest run scripts/lib/hero-detect.test.ts scripts/lib/hold-walls.test.ts \
   scripts/lib/session-scene.test.ts scripts/lib/session-grade.test.ts \
-  scripts/lib/figure-vivid-legal.test.ts scripts/export-layered.test.ts
+  scripts/lib/figure-vivid-legal.test.ts scripts/export-layered.test.ts \
+  scripts/lib/isaac-pick.test.ts scripts/lib/close-lock.test.ts
 ```
 
 ---

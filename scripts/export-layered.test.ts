@@ -44,9 +44,17 @@ describe("export-layered encoding defaults (T4)", () => {
 
   it("--preview forces half-resolution capture, 15fps, and preview output name", () => {
     expect(exportSrc).toContain('"--preview"');
-    expect(exportSrc).toContain("const FPS = preview ? 15");
+    expect(exportSrc).toContain("preview ? 15");
     expect(exportSrc).toContain("computePreviewResolution(config.resolution)");
-    expect(exportSrc).toContain('`${title}-preview${ext}`');
+    expect(exportSrc).toContain('${sketch ? "sketch" : "preview"}${ext}');
+  });
+
+  it("--sketch is a preview tile: quarter-res, 12fps, first 6s, still session-graded", () => {
+    expect(exportSrc).toContain('"--sketch"');
+    expect(exportSrc).toContain("SKETCH_SECONDS = 6");
+    expect(exportSrc).toContain("SKETCH_FPS = 12");
+    expect(exportSrc).toContain("computePreviewResolution(config.resolution, SKETCH_SCALE)");
+    expect(exportSrc).toContain('includes("--preview") || sketch');
   });
 
   it("preview encoding skips final 1080 scale and uses fast x264 settings", () => {
