@@ -33,6 +33,7 @@ OS에 *바닥*(죽은 영상 차단)만 있고 *천장*(환각 요구)이 없어
 - [7. 참조해야 할 파일](#7-참조해야-할-파일)
 - [8. 검증 결과](#8-검증-결과)
 - [9. Isaac 판정 대기 3건](#9-isaac-판정-대기-3건)
+- [10. 추가 (2026-09-03) — 천장을 코드로 옮김](#10-추가-2026-09-03--천장을-코드로-옮김)
 
 ---
 
@@ -399,11 +400,83 @@ npx vitest run scripts/lib/hero-detect.test.ts scripts/lib/hold-walls.test.ts \
 
 ---
 
+## 10. 추가 (2026-09-03) — 천장을 코드로 옮김
+
+v2 출하 다음 날 Isaac: "결과물이 달라진게 없는데?" 측정 결과 맞았다.
+
+| 런 | 실체 | 골든에 없는 언어 |
+|---|---|---:|
+| r349 | 골든 r221과 **82키 0차이** | 0 |
+| r351 v1 | r346 v11 클론 (SSIM 0.980) | — |
+| r351 v2 | 실제 합성 (SSIM 0.548 vs 클론) | 6 |
+
+**원인 두 가지, 둘 다 v2의 설계 결함.**
+1. 바닥은 코드(`session-grade`가 거부), 천장은 문서(00 §1 "Enforced by: agent self-check"). 부탁은 강제가 아니다.
+2. 천장이 언어 **이름**을 셌다. 골든 r221에 `glowWave2 0.06`·`breath 0.003`이 이미 있어 "언어 3종 이상"을 골든 무수정이 그대로 만족했다.
+
+**고친 것 (브랜치 `feat/ceiling-enforced`).**
+
+| # | 변경 | 파일 |
+|---|---|---|
+| C1 | `measureLanguages` — 임계값 이상의 **셰이더 활성화**만 언어로 셈. L3는 baseline으로 절대 안 셈. 골든 기본값은 임계값 미달 → 골든 무수정 = composed 0 | `scripts/lib/language-map.ts` |
+| C2 | `composeLanguageMap` — layer 0에 L4(glowWave 0.40/3 : 0.26/5 + phaseWarp 0.12) + L8(dissolve 0.42/22px · spectral 0.48/16px · chromaFlow 0.5/6px) + L10(breath 0.032×2). prism·colorCycle·플레이트 무변경. 값은 r351 v2(픽셀을 움직인 유일한 실측 씬)에서 | 같은 파일 |
+| C3 | `gradeCeiling` — 골든과 키 동일 · 같은 소스 sha에서 다른 슬러그의 `scene*.json` 재생 · composed <3 · 히어로 레이어 <2 를 **거부**. Isaac waiver(`ceiling-waiver.json`, 씬 sha 바인딩)만 예외 | 같은 파일 |
+| C4 | `prepare-new-source`가 기본 합성 + `language-map.json` 기록. `--compose off`는 `--ceiling-waive "<Isaac 원문>"` 필수 | `scripts/prepare-new-source.ts` |
+| C5 | `session-grade`가 new-source마다 천장 실행 → export도 거부 | `scripts/lib/session-grade.ts` |
+| C6 | `isaac-pick.ts --ceiling-waive` — 프리뷰 전용 waiver, 풀렌더 허가 아님 | `scripts/isaac-pick.ts` |
+| C7 | **매크로 규칙** — composed ≥3만으로는 부족. L1·L2·L6·L9 중 하나가 없으면 거부("no macro language"). 컴포저 v1(L4+L8+L10 장식만)이 Isaac 눈에 "크게 달라진게 없다"였던 것의 코드화 | `scripts/lib/language-map.ts` |
+| C8 | **컴포저 v2** — form/sheet 히어로에 L1 travel(스캐폴드 flow-field 44px, fieldAlign 1, forwardBias 0.35) + transport 30px · 전 씬에 prism `chromaCycles 3` · L4 glowWave 0.55/9 : 0.32/14 + phaseWarp 0.2 · L6 `cameraDrift` 0.01 + zoom 1.006 · L8 · L10. phaseFlowPx/surfaceCycles/colorCycle/플레이트 무변경 | 같은 파일 |
+| C9 | **`macroMotion` 지표** — 32×57 그리드에서 0.2s 간격 |Δluma| 평균. WARN floor 0.025. 골든 0.013 · v1 0.015 · v2 0.035 · Isaac 최종 0.044. SSIM은 등고선 요동을 잡고, 이 지표는 Isaac이 보는 것을 잡는다 | `scripts/lib/qa-motion-core.ts` |
+
+**컴포저 v1은 틀렸다.** r349 소스에 v1(L4+L8+L10)을 렌더해 골든 무수정과 비교하니 SSIM 0.654 — 숫자상 큰 차이였다. Isaac이 보고 "크게 달라진게 없는데"라 했고, 프레임을 나란히 놓고 보니 맞았다. 같은 프리즘 등고선 강이 제자리에서 요동하는 위에 미세 요동만 얹은 것이었다. 매크로 운동 에너지(저해상 0.2s 간격 |Δluma|, 0–255)로 다시 재면 골든 3.40 · v1 3.69 · Isaac이 "구려"라 한 r346 v6 5.56 · Isaac 최종 r346 v11 11.13. SSIM은 등고선 위치를, 이 지표는 프레임이 하는 일을 잰다.
+
+**검증 (컴포저 v2).** 같은 r349 소스를 `--preview`(816×1456, 300f)로 렌더: 매크로 운동 **8.81** (골든 3.40 · v1 3.69 · Isaac 최종 11.13) · SSIM 0.548 · QA PASS (olive 0.069 · bleach 0.008 · seam 1.03 · motionDensity 0.459 · deadZone 0.001). 프레임: 눈·입술·알약 선명(뭉개짐 없음), 얼굴 색조가 20초에 걸쳐 쓸려가고, 빛 밴드가 지나가고, 프레임이 천천히 표류. **Isaac에게 플래그:** `chromaCycles 3`이 사진 얼굴의 피부 색조까지 흔든다 — r346 v11에서는 실루엣+링에 걸렸던 값. R-001 리페인트로 읽힐 수 있음. blind 튠 안 함. 프리뷰: `out/layered/2026-09-03_verify-r349-composed-v2-d42a9b84/verify-r349-composed-v2-preview.mp4`. 테스트 31건(천장 세트) 통과.
+
+**바꾸지 않은 것.** L7·L9는 여전히 Isaac 결정이며 컴포저가 켜지 않는다. L6 벡션은 Isaac의 2026-07-03 기준이 명시한 항목이라 컴포저 기본값으로 올렸다 — 아니오면 `language-map.ts` 상수 하나. Isaac은 합성 룩을 아직 판정하지 않았다. 이 변경은 "다르게 움직이는 프리뷰가 존재함"을 보장할 뿐 "좋아함"을 보장하지 않는다.
+
+### 10.1 두 번째 소스 (r352) + 자글자글 진단 — 2026-09-03 오후
+
+Isaac: "v2가 훨씬 나아 그리고 다른 소스 써봐" → r352 engraved-buddha-hands(`busy-line`, busyness 0.116, 골든 r139)에 컴포저 v2 적용.
+
+| 렌더 | 매크로 운동 | microShare | micro×macro | QA |
+|---|---:|---:|---:|---|
+| r352 (다른 에이전트 손합성) | 2.40 | 0.383 | 0.74 | PASS |
+| **r352 컴포저 v2** | **9.91** | 0.309 | 2.05 | olive 0.058 FAIL · drift 0.184/0.384 FAIL |
+| r346 v11 (Isaac 최종) | 11.13 | 0.240 | 1.20 | — |
+
+`prepare` 출력 `languages layer0=[L1+L3+L4+L8+L10] composed=5`, session-grade OK. 프레임: 얼굴·손 각인선 선명, 주변 필드가 무지개로 흐르고 20초에 걸쳐 색이 쓸림.
+
+**Isaac 지적: "자글자글 끓는 듯한 픽셀 모양의 거친 텍스쳐".** 눈이 아니라 숫자로 잡기 위해 `microShare`(408×728에서 인접프레임 |Δluma|의 최상위 옥타브 비율)를 라벨 케이스로 캘리브레이션:
+
+| 케이스 | microShare | 매크로 | micro×macro | Isaac |
+|---|---:|---:|---:|---|
+| r346 v11 | 0.240 | 11.13 | 1.20 | 최종 |
+| r346 v7 | 0.241 | 11.00 | 1.18 | HOLD |
+| r344 v3 | 0.245 | 12.68 | 1.52 | 최종 |
+| r346 v4 | 0.374 | 7.22 | 1.45 | **"노이즈 낀거같아"** |
+| r346 v5 (디노이즈 시도) | 0.384 | 5.56 | 1.07 | 실패 |
+| r345 v1 | 0.464 | 2.23 | 1.16 | 최종 |
+| r343 r221 v1 | 0.416 | 2.71 | 0.78 | 최종 |
+| r349 컴포저 v2 | 0.303 | 8.81 | 1.43 | 미판정 |
+| **r352 컴포저 v2** | 0.309 | 9.91 | **2.05** | **"자글자글"** |
+
+**읽는 법:** microShare 단독은 예측력이 없다(r345·r343 최종이 0.46/0.42). 절대 micro 에너지(microShare×매크로)도 아니다(r344 v3 1.52 최종 vs r346 v4 1.45 불만). Isaac 최종 3건의 micro는 1.18–1.52 대역에 있고 r352 v2는 **2.05로 그 위**. 즉 자글자글 판정선은 **micro 절대량 ≈1.6 부근**이며, 매크로가 크다고 면제되지 않는다.
+
+**기계론 (가설, 검증 미완):** 소스 자체 텍스처 피치(각인 해칭 ~2–4px)와 같은 스케일에서 프레임마다 리샘플이 일어나면 해칭이 에일리어싱된다. 용의자 3개 — ① 프리즘 `surfaceCycles 22` × `phaseFlowPx 28`이 해칭 피치 근처에서 동작 ② `sourceChromaFlow` 6px/5cyc `detailGain 2`(국소 크로마 차 증폭) ③ `phaseWarpAmount 0.2`. 인과 분리용 프리뷰 3개를 렌더했으나 **계측 전 중단**:
+
+- `out/layered/2026-09-03_probe-nol8-eb367e3a/probe-nol8-preview.mp4` — L8 전부 0 + phaseWarp 0
+- `out/layered/2026-09-03_probe-coarseprism-5e50e667/probe-coarseprism-preview.mp4` — surface 22→8, phaseFlow 28→14
+- `out/layered/2026-09-03_probe-both-68c29b0c/probe-both-preview.mp4` — 둘 다 + 스케일 인지 L8(파장 220px, edgePreserve 0.95, detailGain 1)
+
+**다음 세션이 할 일:** 위 3개에 `microshare` + `macro-motion` 측정 → 지배 원인 확정 → 컴포저를 **소스 주파수 인지형**으로(analysis.json `M4.busyness` 0.116 / `M4.edgeDensity` 0.60을 읽어 프리즘·L8 변위 스케일을 해칭 피치 위로) → `microShare`를 qa-motion 행으로 승격. 미사용 셰이더 프리미티브 `sourceDetailResidualFlow`(`bandLimitPx` 24–96, `chromaOnly`)가 "굵은 것만 움직이고 가는 선은 그대로"의 정공법 후보 — 단 미검증이라 blind 채택 금지(R-013).
+
+---
+
 ## 기록 위치
 
 | 무엇 | 어디 |
 |------|------|
-| 케이스 행 | `docs/video-os/01-CREATE-OS.md` §9 `CASE-2026-09-02-OS-v2` |
+| 케이스 행 | `docs/video-os/01-CREATE-OS.md` §9 `CASE-2026-09-02-OS-v2` · `CASE-2026-09-03-OS-v2.1` |
 | 근거 문서 | `docs/video-os/05-HALLUCINATION-METHOD.md` |
 | 스폰 브리프 (전달 완료) | `docs/video-os/SPAWN-OS-EVOLUTION.md` |
 | 세션 메모리 | `project_hallucination_method_proposal.md` |

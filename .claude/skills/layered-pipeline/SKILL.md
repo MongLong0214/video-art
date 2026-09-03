@@ -14,7 +14,7 @@ description: >
 
 If this skill and `00-INDEX.md` disagree, **00 wins**.
 
-The loop (`00` §2): INTAKE → PREPARE (`prepare-new-source`, `--hero` is the only legal detector override) → SKETCH (`export-layered --sketch` tiles → `sketch-grid.ts`; Isaac picks a **language**, not a knob) → PREVIEW (≤3 per source) → QUOTE (decode with `00` §4) → PICK (`isaac-pick.ts --quote`) → FULL → AUDIO (track + start only) → CLOSE (`close-lock.ts`, default).
+The loop (`00` §2): INTAKE → PREPARE (`prepare-new-source`, `--hero` is the only legal detector override) → PREVIEW (one `--preview` of the type-tree map) → QUOTE (decode with `00` §4) → PICK (`isaac-pick.ts --quote`) → FULL → AUDIO (track + start only) → CLOSE (`close-lock.ts`, default). Sketch-grid only after 다 별로 / 창의적으로.
 
 Closed rebuild:
 

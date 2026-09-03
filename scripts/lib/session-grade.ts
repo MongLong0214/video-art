@@ -10,6 +10,7 @@ import path from "node:path";
 import sharp from "sharp";
 import { detectHero, needsCustomTravel, type HeroDetect } from "./hero-detect.js";
 import { assertFigureVividLegal } from "./figure-vivid-legal.js";
+import { gradeCeiling, loadCeilingWaiver, type CeilingGrade } from "./language-map.js";
 import { loadHoldAlpha, scanHoldPng } from "./hold-walls.js";
 import { plateNamesFor, sceneNeedsTravelPlates, type LooseScene } from "./session-scene.js";
 import type { ClosedLockManifest } from "./rebuild-closed-lock.js";
@@ -20,6 +21,8 @@ export type SessionGrade = {
   readonly reasons: string[];
   readonly hero?: HeroDetect;
   readonly slug?: string;
+  /** 00 §3 ceiling — new-source job only. Closed locks are Isaac-approved looks and are not re-judged. */
+  readonly ceiling?: CeilingGrade;
 };
 
 const TARGET = { width: 1632, height: 2912 };
@@ -206,7 +209,19 @@ export async function gradeSession(workDir: string, cwd = process.cwd()): Promis
   await assertLayerSizes(workDir, files, sourceW, sourceH, reasons);
   await assertNewSourceHolds(workDir, files, hero, reasons);
 
-  return { ok: reasons.length === 0, job: "new-source", reasons, hero };
+  // Ceiling (00 §3): the floor above stops dead/boxed/spinning movies; this stops golden-as-is and clones.
+  const ceiling = gradeCeiling(scene, {
+    sceneSha256: sceneSha,
+    sourceSha256: sourceSha,
+    workDir,
+    heroTravel: needsCustomTravel(hero.kind),
+    goldenDir: path.join(cwd, "recipes/golden"),
+    runsRoot: path.join(cwd, "out/manual-runs"),
+    waiver: loadCeilingWaiver(workDir),
+  });
+  reasons.push(...ceiling.reasons);
+
+  return { ok: reasons.length === 0, job: "new-source", reasons, hero, ceiling };
 }
 
 export async function enforceSessionGrade(workDir: string, cwd = process.cwd()): Promise<SessionGrade> {
@@ -217,7 +232,8 @@ export async function enforceSessionGrade(workDir: string, cwd = process.cwd()):
     throw new Error(
       `session-grade FAIL (${grade.job}${grade.hero ? ` hero=${grade.hero.kind}` : ""}):\n` +
         grade.reasons.map((r) => `  - ${r}`).join("\n") +
-        `\nRun: npx tsx scripts/prepare-new-source.ts --source <png> --slug <slug> --recipe recipes/golden/<file>.json --work-dir ${workDir}`,
+        `\nRun: npx tsx scripts/prepare-new-source.ts --source <png> --slug <slug> --recipe recipes/golden/<file>.json --work-dir ${workDir}` +
+        `\n(golden as-is only with Isaac's words: npx tsx scripts/isaac-pick.ts --work-dir ${workDir} --quote "<verbatim>" --ceiling-waive)`,
     );
   }
   return grade;

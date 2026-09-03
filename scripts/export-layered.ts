@@ -22,11 +22,11 @@ import {
 } from "./lib/region-affinity-authority-audit.js";
 
 const FEEDBACK_WARMUP_SECONDS = 2;
-// --sketch: language-grid tile. Quarter-res, 12fps, first 6s. Isaac picks a language from 4–6 tiles
-// before anyone spends a 1632 preview (00 §4). Not loop-closed on purpose.
+// --sketch: language-grid tile after 다 별로 / 창의적으로. Half-res, 12fps, first 6s.
+// First Isaac-facing look is --preview, not a sketch grid (00 §2, r350).
 const SKETCH_SECONDS = 6;
 const SKETCH_FPS = 12;
-const SKETCH_SCALE = 0.25;
+const SKETCH_SCALE = 0.5;
 
 type CaptureFrameOptions = {
   readonly outputDir: string;
@@ -362,7 +362,7 @@ async function main() {
   const [resW, resH] = captureResolution;
   console.log(`Title: ${title}`);
   console.log(`Archive: ${path.relative(projectRoot, ctx.archiveDir)}/`);
-  console.log(`Resolution: ${resW}x${resH}${sketch ? " (sketch quarter-res)" : preview ? " (preview half-res)" : ""}`);
+  console.log(`Resolution: ${resW}x${resH}${sketch ? " (sketch half-res)" : preview ? " (preview half-res)" : ""}`);
   console.log(`Duration: ${DURATION}s, ${totalFrames} frames @ ${FPS}fps${proresFlag ? " (ProRes 4444)" : sketch ? " (sketch)" : preview ? " (preview)" : fullResFlag ? " (full-res H.264)" : ""}`);
   console.log(`Warmup frames: ${warmupFrames}${cliWarmupFrames === undefined ? " (auto)" : " (CLI)"}`);
 
