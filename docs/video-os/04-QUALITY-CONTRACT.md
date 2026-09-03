@@ -48,7 +48,7 @@ Name **one hero** that must travel. The detector names it in `hero.json`. If the
 
 If the chat image is not 1632×2912, prepare lanczos-upscales (`cover` + center crop) to `sources/incoming/<slug>.png`.
 
-`prepare-new-source` also **composes** the scene (00 §3): layer 0 gets L4 + L8 + L10 on top of the golden, and `session-grade` refuses a golden-as-is or a same-source replay of another slug’s scene. `language-map.json` in the work-dir is what the case row’s `language-map:` line quotes. A golden-as-is preview exists only behind `isaac-pick.ts --ceiling-waive "<Isaac verbatim>"`.
+`prepare-new-source` also **composes** the scene (00 §3): form/sheet heroes get L1 travel along the scaffold flow-field, every scene gets L3 `chromaCycles 3` + L4 + L6 vection + L8 + L10 on top of the golden, and `session-grade` refuses a golden-as-is, a same-source replay of another slug’s scene, and any map without a macro language. `language-map.json` in the work-dir is what the case row’s `language-map:` line quotes. A golden-as-is preview exists only behind `isaac-pick.ts --ceiling-waive "<Isaac verbatim>"`.
 
 Detector kinds (`hero.json`): `halo` · `pour` · `beam` · `sheet` · `form`. `sheet` must start from `oil-slick-macro-bands` or `paint-smear-multipass`, not r221.
 

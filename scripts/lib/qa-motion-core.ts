@@ -25,6 +25,7 @@ const THRESH = {
   lightStaticZone: 0.15,
   lightStaticStd: 0.018,
   deadZone: 0.15,
+  macroMotion: 0.025,
   motionDensity: 0.12,
   sourceColorDrift95: 0.18,
   sourceColorLocalDrift95: 0.3,
@@ -55,6 +56,12 @@ type Metrics = {
   readonly lightStaticZone: number;
   /** Cells with neither hue nor luma motion — the R-023 "whole frame must live" floor (00 §3). */
   readonly deadZone: number;
+  /**
+   * Mean |luma(t) − luma(t−0.2s)| on the 32×57 cell grid, 0–1. Contour wobble averages out at this scale; only
+   * motion that moves the *frame* survives. Isaac finals ≈0.044 (r346 v11); "same as before" ≈0.013 (r349 as-is
+   * and its L4/L8/L10-only composition). SSIM did not separate those two; this does.
+   */
+  readonly macroMotion: number;
   readonly motionDensity: number;
   readonly sourceColorDrift95?: number;
   readonly sourceColorLocalDrift95?: number;
@@ -319,6 +326,17 @@ export async function analyzeFrameBuffer(buf: Buffer, masksDir?: string, sourceG
   const hueDiffs: number[] = [];
   const frameHueRates: number[] = [];
   const adjacentFrameDiffs: number[] = [];
+  const MACRO_LAG = 3;
+  let macroSum = 0;
+  let macroN = 0;
+  for (let frame = MACRO_LAG; frame < frameCount; frame++) {
+    const now = lumFrames[frame];
+    const then = lumFrames[frame - MACRO_LAG];
+    for (let cell = 0; cell < CELL_COUNT; cell++) {
+      macroSum += Math.abs(now[cell] - then[cell]);
+      macroN += 1;
+    }
+  }
   for (let frame = 1; frame < frameCount; frame++) {
     lumDeltas.push(Math.abs(meanY[frame] - meanY[frame - 1]));
     let frameHueSum = 0;
@@ -363,6 +381,7 @@ export async function analyzeFrameBuffer(buf: Buffer, masksDir?: string, sourceG
       staticZone: staticCells / CELL_COUNT,
       lightStaticZone: lightStaticCells / CELL_COUNT,
       deadZone: deadCells / CELL_COUNT,
+      macroMotion: macroN === 0 ? 0 : macroSum / macroN,
       motionDensity: percentile(lumRanges, 0.95),
       sourceColorDrift95: sourceColorDrift?.frameMean95,
       sourceColorLocalDrift95: sourceColorDrift?.local95,
@@ -436,6 +455,7 @@ export function buildMetricRows(metrics: Metrics, source?: QaSourceReport): read
     lightMotionRow("motionDensity", metrics.motionDensity, THRESH.motionDensity, ">= 0.12", "min", metrics.staticZone),
     // ponytail: 32×57 grid cannot see micro-scale energy or flow direction count; add those from full-res frames when H-score is calibrated.
     row("deadZone", metrics.deadZone, THRESH.deadZone, "<= 0.15", "WARN"),
+    row("macroMotion", metrics.macroMotion, THRESH.macroMotion, ">= 0.025", "WARN", "min"),
     row("hierarchy", metrics.hierarchy, THRESH.hierarchy, ">= 0.60", "WARN", "min"),
     row("subjectHold", metrics.subjectHold, THRESH.subjectHold, "<= 0.25", "WARN", "max", metrics.subjectHoldMask ? `mask=${metrics.subjectHoldMask}` : undefined),
   ];

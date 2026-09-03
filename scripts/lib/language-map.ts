@@ -13,7 +13,7 @@
 import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import type { HeroDetect } from "./hero-detect.js";
+import { needsCustomTravel, type HeroDetect } from "./hero-detect.js";
 import type { LooseAnim, LooseLayer, LooseScene } from "./session-scene.js";
 
 export type LanguageId = "L1" | "L2" | "L3" | "L4" | "L5" | "L6" | "L7" | "L8" | "L9" | "L10";
@@ -32,7 +32,10 @@ export type LanguageMap = {
 
 export const CEILING = { minComposed: 3, heroMinLanguages: 2 } as const;
 const BASELINE: readonly LanguageId[] = ["L3"];
-const PENDING: readonly LanguageId[] = ["L6", "L7", "L9"];
+/** Still Isaac's decisions. L6 left this list 2026-09-03: his 2026-07-03 standard names 벡션 (camera drift + portal zoom) outright. */
+const PENDING: readonly LanguageId[] = ["L7", "L9"];
+/** A macro language changes what the frame *does*, not how it shimmers. Without one, Isaac sees the same river (r349 composed v1). */
+const MACRO: readonly LanguageId[] = ["L1", "L2", "L6", "L9"];
 
 const num = (v: unknown): number => (typeof v === "number" && Number.isFinite(v) ? v : Number(v) || 0);
 const obj = (v: unknown): Record<string, unknown> => (v && typeof v === "object" ? (v as Record<string, unknown>) : {});
@@ -112,25 +115,68 @@ export function measureLanguages(scene: LooseScene): LanguageMap {
 }
 
 /**
- * Default composition on layer 0: L4 (two luma waves 3:5 + phase warp) + L8 (dissolve, spectral, chroma flow) + L10 (macro breath).
- * Prism, colorCycle, plates and hold are untouched (identity + R-042 + 04 stay as they were).
- * L6 / L7 / L9 are deliberately not enabled here — they are Isaac's three open decisions (00 §3.1).
+ * Default composition. v1 (2026-09-03 morning) added only L4 + L8 + L10 garnish on top of the golden river and
+ * Isaac saw "크게 달라진게 없다" — the dominant motion (a prism river wobbling in place) was untouched.
+ * v2 changes what the frame does:
+ *   L1  form/sheet heroes ride the scaffold's structure-aligned flow-field (44 px, forwardBias 0.35) — material
+ *       marches along the image's own edges. Travel heroes already ride their plates.
+ *   L3  chromaCycles 3 — hues actually sweep along the contours (golden r221 has 0 = static hues; r346 v11 ✓ used 3).
+ *   L4  two luma waves 9:14 + phaseWarp 0.2 — light bands travel and interfere.
+ *   L6  cameraDrift 0.01 × 1 cycle + feedback zoom 1.006 — whole-frame vection (Isaac 2026-07-03: 벡션).
+ *   L8  dissolve / spectral / chroma flow — mid-scale material.
+ *   L10 breath 0.032 × 2.
+ * Untouched: phaseFlowPx / surfaceCycles (R-063 melt drivers), colorCycle 0 (R-018), plates, hold, rotate 0 (R-060).
+ * L7 / L9 are never enabled here.
  */
-export function composeLanguageMap(scene: LooseScene, _hero?: HeroDetect): LooseScene {
+export function composeLanguageMap(scene: LooseScene, hero?: HeroDetect): LooseScene {
   const layers: LooseLayer[] = (scene.layers ?? []).map((l) => ({ ...l, animation: { ...(l.animation ?? {}) } }));
   if (layers.length === 0) throw new Error("scene has no layers to compose");
   const duration = num(scene.duration) || 20;
   const a = layers[0].animation as LooseAnim;
-  a.glowWave = { strength: 0.4, speed: 3, sharpness: 0.22, fieldCycles: 0.9 };
-  a.glowWave2 = { strength: 0.26, speed: 5, sharpness: 0.18, fieldCycles: 1.4 };
-  a.phaseWarpAmount = 0.12;
+  const travelHero = hero ? needsCustomTravel(hero.kind) : false;
+
+  if (a.flowField === undefined) a.flowField = "layers/flow-field.png";
+  if (!travelHero) {
+    a.sourceFlowAdvection = {
+      amount: 1,
+      maxDisplacementPx: 44,
+      cycles: 2,
+      phaseScale: 1.2,
+      normalMix: 0.2,
+      edgePreserve: 0.5,
+      detailGain: 4,
+      forwardBias: 0.35,
+      fieldAlign: 1,
+    };
+    a.sourceFlowTransport = {
+      amount: 0.75,
+      macroDisplacementPx: 30,
+      macroCycles: 2,
+      microDisplacementPx: 6,
+      microCycles: 4,
+      phaseScale: 1.1,
+      normalMix: 0.16,
+      edgePreserve: 0.12,
+      colorAmount: 0.18,
+      forwardBias: 0.3,
+    };
+  }
+  const prism = obj(a.sourcePrism);
+  if (num(prism.amount) > 0) a.sourcePrism = { ...prism, chromaCycles: Math.max(3, num(prism.chromaCycles)) };
+  a.glowWave = { strength: 0.55, speed: 9, sharpness: 0.5, fieldCycles: 1.3 };
+  a.glowWave2 = { strength: 0.32, speed: 14, sharpness: 0.4, fieldCycles: 1.9 };
+  a.phaseWarpAmount = 0.2;
   a.sourceMaterialDissolve = { amount: 0.42, maxDisplacementPx: 22, cycles: 3, wavelengthPx: 72, edgePreserve: 0.5, streamPhase: false };
   a.sourceSpectralFlow = { amount: 0.48, radiusPx: 16, cycles: 3, phaseScale: 1.15, normalMix: 0.18 };
   a.sourceChromaFlow = { amount: 0.5, maxDisplacementPx: 6, cycles: 5, phaseScale: 1.2, normalMix: 0.18, detailGain: 2 };
   a.breath = { amplitude: 0.032, frequency: 2, period: duration };
-  if (a.flowField === undefined) a.flowField = "layers/flow-field.png"; // dissolve requires a source-derived flow field
   layers[0].animation = a;
-  return { ...scene, layers };
+
+  const effects = { ...(scene.effects ?? {}) } as Record<string, unknown>;
+  const mp = obj(effects.multipassFeedback);
+  effects.multipassFeedback = { ...mp, strength: Math.max(0.18, num(mp.strength)), warp: 0.012, decay: 0.88, zoom: 1.006, rotate: 0 };
+  effects.cameraDrift = { radius: 0.01, cycles: 1, pivot: 0.5 };
+  return { ...scene, layers, effects: effects as LooseScene["effects"] };
 }
 
 export type CeilingWaiver = { readonly approvedBy: "isaac"; readonly reason: string; readonly at: string; readonly sceneSha256: string };
@@ -218,6 +264,11 @@ export function gradeCeiling(scene: LooseScene, opts: CeilingOptions): CeilingGr
   if (map.composed.length < CEILING.minComposed) {
     reasons.push(
       `ceiling: ${map.composed.length} composed language(s) [${map.composed.join(", ") || "none"}] < ${CEILING.minComposed}. active=[${map.distinct.join(", ") || "none"}]. baseline L3 and golden-default glowWave2/breath do not count.`,
+    );
+  }
+  if (!map.composed.some((id) => MACRO.includes(id))) {
+    reasons.push(
+      `ceiling: no macro language [${MACRO.join(" · ")}] — fine-scale garnish on the same prism river reads as the old product (r349 composed v1, "크게 달라진게 없다")`,
     );
   }
   if (opts.heroTravel && (map.perLayer[0]?.length ?? 0) < CEILING.heroMinLanguages) {

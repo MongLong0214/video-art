@@ -81,6 +81,20 @@ r221: `colorCycle 0 · phaseAmount 0 · phaseWarpAmount 0 · glowWave 0.10 · fe
 
 4개 중 1개.
 
+### 1.7 검증 — 매크로 운동 에너지 (2026-09-03)
+
+천장을 코드로 옮긴 뒤 첫 컴포저(L4+L8+L10 장식만)를 r349 소스에 렌더해 골든 무수정과 비교했다. SSIM 0.654로 "크게 달라졌다"고 보고했고, Isaac은 "크게 달라진게 없는데"라 했다. Isaac이 맞았다.
+
+| 렌더 | SSIM vs 골든 | 매크로 운동 (0–255) | Isaac |
+|---|---:|---:|---|
+| r349 골든 무수정 | — | 3.40 | HOLD |
+| r349 컴포저 v1 (L4+L8+L10) | 0.654 | 3.69 | "크게 달라진게 없는데" |
+| r346 v6 denoise | — | 5.56 | "너무 구려 하나도 싸이키델릭하지않아" |
+| r349 컴포저 v2 (L1+chroma+L4+L6+L8+L10) | 0.548 | **8.81** | 미판정 |
+| r346 v11 | — | 11.13 | 최종 |
+
+매크로 운동 = 32×57 그리드에서 0.2s 간격 |Δluma| 평균. 등고선 요동은 이 해상도에서 평균돼 사라지고 프레임을 실제로 움직이는 운동만 남는다. SSIM은 등고선 위치 변화를 잡아 v1을 과대평가했다. 이 지표는 `qa-motion`에 `macroMotion`(0–1, WARN floor 0.025)으로 들어갔고, 천장 규칙에는 "매크로 언어(L1·L2·L6·L9) 1개 필수"가 추가됐다.
+
 ---
 
 ## 2. 방법론 전환: knob 튜닝 → 언어 작곡 (Language Composition)
@@ -181,7 +195,7 @@ R-013 2미스는 유지하되 grid는 타일 수 무관 1미스로 계산.
 | 5 | 00 v2에 §4.2 디코더 · 01 §9.1에 `quote/language-map` · §13 DoD 교체 | §1.4 래칫 해제 | **완료** (Isaac "다 너맘대로해" 2026-09-02) |
 | 6 | 게이트 정책: PASS는 더 이상 풀렌더 바가 아님. 허가 = Isaac pick + floor. `gate:psychedelic`은 진단 도구 | §1.1 | **완료** (가드 코드 무변경 — pick이 override를 기록) |
 | 7 | 00 재작성 (v2), 루트 스텁 7개 삭제, AGENTS/skill 포인터 갱신 | 편입 | **완료** |
-| **8** | **천장을 코드로** — `scripts/lib/language-map.ts`: 언어를 이름이 아니라 **셰이더 활성화(임계값 이상)** 로 계측 · `prepare-new-source`가 L4+L8+L10을 기본 합성 · `session-grade`가 골든 무수정·같은 소스 클론·composed<3을 **거부** · 골든 그대로는 `isaac-pick.ts --ceiling-waive`만 | §1.4 재발: v2 출하 다음 날 r349가 골든 r221 **82키 0차이**로, r351 v1이 r346 v11 클론(SSIM 0.98)으로 Isaac에게 도달. "agent self-check"는 강제가 아니었음 | **완료 2026-09-03** (테스트 12건 · r349 소스 렌더 검증 §1.5 참조) |
+| **8** | **천장을 코드로** — `scripts/lib/language-map.ts`: 언어를 이름이 아니라 **셰이더 활성화(임계값 이상)** 로 계측 · `prepare-new-source`가 L4+L8+L10을 기본 합성 · `session-grade`가 골든 무수정·같은 소스 클론·composed<3을 **거부** · 골든 그대로는 `isaac-pick.ts --ceiling-waive`만 · **매크로 규칙**(L1·L2·L6·L9 중 1개 필수) · 컴포저 v2(L1 travel · chromaCycles 3 · L4 · L6 벡션 · L8 · L10) · qa `macroMotion` | §1.4 재발: v2 출하 다음 날 r349가 골든 r221 **82키 0차이**로, r351 v1이 r346 v11 클론(SSIM 0.98)으로 Isaac에게 도달. "agent self-check"는 강제가 아니었음 | **완료 2026-09-03** (테스트 31건 · 렌더 검증 §1.7) |
 
 ---
 
