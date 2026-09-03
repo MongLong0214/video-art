@@ -49,10 +49,11 @@ describe("export-layered encoding defaults (T4)", () => {
     expect(exportSrc).toContain('${sketch ? "sketch" : "preview"}${ext}');
   });
 
-  it("--sketch is a preview tile: quarter-res, 12fps, first 6s, still session-graded", () => {
+  it("--sketch is a language tile: half-res, 12fps, first 6s, still session-graded", () => {
     expect(exportSrc).toContain('"--sketch"');
     expect(exportSrc).toContain("SKETCH_SECONDS = 6");
     expect(exportSrc).toContain("SKETCH_FPS = 12");
+    expect(exportSrc).toContain("SKETCH_SCALE = 0.5");
     expect(exportSrc).toContain("computePreviewResolution(config.resolution, SKETCH_SCALE)");
     expect(exportSrc).toContain('includes("--preview") || sketch');
   });

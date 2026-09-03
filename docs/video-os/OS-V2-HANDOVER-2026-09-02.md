@@ -33,6 +33,7 @@ OS에 *바닥*(죽은 영상 차단)만 있고 *천장*(환각 요구)이 없어
 - [7. 참조해야 할 파일](#7-참조해야-할-파일)
 - [8. 검증 결과](#8-검증-결과)
 - [9. Isaac 판정 대기 3건](#9-isaac-판정-대기-3건)
+- [10. 추가 (2026-09-03) — 천장을 코드로 옮김](#10-추가-2026-09-03--천장을-코드로-옮김)
 
 ---
 
@@ -399,11 +400,42 @@ npx vitest run scripts/lib/hero-detect.test.ts scripts/lib/hold-walls.test.ts \
 
 ---
 
+## 10. 추가 (2026-09-03) — 천장을 코드로 옮김
+
+v2 출하 다음 날 Isaac: "결과물이 달라진게 없는데?" 측정 결과 맞았다.
+
+| 런 | 실체 | 골든에 없는 언어 |
+|---|---|---:|
+| r349 | 골든 r221과 **82키 0차이** | 0 |
+| r351 v1 | r346 v11 클론 (SSIM 0.980) | — |
+| r351 v2 | 실제 합성 (SSIM 0.548 vs 클론) | 6 |
+
+**원인 두 가지, 둘 다 v2의 설계 결함.**
+1. 바닥은 코드(`session-grade`가 거부), 천장은 문서(00 §1 "Enforced by: agent self-check"). 부탁은 강제가 아니다.
+2. 천장이 언어 **이름**을 셌다. 골든 r221에 `glowWave2 0.06`·`breath 0.003`이 이미 있어 "언어 3종 이상"을 골든 무수정이 그대로 만족했다.
+
+**고친 것 (브랜치 `feat/ceiling-enforced`).**
+
+| # | 변경 | 파일 |
+|---|---|---|
+| C1 | `measureLanguages` — 임계값 이상의 **셰이더 활성화**만 언어로 셈. L3는 baseline으로 절대 안 셈. 골든 기본값은 임계값 미달 → 골든 무수정 = composed 0 | `scripts/lib/language-map.ts` |
+| C2 | `composeLanguageMap` — layer 0에 L4(glowWave 0.40/3 : 0.26/5 + phaseWarp 0.12) + L8(dissolve 0.42/22px · spectral 0.48/16px · chromaFlow 0.5/6px) + L10(breath 0.032×2). prism·colorCycle·플레이트 무변경. 값은 r351 v2(픽셀을 움직인 유일한 실측 씬)에서 | 같은 파일 |
+| C3 | `gradeCeiling` — 골든과 키 동일 · 같은 소스 sha에서 다른 슬러그의 `scene*.json` 재생 · composed <3 · 히어로 레이어 <2 를 **거부**. Isaac waiver(`ceiling-waiver.json`, 씬 sha 바인딩)만 예외 | 같은 파일 |
+| C4 | `prepare-new-source`가 기본 합성 + `language-map.json` 기록. `--compose off`는 `--ceiling-waive "<Isaac 원문>"` 필수 | `scripts/prepare-new-source.ts` |
+| C5 | `session-grade`가 new-source마다 천장 실행 → export도 거부 | `scripts/lib/session-grade.ts` |
+| C6 | `isaac-pick.ts --ceiling-waive` — 프리뷰 전용 waiver, 풀렌더 허가 아님 | `scripts/isaac-pick.ts` |
+
+**검증.** r349 소스에 합성 씬을 `--preview`로 실제 렌더해 기존 골든 무수정 프리뷰와 비교: **SSIM 0.654**. Isaac이 확실히 다르다고 본 r346 v6→v7이 0.850, 클론이 0.980. QA PASS (olive 0.069 · bleach 0.006 · motionDensity 0.392 · deadZone 0.002). 테스트 81건.
+
+**바꾸지 않은 것.** L6·L7·L9는 여전히 Isaac 결정이며 컴포저가 켜지 않는다. Isaac은 합성 룩을 아직 판정하지 않았다. 이 변경은 "다른 프리뷰가 존재함"을 보장할 뿐 "좋아함"을 보장하지 않는다.
+
+---
+
 ## 기록 위치
 
 | 무엇 | 어디 |
 |------|------|
-| 케이스 행 | `docs/video-os/01-CREATE-OS.md` §9 `CASE-2026-09-02-OS-v2` |
+| 케이스 행 | `docs/video-os/01-CREATE-OS.md` §9 `CASE-2026-09-02-OS-v2` · `CASE-2026-09-03-OS-v2.1` |
 | 근거 문서 | `docs/video-os/05-HALLUCINATION-METHOD.md` |
 | 스폰 브리프 (전달 완료) | `docs/video-os/SPAWN-OS-EVOLUTION.md` |
 | 세션 메모리 | `project_hallucination_method_proposal.md` |

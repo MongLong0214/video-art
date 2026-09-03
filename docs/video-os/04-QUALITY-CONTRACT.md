@@ -17,7 +17,7 @@ If you skip this file, you will ship a golden-r221 preview and call it done. Tha
 | Job | Goal | Command of record |
 |-----|------|-------------------|
 | **Rebuild closed** | Byte-same knobs + custom plates as the lock | `npx tsx scripts/rebuild-closed-lock.ts --slug <slug>` then `--full` only if asked |
-| **New source** | First preview already has **hero motion traveling** + **no rectangle hold** + a **textured** hold (not a frozen sticker) | `npx tsx scripts/prepare-new-source.ts --source … --slug … --recipe … --work-dir … [--hero … --hero-reason …]` then `export-layered --sketch` tiles → Isaac picks a language → `--preview` (`00` §2) |
+| **New source** | First preview already has **hero motion traveling** + **no rectangle hold** + a **textured** hold (not a frozen sticker) | `npx tsx scripts/prepare-new-source.ts --source … --slug … --recipe … --work-dir … [--hero … --hero-reason …]` then `export-layered --preview` (`00` §2). Sketch-grid only after 다 별로 / 창의적으로. |
 
 Closed rebuild is not “scaffold + full”. Custom plates are the look.
 
@@ -47,6 +47,8 @@ A zero-context agent that only scaffolds r221 and exports will get a hard FAIL o
 Name **one hero** that must travel. The detector names it in `hero.json`. If the living part you see is not what it named (r346 / r348: detector `form`, hero = eye-ring halo), disagree **only** through the flag — `prepare-new-source … --hero halo@0.50,0.20:130/630 --hero-reason "eye rings are the living part"`. `session-grade` then judges the overridden hero (it reads `hero.json`, sha-tagged to the source), so an override in a case note that never reached the flag does not exist.
 
 If the chat image is not 1632×2912, prepare lanczos-upscales (`cover` + center crop) to `sources/incoming/<slug>.png`.
+
+`prepare-new-source` also **composes** the scene (00 §3): layer 0 gets L4 + L8 + L10 on top of the golden, and `session-grade` refuses a golden-as-is or a same-source replay of another slug’s scene. `language-map.json` in the work-dir is what the case row’s `language-map:` line quotes. A golden-as-is preview exists only behind `isaac-pick.ts --ceiling-waive "<Isaac verbatim>"`.
 
 Detector kinds (`hero.json`): `halo` · `pour` · `beam` · `sheet` · `form`. `sheet` must start from `oil-slick-macro-bands` or `paint-smear-multipass`, not r221.
 

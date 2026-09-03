@@ -24,28 +24,32 @@ If anything disagrees with this page — `AGENTS.md`, the skill, `01` §0–§8 
 | Contract | Guarantees | Enforced by | Can an agent skip it? |
 |----------|------------|-------------|-----------------------|
 | **Floor** (`04`) | hero travels · no rectangle hold · no spin · custom plates present · source 1632×2912 · closed-lock plates | `prepare-new-source` → `session-grade` (export refuses) · `rebuild-closed-lock` | **No.** There is no skip flag. |
-| **Ceiling** (§3) | every region has a motion language · ≥3 languages in frame · ≥2 scales · ≥2 tempos · a creative request is answered by a **language change**, never a knob delta | agent self-check §3 + `qa-motion` `deadZone` row + Isaac | Not if you want Isaac to say anything but “구려”. |
+| **Ceiling** (§3) | ≥3 **composed** languages (shader activations above golden-default thresholds; L3 and golden `glowWave2 0.06` / `breath 0.003` do not count) · hero layer ≥2 · **never golden as-is** · **never a same-source replay of another slug’s scene** · ≥2 scales · ≥2 tempos · a creative request is answered by a **language change** | `prepare-new-source` composes L4+L8+L10 by default → `session-grade` **refuses** golden-as-is / clones / <3 composed (export refuses too) · scales/tempos: agent self-check + Isaac | **No** for the machine part. Golden-as-is only with Isaac’s verbatim quote: `isaac-pick.ts --ceiling-waive` (preview permit, never a full permit). |
 
 Why two: the last six Isaac finals were **5× gate REJECT + override**. The only gate PASS was the most static preview (r343). Guards stop broken movies; they never made a hallucinatory one. Evidence: `05` §1.
+
+Why the ceiling is code (2026-09-03): one day after it was written as prose, r349 shipped golden r221 **byte-identical** (82 keys, 0 diffs) and r351 v1 replayed r346 v11 (SSIM 0.98) — both passed the floor and reached Isaac (“결과물이 똑같잖아”). Prose is a request; `session-grade` is a refusal. `05` §1.4.
 
 ---
 
 ## 2. The loop (state machine — every state has one command and one exit)
 
 ```
-INTAKE → PREPARE → SKETCH → PICK-LANGUAGE → PREVIEW → QUOTE ─┬─ DELTA ──────┐
-                                                             ├─ NEW-LANGUAGE┤→ PREVIEW (≤3 total)
-                                                             └─ STOP (2 misses same class → ask Isaac)
+INTAKE → PREPARE → PREVIEW → QUOTE ─┬─ DELTA ──────┐
+                                    ├─ NEW-LANGUAGE┤→ PREVIEW (≤3 total)
+                                    └─ STOP (2 misses same class → ask Isaac)
 PICK → FULL → AUDIO (only if track+start named) → CLOSE (lock pack, default)
 ```
+
+First Isaac-facing artifact is **one `--preview`** of the type-tree map (language-map declared). A ¼-res sketch grid is not a first look — Isaac cannot judge language in mush (r350). Sketch-grid only after **다 별로 / 창의적으로 / 다른 프리셋**, at **half-res**.
 
 | State | Command | Artifact / exit | Who decides |
 |-------|---------|-----------------|-------------|
 | **INTAKE** | `npx tsx scripts/analyze-source.ts <png> --out out/manual-runs/<slug>/analysis.json` | type from `01` §3.1 + golden file. Native PNG over chat JPEG (R-064). `black-dominant` → stop, tell Isaac. | agent |
-| **PREPARE** | `npx tsx scripts/prepare-new-source.ts --source <png> --slug <slug> --recipe recipes/golden/<g>.json --work-dir out/manual-runs/<slug>` `[--hero <kind@cx,cy[:rIn/rOut][:wNy]> --hero-reason "<why>"]` | lanczos → scaffold → `hero.json` → plates → textured hold → `session-grade.json ok`. **If the detector’s kind is not the living part you see, `--hero` is the only legal disagreement**; grade enforces it (r346/r348 class). | script |
-| **SKETCH** | per language map: `cp scene-<tile>.json scene.json && npx tsx scripts/export-layered.ts --title <slug>-<tile> --work-dir out/manual-runs/<slug> --sketch` then `npx tsx scripts/sketch-grid.ts --out out/manual-runs/<slug>/sketch-grid.mp4 "<tile> <languages>=<sketch.mp4>" …` | 2–6 tiles (quarter-res · 12 fps · 6 s) in one grid + legend. Each tile = a **different language map** (§3), not a knob variant. Floor still graded per tile. | agent builds, **Isaac picks a tile** |
-| **PICK-LANGUAGE** | — | Isaac names a tile → that map is the product’s language. “다 별로” → one more sketch set with **new** languages; second “다 별로” → STOP and ask. | Isaac |
-| **PREVIEW** | `cp scene-<tile>.json scene.json && npx tsx scripts/export-layered.ts --title <slug>-<v> --work-dir out/manual-runs/<slug> --preview` → stills (`01` §4 C) → `npx tsx scripts/qa-motion.ts <preview.mp4> --source out/manual-runs/<slug>/source.png --json out/manual-runs/<slug>/qa-<v>.json` | one 1632 preview. Case row (`01` §9.1) with `quote`/`axis`/`language-map`. Show Isaac **1 preview, max 2 side by side**. Never show internal failures. | agent |
+| **PREPARE** | `npx tsx scripts/prepare-new-source.ts --source <png> --slug <slug> --recipe recipes/golden/<g>.json --work-dir out/manual-runs/<slug>` `[--hero <kind@cx,cy[:rIn/rOut][:wNy]> --hero-reason "<why>"]` `[--compose off --ceiling-waive "<Isaac verbatim>"]` | lanczos → scaffold → `hero.json` → plates → textured hold → **compose** (layer 0 += L4 + L8 + L10) → `session-grade.json ok` → `language-map.json`. **If the detector’s kind is not the living part you see, `--hero` is the only legal disagreement**; grade enforces it (r346/r348 class). Golden as-is exists only behind Isaac’s quote (`--compose off --ceiling-waive`). | script |
+| **PREVIEW** | `npx tsx scripts/export-layered.ts --title <slug>-<v> --work-dir out/manual-runs/<slug> --preview` → stills (`01` §4 C) → `npx tsx scripts/qa-motion.ts <preview.mp4> --source out/manual-runs/<slug>/source.png --json out/manual-runs/<slug>/qa-<v>.json` | **First** Isaac-facing artifact. One half-res 20 s preview of a **composed** language map (`01` §3 + hero plates + §3.2). **Never `cp` a prior slug’s `scene.json`** — same pixels as r346 is not a reason to replay v11 (r351). Case row with `quote`/`axis`/`language-map`. Show **1 preview, max 2 side by side**. Never show internal failures. | agent builds, Isaac judges |
+| **SKETCH** | only after 다 별로 / 창의적으로 / 다른 프리셋: `cp scene-<tile>.json scene.json && npx tsx scripts/export-layered.ts --title <slug>-<tile> --work-dir out/manual-runs/<slug> --sketch` then `npx tsx scripts/sketch-grid.ts --out out/manual-runs/<slug>/sketch-grid.mp4 "<tile> <languages>=<sketch.mp4>" …` | 2–6 tiles (**half-res** · 12 fps · 6 s) in one grid + legend. Each tile = a **different language map** (§3), not a knob variant. A floor defect (diagonal water, oval hold, wrong `waterNy`) is **not** a language miss — fix the plate, one `--preview`, do not burn the sketch budget. | agent builds, **Isaac picks a tile** |
+| **PICK-LANGUAGE** | — | Isaac names a tile → that map is the product’s language. “다 별로” on a **judgeable** preview → one sketch set with **new** languages; second “다 별로” → STOP and ask with **one** `--preview`. “다 별로” on unjudgeable ¼ mush does not count (r350). | Isaac |
 | **QUOTE** | decode with §4 | exactly one of **DELTA** (amplitude / tempo / scale on the same map) · **NEW-LANGUAGE** (change the map, ≤1 language per round) · **STOP**. Budget after the pick: **≤3 previews per source**. Two misses of the same class → STOP (R-013). | Isaac quote is law |
 | **PICK** | `npx tsx scripts/isaac-pick.ts --work-dir out/manual-runs/<slug> --quote "<verbatim>" [--preview <mp4>] [--audio "<Track> @m:ss"]` | `isaac-pick.json` + `psychedelic-gate.json` with `humanOverride`. **This is the full-render permit.** Never hand-edit the gate JSON. `gate:psychedelic` is optional diagnostics, not a bar. | Isaac (“풀렌더 / 최종 / 이걸로”) |
 | **FULL** | `npx tsx scripts/export-layered.ts --title <slug>-final --work-dir out/manual-runs/<slug> --full-res --gate-report out/manual-runs/<slug>/psychedelic-gate.json` → `qa-motion` on the final | silent MP4 path handed to Isaac as **silent**. 20 s · 30 fps · 1632×2912 · H.264. | script |
@@ -73,11 +77,13 @@ A final is **closed** when `rebuild-closed-lock --slug` reproduces it on another
 | **L9** | Region colorCycle — integer cycle on **non-skin** masks only (halo / field / sky) | `colorCycle.speed 12–20` on a masked source layer | killed on *portrait body* (R-018) · **needs Isaac yes** for re-entry by region |
 | **L10** | Macro arc — 1–2 cycles / 20 s envelope on carrier amplitude | `breath` or glow-strength envelope, integer cycles | small, new |
 
-### 3.2 Composition minimums (self-check before any preview — refuse to present if unmet)
+### 3.2 Composition minimums (items 2–3 machine-checked by `session-grade`; 1, 4–6 agent self-check)
+
+`scripts/lib/language-map.ts` counts a language only when its **shader activation clears a threshold** — L1 advection ≥24 px + fieldAlign ≥0.5 · L2 `counter` flow file · L4 two waves ≥0.2/≥0.12 at a non-integer speed ratio **or** `phaseWarpAmount` ≥0.05 · L5 second layer surface ≥20 + `colorMotionMask.floor` ≥0.9 · L6 `zoom` ≥1.002 off / `cameraDrift` >0 · L7 RD >0 · L8 dissolve/spectral/chroma/tangent ≥0.2 with real displacement, or transport ≥0.5/≥16 px · L9 any `colorCycle.speed` ≠0 · L10 `breath` ≥0.01. **L3 is baseline and never counts.** Golden r221’s `glowWave2 0.06` and `breath 0.003` are below threshold — a golden as-is has **0** composed languages. `language-map.json` in the work-dir is the record.
 
 1. **Region map** declared: 3–5 regions (hero · figure · field · ground · sky). Hero from `hero.json`; figure from the hold plate; rest from hue/value classes already in `session-plates`.
-2. **No region has zero languages.** (“사람 형태가 너무 정적이야” is a region with 0.)
-3. Hero ≥ 2 languages (L1 + one more). Frame ≥ 3 distinct languages.
+2. **No region has zero languages.** (“사람 형태가 너무 정적이야” is a region with 0.) Machine part: **composed ≥3** on the frame; the scene is **not** key-identical to any `recipes/golden/*.json`; the scene is **not** key-identical to another slug’s `scene*.json` on the **same source sha** (r351 v1).
+3. Hero ≥ 2 languages (L1 + one more) — machine-checked on layer 0 when the hero travels.
 4. Scales: at least two of macro (≥200 px bands) · mid (30–80 px) · micro (≤12 px). **Micro never dominates** — that is what Isaac calls 노이즈.
 5. Tempos: ≥2 incommensurate (e.g. 3 vs 5 cycles / 20 s). Optional L10.
 6. Face core: L3 low or L5 only. No L1/L6/L7 across a face (identity, R-001).
@@ -101,7 +107,10 @@ Killed axes (`01` §5) stay killed **in the region class and source type where t
 | 꿀렁 · 멜트 · 흐물 | too much phase flow | `phaseFlowPx` ↓ first (R-063) | kill prism · cosmos |
 | 빙글빙글 · 시계방향 · 회전 | R-060 spin (or `mp` too high on concentric art) | remove; `multipassFeedback.strength ≤ 0.04` on rings | — |
 | 구려 · 별로 (on one thing) | kill **that language in that region class** | keep the rest | discard the whole map |
-| 다 별로 · 다 구려 | wrong language set | new sketch set with **unused** languages | knob tour |
+| 다 별로 · 다 구려 | wrong language set **on a judgeable preview** | new sketch set with **unused** languages (half-res) | knob tour · another ¼ grid · treating a plate bug as a language miss |
+| 화질 구려 (on a sketch) | presentation, not language | one `--preview` of the intended map; kill the seam/plate defect | another quarter-res tile set |
+| 방법론이 잘못된거같아 · 너가 좀 다듬어봐 | loop or defect, not a tile pick | one `--preview`; polish = **defects only**; first artifact must be judgeable | more unused-language ¼ tiles |
+| 결과물이 똑같 · 달라진게 없어 · 이전 방법론이랑 | you replayed a closed look | new language map on this source; do not `cp` another slug’s scene | shipping r346 v11 (or any lock) as a “new” preview |
 | X만 (사각형만 · 사람만 · 무릎만) | surgical | change only X, keep every other byte | “while I’m here” fixes |
 | 맘에든다 · 이게 젤 나아 · 오 좋다 · 보류 | pick or hold | `isaac-pick.ts` only when 풀렌더/최종/이걸로 also present | full render on “좋다” alone |
 | 풀렌더 · 풀버전 · 최종 · 플렌더 · ㅇㅋ 합격 | permit | `isaac-pick.ts --quote` → full | edit gate JSON by hand |
@@ -172,4 +181,4 @@ out/**  ← local only
 | reel cuts | `03` (loop look still `01`/this page) |
 | anything vs `archive/` or chat memory | this folder |
 
-*v2 2026-09-02: two contracts, sketch grid, hero override object, textured hold default, pick + close-lock scripts, quote dictionary. Prior: SSOT + session-grade 2026-08-18.*
+*v2.1 2026-09-03: first Isaac-facing artifact is `--preview`, not a ¼ sketch grid (r350). Sketch-grid is the response to 다 별로/창의적으로, at half-res. Floor defects do not spend the language budget. v2 2026-09-02: two contracts, sketch grid, hero override, textured hold, pick + close-lock, quote dictionary. Prior: SSOT + session-grade 2026-08-18.*

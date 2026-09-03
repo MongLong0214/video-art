@@ -10,6 +10,10 @@
  *
  * `--hero` is the only legal way to disagree with the detector. It is written to hero.json with the
  * source sha, and session-grade judges that hero (not a fresh detect), so the override is enforced.
+ *
+ * Every prepared scene is *composed* (00 §3): layer 0 gets L4 + L8 + L10 on top of the golden, so the first
+ * preview is never a golden clone (r349 shipped golden r221 byte-identical; session-grade now refuses that).
+ * `--compose off` needs `--ceiling-waive "<Isaac verbatim>"`.
  */
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
@@ -18,6 +22,7 @@ import path from "node:path";
 import sharp from "sharp";
 import { z } from "zod";
 import { applyHeroOverride, detectHero, needsCustomTravel } from "./lib/hero-detect.js";
+import { composeLanguageMap } from "./lib/language-map.js";
 import { writeSessionPlates } from "./lib/session-plates.js";
 import { patchSessionScene, type LooseScene } from "./lib/session-scene.js";
 import { enforceSessionGrade } from "./lib/session-grade.js";
@@ -38,13 +43,21 @@ type Args = {
   workDir: string;
   hero?: string;
   heroReason?: string;
+  /** default on. `--compose off` = golden as-is; then a --ceiling-waive quote is required or grade refuses. */
+  compose: boolean;
+  ceilingWaive?: string;
 };
 
 function parse(argv: readonly string[]): Args {
-  const out: Partial<Args> = {};
+  const out: Partial<Args> = { compose: true };
   for (let i = 0; i < argv.length; i++) {
     const f = argv[i];
-    if (f === "--source") out.source = req(argv, i++, f);
+    if (f === "--compose") {
+      const v = req(argv, i++, f);
+      if (v !== "on" && v !== "off") throw new Error("--compose must be on|off");
+      out.compose = v === "on";
+    } else if (f === "--ceiling-waive") out.ceilingWaive = req(argv, i++, f);
+    else if (f === "--source") out.source = req(argv, i++, f);
     else if (f === "--slug") out.slug = req(argv, i++, f);
     else if (f === "--recipe") out.recipe = req(argv, i++, f);
     else if (f === "--work-dir") out.workDir = req(argv, i++, f);
@@ -54,10 +67,13 @@ function parse(argv: readonly string[]): Args {
   }
   if (!out.source || !out.slug || !out.recipe || !out.workDir) {
     throw new Error(
-      "usage: --source <png> --slug <name> --recipe <golden.json> --work-dir <dir> [--hero <kind@cx,cy[:rIn/rOut]> --hero-reason <text>]",
+      "usage: --source <png> --slug <name> --recipe <golden.json> --work-dir <dir> [--hero <kind@cx,cy[:rIn/rOut]> --hero-reason <text>] [--compose on|off] [--ceiling-waive <Isaac quote>]",
     );
   }
   if (out.hero && !out.heroReason) throw new Error("--hero requires --hero-reason");
+  if (out.compose === false && !out.ceilingWaive) {
+    throw new Error('--compose off ships a golden as-is (r343/r345/r349). Only with Isaac\'s words: --ceiling-waive "<verbatim quote>"');
+  }
   if (out.heroReason && !out.hero) throw new Error("--hero-reason requires --hero");
   return out as Args;
 }
@@ -126,18 +142,35 @@ async function main(argv: readonly string[] = process.argv.slice(2)): Promise<vo
     if (!plates.holdWallOk) {
       throw new Error(`generated hold has axis-aligned walls:\n${plates.holdWallReasons.join("\n")}`);
     }
-    const scenePath = path.join(workDir, "scene.json");
-    const scene = JSON.parse(fs.readFileSync(scenePath, "utf8")) as LooseScene;
+    const platesScene = path.join(workDir, "scene.json");
+    const scene = JSON.parse(fs.readFileSync(platesScene, "utf8")) as LooseScene;
     const patched = patchSessionScene(scene, hero);
-    fs.writeFileSync(scenePath, `${JSON.stringify(patched, null, 2)}\n`);
+    fs.writeFileSync(platesScene, `${JSON.stringify(patched, null, 2)}\n`);
+  }
+
+  const scenePath = path.join(workDir, "scene.json");
+  if (args.compose) {
+    const scene = JSON.parse(fs.readFileSync(scenePath, "utf8")) as LooseScene;
+    fs.writeFileSync(scenePath, `${JSON.stringify(composeLanguageMap(scene, hero), null, 2)}\n`);
+  }
+  if (args.ceilingWaive) {
+    const waiver = { approvedBy: "isaac", reason: args.ceilingWaive, at: new Date().toISOString(), sceneSha256: sha256File(scenePath) };
+    fs.writeFileSync(path.join(workDir, "ceiling-waiver.json"), `${JSON.stringify(waiver, null, 2)}\n`);
+    process.stdout.write(`ceiling waived for this scene sha by Isaac: "${args.ceilingWaive}"\n`);
   }
 
   const grade = await enforceSessionGrade(workDir, cwd);
+  const map = grade.ceiling?.map;
+  if (map) {
+    fs.writeFileSync(path.join(workDir, "language-map.json"), `${JSON.stringify(map, null, 2)}\n`);
+    const perLayer = map.perLayer.map((ids, i) => `layer${i}=[${ids.join("+")}]`).join(" ");
+    process.stdout.write(`languages ${perLayer} composed=${map.composed.length}${grade.ceiling?.waived ? " (waived)" : ""}${map.pending.length ? ` pending=${map.pending.join(",")}` : ""}\n`);
+  }
   process.stdout.write(`session-grade OK (${grade.job} hero=${hero.kind})\n`);
   const rel = path.relative(cwd, workDir);
   process.stdout.write(
-    `next (language sketches, Isaac picks a language): npx tsx scripts/export-layered.ts --title ${args.slug} --work-dir ${rel} --sketch\n` +
-      `next (one 1632 preview): npx tsx scripts/export-layered.ts --title ${args.slug} --work-dir ${rel} --preview\n`,
+    `next (first Isaac look): npx tsx scripts/export-layered.ts --title ${args.slug} --work-dir ${rel} --preview\n` +
+      `next (sketch-grid only after 다 별로 / 창의적으로): npx tsx scripts/export-layered.ts --title ${args.slug}-<tile> --work-dir ${rel} --sketch\n`,
   );
 }
 

@@ -24,6 +24,8 @@ Versioned starting `scene.json` templates. **New agents start only from these + 
 
 **Hold layer default (2026-09-02):** `prepare-new-source` writes the figure hold with the r346 v11 *textured* knobs (surface 27 · chroma 3 · glow 0.58/12 · `colorMotionMask.floor 1`). The hold is a second language (L5), not a frozen sticker. First defect knob if it bleaches: `sourceColorClamp.maxDrift` 0.42 → 0.26.
 
+**Compose default (2026-09-03):** `prepare-new-source` never ships a golden as-is. Layer 0 gets L4 (glowWave 0.40/3 : 0.26/5 + phaseWarp 0.12) + L8 (dissolve 0.42/22px · spectral 0.48/16px · chromaFlow 0.5/6px) + L10 (breath 0.032 × 2). Prism / colorCycle / plates untouched. `session-grade` refuses a scene that is key-identical to any file in this folder (r349). Golden-as-is only with `isaac-pick.ts --ceiling-waive "<Isaac verbatim>"`.
+
 ## Agent docs
 
 → **`docs/video-os/00-INDEX.md`** then `01-CREATE-OS.md` (type tree).

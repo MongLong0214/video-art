@@ -8,6 +8,7 @@ import { applyHeroOverride, detectHero } from "./hero-detect.js";
 import { fillBoxAlpha } from "./hold-walls.js";
 import { writeSessionPlates } from "./session-plates.js";
 import { collectSpinReasons, gradeSession } from "./session-grade.js";
+import { composeLanguageMap } from "./language-map.js";
 import { patchSessionScene } from "./session-scene.js";
 
 const timeout = 180_000;
@@ -80,6 +81,48 @@ describe("gradeSession hero.json (prepared hero wins over a fresh detect)", () =
   );
 });
 
+describe("gradeSession ceiling (00 §3 — golden as-is and clones are refused)", () => {
+  it(
+    "refuses golden r221 as-is on its own source (r349 class) and passes the composed scene",
+    async () => {
+      const dir = tmpWork();
+      fs.mkdirSync(path.join(dir, "layers"));
+      fs.copyFileSync("sources/approved/r221-eye-mirror.png", path.join(dir, "source.png"));
+      fs.copyFileSync("sources/approved/r221-eye-mirror.png", path.join(dir, "layers/source.png"));
+      fs.copyFileSync("recipes/golden/eye-mirror-phase-advect-r221.json", path.join(dir, "scene.json"));
+      const asIs = await gradeSession(dir);
+      expect(asIs.job).toBe("new-source");
+      expect(asIs.ok).toBe(false);
+      expect(asIs.reasons.some((r) => /golden eye-mirror-phase-advect-r221\.json as-is/.test(r))).toBe(true);
+      expect(asIs.ceiling?.map.composed).toEqual([]);
+
+      const golden = JSON.parse(fs.readFileSync(path.join(dir, "scene.json"), "utf8"));
+      fs.writeFileSync(path.join(dir, "scene.json"), `${JSON.stringify(composeLanguageMap(golden), null, 2)}\n`);
+      const composed = await gradeSession(dir);
+      expect(composed.ok, composed.reasons.join("\n")).toBe(true);
+      expect(composed.ceiling?.map.composed.length).toBeGreaterThanOrEqual(3);
+    },
+    timeout,
+  );
+
+  it(
+    "accepts golden as-is when Isaac waived it for that exact scene sha",
+    async () => {
+      const dir = tmpWork();
+      fs.mkdirSync(path.join(dir, "layers"));
+      fs.copyFileSync("sources/approved/r221-eye-mirror.png", path.join(dir, "source.png"));
+      fs.copyFileSync("sources/approved/r221-eye-mirror.png", path.join(dir, "layers/source.png"));
+      fs.copyFileSync("recipes/golden/eye-mirror-phase-advect-r221.json", path.join(dir, "scene.json"));
+      const sceneSha256 = createHash("sha256").update(fs.readFileSync(path.join(dir, "scene.json"))).digest("hex");
+      fs.writeFileSync(path.join(dir, "ceiling-waiver.json"), JSON.stringify({ approvedBy: "isaac", reason: "221 그대로", at: "t", sceneSha256 }));
+      const grade = await gradeSession(dir);
+      expect(grade.ok, grade.reasons.join("\n")).toBe(true);
+      expect(grade.ceiling?.waived).toBe(true);
+    },
+    timeout,
+  );
+});
+
 describe("gradeSession", () => {
   it(
     "fails a scaffold-only r221 scene on the r325 halo source",
@@ -144,7 +187,7 @@ describe("gradeSession", () => {
   );
 
   it(
-    "passes cosmos golden on a form source (not figure-vivid legal)",
+    "cosmos golden on a form source: floor passes (not figure-vivid legal), only the ceiling refuses golden-as-is",
     async () => {
       const dir = tmpWork();
       fs.mkdirSync(path.join(dir, "layers"));
@@ -153,7 +196,12 @@ describe("gradeSession", () => {
       fs.copyFileSync("recipes/golden/cosmos-vivid-oklch-r24b.json", path.join(dir, "scene.json"));
       const grade = await gradeSession(dir);
       expect(grade.job).toBe("new-source");
-      expect(grade.ok).toBe(true);
+      expect(grade.ok).toBe(false);
+      expect(grade.reasons.every((r) => /golden cosmos-vivid-oklch-r24b\.json as-is|composed language/.test(r)), grade.reasons.join("\n")).toBe(true);
+      const cosmos = JSON.parse(fs.readFileSync(path.join(dir, "scene.json"), "utf8"));
+      fs.writeFileSync(path.join(dir, "scene.json"), `${JSON.stringify(composeLanguageMap(cosmos), null, 2)}\n`);
+      const composed = await gradeSession(dir);
+      expect(composed.ok, composed.reasons.join("\n")).toBe(true);
     },
     timeout,
   );

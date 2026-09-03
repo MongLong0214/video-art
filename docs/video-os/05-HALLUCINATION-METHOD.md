@@ -181,6 +181,7 @@ R-013 2미스는 유지하되 grid는 타일 수 무관 1미스로 계산.
 | 5 | 00 v2에 §4.2 디코더 · 01 §9.1에 `quote/language-map` · §13 DoD 교체 | §1.4 래칫 해제 | **완료** (Isaac "다 너맘대로해" 2026-09-02) |
 | 6 | 게이트 정책: PASS는 더 이상 풀렌더 바가 아님. 허가 = Isaac pick + floor. `gate:psychedelic`은 진단 도구 | §1.1 | **완료** (가드 코드 무변경 — pick이 override를 기록) |
 | 7 | 00 재작성 (v2), 루트 스텁 7개 삭제, AGENTS/skill 포인터 갱신 | 편입 | **완료** |
+| **8** | **천장을 코드로** — `scripts/lib/language-map.ts`: 언어를 이름이 아니라 **셰이더 활성화(임계값 이상)** 로 계측 · `prepare-new-source`가 L4+L8+L10을 기본 합성 · `session-grade`가 골든 무수정·같은 소스 클론·composed<3을 **거부** · 골든 그대로는 `isaac-pick.ts --ceiling-waive`만 | §1.4 재발: v2 출하 다음 날 r349가 골든 r221 **82키 0차이**로, r351 v1이 r346 v11 클론(SSIM 0.98)으로 Isaac에게 도달. "agent self-check"는 강제가 아니었음 | **완료 2026-09-03** (테스트 12건 · r349 소스 렌더 검증 §1.5 참조) |
 
 ---
 

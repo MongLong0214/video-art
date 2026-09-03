@@ -21,7 +21,7 @@
 5. **Preview first.** Full render only after Isaac visual OK (or explicit “풀렌더”).
 6. **No audio** until Isaac explicitly requests a track (R-043).
 7. **Record every render** in §9 case ledger (PASS and FAIL).
-8. **2 misses → stop (R-013).** No third blind render. Budget per source: 1–2 sketch grids + **≤3** 1632 previews after Isaac picks a language (`00` §2; supersedes the R-021 six-preview cap).
+8. **2 misses → stop (R-013).** No third blind render. Budget per source: one `--preview` first, then **≤3** previews total; sketch-grid only after 다 별로 / 창의적으로 (`00` §2).
 9. **No rotation / spin / angular phase (R-060).** Never `phase-angular.png` as phaseField/phaseField2; never multipass `rotate≠0`; never kaleidoscope / polarTwist / rotateSpeed. Do **not** add geometric spin to “match” a spiral/Ganesha/mandala (Isaac: 극도로 구림). **Custom `phase-halo` / `phase-fall` (distance or vertical) is required when 04 §2 says so** — that is not spin. Do not stay on golden `phase-edge`+`mix` if it freezes the hero.
 
 **Roles:** implementation may use any coding agent · orchestration agent records cases · **Isaac = final aesthetic judge**.  
@@ -92,15 +92,15 @@
 
 ## 2. Commands (loop is `00` §2 — do not invent a second loop)
 
-State machine: **INTAKE → PREPARE → SKETCH → PICK-LANGUAGE → PREVIEW → QUOTE → PICK → FULL → AUDIO → CLOSE**.  
-Isaac picks a **language tile**, not a knob. `gate:psychedelic` is optional diagnostics. Full-render permit = `isaac-pick.ts`.
+State machine: **INTAKE → PREPARE → PREVIEW → QUOTE → PICK → FULL → AUDIO → CLOSE** (`00` §2). Sketch-grid only after 다 별로 / 창의적으로.  
+Isaac judges a **language map**, not a knob. `gate:psychedelic` is optional diagnostics. Full-render permit = `isaac-pick.ts`.
 
 | Step | Exact command |
 |------|----------------|
 | Intake | `npx tsx scripts/analyze-source.ts <png> --out out/manual-runs/<slug>/analysis.json` |
 | Prepare | `npx tsx scripts/prepare-new-source.ts --source <png> --slug <slug> --recipe recipes/golden/<file>.json --work-dir out/manual-runs/<slug>` `[--hero "kind@cx,cy[:rIn/rOut]" --hero-reason "<why>"]` |
-| Sketch | `npx tsx scripts/export-layered.ts --title <slug>-<tile> --work-dir out/manual-runs/<slug> --sketch` then `npx tsx scripts/sketch-grid.ts --out out/manual-runs/<slug>/sketch-grid.mp4 "A L1+L2=…/a-sketch.mp4" …` |
-| Preview | `npx tsx scripts/export-layered.ts --title <slug> --work-dir out/manual-runs/<slug> --preview` |
+| Preview (first Isaac look) | `npx tsx scripts/export-layered.ts --title <slug> --work-dir out/manual-runs/<slug> --preview` |
+| Sketch (only after 다 별로 / 창의적으로) | `npx tsx scripts/export-layered.ts --title <slug>-<tile> --work-dir out/manual-runs/<slug> --sketch` then `npx tsx scripts/sketch-grid.ts --out out/manual-runs/<slug>/sketch-grid.mp4 "A L1+L2=…/a-sketch.mp4" …` |
 | QA | `npx tsx scripts/qa-motion.ts out/layered/*<slug>*/<slug>-preview.mp4 --source out/manual-runs/<slug>/source.png --json out/manual-runs/<slug>/qa-preview.json` |
 | Stills | §6.2 commands |
 | Pick (full permit) | `npx tsx scripts/isaac-pick.ts --work-dir out/manual-runs/<slug> --quote "<verbatim>" [--audio "<Track> @m:ss"]` |
@@ -175,9 +175,9 @@ npx tsx scripts/prepare-new-source.ts \
 5. Open §5 KILLED — confirm plan is not a killed axis.
 6. If prepare / export says `session-grade FAIL`, **do not** show Isaac. Fix plates/hold. There is no skip flag.
 
-### Step B — Sketch, then preview
+### Step B — Preview first (sketch only after 다 별로 / 창의적으로)
 
-Loop: `00` §2. New source: **sketch grid first** (language tiles). Isaac picks a tile. Then one 1632 `--preview`. Do not answer “더 창의적으로” with a knob delta.
+Loop: `00` §2. New source: **one `--preview`** of the type-tree map. Do not open with a ¼-res tile grid. Sketch-grid only after Isaac says 다 별로 / 창의적으로 / 다른 프리셋. Do not answer those with a knob delta.
 
 ```bash
 npx tsx scripts/export-layered.ts \
@@ -383,8 +383,12 @@ ffprobe -v error -show_entries stream=codec_type,codec_name,nb_frames -of csv=p=
 | **r344 v3** | **Isaac final + audio** | r139 slow-strong; All Around Us @2:25; gate REJECT + override |
 | **r345 v1** | **Isaac final + audio** | r139 golden; v2 not used; Salaam @0:00; gate REJECT + override |
 | **r346 v11** | **Isaac final + audio** | v7 rings + figure r139; Adhana @5:06; gate REJECT + override |
+| **OS v2.1 2026-09-03** | **ceiling enforced** | r349 golden-as-is + r351 v1 clone slipped through prose; `language-map.ts` composes by default and `session-grade` refuses golden/clone/<3 composed; r349 source composed vs as-is SSIM 0.654 |
 | **OS v2 2026-09-02** | **method change** | floor+ceiling contracts; sketch grid before preview; quote→axis dictionary; `--hero` enforced; textured hold default; `isaac-pick`/`close-lock`; session-plates alpha stride bug fixed |
 | r349 uv-pills-face | **HOLD Isaac** · QA PASS | ESRGAN 2x→1632 cover · golden r221 as-is · hero form |
+| r350 rainbow-tongue-mouth | **FAIL look** | Isaac “별로야 너무 구려” on v3 · killed · no full |
+| r351 eyes-galaxy-sitter | **HOLD Isaac** v2 | v1 was r346 v11 clone (Isaac catch) · v2 L1+L2+L4+L8+L5+L10 |
+| r352 engraved-buddha-hands | **HOLD Isaac** | busy-line r139 · face hold · L3+L4+L8 hands · L5 face · QA PASS |
 
 ### 9.2b CASE detail — hand-face (2026-07-15)
 
@@ -1832,6 +1836,60 @@ Evidence: `docs/archive/OUTPUT_GAP_ANALYSIS.pre-refactor-2026-07-15.md` (git sna
 - judge: **HOLD Isaac** — contour crawl on paint · identity cyan-shift vs lime/magenta source (R-001 risk) · no box · no spin · no full · no audio
 - rules: R-060 confirm · R-064 ESRGAN+cover vs native
 - status: delivered-preview
+
+#### CASE-2026-09-03-r350-sketch | rainbow-tongue-mouth language tiles (HOLD Isaac)
+- source: native 1632×2912 PNG `sources/incoming/r350-rainbow-tongue-mouth.png` (Downloads monglong open-mouth; chat JPEG 1121 unused, R-064) sha256=`7f73c615e45b097c…` — type=`figure-vivid` (lips) + tongue **sheet**; M: satMean=0.47 vivid=28.5% busyness=0.040 greenRisk**false** finishedVivid=0.29 figure=40%
+- hero round 1: detector **form** → `--hero pour@0.508,0.56:w0.40` — **FAIL look**. `waterNy=0.40` classified the tongue as water; `session-plates` water branch `sin((ny-waterNy)*38 + nx*6)` painted diagonal cyan/pink stripes. Hold was a face ellipse on the tongue, not lips/teeth. Isaac: "다 별로야 화질도 너무 구려 경계선도 막 이상하게 대각으로".
+- hero round 2: `--hero pour@0.50,0.36:w0.96` + custom wide-cavity plates (`build-tongue-plates.mjs`): L1 = downward fall on the mouth cavity (no water sine); hold = lips+teeth only (hero alpha 0). session-grade OK all tiles.
+- recipe: `oil-slick-macro-bands` (04 sheet) + pour travel (L1)
+- language-map tiles round 1 (invalid — floor defect, not a language trial): A L1+L3 / B L1+L4 / C L1+L8
+- language-map tiles round 2 (`00` §4 다 별로 → unused languages; L6/L7/L9 still need Isaac yes):
+  - **D** hero=L1+L2 · figure=L5 · field=L3 — 18-band tongue counterflow (`flow-fall-counter.png`)
+  - **E** hero=L1+L10 · figure=L5 · field=L3 — macro breath 2 cycles/20s amp 0.055
+  - **F** hero=L1+L3 · figure=L5 · field=L3 — same chroma river as A, **plates fixed** (first readable L3)
+- sketch-grid: `out/manual-runs/r350-rainbow-tongue-mouth/sketch-grid.mp4` (round 1 saved as `sketch-grid-round1.mp4`)
+- stills: contact=`out/manual-runs/r350-rainbow-tongue-mouth/stills-sketch/contact.png` (round 1=`…/stills-sketch/contact-round1.png`)
+- quote round 1: "다 별로야 화질도 너무 구려 경계선도 막 이상하게 대각으로" → plate defect (not a language miss)
+- quote round 2: "너무 별론데 ? 새로운 방법론이 잘못된거같아 너가 좀 다듬어봐" → loop miss. ¼ sketch-grid cannot be judged. OS v2.1: first artifact = `--preview`; sketch only after 다 별로 on a judgeable look.
+- v3 preview (this is the STOP one-preview): language-map hero=L1+L3 · figure=L5(mild) · field=L3. Feathered lip/teeth hold (blur 6.2). No L2 bands. CA 0.022. session-grade OK.
+- preview: `out/layered/2026-09-03_r350-rainbow-tongue-mouth-v3-e1954fe1/r350-rainbow-tongue-mouth-v3-preview.mp4`
+- stills: contact=`out/manual-runs/r350-rainbow-tongue-mouth/stills-v3/contact.png` subsec=`…/stills-v3/subsec.png` hero=`…/stills-v3/subsec-hero.png`
+- QA: olive PASS bleach PASS drift=0.142/local=0.296 seam=1.13 motionDensity=0.360 verdict=**PASS**
+- judge: **FAIL look** — Isaac “별로야 너무 구려 !!!” · killed · no full · no audio
+- status: discarded
+
+#### CASE-2026-09-03-r351 | eyes-galaxy-sitter first preview (HOLD Isaac)
+- source: native 1632×2912 PNG `sources/incoming/r351-eyes-galaxy-sitter.png` sha256=`969151fc04529868…` — **same pixels as r346** (chat JPEG 1121 unused, R-064). type=`figure-vivid` M: satMean=0.57 vivid=51% busyness=0.055 greenRisk**false** finishedVivid=0.24 dark=25%
+- hero: detector **form** → `--hero halo@0.498,0.20:72/1120` — concentric eyes travel; galaxy silhouette is form. session-grade OK.
+- recipe: golden r221 + 24-band `flow-halo-counter` (L2, Isaac ✓ r346) + silhouette hold (rings not held)
+- v1 miss: agent `cp` r346 v11 scene onto new plates → Isaac “결과물이 똑같잖아”. Same pixels ≠ replay a closed look (`00` §4).
+- v2 language-map (composed, not a clone): hero=L1+L2+L8 · figure=L5 · field=L3+L4 · L10 breath. 24-band counterflow kept (the language for this halo). No v11 godRays/CA/mp blob.
+- preview v2: `out/layered/2026-09-03_r351-eyes-galaxy-sitter-v2-ca09465e/r351-eyes-galaxy-sitter-v2-preview.mp4`
+- stills: contact=`out/manual-runs/r351-eyes-galaxy-sitter/stills-v2/contact.png` subsec=`…/stills-v2/subsec.png` rings=`…/stills-v2/subsec-rings.png`
+- QA v2: olive PASS bleach PASS drift=0.136/local=0.250 seam=1.18 motionDensity=0.452 verdict=**PASS** darkDwell WARN
+- quote: “왜 새로운 방법론이랑 이전 방법론이랑 달라진게 없어 ? 결과물이 똑같잖아”
+- judge: **HOLD Isaac** — no full · no audio
+- status: delivered-preview-v2
+
+#### CASE-2026-09-03-r352 | engraved-buddha-hands first preview (HOLD Isaac)
+- source: native 1632×2912 PNG `sources/incoming/r352-engraved-buddha-hands.png` (Downloads monglong striking graphic large textur; chat JPEG 1121 unused, R-064) sha256=`d6b19ce7654a3166…` — type=`busy-line` (hatch on hands) M: satMean=0.68 vivid=59.8% busyness=**0.116** greenRisk**true** finishedVivid=0.38 dark=31%
+- hero: detector **form** @0.755,0.329 (right hand) — living part = engraved lines on hands/robe, not a halo/pour. no `--hero`. session-grade OK.
+- recipe: golden `woodblock-phase-advect-r139` (type tree #2). Not a clone of r139 glow0/43/67 — composed map.
+- language-map: hands/robe=L3+L4+L8 · face=L5 (ellipse hold, hands not held) · sky=L4/L10 · phaseMix=0 UV-fixed (busy-line law) · clamp 0.28
+- preview: `out/layered/2026-09-03_r352-engraved-buddha-hands-44ebe7de/r352-engraved-buddha-hands-preview.mp4`
+- stills: contact=`out/manual-runs/r352-engraved-buddha-hands/stills/contact.png` subsec=`…/stills/subsec.png` hand=`…/stills/subsec-hand.png`
+- QA: olive PASS bleach PASS drift=0.100/local=0.195 seam=1.03 motionDensity=0.224 verdict=**PASS**
+- judge: **HOLD Isaac** — no full · no audio
+- status: delivered-preview
+
+#### CASE-2026-09-03-OS-v2.1 | ceiling as code — golden-as-is and clones refused (verification render only)
+- request: Isaac "새로운 방법론대로 돌려봤는데 결과물이 달라진게 없는데 ? 도대체 뭐가 달라진거야 ?" → "브랜치하나 파서 똑바로 작업해줘"
+- diagnosis (measured, not argued): v2 shipped the floor as code and the ceiling as prose ("Enforced by: agent self-check"). One day later: **r349** scene = golden r221 **key-identical (82 keys, 0 diffs)**, session-grade OK, QA PASS, reached Isaac. **r351 v1** = r346 v11 replay (SSIM 0.980). Only r351 v2 actually composed (SSIM 0.548 vs its clone — the largest pixel change in the ledger). Second defect: the ceiling counted language *names*, and golden r221 already carries `glowWave2 0.06` + `breath 0.003`, so "≥3 languages" was satisfied by an untouched golden.
+- shipped (code, branch `feat/ceiling-enforced`): `scripts/lib/language-map.ts` — `measureLanguages` counts **shader activations above thresholds** (L3 baseline never counts; golden defaults below threshold) · `composeLanguageMap` adds L4 (glowWave 0.40/3 : 0.26/5 + phaseWarp 0.12) + L8 (dissolve 0.42/22px · spectral 0.48/16px · chromaFlow 0.5/6px) + L10 (breath 0.032×2) to layer 0, prism/colorCycle/plates untouched · `gradeCeiling` refuses key-identical golden, same-source replay of another slug's `scene*.json`, composed <3, hero layer <2 · `prepare-new-source` composes by default and writes `language-map.json`; `--compose off` requires `--ceiling-waive "<Isaac verbatim>"` · `session-grade` runs the ceiling on every new-source grade (export refuses too) · `isaac-pick.ts --ceiling-waive` = preview-only waiver bound to the scene sha.
+- verification: r349 source, composed via `prepare-new-source` → `--preview` (816×1456, 300f) vs the shipped golden-as-is preview `2026-09-02_r349-uv-pills-face-51d28a3d`: **SSIM 0.654** (r346 v6→v7 that Isaac clearly saw = 0.850; r351 v1 clone = 0.980). QA on composed: olive 0.069 PASS · bleach 0.006 PASS · seam 0.98 · motionDensity 0.392 · deadZone 0.002 · verdict PASS. Tests: `language-map.test.ts` 8 · `session-grade.test.ts` +2 · cosmos-golden test rewritten (floor passes, ceiling refuses, composed passes) · 81 green.
+- not decided by this change: L6 / L7 / L9 are still Isaac's (composer never enables them; they count if an agent enables them after a yes). Isaac has **not** judged the composed look — this guarantees a different preview exists, not that he likes it.
+- rules: 00 §1 ceiling row rewritten (enforced by script) · 00 §3.2 thresholds · 04 §2 compose note · golden README compose note
+- status: **shipped on branch, one verification render, no Isaac-facing preview, no full, no audio**
 
 #### CASE-2026-09-02-OS-v2 | operating-system rewrite + session-plates alpha bug (no render)
 - request: Isaac "환각적인 요소들이 너무 적어 … 새로운 작업 방식이 필요해 / 기존 작업방식 싹 갈아엎어도돼 다 너맘대로해"

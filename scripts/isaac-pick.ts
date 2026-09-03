@@ -6,6 +6,10 @@
  *
  * Writes <work-dir>/psychedelic-gate.json (existing gate + humanOverride, or a REJECT+override stub)
  * and <work-dir>/isaac-pick.json (quote, time, scene sha, preview, audio). Then:
+ *
+ *   --ceiling-waive : instead writes <work-dir>/ceiling-waiver.json so session-grade accepts a golden-as-is
+ *                     or replayed scene for *preview* (00 §3). Never a full permit.
+ *
  *   npx tsx scripts/export-layered.ts --title <slug>-final --work-dir <work-dir> --full-res --gate-report <work-dir>/psychedelic-gate.json
  */
 import { createHash } from "node:crypto";
@@ -22,21 +26,27 @@ function req(argv: readonly string[], i: number, flag: string): string {
   return arg.parse(v);
 }
 
-function parse(argv: readonly string[]): { workDir: string; quote: string; preview?: string; audio?: string } {
+function parse(argv: readonly string[]): { workDir: string; quote: string; preview?: string; audio?: string; ceilingWaive: boolean } {
   let workDir: string | undefined;
   let quote: string | undefined;
   let preview: string | undefined;
   let audio: string | undefined;
+  let ceilingWaive = false;
   for (let i = 0; i < argv.length; i++) {
     const f = argv[i];
     if (f === "--work-dir") workDir = req(argv, i++, f);
     else if (f === "--quote") quote = req(argv, i++, f);
     else if (f === "--preview") preview = req(argv, i++, f);
     else if (f === "--audio") audio = req(argv, i++, f);
+    else if (f === "--ceiling-waive") ceilingWaive = true;
     else throw new Error(`unknown arg: ${f}`);
   }
-  if (!workDir || !quote) throw new Error('usage: --work-dir <dir> --quote "<Isaac verbatim>" [--preview <mp4>] [--audio "<track @m:ss>|none"]');
-  return { workDir, quote, preview, audio };
+  if (!workDir || !quote) {
+    throw new Error(
+      'usage: --work-dir <dir> --quote "<Isaac verbatim>" [--preview <mp4>] [--audio "<track @m:ss>|none"] | --ceiling-waive (golden-as-is preview permit only, no full permit)',
+    );
+  }
+  return { workDir, quote, preview, audio, ceilingWaive };
 }
 
 function sha256File(filePath: string): string {
@@ -51,6 +61,16 @@ function main(): void {
   if (args.preview && !fs.existsSync(path.resolve(args.preview))) throw new Error(`preview not found: ${args.preview}`);
 
   const sceneSha = sha256File(scenePath);
+
+  if (args.ceilingWaive) {
+    // Preview permit for a golden-as-is / clone scene (00 §3). Not a full-render permit — run again without the flag for that.
+    const waiver = { approvedBy: "isaac", reason: args.quote.trim(), at: new Date().toISOString(), sceneSha256: sceneSha };
+    if (!waiver.reason) throw new Error("Isaac quote is required verbatim — it is the waiver");
+    fs.writeFileSync(path.join(workDir, "ceiling-waiver.json"), `${JSON.stringify(waiver, null, 2)}\n`);
+    process.stdout.write(`ceiling waived for scene ${sceneSha.slice(0, 16)}: "${waiver.reason}"\nnext: export-layered --preview (full still needs isaac-pick without --ceiling-waive)\n`);
+    return;
+  }
+
   const reportPath = path.join(workDir, "psychedelic-gate.json");
   const existing = fs.existsSync(reportPath)
     ? (JSON.parse(fs.readFileSync(reportPath, "utf8")) as Record<string, unknown>)
