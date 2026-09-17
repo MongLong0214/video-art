@@ -10,11 +10,11 @@
       "lock": "recipes/locks/r221-eye-mirror-phase-advect-peak.json",
       "sceneSha256": "1204cde756434749f74eaf787d0aac6fb684c0f34965e585a11d1267201e2a91",
       "gate": "recipes/locks/r221-eye-mirror-phase-advect-peak.gate.json",
-      "audio": "Getting That Feeling (Jared Wilson) @0s \u2014 WAV not in git",
+      "audio": "Getting That Feeling (Jared Wilson) @0s — WAV not in git",
       "scaffold": "npx tsx scripts/scaffold-layered-run.ts --source sources/approved/r221-eye-mirror.png --slug r221-eye-mirror-phase-advect-peak --recipe recipes/locks/r221-eye-mirror-phase-advect-peak.json --work-dir out/manual-runs/r221-eye-mirror-phase-advect-peak",
       "exportFull": "npx tsx scripts/export-layered.ts --title r221-eye-mirror-phase-advect-peak-final --work-dir out/manual-runs/r221-eye-mirror-phase-advect-peak --full-res --gate-report recipes/locks/r221-eye-mirror-phase-advect-peak.gate.json",
       "notes": "After scaffold, overwrite scene.json with lock (or use lock as --recipe). Gate has humanOverride.",
-      "playbookSection": "docs/video-os/02-REPRO-LOCKS.md \u00a73"
+      "playbookSection": "docs/video-os/02-REPRO-LOCKS.md §3"
     },
     {
       "slug": "r242-handface-phase-river-gatepass",
@@ -23,11 +23,11 @@
       "lock": "recipes/locks/r242-handface-phase-river-gatepass.json",
       "sceneSha256": "6aac3671605a67c6e4115c75508615c3f20c0a273a3845fece259af3d68bac96",
       "gate": "recipes/locks/r242-handface-phase-river-gatepass.gate.json",
-      "audio": "Eating Glue (Paranoid London/Mutado Pintado) @0s \u2014 WAV not in git",
+      "audio": "Eating Glue (Paranoid London/Mutado Pintado) @0s — WAV not in git",
       "scaffold": "npx tsx scripts/scaffold-layered-run.ts --source sources/approved/r242-hand-face.png --slug r242-handface-phase-river-gatepass --recipe recipes/locks/r242-handface-phase-river-gatepass.json --work-dir out/manual-runs/r242-handface-phase-river-gatepass",
       "exportFull": "npx tsx scripts/export-layered.ts --title r242-handface-phase-river-gatepass-final --work-dir out/manual-runs/r242-handface-phase-river-gatepass --full-res --gate-report recipes/locks/r242-handface-phase-river-gatepass.gate.json",
-      "notes": "gate PASS; clamp maxDrift 0.26. Scaffold with lock as recipe regenerates layers from source. | ALWAYS cp lock\u2192scene.json after scaffold before full export.",
-      "playbookSection": "docs/video-os/02-REPRO-LOCKS.md \u00a73"
+      "notes": "gate PASS; clamp maxDrift 0.26. Scaffold with lock as recipe regenerates layers from source. | ALWAYS cp lock→scene.json after scaffold before full export.",
+      "playbookSection": "docs/video-os/02-REPRO-LOCKS.md §3"
     },
     {
       "slug": "r274-dual-abstract-a-beam-focus",
@@ -36,13 +36,13 @@
       "lock": "recipes/locks/r274-dual-abstract-a-beam-focus.json",
       "sceneSha256": "1b6afdba446861d52cf434a140b93d48befcf03312088fdbadb05338dbe577c3",
       "gate": "recipes/locks/r274-dual-abstract-a-beam-focus.gate.json",
-      "audio": "Astrix \u2014 Sapana (Album Version) @2:58 (178s) \u2014 WAV not in git",
+      "audio": "Astrix — Sapana (Album Version) @2:58 (178s) — WAV not in git",
       "finalLocal": "out/layered/2026-07-16_r274-dual-abstract-a-beam-focus-final-54cff7f8/r274-dual-abstract-a-beam-focus-final.mp4",
       "finalWithAudioLocal": "out/layered/2026-07-16_r274-dual-abstract-a-beam-focus-final-54cff7f8/r274-dual-abstract-a-beam-focus-final-with-sapana.mp4",
       "scaffold": "npx tsx scripts/scaffold-layered-run.ts --source sources/approved/r274-dual-abstract-beam.png --slug r274-dual-abstract-a-beam-focus --recipe recipes/locks/r274-dual-abstract-a-beam-focus.json --work-dir out/manual-runs/r274-dual-abstract-a-beam-focus",
       "exportFull": "npx tsx scripts/export-layered.ts --title r274-dual-abstract-a-beam-focus-final --work-dir out/manual-runs/r274-dual-abstract-a-beam-focus --full-res --gate-report recipes/locks/r274-dual-abstract-a-beam-focus.gate.json",
       "notes": "Isaac liked 2026-07-16. Beam-focus: godRays from third-eye + bloom threshold + colorMotionMask lum/sat. Gate PASS. Parent r272 extreme; r273 near-miss temporal 0.8095.",
-      "playbookSection": "docs/video-os/02-REPRO-LOCKS.md \u00a73"
+      "playbookSection": "docs/video-os/02-REPRO-LOCKS.md §3"
     },
     {
       "slug": "r325-ganesha-rainbow-rings-master",
@@ -51,14 +51,14 @@
       "lock": "recipes/locks/r325-ganesha-rainbow-rings-master.json",
       "sceneSha256": "95562464780fa56ff54a1435a1116d1c8729ee29b9f69db263584ecb59fa8c95",
       "gate": "recipes/locks/r325-ganesha-rainbow-rings-master.gate.json",
-      "audio": "Technical Hitch \u2014 Mama India (Outside The Universe Remix) @6:27 (387s) \u2014 WAV not in git",
+      "audio": "Technical Hitch — Mama India (Outside The Universe Remix) @6:27 (387s) — WAV not in git",
       "finalLocal": "out/layered/2026-08-13_r325-ganesha-rainbow-rings-master-v8b-knee-final-f3bfc5a4/r325-ganesha-rainbow-rings-master-v8b-knee-final.mp4",
       "finalWithAudioLocal": "out/layered/2026-08-13_r325-ganesha-rainbow-rings-master-v8b-knee-final-f3bfc5a4/r325-ganesha-rainbow-rings-master-v8b-knee-final-with-mama-india.mp4",
       "scaffold": "npx tsx scripts/scaffold-layered-run.ts --source sources/approved/r325-ganesha-rainbow-rings.png --slug r325-ganesha-rainbow-rings-master --recipe recipes/locks/r325-ganesha-rainbow-rings-master.json --work-dir out/manual-runs/r325-ganesha-rainbow-rings-master",
       "plates": "node scripts/locks/r325-build-halo-plates.mjs && node scripts/locks/r325-build-counterflow.mjs && cp out/manual-runs/r325-ganesha-rainbow-rings-master/layers/deity.png out/manual-runs/r325-ganesha-rainbow-rings-master/layers/deity-v8.png && node scripts/locks/r325-build-knee-hold.mjs",
       "exportFull": "npx tsx scripts/export-layered.ts --title r325-ganesha-rainbow-rings-master-v8b-knee-final --work-dir out/manual-runs/r325-ganesha-rainbow-rings-master --full-res --gate-report recipes/locks/r325-ganesha-rainbow-rings-master.gate.json",
-      "notes": "Isaac 2026-08-13 \uc774\uac8c \uc824 \ub098\uc544 + \ud480\ubc84\uc804. v8 counterhalo + right-knee hold patch. Gate REJECT + humanOverride. After scaffold: run plates then cp lock\u2192scene.json. Custom plates: phase-halo, flow-halo-counter, deity.",
-      "playbookSection": "docs/video-os/02-REPRO-LOCKS.md \u00a73"
+      "notes": "Isaac 2026-08-13 이게 젤 나아 + 풀버전. v8 counterhalo + right-knee hold patch. Gate REJECT + humanOverride. After scaffold: run plates then cp lock→scene.json. Custom plates: phase-halo, flow-halo-counter, deity.",
+      "playbookSection": "docs/video-os/02-REPRO-LOCKS.md §3"
     },
     {
       "slug": "r342-cosmic-buddha-eye-fall",
@@ -67,14 +67,74 @@
       "lock": "recipes/locks/r342-cosmic-buddha-eye-fall.json",
       "sceneSha256": "502aa11d1e71ba9c5e1e9293b79021d2f1dbca54aec19c1a9cebdb9cc8bf3885",
       "gate": "recipes/locks/r342-cosmic-buddha-eye-fall.gate.json",
-      "audio": "Shaman Trance @0:00 \u2014 WAV not in git",
+      "audio": "Shaman Trance @0:00 — WAV not in git",
       "finalLocal": "out/layered/2026-08-18_r342-cosmic-buddha-eye-fall-v1c-nobox-final-22fa7aba/r342-cosmic-buddha-eye-fall-v1c-nobox-final.mp4",
       "finalWithAudioLocal": "out/layered/2026-08-18_r342-cosmic-buddha-eye-fall-v1c-nobox-final-22fa7aba/r342-cosmic-buddha-eye-fall-v1c-nobox-final-with-shaman-trance.mp4",
       "scaffold": "npx tsx scripts/scaffold-layered-run.ts --source sources/approved/r342-cosmic-buddha-eye-fall.png --slug r342-cosmic-buddha-eye-fall --recipe recipes/locks/r342-cosmic-buddha-eye-fall.json --work-dir out/manual-runs/r342-cosmic-buddha-eye-fall",
       "plates": "node scripts/locks/r342-build-fall-plates.mjs && node scripts/locks/r342-build-nobox-hold.mjs",
       "exportFull": "npx tsx scripts/export-layered.ts --title r342-cosmic-buddha-eye-fall-v1c-nobox-final --work-dir out/manual-runs/r342-cosmic-buddha-eye-fall --full-res --gate-report recipes/locks/r342-cosmic-buddha-eye-fall.gate.json",
-      "notes": "Isaac 2026-08-18 \ub9d8\uc5d0\ub4e0\ub2e4 + \ud480\ub80c\ub354. v1 river + head-only hold (no rectangle). Gate REJECT + humanOverride. After scaffold: run plates then cp lock\u2192scene.json. Custom plates: flow-fall, phase-fall, figure-hold.",
-      "playbookSection": "docs/video-os/02-REPRO-LOCKS.md \u00a73"
+      "notes": "Isaac 2026-08-18 맘에든다 + 풀렌더. v1 river + head-only hold (no rectangle). Gate REJECT + humanOverride. After scaffold: run plates then cp lock→scene.json. Custom plates: flow-fall, phase-fall, figure-hold.",
+      "playbookSection": "docs/video-os/02-REPRO-LOCKS.md §3"
+    },
+    {
+      "slug": "r353-mushroom-man-stems",
+      "source": "sources/approved/r353-mushroom-man-stems.png",
+      "sourceSha256": "831d7659525ed753cfa78d6b89a5b75a28a7228055b5d78054e69a3285af24d5",
+      "lock": "recipes/locks/r353-mushroom-man-stems.json",
+      "sceneSha256": "3a17cd761dd8b99bacd0c65a40165369194fbcaca3ea5f06bbabb00205f52a0b",
+      "gate": "recipes/locks/r353-mushroom-man-stems.gate.json",
+      "audio": "Bebopper @1:50 — WAV not in git",
+      "finalLocal": "out/layered/2026-09-09_r353-mushroom-man-stems-final-b66d9d62/r353-mushroom-man-stems-final.mp4",
+      "scaffold": "npx tsx scripts/scaffold-layered-run.ts --source sources/approved/r353-mushroom-man-stems.png --slug r353-mushroom-man-stems --recipe recipes/locks/r353-mushroom-man-stems.json --work-dir out/manual-runs/r353-mushroom-man-stems",
+      "plates": "node scripts/locks/r353-build-beam-plates.mjs && node scripts/locks/r353-build-sky.mjs",
+      "exportFull": "npx tsx scripts/export-layered.ts --title r353-mushroom-man-stems-final --work-dir out/manual-runs/r353-mushroom-man-stems --full-res --gate-report recipes/locks/r353-mushroom-man-stems.gate.json",
+      "notes": "Isaac: v4 풀버전 + Bebopper @1:50. “ㅇㅇ 맘에든다 합격”. Gate REJECT + humanOverride: 별로야. 이거 그냥 풀버전으로 뽑아줘. After scaffold: run plates then cp lock→scene.json.",
+      "playbookSection": "docs/video-os/02-REPRO-LOCKS.md §3"
+    },
+    {
+      "slug": "r357-tree-sun-drip-face",
+      "source": "sources/approved/r357-tree-sun-drip-face.png",
+      "sourceSha256": "0f3a3484c218c774fe6a17e6a2282023c591ed2485703590b71ab799d3286a34",
+      "lock": "recipes/locks/r357-tree-sun-drip-face.json",
+      "sceneSha256": "aff884de5c4645030f97cca330d5ff3859942c7084161578ab3f3d2c7f864176",
+      "gate": "recipes/locks/r357-tree-sun-drip-face.gate.json",
+      "audio": "Lightyears @0:00 — WAV not in git",
+      "finalLocal": "out/layered/2026-09-11_r357-tree-sun-drip-face-final-69851b8f/r357-tree-sun-drip-face-final.mp4",
+      "scaffold": "npx tsx scripts/scaffold-layered-run.ts --source sources/approved/r357-tree-sun-drip-face.png --slug r357-tree-sun-drip-face --recipe recipes/locks/r357-tree-sun-drip-face.json --work-dir out/manual-runs/r357-tree-sun-drip-face",
+      "plates": "node scripts/locks/r357-build-drip-plates.mjs",
+      "exportFull": "npx tsx scripts/export-layered.ts --title r357-tree-sun-drip-face-final --work-dir out/manual-runs/r357-tree-sun-drip-face --full-res --gate-report recipes/locks/r357-tree-sun-drip-face.gate.json",
+      "notes": "Isaac: 풀버전으로 뽑아 (v2 no ny-slab, silent) Gate REJECT + humanOverride: 풀버전으로 뽑아. After scaffold: run plates then cp lock→scene.json. | audio Lightyears @0:00 (energy from t=0, -8.3 dBFS).",
+      "playbookSection": "docs/video-os/02-REPRO-LOCKS.md §3"
+    },
+    {
+      "slug": "r358-buddha-rain-glitch",
+      "source": "sources/approved/r358-buddha-rain-glitch.png",
+      "sourceSha256": "6f211967149e929ac3799a86e23132dbf19e7db8c0c6babe055afebe6ee2547d",
+      "lock": "recipes/locks/r358-buddha-rain-glitch.json",
+      "sceneSha256": "bd18083113e846a7bba4b63eff8bea299b0033a1912e518db5283ded1765eefc",
+      "gate": "recipes/locks/r358-buddha-rain-glitch.gate.json",
+      "audio": "none",
+      "finalLocal": "out/layered/2026-09-16_r358-buddha-rain-glitch-final-cebf8a01/r358-buddha-rain-glitch-final.mp4",
+      "scaffold": "npx tsx scripts/scaffold-layered-run.ts --source sources/approved/r358-buddha-rain-glitch.png --slug r358-buddha-rain-glitch --recipe recipes/locks/r358-buddha-rain-glitch.json --work-dir out/manual-runs/r358-buddha-rain-glitch",
+      "plates": "node scripts/locks/r358-build-rain-plates.mjs",
+      "exportFull": "npx tsx scripts/export-layered.ts --title r358-buddha-rain-glitch-final --work-dir out/manual-runs/r358-buddha-rain-glitch --full-res --gate-report recipes/locks/r358-buddha-rain-glitch.gate.json",
+      "notes": "Isaac: 전반적으로 불만족스러워 최종본 다시 뽑아줘. v5 L1 rain + L5 statue, L4 off, edge gate. Silent. Gate REJECT + humanOverride: 전반적으로 불만족스러워 최종본 다시 뽑아줘. After scaffold: run plates then cp lock→scene.json.",
+      "playbookSection": "docs/video-os/02-REPRO-LOCKS.md §3"
+    },
+    {
+      "slug": "r362-dot-hand-mushrooms",
+      "source": "sources/approved/r362-dot-hand-mushrooms.png",
+      "sourceSha256": "10fe3dad893857bef9ee62ad1018aa649900dacfc2d5d7442ced21dd7198a1b2",
+      "lock": "recipes/locks/r362-dot-hand-mushrooms.json",
+      "sceneSha256": "0bf1dbb73857cad56a40ef77373808991ed66282388b78facdfc4dde002220a3",
+      "gate": "recipes/locks/r362-dot-hand-mushrooms.gate.json",
+      "audio": "Valley of Stevie @0:13",
+      "finalLocal": "out/layered/2026-09-16_r362-dot-hand-mushrooms-final-70ed5825/r362-dot-hand-mushrooms-final.mp4",
+      "scaffold": "npx tsx scripts/scaffold-layered-run.ts --source sources/approved/r362-dot-hand-mushrooms.png --slug r362-dot-hand-mushrooms --recipe recipes/locks/r362-dot-hand-mushrooms.json --work-dir out/manual-runs/r362-dot-hand-mushrooms",
+      "plates": "node scripts/locks/r362-build-beam-plates.mjs",
+      "exportFull": "npx tsx scripts/export-layered.ts --title r362-dot-hand-mushrooms-final --work-dir out/manual-runs/r362-dot-hand-mushrooms --full-res --gate-report recipes/locks/r362-dot-hand-mushrooms.gate.json",
+      "notes": "Isaac: 풀렌더 + Valley of Stevie. Vocal drop measured 13.50s RMS -23→-17 dBFS. Mux -ss 13.5. Gate REJECT+override. Gate REJECT + humanOverride: 풀렌더 뽑아 그리고 Valley of Stevie 00:13~00:14에 여자 오디오 들어갈 때 붙여. After scaffold: run plates then cp lock→scene.json.",
+      "playbookSection": "docs/video-os/02-REPRO-LOCKS.md §3"
     }
   ],
   "playbook": "docs/video-os/02-REPRO-LOCKS.md",

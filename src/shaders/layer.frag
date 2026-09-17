@@ -288,6 +288,13 @@ vec4 cubic(float v) {
   float w = 6.0 - x - y - z;
   return vec4(x, y, z, w) * (1.0 / 6.0);
 }
+// ClampToEdge + off-canvas UV repeats the border texel as a smear on all four edges.
+float frameEdgeGate(vec2 uv) {
+  float m = 0.08;
+  float e = min(min(uv.x, 1.0 - uv.x), min(uv.y, 1.0 - uv.y));
+  return smoothstep(0.0, m, e);
+}
+
 vec4 sampleBicubic(sampler2D tex, vec2 uv, vec2 texSize) {
   vec2 invTex = 1.0 / texSize;
   uv = uv * texSize - 0.5;
@@ -1220,6 +1227,7 @@ void main() {
     );
     sampleUv = clamp(sourceRegionAffinityUv, 0.0, 1.0);
   }
+  sampleUv = vUv + (sampleUv - vUv) * frameEdgeGate(vUv);
   sampleUv = clamp(sampleUv, 0.0, 1.0);
 
   vec4 sourceCenterColor = uBicubicFilter > 0.5

@@ -63,6 +63,10 @@
 | engraved multi-eye swan | **r344 v3** | local MP4 · lock pack TODO · `out/layered/2026-08-27_r344-engraved-swan-eyes-final-1a283714/…-final.mp4` | **All Around Us @2:25** |
 | skeleton-baby halo | **r345 v1** | local MP4 · lock pack TODO · `out/layered/2026-08-28_r345-skeleton-baby-halo-final-7c74fd4d/…-final.mp4` | **Salaam @0:00** |
 | eye-mandala-sitter | **r346 v11** | local MP4 · lock pack TODO · `out/layered/2026-09-02_r346-eye-mandala-sitter-final-40c26252/…-final.mp4` | **Adhana @5:06** |
+| mushroom-man-stems | **r353 v4** | git: `sources/approved/r353-mushroom-man-stems.png` + `recipes/locks/r353-mushroom-man-stems.{json,gate.json}` · plates `scripts/locks/r353-build-*.mjs` · local final `out/layered/2026-09-09_r353-mushroom-man-stems-final-b66d9d62/r353-mushroom-man-stems-final.mp4` · **+audio** `…-final-with-bebopper.mp4` | **Bebopper @1:50** |
+| tree-sun-drip-face | **r357 v2** | git: `sources/approved/r357-tree-sun-drip-face.png` + `recipes/locks/r357-tree-sun-drip-face.{json,gate.json}` · plates `scripts/locks/r357-build-drip-plates.mjs` · local final `out/layered/2026-09-11_r357-tree-sun-drip-face-final-69851b8f/r357-tree-sun-drip-face-final.mp4` · **+audio** `…-final-with-lightyears.mp4` | **Lightyears @0:00** |
+| buddha-rain-glitch | **r358 v5** | git: `sources/approved/r358-buddha-rain-glitch.png` + `recipes/locks/r358-buddha-rain-glitch.{json,gate.json}` · plates `scripts/locks/r358-build-rain-plates.mjs` · local final `out/layered/2026-09-16_r358-buddha-rain-glitch-final-cebf8a01/r358-buddha-rain-glitch-final.mp4` | silent (no track named) |
+| dot-hand-mushrooms | **r362** | git: `sources/approved/r362-dot-hand-mushrooms.png` + `recipes/locks/r362-dot-hand-mushrooms.{json,gate.json}` · plates `scripts/locks/r362-build-beam-plates.mjs` · local final `out/layered/2026-09-16_r362-dot-hand-mushrooms-final-70ed5825/r362-dot-hand-mushrooms-final.mp4` · **+audio** `…-final-with-valley-of-stevie.mp4` | **Valley of Stevie @0:13** (mux **-ss 13.5**) |
 
 
 ### Approved previews (Isaac visual OK — full only after gate PASS §7.1; do not re-open without new defect)
@@ -389,6 +393,16 @@ ffprobe -v error -show_entries stream=codec_type,codec_name,nb_frames -of csv=p=
 | r350 rainbow-tongue-mouth | **FAIL look** | Isaac “별로야 너무 구려” on v3 · killed · no full |
 | r351 eyes-galaxy-sitter | **HOLD Isaac** v2 | v1 was r346 v11 clone (Isaac catch) · v2 L1+L2+L4+L8+L5+L10 |
 | r352 engraved-buddha-hands | **HOLD Isaac** | busy-line r139 · face hold · L3+L4+L8 hands · L5 face · QA PASS |
+| r353 mushroom-man-stems | **Isaac final** v4 + Bebopper @1:50 | “ㅇㅇ 맘에든다 합격” · do not re-tune |
+| r356 buddha-rainbow-monk | **HOLD Isaac** | native 1632 · pour along rainbow ribbon · QA PASS |
+| r357 tree-sun-drip-face | **Isaac final** v2 + Lightyears @0:00 | silent + mux · lock pack closed |
+| r358 buddha-rain-glitch | **HOLD Isaac** v6 | 부처 sat↑ phaseFlow↓ · rain unchanged · QA PASS macroMotion WARN |
+| r359 buddha-halo-rings | **HOLD Isaac** | oval halo L1+L2 · statue L5 · no spin · QA PASS |
+| r360 uv-tongue-pills | **HOLD Isaac** | chat JPEG upscaled · tongue pour · QA PASS darkDwell WARN |
+| r361 mosaic-eye-fall | **HOLD Isaac** | pour pupil→palm · hand+sclera hold · QA PASS |
+| r362 dot-hand-mushrooms | **Isaac final** + Valley of Stevie @0:13 | mux -ss 13.5 · lock closed |
+| r354 mushroom-man-paint | **HOLD Isaac** | folder31 · beam from face · QA PASS |
+| r355 marble-face-profile | **HOLD Isaac** | folder31 · oil sheet + profile hold · QA PASS hueJump WARN |
 
 ### 9.2b CASE detail — hand-face (2026-07-15)
 
@@ -1881,6 +1895,252 @@ Evidence: `docs/archive/OUTPUT_GAP_ANALYSIS.pre-refactor-2026-07-15.md` (git sna
 - QA: olive PASS bleach PASS drift=0.100/local=0.195 seam=1.03 motionDensity=0.224 verdict=**PASS**
 - judge: **HOLD Isaac** — no full · no audio
 - status: delivered-preview
+
+#### CASE-2026-09-09-folder31 | r353 · r354 · r355 first previews (HOLD Isaac)
+- source dir: `/Users/isaac/Downloads/항목을 포함하는 새로운 폴더 31/` — 3× native 1632 PNG
+- r353 mushroom-man-stems sha=`831d7659525ed753…` type=`figure-vivid` greenRisk**true** finishedVivid=0.60 · hero detector halo → `--hero beam@0.48,0.40:30/700` (stems grow out of the face). Custom `flow-beam` radial-out (session-plates wrote pour water diagonals into beam names). Hold = hair/torso ellipses, mushrooms not held. clamp 0.18. QA **PASS** hueJump WARN. preview `out/layered/2026-09-09_r353-mushroom-man-stems-8b60afd0/r353-mushroom-man-stems-preview.mp4`
+- r354 mushroom-man-paint sha=`e94997cc0c723628…` type=`figure-vivid` finishedVivid=0.81 · detector form on a cap → `--hero beam@0.45,0.42:30/650`. Same beam plates. QA **PASS**. preview `out/layered/2026-09-09_r354-mushroom-man-paint-53e566c5/r354-mushroom-man-paint-preview.mp4`
+- r355 marble-face-profile sha=`9285da37ca0fea09…` type=`figure-vivid` + oil sheet · detector pour → `--hero sheet@0.32,0.48` (no waterNy stripes). oil-slick + ellipse hold on clean profile. QA **PASS** hueJump WARN. preview `out/layered/2026-09-09_r355-marble-face-profile-2e870ac4/r355-marble-face-profile-preview.mp4`
+- composer v2 on all three (L1+L4+L6+L8+L10). No full · no audio
+- status: delivered-preview
+
+#### CASE-2026-09-09-r353-sketch | r353 고도화 language tiles (PICK-LANGUAGE)
+- request: Isaac “이거만 다양한 버전으로 고도화해봐” on `…/r353-mushroom-man-stems-preview.mp4`. r354/r355 untouched.
+- floor: first preview had a torso-ellipse oval. Hold rebuilt as **head silhouette** (hair+face+ear, mushrooms + beam origin punched out, shirt out). hero α=0 cap=0 hair=1 cheek=0.55 torso=0.
+- first sketch set (A–D at 15:28) was a knob-adjacent family — stills looked the same. Replaced with four maps:
+  - **A grow** L1 72px + L5 + L10 · kill L4/L6/L8 · `…-a-64fd2399/…-a-sketch.mp4`
+  - **B material** L1 + L8 dissolve 0.85/32px λ160 + spectral 0.55/24 + transport 0.82/36 · kill L4/L6/L10 · `…-b-e8f9c6dc/…-b-sketch.mp4`
+  - **C vection** L1 + L6 zoom **0.988** (inward portal) + cameraDrift 0.02 + mp 0.26 · kill L4/L8 · `…-c-2564071a/…-c-sketch.mp4`
+  - **D interfere** L1 + L4 0.74/3 : 0.48/5 + phaseWarp 0.28 + L10 0.04 · kill L6/L8 · `…-d-2663b749/…-d-sketch.mp4`
+- session-grade OK on all four. grid `out/manual-runs/r353-mushroom-man-stems/sketch-grid.mp4` (half-res · 12 fps · 6 s). stills `…/stills-sketch/{a,b,c,d,contact}.png`
+- language-map: hero=L1 · figure=L5 · A field=L10 · B field=L8 · C frame=L6 · D field=L4+L10
+- next: Isaac names a tile → one 1632 `--preview` of that map only. No full · no audio
+- status: superseded — Isaac “다 너무 별로야” + “타원형 경계선 제거해”
+
+#### CASE-2026-09-09-r353-v2 | oval hold removed (floor defect, not a language miss)
+- quote: “아 다 너무 별로야. 그리고 중앙 쯤에 타원형 경계선 보이는거뭐야 제거해”
+- axis: oval hold = overlay (R-038). OS: plate bug is not a language miss — one `--preview`, do not burn another sketch set. “이질적/오버레이 → remove it / never soften.”
+- do: emptied `figure-hold.png` (hero/cap/hair/cheek/torso/sky α=0) · dropped hold layer from `scene.json` (v0 knobs kept: L1+L4+L6+L8+L10). No new languages.
+- preview: `out/layered/2026-09-09_r353-mushroom-man-stems-v2-b1e2e959/r353-mushroom-man-stems-v2-preview.mp4`
+- stills: contact=`out/manual-runs/r353-mushroom-man-stems/stills-v2/contact.png` subsec=`…/stills-v2/subsec.png`
+- QA: **PASS** hueJump WARN · macroMotion 0.040 · motionDensity 0.370 · drift 0.140/0.245
+- language-map: hero=L1+L4+L8+L10 · field/sky=L4+L6 · figure=none (hold gone)
+- judge: **HOLD Isaac** — no full · no audio. If this look is still 다 별로, that is the language miss (unused-language sketch set or STOP).
+- status: superseded by v3 marble delta
+
+#### CASE-2026-09-09-r353-v3 | marble L8 only (surgical)
+- quote: “마블링 패턴만 좀 수정해줘 더 싸이키델릭하게”
+- axis: DELTA on L8 only. L1 40px / L4 waves / L6 vection / L10 / clamp 0.18 / no hold — untouched.
+- L8: dissolve 0.42/22/λ72 → 0.82/32/λ140 · spectral 0.48/16 → 0.72/24 · chromaFlow 0.5/6 → 0.78/8 · transport 0.75/28 → 0.95/72 colorAmount 0.50 · tangent 0.55/4
+- preview: `out/layered/2026-09-09_r353-mushroom-man-stems-v3-d4d1c1fa/r353-mushroom-man-stems-v3-preview.mp4`
+- stills: contact=`out/manual-runs/r353-mushroom-man-stems/stills-v3/contact.png` subsec=`…/stills-v3/subsec.png`
+- QA: **PASS** hueJump WARN · macroMotion 0.041 · motionDensity 0.379 · drift 0.144/0.252
+- language-map: hero=L1+L4+L8+L10 · ground/shirt=L8 · sky=L4+L6 · figure=none
+- judge: **HOLD Isaac** — no full · no audio
+- status: superseded — Isaac: 마블링 = sky, not ground
+
+#### CASE-2026-09-09-r353-v4 | sky marbling (the region Isaac meant)
+- quote: “내가 어떤 부분을 이야기하는지 알아 ? 하늘의 패턴 이야기하는거야”
+- axis: surgical sky only. Restored v2 layer 0 (undid v3 ground L8). New `layers/sky.png` color mask (cobalt, no rectangle) + `flow-sky` curl field. Sky layer: L4 0.82/3:0.52/5 + warp 0.36 · L8 dissolve 0.78/32 λ168 · chroma 5 · clamp 0.24. Face/ground/L1 beam untouched.
+- preview: `out/layered/2026-09-09_r353-mushroom-man-stems-v4-0e2f08a5/r353-mushroom-man-stems-v4-preview.mp4`
+- stills: contact=`out/manual-runs/r353-mushroom-man-stems/stills-v4/contact.png` sky-compare=`…/stills-v4/sky-v2-v4.png`
+- QA: **PASS** hueJump WARN · macroMotion 0.036 · motionDensity 0.412
+- language-map: hero=L1 · sky=L4+L8+L10 · ground=L8(v2) · figure=none
+- judge: **HOLD Isaac** — no full · no audio
+- status: delivered-preview · then 고도화 sketch-grid on sky marble
+
+#### CASE-2026-09-09-r353-sky-marble | sky marble language tiles
+- quote: “마블 패턴 자체를 고도화해봐 지금도 나쁘지는 않아”
+- axis: NEW-LANGUAGE on sky only. Layer 0 frozen at v2. A = current v4 (keep). B/C/D = unused sky maps, not knob tours.
+  - **A current** L4+L8 curl · `…-sky-a-f60b3452/…-sky-a-sketch.mp4`
+  - **B oil** phase-vertical + structureFlow, kill L8 · `…-sky-b-2f360ffd/…-sky-b-sketch.mp4`
+  - **C interfere** L4 only, kill L8 · `…-sky-c-d725e7c3/…-sky-c-sketch.mp4`
+  - **D shear** suminagashi field + L8 λ256 · `…-sky-d-96ea71cd/…-sky-d-sketch.mp4`
+- grid: `out/manual-runs/r353-mushroom-man-stems/sky-marble-grid.mp4`
+- stills: `…/stills-sky/sky-contact.png`
+- next: Isaac names a tile → one 1632 `--preview` of that sky map only. No full · no audio
+- status: superseded — Isaac “b와 d 의 중간쯤”
+
+#### CASE-2026-09-09-r353-v5 | sky B/D midpoint
+- quote: “b와 d 의 중간쯤되었으면 좋겠어”
+- axis: PICK-LANGUAGE blend. B oil (phase-vertical + structureFlow) on D shear current (`flow-sky-shear`) + half L8 (dissolve 0.50/24 λ192, transport 0.54/32). Layer 0 still v2. No hold.
+- preview: `out/layered/2026-09-09_r353-mushroom-man-stems-v5-892a4762/r353-mushroom-man-stems-v5-preview.mp4`
+- stills: contact=`out/manual-runs/r353-mushroom-man-stems/stills-v5/contact.png` compare=`…/stills-v5/sky-b-v5-d.png`
+- QA: **PASS** hueJump WARN · macroMotion 0.036 · motionDensity 0.357
+- language-map: hero=L1 · sky=L1+L4+L8 (oil+shear mid) · ground=L8(v2)
+- judge: **HOLD Isaac** — no full · no audio
+- status: superseded — Isaac “별로야” on v5, 풀버전 on v4
+
+#### CASE-2026-09-09-r353-final | v4 full silent
+- quote: “별로야. 이거 그냥 풀버전으로 뽑아줘” + v4 preview path
+- axis: PICK v4 (sky L4+L8 curl). Kill v5 B/D mid. No audio (track+start not named).
+- pick: `isaac-pick.ts` gate REJECT+override · scene sha `3a17cd761dd8b99b`
+- full: 1632×2912 · 20s · 30fps · silent `out/layered/2026-09-09_r353-mushroom-man-stems-final-b66d9d62/r353-mushroom-man-stems-final.mp4`
+- QA: **PASS** hueJump WARN · macroMotion WARN 0.020 · motionDensity 0.442 · drift 0.149/0.254
+- close: `close-lock.ts --slug r353-mushroom-man-stems` plates `r353-build-beam-plates` + `r353-build-sky`
+- language-map: hero=L1 beam · sky=L4+L8 curl · ground=L8(v2) · figure=none
+- status: closed-final + Bebopper @1:50
+
+#### CASE-2026-09-09-r353-audio | Bebopper mux
+- quote: “Bebopper … 1분 50초부터 합쳐줘”
+- mux: `/Users/isaac/Downloads/Bebopper [4-rDzvcrBA4].wav` **-ss 110** (1:50) aac 320k · video copy 600f · duration 20.000s
+- out: `out/layered/2026-09-09_r353-mushroom-man-stems-final-b66d9d62/r353-mushroom-man-stems-final-with-bebopper.mp4`
+- judge: Isaac **“ㅇㅇ 맘에든다 합격”** — do not re-tune without new defect
+- status: closed-final + audio approved
+
+#### CASE-2026-09-11-r356 | buddha-rainbow-monk first preview
+- source: native 1632 PNG sha=`b799ed05a2296dcc…` `sources/incoming/r356-buddha-rainbow-monk.png` · type=`figure-vivid` satMean=0.70 finishedVivid=0.37 greenRisk**true** busyness=0.028
+- hero: detector halo@0.60,0.23 → `--hero pour@0.46,0.10:w0.92` (rainbow ribbon from the crown). Custom `flow-fall` follows ribbon tangent (session-plates wrote a vertical cone + water diagonals). Hold = Buddha face/hair + monk silhouette, rainbow/clouds/sky not held, origin punched.
+- language-map: hero=L1 along ribbon · figure=L5 · field=L4+L8+L10 · frame=L6 · composed=6
+- preview: `out/layered/2026-09-11_r356-buddha-rainbow-monk-6773ebc9/r356-buddha-rainbow-monk-preview.mp4`
+- stills: contact=`out/manual-runs/r356-buddha-rainbow-monk/stills/contact.png` subsec=`…/stills/subsec.png`
+- QA: **PASS** · macroMotion 0.043 · motionDensity 0.486 · drift 0.167/0.289
+- judge: **HOLD Isaac** — no full · no audio
+- status: delivered-preview
+
+#### CASE-2026-09-11-r357 | tree-sun-drip-face first preview
+- source: native 1632 PNG sha=`0f3a3484c218c774…` `sources/incoming/r357-tree-sun-drip-face.png` · type=`figure-vivid` satMean=0.57 finishedVivid=0.23 busyness=0.032 greenRisk false
+- hero: detector halo@sun → `--hero pour@0.50,0.40:w0.92` (sheet + drips). Custom plates: drips `dy`, sheet lateral, sun radial. Hold = dotted face, not drips/sheet/sun.
+- language-map: hero=L1 pour · figure=L5 · field=L4+L8+L10 · frame=L6 · composed=6
+- preview: `out/layered/2026-09-11_r357-tree-sun-drip-face-2212506d/r357-tree-sun-drip-face-preview.mp4`
+- stills: contact=`out/manual-runs/r357-tree-sun-drip-face/stills/contact.png`
+- QA: **PASS** · macroMotion 0.046 · motionDensity 0.475 · drift 0.126/0.264
+- judge: **HOLD Isaac** — no full · no audio
+- status: superseded — Isaac “인위적인 경계선 근본적으로 제거해”
+
+#### CASE-2026-09-11-r357-v2 | kill ny-slab seam
+- quote: “아니 왜 자꾸 인위적인 경계선이 생겨 ? 근본적으로 제거해”
+- axis: plate defect (ny-slab flow + hold cut at waterline), not a language miss. Overlay → remove (r353 oval class).
+- do: emptied hold · dropped hold layer · one continuous flow (structure + radial sun by distance, not ny · drips only below the sheet, 10px feather). No sheet rectangle.
+- preview: `out/layered/2026-09-11_r357-tree-sun-drip-face-v2-63ec151f/r357-tree-sun-drip-face-v2-preview.mp4`
+- stills: contact=`out/manual-runs/r357-tree-sun-drip-face/stills-v2/contact.png`
+- QA: **PASS** · macroMotion 0.048 · motionDensity 0.498
+- language-map: hero=L1 · field=L4+L8+L10 · frame=L6 · figure=none
+- judge: **HOLD Isaac** — no full · no audio
+- status: superseded — Isaac “풀버전으로 뽑아”
+
+#### CASE-2026-09-11-r357-final | v2 full silent
+- quote: “풀버전으로 뽑아”
+- pick: `isaac-pick.ts` gate REJECT+override · scene sha `aff884de5c464503`
+- full: 1632×2912 · 20s · 30fps · silent `out/layered/2026-09-11_r357-tree-sun-drip-face-final-69851b8f/r357-tree-sun-drip-face-final.mp4`
+- QA: **PASS** · macroMotion 0.030 · motionDensity 0.539
+- close: `close-lock.ts --slug r357-tree-sun-drip-face` plates `r357-build-drip-plates`
+- language-map: hero=L1 · field=L4+L8+L10 · frame=L6 · figure=none
+- status: closed-final + Lightyears @0:00
+
+#### CASE-2026-09-11-r357-audio | Lightyears mux
+- quote: “Lightyears.wav 이거 합쳐줘” (start not named)
+- measure: RMS **-8.3 dBFS at t=0** (no mute intro) → **-ss 0**
+- mux: `/Users/isaac/Downloads/Lightyears.wav` aac 320k · video copy 600f · duration 20.000s
+- out: `out/layered/2026-09-11_r357-tree-sun-drip-face-final-69851b8f/r357-tree-sun-drip-face-final-with-lightyears.mp4`
+- status: delivered-audio
+
+#### CASE-2026-09-16-r358 | buddha-rain-glitch first preview
+- source: native 1632 PNG sha=`6f211967149e929a…` `sources/incoming/r358-buddha-rain-glitch.png` · type=`figure-vivid` satMean=0.55 finishedVivid=0.21 busyness=0.030 M5=line
+- hero: detector form@statue → `--hero pour@0.50,0.08:w0.95` (rain field). Custom flow: rain down, no cone, no water diagonals. Hold layer dropped (r353/r357 oval-seam class).
+- language-map: hero=L1 rain · field=L4+L8+L10 · frame=L6 · figure=none · composed=5
+- preview: `out/layered/2026-09-16_r358-buddha-rain-glitch-d974aa3a/r358-buddha-rain-glitch-preview.mp4`
+- stills: contact=`out/manual-runs/r358-buddha-rain-glitch/stills/contact.png`
+- QA: **PASS** · macroMotion 0.045 · motionDensity 0.457
+- judge: **HOLD Isaac** — no full · no audio
+- status: superseded — Isaac “노이즈 낀거같은거좀 다듬어줘”
+
+#### CASE-2026-09-16-r358-v2 | denoise micro (same map)
+- quote: “이게 최선이야 ? 전반적으로 노이즈 낀거같은거좀 다듬어줘”
+- axis: 노이즈 = micro dominates. surfaceCycles 26→10 · dissolve λ72→160 · glow sharpness ↓ · transport micro 7→3. L1 rain / L4 / L6 / L8 kept. No global damping.
+- preview: `out/layered/2026-09-16_r358-buddha-rain-glitch-v2-5df580fc/r358-buddha-rain-glitch-v2-preview.mp4`
+- stills: contact=`out/manual-runs/r358-buddha-rain-glitch/stills-v2/contact.png` compare=`…/stills-v2/v1-v2.png`
+- QA: **PASS** · macroMotion 0.040 · motionDensity 0.480
+- judge: **HOLD Isaac** — no full · no audio
+- status: superseded — Isaac “상하좌우 끝단 blur 빼줘”
+
+#### CASE-2026-09-16-r358-v3 | kill edge mush
+- quote: “상하좌우 양 끝단에 blur처럼 뭉게지는 효과 뺴줘”
+- axis: X만 = frame-edge smear. cameraDrift 0 · mp zoom 1.0 · CA 0. Rain L1 / L4 / L8 kept. L6 off.
+- preview: `out/layered/2026-09-16_r358-buddha-rain-glitch-v3-85b5d388/r358-buddha-rain-glitch-v3-preview.mp4`
+- stills: contact=`out/manual-runs/r358-buddha-rain-glitch/stills-v3/contact.png`
+- QA: **PASS** · macroMotion 0.040 · motionDensity 0.478
+- judge: **HOLD Isaac** — no full · no audio
+- status: superseded — Isaac “여전히 끝단 뭉게짐 있어 제대로 파악해”
+
+#### CASE-2026-09-16-r358-v4 | ClampToEdge border smear (root cause)
+- quote: “여전히 끝단 뭉게짐 있어 제대로 파악해 !!!”
+- axis: not zoom/drift. `layer.frag` displaces UV then `clamp(uv,0,1)` + ClampToEdge → border texel stretched across the frame (visible as left-ear smear). `frameEdgeGate` scales displacement to 0 in the outer 8%.
+- preview: `out/layered/2026-09-16_r358-buddha-rain-glitch-v4-c643bb30/r358-buddha-rain-glitch-v4-preview.mp4`
+- stills: contact=`out/manual-runs/r358-buddha-rain-glitch/stills-v4/contact.png`
+- QA: **PASS** · macroMotion 0.040 · motionDensity 0.464
+- judge: **HOLD Isaac** — no full · no audio
+- status: superseded — Isaac “전반적으로 불만족스러워 최종본 다시 뽑아줘”
+
+#### CASE-2026-09-16-r358-final | v5 full silent
+- quote: “끝단 뭉게짐은 해소됐지만 전반적으로 불만족스러워 최종본 다시 뽑아줘”
+- axis: language — statue L5 (color silhouette, no ellipse) · kill L4 isolines · keep L1 rain + L8 + edge gate. Not a v4 replay.
+- pick: `isaac-pick.ts` gate REJECT+override · scene sha `bd18083113e846a7`
+- full: 1632×2912 · 20s · 30fps · silent `out/layered/2026-09-16_r358-buddha-rain-glitch-final-cebf8a01/r358-buddha-rain-glitch-final.mp4`
+- QA: **PASS** macroMotion WARN 0.009 · motionDensity 0.296
+- close: `close-lock.ts --slug r358-buddha-rain-glitch` plates `r358-build-rain-plates`
+- language-map: hero=L1 rain · figure=L5 · field=L8+L10
+- status: closed-final silent · then Isaac “부처가 좀더 쩅하고 선명했으면”
+
+#### CASE-2026-09-16-r358-v6 | statue punch + sharpness
+- quote: “부처가 좀더 쩅하고 선명했으면 좋겠어”
+- axis: X만 = 부처. hold satBoost 1.55→1.88 · valueLift 0.04 · phaseFlowPx 14→4 (R-063 선명). Rain layer untouched.
+- preview: `out/layered/2026-09-16_r358-buddha-rain-glitch-v6-7bee61fb/r358-buddha-rain-glitch-v6-preview.mp4`
+- stills: contact=`out/manual-runs/r358-buddha-rain-glitch/stills-v6/contact.png`
+- QA: **PASS** macroMotion WARN 0.015 · motionDensity 0.275
+- judge: **HOLD Isaac** — no full until named
+- status: delivered-preview
+
+#### CASE-2026-09-16-r359 | buddha-halo-rings first preview
+- source: native 1632 PNG sha=`455a416422c264fe…` `sources/incoming/r359-buddha-halo-rings.png` · type=`figure-vivid` satMean=0.62 finishedVivid=0.48 busyness=0.066 greenRisk**true**
+- hero: detector form → `--hero halo@0.50,0.46:280/820`. Custom **ellipse** counterflow (session-plates was a circle + oval hold on the rings). Hold = statue color silhouette.
+- R-060: mp 0.04 · zoom 1 · rotate 0 · drift 0. clamp 0.18
+- language-map: hero=L1+L2 · figure=L5 · field=L4+L8+L10 · composed=6
+- preview: `out/layered/2026-09-16_r359-buddha-halo-rings-ab02d6ee/r359-buddha-halo-rings-preview.mp4`
+- stills: contact=`out/manual-runs/r359-buddha-halo-rings/stills/contact.png`
+- QA: **PASS** · macroMotion 0.031 · motionDensity 0.404
+- judge: **HOLD Isaac** — no full · no audio
+- status: delivered-preview
+
+#### CASE-2026-09-16-r360 | uv-tongue-pills first preview
+- source: **chat JPEG** 1163×1783 lanczos→1632 (no native PNG) sha-jpg=`01d11f97…` `sources/incoming/r360-uv-tongue-pills.jpg`
+- type=`figure-vivid` satMean=0.63 finishedVivid=0.59 busyness=0.009
+- hero: detector form@eye → `--hero pour@0.32,0.70:w0.92` (tongue+pills). Custom flow: tongue `dy`, no cone/water. Hold = face, not tongue.
+- language-map: hero=L1 · figure=L5 · field=L4+L8+L10 · composed=5
+- preview: `out/layered/2026-09-16_r360-uv-tongue-pills-bdfe3daa/r360-uv-tongue-pills-preview.mp4`
+- stills: contact=`out/manual-runs/r360-uv-tongue-pills/stills/contact.png`
+- QA: **PASS** darkDwell WARN · macroMotion 0.045 · motionDensity 0.375
+- judge: **HOLD Isaac** — no full · no audio
+- status: delivered-preview
+
+#### CASE-2026-09-16-r361 | mosaic-eye-fall first preview
+- source: native 1632 PNG `sources/incoming/r361-mosaic-eye-fall.png` · type=`figure-vivid` satMean=0.50 finishedVivid=0.52 busyness=0.028
+- hero: detector form@lid → `--hero pour@0.50,0.36:w0.72` (waterfall into the palm). Custom fall column, no cone/water diagonals. Hold = hand + sclera (not the fall).
+- language-map: hero=L1 · figure=L5 · field=L4+L8+L10 · composed=5
+- preview: `out/layered/2026-09-16_r361-mosaic-eye-fall-ff1fadee/r361-mosaic-eye-fall-preview.mp4`
+- stills: contact=`out/manual-runs/r361-mosaic-eye-fall/stills/contact.png`
+- QA: **PASS**
+- judge: **HOLD Isaac** — no full · no audio
+- status: delivered-preview
+
+#### CASE-2026-09-16-r362 | dot-hand-mushrooms first preview
+- source: native 1632 PNG `sources/incoming/r362-dot-hand-mushrooms.png` · type=`figure-vivid` satMean=0.53 finishedVivid=0.36 busyness=0.049
+- hero: detector form → `--hero beam@0.58,0.42:40/800` (radial sunburst). Custom radial-out (no pour water). Hold = dark hand+mushrooms, not sky.
+- language-map: hero=L1 · figure=L5 · field=L4+L6+L8+L10 · composed=6
+- preview: `out/layered/2026-09-16_r362-dot-hand-mushrooms-9842f83b/r362-dot-hand-mushrooms-preview.mp4`
+- stills: contact=`out/manual-runs/r362-dot-hand-mushrooms/stills/contact.png`
+- QA: **PASS** darkDwell WARN · macroMotion 0.038 · motionDensity 0.480
+- judge: **HOLD Isaac** — no full · no audio
+- status: superseded — Isaac 풀렌더 + Valley of Stevie @0:13
+
+#### CASE-2026-09-16-r362-final | full + Valley of Stevie
+- quote: “풀렌더 뽑아 그리고 … 00:13~00:14에 여자 오디오 들어갈 때 붙여”
+- measure: RMS jump **13.50s** −23.2 → −17.6 dBFS (vocal in). Mux **-ss 13.5**
+- full: 1632×2912 · 20s · 30fps silent `…-final-70ed5825/r362-dot-hand-mushrooms-final.mp4`
+- +audio: `…-final-with-valley-of-stevie.mp4` aac 320k · 20.000s · 600f
+- QA: **PASS** darkDwell WARN · macroMotion WARN 0.022
+- close: `close-lock.ts --slug r362-dot-hand-mushrooms`
+- status: closed-final + audio
 
 #### CASE-2026-09-03-r352-composed | composer v2 on a second source + 자글자글 diagnosis (verification renders only)
 - request: Isaac "v2가 훨씬 나아 그리고 다른 소스 써봐" → then "자글자글 끓는 듯한 픽셀 모양의 거친 텍스쳐 근본적으로 제거해줘"

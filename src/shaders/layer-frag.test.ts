@@ -386,6 +386,13 @@ describe("layer.frag — source-derived tangent microflow", () => {
   });
 });
 
+describe("layer.frag — frame-edge ClampToEdge smear", () => {
+  it("gates UV displacement at the four frame borders", () => {
+    expect(fragSrc).toContain("float frameEdgeGate(vec2 uv)");
+    expect(fragSrc).toMatch(/sampleUv\s*=\s*vUv\s*\+\s*\(sampleUv\s*-\s*vUv\)\s*\*\s*frameEdgeGate\(vUv\)/);
+  });
+});
+
 describe("layer.frag — iterative source-flow advection", () => {
   it("declares bounded source-flow advection uniforms", () => {
     expect(fragSrc).toContain("uniform float uSourceFlowAdvectionAmount;");

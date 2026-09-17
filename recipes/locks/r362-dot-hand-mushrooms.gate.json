@@ -1,0 +1,12 @@
+{
+  "status": "REJECT",
+  "scene": {
+    "sha256": "0bf1dbb73857cad56a40ef77373808991ed66282388b78facdfc4dde002220a3"
+  },
+  "note": "no gate for this scene sha; Isaac pick is the permit (00 §2)",
+  "humanOverride": {
+    "approvedBy": "isaac",
+    "reason": "풀렌더 뽑아 그리고 Valley of Stevie 00:13~00:14에 여자 오디오 들어갈 때 붙여",
+    "at": "2026-09-16T08:24:01.043Z"
+  }
+}

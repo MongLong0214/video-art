@@ -1,0 +1,12 @@
+{
+  "status": "REJECT",
+  "scene": {
+    "sha256": "bd18083113e846a7bba4b63eff8bea299b0033a1912e518db5283ded1765eefc"
+  },
+  "note": "no gate for this scene sha; Isaac pick is the permit (00 §2)",
+  "humanOverride": {
+    "approvedBy": "isaac",
+    "reason": "전반적으로 불만족스러워 최종본 다시 뽑아줘",
+    "at": "2026-09-16T06:44:24.881Z"
+  }
+}
