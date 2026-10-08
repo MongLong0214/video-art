@@ -1,0 +1,12 @@
+{
+  "status": "REJECT",
+  "scene": {
+    "sha256": "cdff731ee3432cd764ba48765564ccdd291e5bb6a86d70e00d5f5976b137f033"
+  },
+  "note": "no gate for this scene sha; Isaac pick is the permit (00 §2)",
+  "humanOverride": {
+    "approvedBy": "isaac",
+    "reason": "ㅇㅇ 풀버전으로 뽑고 /Users/isaac/Downloads/Ancestors.wav 이거 합쳐 맘에들어",
+    "at": "2026-10-07T03:25:42.785Z"
+  }
+}

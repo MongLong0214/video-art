@@ -1,0 +1,710 @@
+{
+  "version": 1,
+  "source": "layers/source.png",
+  "resolution": [
+    1632,
+    2912
+  ],
+  "duration": 20,
+  "fps": 30,
+  "layers": [
+    {
+      "id": "source-v5-still",
+      "file": "layers/source.png",
+      "zIndex": 0,
+      "opacity": 1,
+      "blending": "normal",
+      "role": "subject",
+      "animation": {
+        "colorCycle": {
+          "speed": 0,
+          "period": 20,
+          "phaseOffset": 0
+        },
+        "hueSpace": "oklch",
+        "greenCompress": 0,
+        "saturationBoost": 1.0,
+        "valueLift": 0,
+        "luminanceKey": 0,
+        "hueKey": 0,
+        "hueSpeed": 0,
+        "satInjectionMul": 0.01,
+        "satBlendLow": 0.05,
+        "satBlendHigh": 0.6,
+        "paletteAmount": 0,
+        "noiseAmount": 0,
+        "bicubicFilter": true,
+        "phaseField": "layers/phase-beam.png",
+        "phaseField2": "layers/phase-mix.png",
+        "flowField": "layers/flow-beam.png",
+        "phaseAmount": 0,
+        "phaseWarpAmount": 0,
+        "glowWave": {
+          "strength": 0,
+          "speed": 9,
+          "sharpness": 0.3,
+          "fieldCycles": 1.3
+        },
+        "glowWave2": {
+          "strength": 0,
+          "speed": 14,
+          "sharpness": 0.25,
+          "fieldCycles": 1.9
+        },
+        "structureFlow": {
+          "strength": 0,
+          "cycles": 3
+        },
+        "adaptiveFlow": {
+          "strength": 0,
+          "scale": 5,
+          "cycles": 3,
+          "luminanceWeight": 0,
+          "saturationWeight": 0,
+          "edgeWeight": 0,
+          "maxDisplacementPx": 0,
+          "edgePreserve": 1
+        },
+        "sourcePrism": {
+          "amount": 0,
+          "radiusPx": 0,
+          "directionCycles": 0,
+          "chromaCycles": 3,
+          "surfaceCycles": 6,
+          "phaseFlowPx": 27,
+          "phaseFlowCycles": 5,
+          "phaseMix": 0,
+          "detailBoost": 1.05,
+          "phaseScale": 5.8
+        },
+        "sourceColorClamp": {
+          "maxDrift": 0.12
+        },
+        "breath": {
+          "amplitude": 0.012,
+          "frequency": 2,
+          "period": 20
+        },
+        "sourceFlowAdvection": {
+          "amount": 1,
+          "maxDisplacementPx": 28,
+          "cycles": 3,
+          "phaseScale": 1.1,
+          "normalMix": 0.16,
+          "edgePreserve": 0.9,
+          "detailGain": 5,
+          "forwardBias": 0.36,
+          "fieldAlign": 0.92
+        },
+        "sourceFlowTransport": {
+          "amount": 0,
+          "macroDisplacementPx": 20,
+          "macroCycles": 4,
+          "microDisplacementPx": 0,
+          "microCycles": 4,
+          "phaseScale": 2.0,
+          "normalMix": 0.35,
+          "edgePreserve": 1.0,
+          "colorAmount": 0,
+          "forwardBias": 0
+        },
+        "sourceMaterialDissolve": {
+          "amount": 0,
+          "maxDisplacementPx": 22,
+          "cycles": 3,
+          "wavelengthPx": 72,
+          "edgePreserve": 0.5,
+          "streamPhase": false
+        },
+        "sourceSpectralFlow": {
+          "amount": 0,
+          "radiusPx": 16,
+          "cycles": 3,
+          "phaseScale": 1.15,
+          "normalMix": 0.18
+        },
+        "sourceChromaFlow": {
+          "amount": 0,
+          "maxDisplacementPx": 6,
+          "cycles": 5,
+          "phaseScale": 1.2,
+          "normalMix": 0.18,
+          "detailGain": 2
+        },
+        "colorMotionMask": {
+          "floor": 0.35,
+          "luminanceWeight": 1,
+          "saturationWeight": 0,
+          "edgeWeight": 0,
+          "power": 1
+        }
+      }
+    },
+    {
+      "id": "field-fill-transport",
+      "file": "layers/field-fill.png",
+      "zIndex": 1,
+      "opacity": 1,
+      "blending": "normal",
+      "role": "background",
+      "animation": {
+        "colorCycle": {
+          "speed": 16,
+          "period": 20,
+          "phaseOffset": 0
+        },
+        "hueSpace": "oklch",
+        "greenCompress": 0.6,
+        "saturationBoost": 1.2,
+        "valueLift": 0,
+        "luminanceKey": 0,
+        "hueKey": 0,
+        "hueSpeed": 0,
+        "satInjectionMul": 0.01,
+        "satBlendLow": 0.05,
+        "satBlendHigh": 0.6,
+        "paletteAmount": 0,
+        "noiseAmount": 0,
+        "bicubicFilter": true,
+        "phaseField": "layers/phase-beam.png",
+        "phaseField2": "layers/phase-mix.png",
+        "flowField": "layers/flow-beam.png",
+        "phaseAmount": 1.0,
+        "phaseWarpAmount": 0,
+        "glowWave": {
+          "strength": 0,
+          "speed": 9,
+          "sharpness": 0.3,
+          "fieldCycles": 1.3
+        },
+        "glowWave2": {
+          "strength": 0,
+          "speed": 14,
+          "sharpness": 0.25,
+          "fieldCycles": 1.9
+        },
+        "structureFlow": {
+          "strength": 0,
+          "cycles": 3
+        },
+        "adaptiveFlow": {
+          "strength": 0,
+          "scale": 5,
+          "cycles": 3,
+          "luminanceWeight": 0,
+          "saturationWeight": 0,
+          "edgeWeight": 0,
+          "maxDisplacementPx": 0,
+          "edgePreserve": 1
+        },
+        "sourcePrism": {
+          "amount": 0,
+          "radiusPx": 0,
+          "directionCycles": 0,
+          "chromaCycles": 3,
+          "surfaceCycles": 6,
+          "phaseFlowPx": 27,
+          "phaseFlowCycles": 5,
+          "phaseMix": 0,
+          "detailBoost": 1.05,
+          "phaseScale": 5.8
+        },
+        "sourceColorClamp": {
+          "maxDrift": 1
+        },
+        "breath": {
+          "amplitude": 0.032,
+          "frequency": 2,
+          "period": 20
+        },
+        "sourceFlowAdvection": {
+          "amount": 0,
+          "maxDisplacementPx": 28,
+          "cycles": 3,
+          "phaseScale": 1.1,
+          "normalMix": 0.16,
+          "edgePreserve": 0.9,
+          "detailGain": 5,
+          "forwardBias": 0.36,
+          "fieldAlign": 0.92
+        },
+        "sourceFlowTransport": {
+          "amount": 1,
+          "macroDisplacementPx": 128,
+          "macroCycles": 4,
+          "microDisplacementPx": 6,
+          "microCycles": 7,
+          "phaseScale": 2.0,
+          "normalMix": 0.35,
+          "edgePreserve": 0.5,
+          "colorAmount": 0,
+          "forwardBias": 0
+        },
+        "sourceMaterialDissolve": {
+          "amount": 0.42,
+          "maxDisplacementPx": 22,
+          "cycles": 3,
+          "wavelengthPx": 72,
+          "edgePreserve": 0.5,
+          "streamPhase": false
+        },
+        "sourceSpectralFlow": {
+          "amount": 0.48,
+          "radiusPx": 16,
+          "cycles": 3,
+          "phaseScale": 1.15,
+          "normalMix": 0.18
+        },
+        "sourceChromaFlow": {
+          "amount": 0.5,
+          "maxDisplacementPx": 6,
+          "cycles": 5,
+          "phaseScale": 1.2,
+          "normalMix": 0.18,
+          "detailGain": 2
+        },
+        "colorMotionMask": {
+          "floor": 1,
+          "luminanceWeight": 0,
+          "saturationWeight": 0,
+          "edgeWeight": 0,
+          "power": 1
+        }
+      }
+    },
+    {
+      "id": "edge-columns",
+      "file": "layers/edge-columns.png",
+      "zIndex": 2,
+      "opacity": 1,
+      "blending": "normal",
+      "role": "background",
+      "animation": {
+        "colorCycle": {
+          "speed": 0,
+          "period": 20,
+          "phaseOffset": 0
+        },
+        "hueSpace": "oklch",
+        "greenCompress": 0,
+        "saturationBoost": 1.2,
+        "valueLift": 0,
+        "luminanceKey": 0,
+        "hueKey": 0,
+        "hueSpeed": 0,
+        "satInjectionMul": 0.01,
+        "satBlendLow": 0.05,
+        "satBlendHigh": 0.6,
+        "paletteAmount": 0,
+        "noiseAmount": 0,
+        "bicubicFilter": true,
+        "phaseField": "layers/phase-beam.png",
+        "phaseField2": "layers/phase-mix.png",
+        "flowField": "layers/flow-beam.png",
+        "phaseAmount": 0,
+        "phaseWarpAmount": 0,
+        "glowWave": {
+          "strength": 0,
+          "speed": 9,
+          "sharpness": 0.3,
+          "fieldCycles": 1.3
+        },
+        "glowWave2": {
+          "strength": 0,
+          "speed": 14,
+          "sharpness": 0.25,
+          "fieldCycles": 1.9
+        },
+        "structureFlow": {
+          "strength": 0,
+          "cycles": 3
+        },
+        "adaptiveFlow": {
+          "strength": 0,
+          "scale": 5,
+          "cycles": 3,
+          "luminanceWeight": 0,
+          "saturationWeight": 0,
+          "edgeWeight": 0,
+          "maxDisplacementPx": 0,
+          "edgePreserve": 1
+        },
+        "sourcePrism": {
+          "amount": 0,
+          "radiusPx": 0,
+          "directionCycles": 0,
+          "chromaCycles": 3,
+          "surfaceCycles": 6,
+          "phaseFlowPx": 27,
+          "phaseFlowCycles": 5,
+          "phaseMix": 0,
+          "detailBoost": 1.05,
+          "phaseScale": 5.8
+        },
+        "sourceColorClamp": {
+          "maxDrift": 0.18
+        },
+        "breath": {
+          "amplitude": 0.032,
+          "frequency": 2,
+          "period": 20
+        },
+        "sourceFlowAdvection": {
+          "amount": 0,
+          "maxDisplacementPx": 28,
+          "cycles": 3,
+          "phaseScale": 1.1,
+          "normalMix": 0.16,
+          "edgePreserve": 0.9,
+          "detailGain": 5,
+          "forwardBias": 0.36,
+          "fieldAlign": 0.92
+        },
+        "sourceFlowTransport": {
+          "amount": 1,
+          "macroDisplacementPx": 128,
+          "macroCycles": 4,
+          "microDisplacementPx": 6,
+          "microCycles": 7,
+          "phaseScale": 2.0,
+          "normalMix": 0.35,
+          "edgePreserve": 0.5,
+          "colorAmount": 0,
+          "forwardBias": 0
+        },
+        "sourceMaterialDissolve": {
+          "amount": 0.42,
+          "maxDisplacementPx": 22,
+          "cycles": 3,
+          "wavelengthPx": 72,
+          "edgePreserve": 0.5,
+          "streamPhase": false
+        },
+        "sourceSpectralFlow": {
+          "amount": 0.48,
+          "radiusPx": 16,
+          "cycles": 3,
+          "phaseScale": 1.15,
+          "normalMix": 0.18
+        },
+        "sourceChromaFlow": {
+          "amount": 0.5,
+          "maxDisplacementPx": 6,
+          "cycles": 5,
+          "phaseScale": 1.2,
+          "normalMix": 0.18,
+          "detailGain": 2
+        },
+        "colorMotionMask": {
+          "floor": 1,
+          "luminanceWeight": 0,
+          "saturationWeight": 0,
+          "edgeWeight": 0,
+          "power": 1
+        }
+      }
+    },
+    {
+      "id": "color-ring",
+      "file": "layers/color-ring.png",
+      "zIndex": 3,
+      "opacity": 1,
+      "blending": "normal",
+      "role": "background",
+      "animation": {
+        "colorCycle": {
+          "speed": 16,
+          "period": 20,
+          "phaseOffset": 0
+        },
+        "hueSpace": "oklch",
+        "greenCompress": 0.6,
+        "saturationBoost": 1.2,
+        "valueLift": 0,
+        "luminanceKey": 0,
+        "hueKey": 0,
+        "hueSpeed": 0,
+        "satInjectionMul": 0.01,
+        "satBlendLow": 0.05,
+        "satBlendHigh": 0.6,
+        "paletteAmount": 0,
+        "noiseAmount": 0,
+        "bicubicFilter": true,
+        "phaseField": "layers/phase-beam.png",
+        "phaseField2": "layers/phase-mix.png",
+        "flowField": "layers/flow-beam.png",
+        "phaseAmount": 1.0,
+        "phaseWarpAmount": 0,
+        "glowWave": {
+          "strength": 0,
+          "speed": 9,
+          "sharpness": 0.3,
+          "fieldCycles": 1.3
+        },
+        "glowWave2": {
+          "strength": 0,
+          "speed": 14,
+          "sharpness": 0.25,
+          "fieldCycles": 1.9
+        },
+        "structureFlow": {
+          "strength": 0,
+          "cycles": 3
+        },
+        "adaptiveFlow": {
+          "strength": 0,
+          "scale": 5,
+          "cycles": 3,
+          "luminanceWeight": 0,
+          "saturationWeight": 0,
+          "edgeWeight": 0,
+          "maxDisplacementPx": 0,
+          "edgePreserve": 1
+        },
+        "sourcePrism": {
+          "amount": 0,
+          "radiusPx": 0,
+          "directionCycles": 0,
+          "chromaCycles": 3,
+          "surfaceCycles": 6,
+          "phaseFlowPx": 27,
+          "phaseFlowCycles": 5,
+          "phaseMix": 0,
+          "detailBoost": 1.05,
+          "phaseScale": 5.8
+        },
+        "sourceColorClamp": {
+          "maxDrift": 1
+        },
+        "breath": {
+          "amplitude": 0,
+          "frequency": 2,
+          "period": 20
+        },
+        "sourceFlowAdvection": {
+          "amount": 0,
+          "maxDisplacementPx": 28,
+          "cycles": 3,
+          "phaseScale": 1.1,
+          "normalMix": 0.16,
+          "edgePreserve": 0.9,
+          "detailGain": 5,
+          "forwardBias": 0.36,
+          "fieldAlign": 0.92
+        },
+        "sourceFlowTransport": {
+          "amount": 0,
+          "macroDisplacementPx": 128,
+          "macroCycles": 4,
+          "microDisplacementPx": 6,
+          "microCycles": 7,
+          "phaseScale": 2.0,
+          "normalMix": 0.35,
+          "edgePreserve": 0.5,
+          "colorAmount": 0,
+          "forwardBias": 0
+        },
+        "sourceMaterialDissolve": {
+          "amount": 0,
+          "maxDisplacementPx": 22,
+          "cycles": 3,
+          "wavelengthPx": 72,
+          "edgePreserve": 0.5,
+          "streamPhase": false
+        },
+        "sourceSpectralFlow": {
+          "amount": 0,
+          "radiusPx": 16,
+          "cycles": 3,
+          "phaseScale": 1.15,
+          "normalMix": 0.18
+        },
+        "sourceChromaFlow": {
+          "amount": 0,
+          "maxDisplacementPx": 6,
+          "cycles": 5,
+          "phaseScale": 1.2,
+          "normalMix": 0.18,
+          "detailGain": 2
+        },
+        "colorMotionMask": {
+          "floor": 0,
+          "luminanceWeight": 0,
+          "saturationWeight": 1,
+          "edgeWeight": 0,
+          "power": 1
+        }
+      }
+    },
+    {
+      "id": "hand-hold",
+      "file": "layers/hand-hold.png",
+      "zIndex": 4,
+      "opacity": 1,
+      "blending": "normal",
+      "role": "subject",
+      "animation": {
+        "colorCycle": {
+          "speed": 0,
+          "period": 20,
+          "phaseOffset": 0
+        },
+        "hueSpace": "oklch",
+        "greenCompress": 0,
+        "saturationBoost": 1.0,
+        "valueLift": 0,
+        "luminanceKey": 0,
+        "hueKey": 0,
+        "hueSpeed": 0,
+        "satInjectionMul": 0.01,
+        "satBlendLow": 0.05,
+        "satBlendHigh": 0.6,
+        "paletteAmount": 0,
+        "noiseAmount": 0,
+        "bicubicFilter": true,
+        "phaseField": "layers/phase-beam.png",
+        "phaseField2": "layers/phase-mix.png",
+        "flowField": "layers/flow-beam.png",
+        "phaseAmount": 0,
+        "phaseWarpAmount": 0,
+        "glowWave": {
+          "strength": 0,
+          "speed": 9,
+          "sharpness": 0.3,
+          "fieldCycles": 1.3
+        },
+        "glowWave2": {
+          "strength": 0,
+          "speed": 14,
+          "sharpness": 0.25,
+          "fieldCycles": 1.9
+        },
+        "structureFlow": {
+          "strength": 0,
+          "cycles": 3
+        },
+        "adaptiveFlow": {
+          "strength": 0,
+          "scale": 5,
+          "cycles": 3,
+          "luminanceWeight": 0,
+          "saturationWeight": 0,
+          "edgeWeight": 0,
+          "maxDisplacementPx": 0,
+          "edgePreserve": 1
+        },
+        "sourcePrism": {
+          "amount": 0,
+          "radiusPx": 0,
+          "directionCycles": 0,
+          "chromaCycles": 3,
+          "surfaceCycles": 6,
+          "phaseFlowPx": 27,
+          "phaseFlowCycles": 5,
+          "phaseMix": 0,
+          "detailBoost": 1.05,
+          "phaseScale": 5.8
+        },
+        "sourceColorClamp": {
+          "maxDrift": 0.12
+        },
+        "breath": {
+          "amplitude": 0,
+          "frequency": 2,
+          "period": 20
+        },
+        "sourceFlowAdvection": {
+          "amount": 0,
+          "maxDisplacementPx": 28,
+          "cycles": 3,
+          "phaseScale": 1.1,
+          "normalMix": 0.16,
+          "edgePreserve": 0.9,
+          "detailGain": 5,
+          "forwardBias": 0.36,
+          "fieldAlign": 1
+        },
+        "sourceFlowTransport": {
+          "amount": 0,
+          "macroDisplacementPx": 28,
+          "macroCycles": 2,
+          "microDisplacementPx": 6,
+          "microCycles": 4,
+          "phaseScale": 1.05,
+          "normalMix": 0.12,
+          "edgePreserve": 0.1,
+          "colorAmount": 0.16,
+          "forwardBias": 0.32
+        },
+        "sourceMaterialDissolve": {
+          "amount": 0,
+          "maxDisplacementPx": 22,
+          "cycles": 3,
+          "wavelengthPx": 72,
+          "edgePreserve": 0.5,
+          "streamPhase": false
+        },
+        "sourceSpectralFlow": {
+          "amount": 0,
+          "radiusPx": 16,
+          "cycles": 3,
+          "phaseScale": 1.15,
+          "normalMix": 0.18
+        },
+        "sourceChromaFlow": {
+          "amount": 0,
+          "maxDisplacementPx": 6,
+          "cycles": 5,
+          "phaseScale": 1.2,
+          "normalMix": 0.18,
+          "detailGain": 2
+        },
+        "colorMotionMask": {
+          "floor": 0.35,
+          "luminanceWeight": 1,
+          "saturationWeight": 0,
+          "edgeWeight": 0,
+          "power": 1
+        }
+      }
+    }
+  ],
+  "effects": {
+    "bloom": {
+      "strength": 0.3,
+      "radius": 0.5,
+      "threshold": 0.68
+    },
+    "chromaticAberration": {
+      "offset": 0.06,
+      "modulationOffset": 0.02
+    },
+    "multipassFeedback": {
+      "strength": 0,
+      "warp": 0.012,
+      "decay": 0.88,
+      "hueShift": 0.008,
+      "zoom": 1.006,
+      "rotate": 0
+    },
+    "godRays": {
+      "intensity": 0,
+      "centerX": 0.505,
+      "centerY": 0.538
+    },
+    "aura": {
+      "intensity": 0
+    },
+    "filmGrade": {
+      "grain": 0,
+      "contrast": 1.0,
+      "sCurve": 0,
+      "vignetteIntensity": 0
+    },
+    "cameraDrift": {
+      "radius": 0.01,
+      "cycles": 2,
+      "pivot": 0.5
+    }
+  }
+}

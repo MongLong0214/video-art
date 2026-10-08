@@ -1,0 +1,12 @@
+{
+  "status": "REJECT",
+  "scene": {
+    "sha256": "49891ed9317f15cf6afe67fe3cce9f182c6585bcdd3a56e623316154e92b69f7"
+  },
+  "note": "no gate for this scene sha; Isaac pick is the permit (00 §2)",
+  "humanOverride": {
+    "approvedBy": "isaac",
+    "reason": "간만에 아주 맘에들어 풀렌더 뽑고 오디오는 이거 '/Users/isaac/Downloads/Attack of the 303.wav'",
+    "at": "2026-10-08T07:55:12.373Z"
+  }
+}

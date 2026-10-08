@@ -1,0 +1,12 @@
+{
+  "status": "REJECT",
+  "scene": {
+    "sha256": "890dc4b2bde7850f332f316ff6d3197d0fbfbca68b0626063c53e9088c29c1c5"
+  },
+  "note": "no gate for this scene sha; Isaac pick is the permit (00 §2)",
+  "humanOverride": {
+    "approvedBy": "isaac",
+    "reason": "풀렌더로 뽑아줘 오디오는 '/Users/isaac/Downloads/Bloody Mary - Love is Acid.wav'. 그리고 간만에 아주 맘에들어. 몇개월만인거같아",
+    "at": "2026-10-08T03:09:52.545Z"
+  }
+}

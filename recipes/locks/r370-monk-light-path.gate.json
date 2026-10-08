@@ -1,0 +1,12 @@
+{
+  "status": "REJECT",
+  "scene": {
+    "sha256": "85688555bcc73998259f94327f4d33bf098413c909e8671ef42c658da64c68b4"
+  },
+  "note": "no gate for this scene sha; Isaac pick is the permit (00 §2)",
+  "humanOverride": {
+    "approvedBy": "isaac",
+    "reason": "그냥 /Users/isaac/WebstormProjects/video-art/out/layered/2026-09-28_r370-monk-light-path-091c0d51/r370-monk-light-path-preview.mp4 이거 풀버전으로 뽑고, /Users/isaac/Downloads/Buddha-Bar - Tebra ＂Shiva＂.wav 이거 적절히 합펴줘",
+    "at": "2026-09-28T02:34:44.105Z"
+  }
+}

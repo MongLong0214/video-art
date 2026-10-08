@@ -1,0 +1,12 @@
+{
+  "status": "REJECT",
+  "scene": {
+    "sha256": "7a35d42e49c760614d6e51ad2287c1151fef2f02820b369dd6212a675d18d657"
+  },
+  "note": "no gate for this scene sha; Isaac pick is the permit (00 §2)",
+  "humanOverride": {
+    "approvedBy": "isaac",
+    "reason": "맘에 들어 풀렌더 하고 /Users/isaac/Downloads/Electric Universe & Ace Ventura - Ancient Aum.wav 이거 1분48초 쯤 확 터질떄부터 합쳐줘",
+    "at": "2026-09-23T06:49:51.322Z"
+  }
+}

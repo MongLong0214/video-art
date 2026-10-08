@@ -1,0 +1,12 @@
+{
+  "status": "REJECT",
+  "scene": {
+    "sha256": "3805895c63902ad65bdfa45a2f8abdd6b066f6bad8d22d54addba98c19b367bd"
+  },
+  "note": "no gate for this scene sha; Isaac pick is the permit (00 §2)",
+  "humanOverride": {
+    "approvedBy": "isaac",
+    "reason": "풀버전 뽑아줘 '/Users/isaac/Downloads/Avalon & Stryker - Dusk Till Dawn.wav' 이거 3초부근에 여자 목소리 시작지점부터 넣어",
+    "at": "2026-10-06T01:47:17.808Z"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "status": "REJECT",
+  "scene": {
+    "sha256": "cd0bb856785c342b4a4f310d46389dd16b4ec7ed2c8ba00a8b633b26ad08cbb4"
+  },
+  "note": "no gate for this scene sha; Isaac pick is the permit (00 §2)",
+  "humanOverride": {
+    "approvedBy": "isaac",
+    "reason": "맘에 들어 풀버전 뽑고 '/Users/isaac/Downloads/Bloody Mary - Love is Acid.wav' 이거 합쳐",
+    "at": "2026-10-01T00:56:25.557Z"
+  }
+}

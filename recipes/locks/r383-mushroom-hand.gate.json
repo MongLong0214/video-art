@@ -1,0 +1,12 @@
+{
+  "status": "REJECT",
+  "scene": {
+    "sha256": "7a93bffbb2cd34b00f9f37259e7670da09a9942e580667ef82317d9b523ac7bf"
+  },
+  "note": "no gate for this scene sha; Isaac pick is the permit (00 §2)",
+  "humanOverride": {
+    "approvedBy": "isaac",
+    "reason": "ㅇㅇ 풀버전으로 뽑고 음악 합쳐 '/Users/isaac/Downloads/Great Spirit.wav'",
+    "at": "2026-10-07T05:24:54.828Z"
+  }
+}
