@@ -116,6 +116,7 @@ Isaac judges a **language map**, not a knob. `gate:psychedelic` is optional diag
 | Sketch (only after 다 별로 / 창의적으로) | `npx tsx scripts/export-layered.ts --title <slug>-<tile> --work-dir out/manual-runs/<slug> --sketch` then `npx tsx scripts/sketch-grid.ts --out out/manual-runs/<slug>/sketch-grid.mp4 "A L1+L2=…/a-sketch.mp4" …` |
 | QA | `npx tsx scripts/qa-motion.ts out/layered/*<slug>*/<slug>-preview.mp4 --source out/manual-runs/<slug>/source.png --json out/manual-runs/<slug>/qa-preview.json` |
 | Stills | §6.2 commands |
+| Taste audit | `node scripts/taste/measure.mjs <preview.mp4> <label>` · `node scripts/taste/probe.mjs out/manual-runs/<slug>/source.png <preview.mp4> <label>` — targets in `04` §4 |
 | Pick (full permit) | `npx tsx scripts/isaac-pick.ts --work-dir out/manual-runs/<slug> --quote "<verbatim>" [--audio "<Track> @m:ss"]` |
 | Gate (optional diagnostics) | `npm run gate:psychedelic -- --candidate <preview.mp4> --source <source.png> --reference "$REF1" --reference "$REF2" --work-dir out/manual-runs/<slug> --axis <axis> --primitive <primitive>` |
 | Full | `npx tsx scripts/export-layered.ts --title <slug>-final --work-dir <dir> --full-res --gate-report out/manual-runs/<slug>/psychedelic-gate.json` |
@@ -162,6 +163,7 @@ npx tsx scripts/analyze-source.ts <source.png> --out out/manual-runs/<slug>/anal
 | `dense-pattern-figure` | start **r139** path; colorCycle **0** first; for **gate/final** clamp maxDrift **≤0.26** (r242) | default colorCycle/hueKey; shipping with clamp 0.42+ without re-gate |
 | `allover-vivid` | OKLCH; integer cycle; satInj 0 | HSV + high satFloor |
 | `pastel-greenrisk` | clamp; low hueKey | full-field hue “for energy” |
+| `figure-vivid` on a dark smoke field (r385 · r386, both “간만에 아주 맘에들어”) | figure held in source colour (hold layer; prism ≤ s12 only where it does not repaint skin). Field lifted (CLAHE × gain) and coloured **only** by a palette layer (`layers[1]`, alpha = soft lifted luma away from the figure): cosine path anchored on the source bg hue, never 35–135°, integer `paletteC` bands for pattern, phase plate histogram-equalised over the field, colour loop ≈ 3 s. Hero light = glowWave on a clone of `layers[0]` whose alpha is the source’s own glow path, one band (`fieldCycles` 2, strength ≈ 0.7). Plates: `scripts/locks/r385-build-*.mjs`, `r386-build-*.mjs` | glowWave on `layers[0]` (rings cross the faces) · prism on the dark field · palette without the source hue · CA / feedback |
 
 ---
 

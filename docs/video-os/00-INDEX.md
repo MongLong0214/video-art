@@ -116,6 +116,12 @@ Killed axes (`01` §5) stay killed **in the region class and source type where t
 | 풀렌더 · 풀버전 · 최종 · 플렌더 · ㅇㅋ 합격 | permit | `isaac-pick.ts --quote` → full | edit gate JSON by hand |
 | `<Track> @m:ss` | audio | mux with that `-ss` | guessing a start · muxing without it |
 | 알아서 다듬어 · 알아서 최종본 | keep the picked map; polish = **defects only** (seam, wall, olive) | no language change · no denoise sweep | reading it as “reduce everything” (r346 v6) |
+| 배경이 심심해 · 배경에 패턴 | the dark field carries no colour | lift the field + bg-only palette layer anchored on the source bg hue + integer `paletteC` contour bands (r385, `01` §3.2) | prism on a dark field (OKLab keeps L → olive) |
+| 인위적이고 저급해 (on a light / flow) | the effect reads as a filter laid over the image (whole-frame glow rings crossing faces) | confine it to the source’s own glow path on a masked clone layer (r386) | deleting the motion (r386: “흐름을 아예 없애지는 말고”) |
+| 은은해서 잘 안보여 | the band is wider than its path, so it pulses instead of travelling | one defined band: `fieldCycles` ↑ and strength ↑ (r386 v7) | speed ↑ |
+| 눈이 아퍼 · 쨍 | neon (channel max + high sat), not brightness | `saturationBoost` ↓ · feedback ↓ (r366) | contrast/sCurve ↓ too (“쨍+밋밋” = two axes) |
+| 단조로워 (colour) | one colour moves as a block | L3 `phaseScale` ≈ 2 (more bands) (r381) | sat ↑ |
+| 너무 극단적 (colour) | full-frame palette repaint | in-place prism + luma detail bands (r383) | — |
 
 Two quotes of the same class in a row on the same map = STOP and ask with one preview and one question.
 
@@ -168,6 +174,7 @@ docs/video-os/03-INSTAGRAM-REELS.md    ← reel edit log
 docs/video-os/05-HALLUCINATION-METHOD.md ← why (evidence), not what
 docs/video-os/OS-V2-HANDOVER-2026-09-02.md ← what changed on 2026-09-02 and why (history, not law)
 scripts/prepare-new-source.ts · export-layered.ts (--sketch/--preview/--full-res) · sketch-grid.ts · isaac-pick.ts · close-lock.ts · rebuild-closed-lock.ts
+scripts/taste/measure.mjs · probe.mjs   ← taste self-audit vs approved finals (`04` §4)
 recipes/golden/*.json  · recipes/locks/manifest.json · sources/approved/*
 out/**  ← local only
 ```

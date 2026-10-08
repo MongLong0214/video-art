@@ -93,8 +93,27 @@ Refuse to present if any box is unchecked.
 - [ ] Hold debug (if a hold layer exists): no **constant-nx vertical wall**. (Waterline / seated base may be horizontal.)
 - [ ] Figure-vivid / prism scenes: `colorCycle.speed === 0`. `rotate === 0`. No `phase-angular`. Cosmos colorCycle is legal when there is no `sourcePrism`.
 - [ ] Still vs source: identity not washed to cyan/magenta dayglo (R-001).
+- [ ] Taste self-audit vs the approved finals (`node scripts/taste/measure.mjs` + `node scripts/taste/probe.mjs`, table below). Out of range = fix or say why in the case row.
+  - sat temporal std ≤ 0.02. meanL ≤ source + 3. neon < 3 %. white ≈ source.
+  - pumpShare ≤ 0.2. Whole-frame pumping means a skewed phase histogram, so equalise the plate.
+  - hueDom ≥ source where the source hue axis allows it.
+  - Colour loop ≈ 3 s. Frame 0 already moving; rotate the loop to open at peak if not.
 - [ ] Case ledger row appended in `01-CREATE-OS.md` §9 (PASS and FAIL).
 - [ ] Preview path given. **No full. No audio.**
+
+Approved finals, measured with `scripts/taste/measure.mjs` (src = the source still):
+
+| Final | Family | hueSpd °/s | lumSpd | hueDom (src) | sat temporal std |
+|-------|--------|-----------|--------|--------------|------------------|
+| r372 third-eye-burst | luminance-led | 14 | 26 | 0.55 | — |
+| r366 lips-buddha-tongue | luminance-led | 8 | 31 | 0.75 | — |
+| r383 mushroom-hand | hue-led | 215 | 23.7 | 0.50 (0.81) | — |
+| r385 xray-mushroom | hue-led (bg palette) | 130 | 12.6 | 0.38 (0.39) | — |
+| r386 hourglass-faces | bg palette + confined glow | 19 | 5.1 | 0.28 (0.47) | 0.003 |
+
+All finals sit at ±0.003–0.018 sat temporal std.
+
+r386 sits below its source hueDom because an olive-free cosine path between orange and teal must cross violet.
 
 ---
 
