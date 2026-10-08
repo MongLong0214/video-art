@@ -410,8 +410,10 @@ describe("layer.frag — iterative source-flow advection", () => {
     expect(fragSrc).toMatch(/texture2D\(uFlowFieldTex,\s*sourceFlowUv\)\.rgb/);
     expect(fragSrc).toMatch(/texture2D\(uPhaseTex2,\s*sourceFlowUv\)\.r/);
     expect(fragSrc).toMatch(/texture2D\(uPhaseTex,\s*sourceFlowUv\)\.r/);
-    expect(fragSrc).toMatch(/sourceFlowTravelA\s*=\s*sin\(sourceFlowAngleA\)/);
-    expect(fragSrc).toMatch(/sourceFlowTravelB\s*=\s*sin\(sourceFlowAngleB\)/);
+    expect(fragSrc).toMatch(/sourceFlowTravelA\s*=\s*sourceFlowForwardTravel\(sourceFlowAngleA,\s*uSourceFlowAdvectionForwardBias\)/);
+    expect(fragSrc).toMatch(/sourceFlowTravelB\s*=\s*sourceFlowForwardTravel\(sourceFlowAngleB,\s*uSourceFlowAdvectionForwardBias\)/);
+    // forwardBias 0 keeps the original sin shuttle
+    expect(fragSrc).toMatch(/float\s+shuttle\s*=\s*sin\(angle\);[\s\S]*?return\s+mix\(shuttle,\s*forward,\s*clamp\(forwardBias,\s*0\.0,\s*1\.0\)\)/);
     expect(fragSrc).toMatch(/sourceFlowDirectionRaw\s*\/\s*max\(1\.0,\s*length\(sourceFlowDirectionRaw\)\)/);
     expect(fragSrc).toMatch(/sourceFlowUv\s*\+=\s*edgePreservedSourceFlowDelta\(sourceFlowUv,\s*sourceFlowDelta\)/);
     expect(fragSrc).toMatch(/sampleUv\s*=\s*clamp\(sourceFlowUv,\s*0\.0,\s*1\.0\)/);
